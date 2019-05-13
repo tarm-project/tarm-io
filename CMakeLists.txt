@@ -7,6 +7,10 @@ project(connection_test
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(MACOSX TRUE)
+endif()
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
@@ -16,8 +20,13 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBUV REQUIRED libuv)
+if (UNIX AND NOT MACOSX)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBUV REQUIRED libuv)
+elseif(MACOSX)
+    find_library(LIBUV_LIBRARIES uv PATHS /usr/local/lib)
+    find_path(LIBUV_INCLUDE_DIR uv.h PATHS /usr/local/include/)
+endif()
 
 # TODO: need to check it if Boost installed to some location as /opt,
 # because below I do not have add include dirs and libs
