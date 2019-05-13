@@ -11,7 +11,9 @@ int main(int argc, char* argv[]) {
     io::TcpServer server(loop);
 
     io::File file(loop);
-    file.open("cmake_install.cmake", nullptr);
+    file.open("cmake_install.cmake", [](io::File& file) {
+        std::cout << "Opened file " << file.path() << std::endl;
+    });
 
     //io::Timer timer(loop);
     //timer.start([&](Timer& t){ std::cout << "Timer!!!" << std::endl; timer.stop();}, 1000, 0);

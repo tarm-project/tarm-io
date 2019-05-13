@@ -20,6 +20,7 @@ public:
     // statics
     static void on_open(uv_fs_t *req);
 
+    const std::string& path() const;
 private:
     OpenFileCallback m_open_callback = nullptr;
 
@@ -28,6 +29,8 @@ private:
     uv_fs_t m_open_req;
     uv_fs_t m_read_req;
     uv_fs_t m_write_req;
+
+    std::string m_path;
 };
 
 } // namespace io

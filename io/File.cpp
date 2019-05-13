@@ -21,13 +21,23 @@ File::~File() {
 }
 
 void File::open(const std::string& path, OpenFileCallback callback) {
+    m_path.clear();
     m_open_callback = callback;
+    m_open_req.data = this;
     uv_fs_open(m_loop, &m_open_req, path.c_str(), UV_FS_O_RDWR, 0, File::on_open);
+}
+
+const std::string& File::path() const {
+    return m_path;
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
 void File::on_open(uv_fs_t* req) {
-    std::cout << "Opened file " << req->path << std::endl;
+    auto& this_ = *reinterpret_cast<File*>(req->data);
+    this_.m_path = req->path;
+    if (this_.m_open_callback) {
+        this_.m_open_callback(this_);
+    }
 }
 
 } // namespace io
