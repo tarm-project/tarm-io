@@ -13,6 +13,10 @@ int main(int argc, char* argv[]) {
     io::File file(loop);
     file.open("cmake_install.cmake", [](io::File& file) {
         std::cout << "Opened file " << file.path() << std::endl;
+
+        file.read([](io::File& file, const char* buf, std::size_t size) {
+            std::cout.write(buf, size);
+        });
     });
 
     //io::Timer timer(loop);
