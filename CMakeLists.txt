@@ -34,7 +34,8 @@ find_package(Boost REQUIRED)
 
 #message(FATAL_ERROR !${Boost_LIBRARIES}!)
 
-set(IO_SOURCE_LIST
+FILE(GLOB IO_SOURCE_LIST io/*.h)
+list(APPEND IO_SOURCE_LIST
         io/Common.cpp
         io/EventLoop.cpp
         io/File.cpp
