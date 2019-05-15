@@ -34,23 +34,26 @@ find_package(Boost REQUIRED)
 
 #message(FATAL_ERROR !${Boost_LIBRARIES}!)
 
-set(SOURCE_LIST)
-list(APPEND SOURCE_LIST io/Common.cpp)
-list(APPEND SOURCE_LIST io/EventLoop.cpp)
-list(APPEND SOURCE_LIST io/File.cpp)
-list(APPEND SOURCE_LIST io/Timer.cpp)
-list(APPEND SOURCE_LIST io/TcpClient.cpp)
-list(APPEND SOURCE_LIST io/TcpServer.cpp)
+set(IO_SOURCE_LIST
+        io/Common.cpp
+        io/EventLoop.cpp
+        io/File.cpp
+        io/Timer.cpp
+        io/TcpClient.cpp
+        io/TcpServer.cpp
+)
+
+source_group(io FILES ${IO_SOURCE_LIST})
 
 set(LIB_LIST)
 list(APPEND LIB_LIST ${LIBUV_LIBRARIES})
 #message(FATAL_ERROR "!${LIBUV_INCLUDE_DIR}!")
 include_directories(${LIBUV_INCLUDE_DIR})
 
-add_executable(client Client.cpp ${SOURCE_LIST})
+add_executable(client Client.cpp ${IO_SOURCE_LIST})
 target_link_libraries(client ${LIB_LIST})
 
-add_executable(server Server.cpp ${SOURCE_LIST})
+add_executable(server Server.cpp ${IO_SOURCE_LIST})
 target_link_libraries(server ${LIB_LIST})
 
 #############################################################
