@@ -2,13 +2,25 @@
 #include "io/TcpServer.h"
 #include "io/Timer.h"
 #include "io/File.h"
+#include "io/Dir.h"
 
 #include <iostream>
 #include <cstring>
 
+
 int main(int argc, char* argv[]) {
     io::EventLoop loop;
     io::TcpServer server(loop);
+
+
+    io::Dir dir(loop);
+    dir.open("/Users/tarm", [&](io::Dir& dir) {
+        std::cout << "Opened dir: " << dir.path() << std::endl;
+        dir.read([&] (io::Dir& dir, const char* path) {
+            std::cout << path << std::endl;
+        });
+    });
+
 
     io::File file(loop);
 
