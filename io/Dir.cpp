@@ -7,6 +7,34 @@
 
 namespace io {
 
+namespace {
+
+DirectoryEntryType convert_direntry_type(uv_dirent_type_t type) {
+    switch (type) {
+        case UV_DIRENT_FILE:
+            return DirectoryEntryType::FILE;
+        case UV_DIRENT_DIR:
+            return DirectoryEntryType::DIR;
+        case UV_DIRENT_LINK:
+            return DirectoryEntryType::LINK;
+        case UV_DIRENT_FIFO:
+            return DirectoryEntryType::FIFO;
+        case UV_DIRENT_SOCKET:
+            return DirectoryEntryType::SOCKET;
+        case UV_DIRENT_CHAR:
+            return DirectoryEntryType::CHAR;
+        case UV_DIRENT_BLOCK:
+            return DirectoryEntryType::BLOCK;
+        case UV_DIRENT_UNKNOWN:
+        default:
+            return DirectoryEntryType::UNKNOWN;
+    }
+
+    return DirectoryEntryType::UNKNOWN;
+}
+
+}
+
 const std::string& Dir::path() const {
     return m_path;
 }
@@ -60,22 +88,6 @@ void Dir::close() {
 }
 
 ////////////////////////////////////// static //////////////////////////////////////
-void Dir::on_read_dir(uv_fs_t* req) {
-    auto& this_ = *reinterpret_cast<Dir*>(req->data);
-
-    uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
-
-    if (req->result == 0) {
-        this_.close();
-    } else {
-        if (this_.m_read_callback) {
-            this_.m_read_callback(this_, this_.m_dirents[0].name);
-        }
-
-        uv_fs_readdir(req->loop, &this_.m_read_dir_req, dir, Dir::on_read_dir);
-    }
-}
-
 void Dir::on_open_dir(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<Dir*>(req->data);
 
@@ -92,6 +104,22 @@ void Dir::on_open_dir(uv_fs_t* req) {
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
     dir->dirents = this_.m_dirents;
     dir->nentries = Dir::DIRENTS_NUMBER;
+}
+
+void Dir::on_read_dir(uv_fs_t* req) {
+    auto& this_ = *reinterpret_cast<Dir*>(req->data);
+
+    uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
+
+    if (req->result == 0) {
+        this_.close();
+    } else {
+        if (this_.m_read_callback) {
+            this_.m_read_callback(this_, this_.m_dirents[0].name, convert_direntry_type(this_.m_dirents[0].type));
+        }
+
+        uv_fs_readdir(req->loop, &this_.m_read_dir_req, dir, Dir::on_read_dir);
+    }
 }
 
 void Dir::on_close_dir(uv_fs_t* req) {

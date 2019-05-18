@@ -6,12 +6,52 @@
 #include <string>
 #include <functional>
 
+// TODO: move
+#include <ostream>
+
 namespace io {
+
+// TODO: move to separate file
+enum class DirectoryEntryType {
+    UNKNOWN = 0,
+    FILE,
+    DIR,
+    LINK,
+    FIFO,
+    SOCKET,
+    CHAR,
+    BLOCK
+};
+
+inline
+std::ostream& operator<< (std::ostream& os, DirectoryEntryType type)
+{
+    switch (type) {
+        case DirectoryEntryType::UNKNOWN:
+            return os << "UNKNOWN";
+        case DirectoryEntryType::FILE:
+            return os << "FILE";
+        case DirectoryEntryType::DIR:
+            return os << "DIR";
+        case DirectoryEntryType::LINK:
+            return os << "LINK";
+        case DirectoryEntryType::FIFO:
+            return os << "FIFO";
+        case DirectoryEntryType::SOCKET:
+            return os << "SOCKET";
+        case DirectoryEntryType::CHAR:
+            return os << "CHAR";
+        case DirectoryEntryType::BLOCK:
+            return os << "BLOCK";
+        // omit default case to trigger compiler warning for missing cases
+    };
+    return os << static_cast<std::uint64_t>(type);
+}
 
 class Dir {
 public:
     using OpenCallback = std::function<void(Dir&)>; // TODO: error handling for this callback
-    using ReadCallback = std::function<void(Dir&, const char*)>;
+    using ReadCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
     using CloseCallback = std::function<void(Dir&)>;
 
     Dir(EventLoop& loop);

@@ -12,12 +12,11 @@ int main(int argc, char* argv[]) {
     io::EventLoop loop;
     io::TcpServer server(loop);
 
-
     io::Dir dir(loop);
     dir.open("/Users/tarm", [&](io::Dir& dir) {
         std::cout << "Opened dir: " << dir.path() << std::endl;
-        dir.read([&] (io::Dir& dir, const char* path) {
-            std::cout << path << std::endl;
+        dir.read([&] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
+            std::cout << type << " " << path << std::endl;
         });
     });
 
