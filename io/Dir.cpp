@@ -1,6 +1,6 @@
 #include "Dir.h"
 
-//#include <cstring>
+#include <cstring>
 
 // TODO: remove
 #include <iostream>

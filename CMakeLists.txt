@@ -53,10 +53,10 @@ list(APPEND LIB_LIST ${LIBUV_LIBRARIES})
 include_directories(${LIBUV_INCLUDE_DIR})
 
 add_executable(client Client.cpp ${IO_SOURCE_LIST})
-target_link_libraries(client ${LIB_LIST})
+target_link_libraries(client ${LIB_LIST} ${LIBUV_LDFLAGS})
 
 add_executable(server Server.cpp ${IO_SOURCE_LIST})
-target_link_libraries(server ${LIB_LIST})
+target_link_libraries(server ${LIB_LIST} ${LIBUV_LDFLAGS})
 
 #############################################################
 # get_cmake_property(_variableNames VARIABLES)
