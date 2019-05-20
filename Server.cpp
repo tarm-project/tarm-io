@@ -41,6 +41,7 @@ int main(int argc, char* argv[]) {
 
     auto on_data_read = [&](const io::TcpServer&, const io::TcpClient& client, const char* data, size_t len) {
         std::string message(data, data + len);
+        std::cout << message;
 
         if (message.find("close") != std::string::npos ) {
             std::cout << "Sutting down server..." << std::endl;
@@ -50,7 +51,16 @@ int main(int argc, char* argv[]) {
 
         if (message.find("open") != std::string::npos ) {
             auto pos = message.find("open");
-            auto file_name = message.substr(5, message.size() - 5 - 1); // TODO: magic values and strings
+            int sub_size = 0;
+            if (message.size() >= 1 && (message.back() == '\r' || message.back() == '\n')) {
+                ++sub_size;
+            }
+
+            if (message.size() >= 2 && (message[message.size() - 2] == '\r' || message[message.size() - 2] == '\n')) {
+                ++sub_size;
+            }
+
+            auto file_name = message.substr(5, message.size() - 5 - sub_size); // TODO: magic values and strings
 
             file.open(file_name, [&](io::File& file) {
                 std::cout << "Opened file " << file.path() << std::endl;
@@ -63,8 +73,6 @@ int main(int argc, char* argv[]) {
                 });
             });
         }
-
-        std::cout << message;
     };
 
     auto status = server.bind("0.0.0.0", 1234);

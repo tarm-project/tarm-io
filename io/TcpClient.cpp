@@ -1,5 +1,8 @@
 #include "TcpClient.h"
 
+// TODO: move
+#include <iostream>
+
 namespace io {
 
 std::uint32_t TcpClient::ipv4_addr() const {
@@ -36,6 +39,13 @@ void TcpClient::send_data(std::shared_ptr<char> buffer, std::size_t size) {
 void TcpClient::after_write(uv_write_t* req, int status) {
     auto request = reinterpret_cast<WriteRequest*>(req);
     delete request;
+
+    if (status < 0) {
+        std::cerr << "TcpClient::after_write: " << uv_strerror(status) << std::endl;
+    }
+
+    static int counter = 0;
+    std::cout << "TcpClient::after_write: counter " << counter++ << std::endl;
 }
 
 } // namespace io

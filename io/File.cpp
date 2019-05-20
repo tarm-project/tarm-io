@@ -42,12 +42,15 @@ const std::string& File::path() const {
 
 // ////////////////////////////////////// static //////////////////////////////////////
 void File::on_open(uv_fs_t* req) {
+    auto& this_ = *reinterpret_cast<File*>(req->data);
+
     if (req->result < 0) {
         // TODO: error handling
         fprintf(stderr, "Open error: %s\n", uv_strerror(req->result));
+        std::cout << req->path << std::endl;
+        return;
     }
 
-    auto& this_ = *reinterpret_cast<File*>(req->data);
     this_.m_path = req->path;
     if (this_.m_open_callback) {
         this_.m_open_callback(this_);
@@ -59,7 +62,8 @@ void File::on_read(uv_fs_t* req) {
 
     if (req->result < 0) {
         // TODO: error handling
-        fprintf(stderr, "Read error: %s\n", uv_strerror(req->result));
+        std::cout << this_.path() << std::endl;
+        fprintf(stderr, "Read error: %s\n",  uv_strerror(req->result));
     } else if (req->result == 0) {
         std::cout << "Closing file: " << this_.path() << std::endl;
         uv_fs_t close_req;
