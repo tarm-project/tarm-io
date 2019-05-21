@@ -12,13 +12,13 @@ int main(int argc, char* argv[]) {
     io::EventLoop loop;
     io::TcpServer server(loop);
 
-    io::Dir dir(loop);
-    dir.open("/Users/tarm", [&](io::Dir& dir) {
-        std::cout << "Opened dir: " << dir.path() << std::endl;
-        dir.read([&] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
-            std::cout << type << " " << path << std::endl;
-        });
-    });
+    //io::Dir dir(loop);
+    //dir.open("/Users/tarm", [&](io::Dir& dir) {
+    //    std::cout << "Opened dir: " << dir.path() << std::endl;
+    //    dir.read([&] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
+    //        std::cout << type << " " << path << std::endl;
+    //    });
+    //});
 
     //io::Timer timer(loop);
     //timer.start([&](Timer& t){ std::cout << "Timer!!!" << std::endl; timer.stop();}, 1000, 0);
@@ -55,10 +55,12 @@ int main(int argc, char* argv[]) {
                 ++sub_size;
             }
 
-            auto file_name = message.substr(5, message.size() - 5 - sub_size); // TODO: magic values and strings
-            auto file_ptr = std::make_shared<io::File>(loop);
+            auto file_name = message.substr(5, message.size() - 5 - sub_size); // TODO: magic values
 
-            file_ptr->open(file_name, [&client, file_ptr](io::File& file) {
+            //auto file_ptr = std::make_shared<io::File>(loop);
+            auto file_ptr = new io::File(loop);
+
+            file_ptr->open(file_name, [&client](io::File& file) {
                 std::cout << "Opened file " << file.path() << std::endl;
 
                 std::shared_ptr<char> write_data_buf(new char[io::File::READ_BUF_SIZE], std::default_delete<char[]>());
@@ -67,6 +69,10 @@ int main(int argc, char* argv[]) {
                     io::TcpClient& client_ = const_cast<io::TcpClient&>(client);
                     std::memcpy(write_data_buf.get(), buf, size);
                     client_.send_data(write_data_buf, size);
+                },
+                [](io::File& file){
+                    file.close();
+                    file.schedule_removal();
                 });
             });
         }

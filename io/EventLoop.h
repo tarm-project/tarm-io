@@ -15,7 +15,7 @@ public:
     EventLoop(EventLoop&& other) = default;
     EventLoop& operator=(EventLoop&& other) = default;
 
-    // TODO: renive error codes????
+    // TODO: handle(convert) error codes????
     int run();
 };
 

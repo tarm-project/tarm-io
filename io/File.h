@@ -11,25 +11,34 @@ namespace io {
 class File {
 public:
     static constexpr std::size_t READ_BUF_SIZE = 1024;
-    
+
     using OpenCallback = std::function<void(File&)>; // TODO: error handling for this callback
     using ReadCallback = std::function<void(File&, const char*, std::size_t)>;
+    using EndReadCallback = std::function<void(File&)>;
 
     File(EventLoop& loop);
     ~File();
 
     void open(const std::string& path, OpenCallback callback); // TODO: pass open flags
     void read(ReadCallback callback);
+    void read(ReadCallback read_callback, EndReadCallback end_read_callback);
+
+    void close();
 
     const std::string& path() const;
-    
+
+    // TODO: experimental, need explanation of approach!
+    void schedule_removal();
+
     // statics
     static void on_open(uv_fs_t *req);
     static void on_read(uv_fs_t *req);
+    static void on_removal(uv_idle_t* handle);
 
 private:
     OpenCallback m_open_callback = nullptr;
     ReadCallback m_read_callback = nullptr;
+    EndReadCallback m_end_read_callback = nullptr;
 
     EventLoop* m_loop;
 
@@ -39,7 +48,7 @@ private:
 
     // TODO: revise this. Probably allocation via heap or pool will be better
     char m_read_buf[READ_BUF_SIZE] = {0};
-    
+
     std::string m_path;
 };
 

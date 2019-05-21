@@ -15,9 +15,18 @@ File::File(EventLoop& loop) :
 }
 
 File::~File() {
+    std::cout << "File::~File " << m_path << std::endl;
+    close();
+}
+
+void File::close() {
     uv_fs_req_cleanup(&m_open_req);
     uv_fs_req_cleanup(&m_read_req);
     uv_fs_req_cleanup(&m_write_req);
+
+    m_open_callback = nullptr;
+    m_read_callback = nullptr;
+    m_end_read_callback = nullptr;
 }
 
 void File::open(const std::string& path, OpenCallback callback) {
@@ -27,8 +36,9 @@ void File::open(const std::string& path, OpenCallback callback) {
     uv_fs_open(m_loop, &m_open_req, path.c_str(), UV_FS_O_RDWR, 0, File::on_open);
 }
 
-void File::read(ReadCallback callback) {
-    m_read_callback = callback;
+void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
+    m_read_callback = read_callback;
+    m_end_read_callback = end_read_callback;
     m_read_req.data = this;
 
     uv_buf_t buf = uv_buf_init(m_read_buf, sizeof(m_read_buf));
@@ -36,8 +46,19 @@ void File::read(ReadCallback callback) {
     uv_fs_read(m_loop, &m_read_req, m_open_req.result, &buf, 1, -1, File::on_read);
 }
 
+void File::read(ReadCallback callback) {
+    read(callback, nullptr);
+}
+
 const std::string& File::path() const {
     return m_path;
+}
+
+void File::schedule_removal() {
+    auto idle_ptr = new uv_idle_t;
+    idle_ptr->data = this;
+    uv_idle_init(m_loop, idle_ptr); // TODO: error handling
+    uv_idle_start(idle_ptr, File::on_removal);
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
@@ -69,6 +90,10 @@ void File::on_read(uv_fs_t* req) {
         uv_fs_t close_req;
         // synchronous
         uv_fs_close(req->loop, &close_req, this_.m_open_req.result, nullptr);
+
+        if (this_.m_end_read_callback) {
+            this_.m_end_read_callback(this_);
+        }
     } else if (req->result > 0) {
         if (this_.m_read_callback) {
             this_.m_read_callback(this_, this_.m_read_buf, req->result);
@@ -79,6 +104,21 @@ void File::on_read(uv_fs_t* req) {
         // TODO: error handling for uv_fs_read return value
         uv_fs_read(req->loop, &this_.m_read_req, this_.m_open_req.result, &buf, 1, -1, File::on_read);
     }
+}
+
+namespace {
+
+void on_delete_idle_handle_close(uv_handle_t* handle) {
+    delete reinterpret_cast<uv_idle_t*>(handle);
+}
+
+} // namespace
+
+void File::on_removal(uv_idle_t* handle) {
+    uv_idle_stop(handle);
+    uv_close(reinterpret_cast<uv_handle_t*>(handle), on_delete_idle_handle_close);
+    delete reinterpret_cast<File*>(handle->data);
+    //delete handle;
 }
 
 } // namespace io
