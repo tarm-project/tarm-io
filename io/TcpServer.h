@@ -20,8 +20,8 @@ public:
     const size_t READ_BUFFER_SIZE = 65536;
 
     // TODO: replace 'int status' with some error
-    using NewConnectionCallback = std::function<bool(const TcpServer&, const TcpClient&)>;
-    using DataReceivedCallback = std::function<void(const TcpServer&, const TcpClient&, const char*, size_t)>;
+    using NewConnectionCallback = std::function<bool(TcpServer&, TcpClient&)>;
+    using DataReceivedCallback = std::function<void(TcpServer&, TcpClient&, const char*, size_t)>;
 
     TcpServer(EventLoop& loop);
     ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server

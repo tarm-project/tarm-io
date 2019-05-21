@@ -23,18 +23,16 @@ int main(int argc, char* argv[]) {
     //io::Timer timer(loop);
     //timer.start([&](Timer& t){ std::cout << "Timer!!!" << std::endl; timer.stop();}, 1000, 0);
 
-    auto on_new_connection = [&](const io::TcpServer& server, const io::TcpClient& client) -> bool {
+    auto on_new_connection = [](io::TcpServer& server, io::TcpClient& client) -> bool {
         std::cout << "New connection from " << io::ip4_addr_to_string(client.ipv4_addr()) << ":" << client.port() << std::endl;
 
-        // TODO: this is wrong!!!
-        // TcpClient& client_ = const_cast<TcpClient&>(client);
         // std::memcpy(write_data_buf.get(), "Hello", 5);
         // client_.send_data(write_data_buf, 5);
 
         return true;
     };
 
-    auto on_data_read = [&server, &loop](const io::TcpServer&, const io::TcpClient& client, const char* data, size_t len) {
+    auto on_data_read = [&loop](io::TcpServer& server, io::TcpClient& client, const char* data, size_t len) {
         std::string message(data, data + len);
         std::cout << message;
 
@@ -65,10 +63,8 @@ int main(int argc, char* argv[]) {
 
                 std::shared_ptr<char> write_data_buf(new char[io::File::READ_BUF_SIZE], std::default_delete<char[]>());
                 file.read([&client, write_data_buf](io::File& file, const char* buf, std::size_t size) {
-                    // TODO: this is wrong!!!
-                    io::TcpClient& client_ = const_cast<io::TcpClient&>(client);
                     std::memcpy(write_data_buf.get(), buf, size);
-                    client_.send_data(write_data_buf, size);
+                    client.send_data(write_data_buf, size);
                 },
                 [](io::File& file){
                     file.close();
