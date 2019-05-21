@@ -20,13 +20,8 @@ int main(int argc, char* argv[]) {
         });
     });
 
-
-    io::File file(loop);
-
     //io::Timer timer(loop);
     //timer.start([&](Timer& t){ std::cout << "Timer!!!" << std::endl; timer.stop();}, 1000, 0);
-
-    std::shared_ptr<char> write_data_buf(new char[io::File::READ_BUF_SIZE], std::default_delete<char[]>());
 
     auto on_new_connection = [&](const io::TcpServer& server, const io::TcpClient& client) -> bool {
         std::cout << "New connection from " << io::ip4_addr_to_string(client.ipv4_addr()) << ":" << client.port() << std::endl;
@@ -39,7 +34,7 @@ int main(int argc, char* argv[]) {
         return true;
     };
 
-    auto on_data_read = [&](const io::TcpServer&, const io::TcpClient& client, const char* data, size_t len) {
+    auto on_data_read = [&server, &loop](const io::TcpServer&, const io::TcpClient& client, const char* data, size_t len) {
         std::string message(data, data + len);
         std::cout << message;
 
@@ -61,11 +56,13 @@ int main(int argc, char* argv[]) {
             }
 
             auto file_name = message.substr(5, message.size() - 5 - sub_size); // TODO: magic values and strings
+            auto file_ptr = std::make_shared<io::File>(loop);
 
-            file.open(file_name, [&](io::File& file) {
+            file_ptr->open(file_name, [&client, file_ptr](io::File& file) {
                 std::cout << "Opened file " << file.path() << std::endl;
 
-                file.read([&](io::File& file, const char* buf, std::size_t size) {
+                std::shared_ptr<char> write_data_buf(new char[io::File::READ_BUF_SIZE], std::default_delete<char[]>());
+                file.read([&client, write_data_buf](io::File& file, const char* buf, std::size_t size) {
                     // TODO: this is wrong!!!
                     io::TcpClient& client_ = const_cast<io::TcpClient&>(client);
                     std::memcpy(write_data_buf.get(), buf, size);
@@ -87,4 +84,5 @@ int main(int argc, char* argv[]) {
     }
 
     return loop.run();
+    std::cout << "Shutting down..." << std::endl;
 }
