@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
         std::cout << message;
 
         if (message.find("close") != std::string::npos ) {
-            std::cout << "Sutting down server..." << std::endl;
+            std::cout << "Forcing server shut down..." << std::endl;
             server.shutdown();
             //timer.stop();
         }
@@ -54,17 +54,13 @@ int main(int argc, char* argv[]) {
             }
 
             auto file_name = message.substr(5, message.size() - 5 - sub_size); // TODO: magic values
-
-            //auto file_ptr = std::make_shared<io::File>(loop);
             auto file_ptr = new io::File(loop);
 
             file_ptr->open(file_name, [&client](io::File& file) {
-                std::cout << "Opened file " << file.path() << std::endl;
+                std::cout << "Opened file: " << file.path() << std::endl;
 
-                std::shared_ptr<char> write_data_buf(new char[io::File::READ_BUF_SIZE], std::default_delete<char[]>());
-                file.read([&client, write_data_buf](io::File& file, const char* buf, std::size_t size) {
-                    std::memcpy(write_data_buf.get(), buf, size);
-                    client.send_data(write_data_buf, size);
+                file.read([&client](io::File& file, const char* buf, std::size_t size) {
+                    client.send_data(buf, size);
                 },
                 [](io::File& file){
                     file.close();

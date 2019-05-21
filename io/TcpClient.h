@@ -17,7 +17,7 @@ public:
     void set_ipv4_addr(std::uint32_t value);
     void set_port(std::uint16_t value);
 
-    void send_data(std::shared_ptr<char> buffer, std::size_t size);
+    void send_data(const char* buffer, std::size_t size);
 
     static void after_write(uv_write_t* req, int status);
 private:

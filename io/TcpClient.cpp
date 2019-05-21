@@ -29,9 +29,10 @@ struct WriteRequest : public uv_write_t {
 
 } // namespace
 
-void TcpClient::send_data(std::shared_ptr<char> buffer, std::size_t size) {
+void TcpClient::send_data(const char* buffer, std::size_t size) {
     auto req = new WriteRequest;
-    req->buf = uv_buf_init(buffer.get(), size);
+    // const_cast is workaround for lack of constness support in uv_buf_t
+    req->buf = uv_buf_init(const_cast<char*>(buffer), size);
 
     uv_write(req, reinterpret_cast<uv_stream_t*>(this), &req->buf, 1, TcpClient::after_write);
 }
