@@ -125,7 +125,7 @@ void File::on_read(uv_fs_t* req) {
             this_.m_end_read_callback(this_);
         }
 
-        this_.m_read_state == ReadState::DONE;
+        this_.m_read_state = ReadState::DONE;
     } else if (req->result > 0) {
         if (this_.m_read_callback) {
             this_.m_read_callback(this_, this_.current_read_buf(), req->result);
