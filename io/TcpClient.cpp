@@ -17,6 +17,7 @@ TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
 }
 
 TcpClient::~TcpClient() {
+    std::cout << "TcpClient::~TcpClient" << std::endl;
     uv_close(reinterpret_cast<uv_handle_t*>(&m_stream), nullptr/*on_close*/);
 }
 

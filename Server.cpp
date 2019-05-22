@@ -43,7 +43,6 @@ int main(int argc, char* argv[]) {
         }
 
         if (message.find("open") != std::string::npos ) {
-            auto pos = message.find("open");
             int sub_size = 0;
             if (message.size() >= 1 && (message.back() == '\r' || message.back() == '\n')) {
                 ++sub_size;

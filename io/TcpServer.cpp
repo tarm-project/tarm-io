@@ -85,6 +85,7 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
     if (nread < 0) {
         if (nread == UV_EOF) {
             std::cout << "Connection end!" << std::endl;
+            tcp_client.schedule_removal();
         }
 
         auto it = this_.m_client_connections.find(&tcp_client);
@@ -94,7 +95,7 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
             // error unknown connection
         }
 
-        uv_close((uv_handle_t*) client, nullptr /*on_close*/);
+        //uv_close((uv_handle_t*) client, nullptr /*on_close*/);
     }
 
     this_.m_pool->free(buf->base);
