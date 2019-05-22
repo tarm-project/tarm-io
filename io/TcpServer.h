@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <set>
 #include <string>
 
 namespace io {
@@ -48,11 +49,9 @@ public:
 
     static void on_new_connection(uv_stream_t* server, int status);
     static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf);
-    static void on_client_shutdown(uv_shutdown_t* req, int status);
-    static void on_client_close_cb(uv_handle_t* handle);
 private:
 
-    EventLoop& m_loop; // TODO: reuse loop var from handles instead of holding custom one
+    EventLoop* m_loop; // TODO: reuse loop var from handles instead of holding custom one
     // TODO: most likely this data member is not need to be data member but some var on stack
     struct sockaddr_in m_unix_addr;
 
@@ -61,7 +60,8 @@ private:
 
     // Using such interesting kind of mapping here to be able find connections by raw C pointer
     // and also have benefits of RAII with unique_ptr
-    std::map<uv_tcp_t*, TcpClientPtr> m_client_connections;
+    //std::map<uv_tcp_t*, TcpClientPtr> m_client_connections;
+    std::set<TcpClient*> m_client_connections;
 
     // Made as unique_ptr because boost::pool has no move constructor defined
     std::unique_ptr<boost::pool<>> m_pool;
