@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Disposable.h"
 #include "EventLoop.h"
 
 #include <string>
@@ -10,7 +11,7 @@
 
 namespace io {
 
-class File {
+class File : public Disposable {
 public:
     static constexpr std::size_t READ_BUF_SIZE = 1024;
     static constexpr std::size_t READ_BUFS_NUM = 2;
@@ -40,13 +41,9 @@ public:
     void continue_read();
     ReadState read_state();
 
-    // TODO: experimental, need explanation of approach!
-    void schedule_removal();
-
     // statics
     static void on_open(uv_fs_t *req);
     static void on_read(uv_fs_t *req);
-    static void on_removal(uv_idle_t* handle);
 
 private:
     OpenCallback m_open_callback = nullptr;

@@ -8,6 +8,7 @@
 namespace io {
 
 File::File(EventLoop& loop) :
+    Disposable(loop),
     m_loop(&loop) {
     memset(&m_open_req, 0, sizeof(m_open_req));
     memset(&m_read_req, 0, sizeof(m_read_req));
@@ -56,13 +57,6 @@ void File::read(ReadCallback callback) {
 
 const std::string& File::path() const {
     return m_path;
-}
-
-void File::schedule_removal() {
-    auto idle_ptr = new uv_idle_t;
-    idle_ptr->data = this;
-    uv_idle_init(m_loop, idle_ptr); // TODO: error handling
-    uv_idle_start(idle_ptr, File::on_removal);
 }
 
 void File::schedule_read() {
@@ -141,21 +135,6 @@ void File::on_read(uv_fs_t* req) {
             this_.schedule_read();
         }
     }
-}
-
-namespace {
-
-void on_delete_idle_handle_close(uv_handle_t* handle) {
-    delete reinterpret_cast<uv_idle_t*>(handle);
-}
-
-} // namespace
-
-void File::on_removal(uv_idle_t* handle) {
-    uv_idle_stop(handle);
-    uv_close(reinterpret_cast<uv_handle_t*>(handle), on_delete_idle_handle_close);
-    delete reinterpret_cast<File*>(handle->data);
-    //delete handle;
 }
 
 } // namespace io

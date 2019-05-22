@@ -38,6 +38,7 @@ FILE(GLOB IO_SOURCE_LIST io/*.h)
 list(APPEND IO_SOURCE_LIST
         io/Common.cpp
         io/EventLoop.cpp
+        io/Disposable.cpp
         io/Dir.cpp
         io/File.cpp
         io/Timer.cpp
