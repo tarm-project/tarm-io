@@ -60,7 +60,24 @@ int main(int argc, char* argv[]) {
                 std::cout << "Opened file: " << file.path() << std::endl;
 
                 file.read([&client](io::File& file, const char* buf, std::size_t size) {
-                    client.send_data(buf, size);
+                    if (client.pending_write_requesets() > 0) {
+                        std::cout << "pending_write_requesets " << client.pending_write_requesets() << std::endl;
+                    }
+
+                    client.send_data(buf, size, [&file](io::TcpClient& client) {
+                        static int counter = 0;
+                        std::cout << "TcpClient after send counter: " << counter++ << std::endl;
+
+                        if (file.read_state() == io::File::ReadState::PAUSE) {
+                            std::cout << "Continue read" << std::endl;
+                            file.continue_read();
+                        }
+                    });
+
+                    if (client.pending_write_requesets() > 1) {
+                        std::cout << "Pause read" << std::endl;
+                        file.pause_read();
+                    }
                 },
                 [](io::File& file){
                     file.close();

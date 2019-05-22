@@ -1,5 +1,7 @@
 #include "TcpClient.h"
 
+#include <assert.h>
+
 // TODO: move
 #include <iostream>
 
@@ -29,15 +31,29 @@ struct WriteRequest : public uv_write_t {
 
 } // namespace
 
-void TcpClient::send_data(const char* buffer, std::size_t size) {
+void TcpClient::send_data(const char* buffer, std::size_t size, EndSendCallback callback) {
+    m_end_send_callback = callback;
+
     auto req = new WriteRequest;
+    req->data = this;
     // const_cast is workaround for lack of constness support in uv_buf_t
     req->buf = uv_buf_init(const_cast<char*>(buffer), size);
 
     uv_write(req, reinterpret_cast<uv_stream_t*>(this), &req->buf, 1, TcpClient::after_write);
+    ++m_pending_write_requesets;
 }
 
+std::size_t TcpClient::pending_write_requesets() const {
+    return m_pending_write_requesets;
+}
+
+// ////////////////////////////////////// static //////////////////////////////////////
 void TcpClient::after_write(uv_write_t* req, int status) {
+    auto& this_ = *reinterpret_cast<TcpClient*>(req->data);
+
+    assert(this_.m_pending_write_requesets >= 1);
+    --this_.m_pending_write_requesets;
+
     auto request = reinterpret_cast<WriteRequest*>(req);
     delete request;
 
@@ -45,8 +61,9 @@ void TcpClient::after_write(uv_write_t* req, int status) {
         std::cerr << "TcpClient::after_write: " << uv_strerror(status) << std::endl;
     }
 
-    static int counter = 0;
-    std::cout << "TcpClient::after_write: counter " << counter++ << std::endl;
+    if (this_.m_end_send_callback) {
+        this_.m_end_send_callback(this_);
+    }
 }
 
 } // namespace io

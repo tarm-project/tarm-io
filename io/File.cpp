@@ -12,6 +12,11 @@ File::File(EventLoop& loop) :
     memset(&m_open_req, 0, sizeof(m_open_req));
     memset(&m_read_req, 0, sizeof(m_read_req));
     memset(&m_write_req, 0, sizeof(m_write_req));
+
+    m_read_bufs.resize(READ_BUFS_NUM);
+    for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
+        m_read_bufs[i].reset(new char[READ_BUF_SIZE]);
+    }
 }
 
 File::~File() {
@@ -40,10 +45,9 @@ void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     m_read_callback = read_callback;
     m_end_read_callback = end_read_callback;
     m_read_req.data = this;
+    m_read_state = ReadState::CONTINUE;
 
-    uv_buf_t buf = uv_buf_init(m_read_buf, sizeof(m_read_buf));
-    // TODO: error handling for uv_fs_read return value
-    uv_fs_read(m_loop, &m_read_req, m_open_req.result, &buf, 1, -1, File::on_read);
+    schedule_read();
 }
 
 void File::read(ReadCallback callback) {
@@ -59,6 +63,38 @@ void File::schedule_removal() {
     idle_ptr->data = this;
     uv_idle_init(m_loop, idle_ptr); // TODO: error handling
     uv_idle_start(idle_ptr, File::on_removal);
+}
+
+void File::schedule_read() {
+    uv_buf_t buf = uv_buf_init(next_read_buf(), READ_BUF_SIZE);
+    // TODO: error handling for uv_fs_read return value
+    uv_fs_read(m_loop, &m_read_req, m_open_req.result, &buf, 1, -1, File::on_read);
+}
+
+char* File::current_read_buf() {
+    return m_read_bufs[m_current_read_buf_idx].get();
+}
+
+char* File::next_read_buf() {
+    m_current_read_buf_idx = (m_current_read_buf_idx + 1) % READ_BUFS_NUM;
+    return current_read_buf();
+}
+
+void File::pause_read() {
+    if (m_read_state == ReadState::CONTINUE) {
+        m_read_state = ReadState::PAUSE;
+    }
+}
+
+void File::continue_read() {
+    if (m_read_state == ReadState::PAUSE) {
+        m_read_state = ReadState::CONTINUE;
+        schedule_read();
+    }
+}
+
+File::ReadState File::read_state() {
+    return m_read_state;
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
@@ -94,15 +130,16 @@ void File::on_read(uv_fs_t* req) {
         if (this_.m_end_read_callback) {
             this_.m_end_read_callback(this_);
         }
+
+        this_.m_read_state == ReadState::DONE;
     } else if (req->result > 0) {
         if (this_.m_read_callback) {
-            this_.m_read_callback(this_, this_.m_read_buf, req->result);
+            this_.m_read_callback(this_, this_.current_read_buf(), req->result);
         }
 
-        // TODO: copypaste from File::read
-        uv_buf_t buf = uv_buf_init(this_.m_read_buf, sizeof(m_read_buf));
-        // TODO: error handling for uv_fs_read return value
-        uv_fs_read(req->loop, &this_.m_read_req, this_.m_open_req.result, &buf, 1, -1, File::on_read);
+        if (this_.m_read_state == ReadState::CONTINUE) {
+            this_.schedule_read();
+        }
     }
 }
 
