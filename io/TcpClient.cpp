@@ -47,14 +47,14 @@ namespace {
 
 struct WriteRequest : public uv_write_t {
     uv_buf_t buf;
+    TcpClient::EndSendCallback end_send_callback = nullptr;
 };
 
 } // namespace
 
 void TcpClient::send_data(const char* buffer, std::size_t size, EndSendCallback callback) {
-    m_end_send_callback = callback;
-
     auto req = new WriteRequest;
+    req->end_send_callback = callback;
     req->data = this;
     // const_cast is workaround for lack of constness support in uv_buf_t
     req->buf = uv_buf_init(const_cast<char*>(buffer), size);
@@ -109,14 +109,14 @@ void TcpClient::after_write(uv_write_t* req, int status) {
     --this_.m_pending_write_requesets;
 
     auto request = reinterpret_cast<WriteRequest*>(req);
-    delete request;
+    std::unique_ptr<WriteRequest> guard(request);
 
     if (status < 0) {
         std::cerr << "TcpClient::after_write: " << uv_strerror(status) << std::endl;
     }
 
-    if (this_.m_end_send_callback) {
-        this_.m_end_send_callback(this_);
+    if (request->end_send_callback) {
+        request->end_send_callback(this_);
     }
 }
 

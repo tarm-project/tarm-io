@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <sstream>
 
 
 int main(int argc, char* argv[]) {
@@ -14,13 +15,13 @@ int main(int argc, char* argv[]) {
     io::EventLoop loop;
     io::TcpServer server(loop);
 
-    //io::Dir dir(loop);
-    //dir.open("/Users/tarm", [&](io::Dir& dir) {
-    //    std::cout << "Opened dir: " << dir.path() << std::endl;
-    //    dir.read([&] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
-    //        std::cout << type << " " << path << std::endl;
-    //    });
-    //});
+    // io::Dir dir(loop);
+    // dir.open(".", [&](io::Dir& dir) {
+    //     std::cout << "Opened dir: " << dir.path() << std::endl;
+    //     dir.read([&] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
+    //         std::cout << type << " " << path << std::endl;
+    //     });
+    // });
 
     //io::Timer timer(loop);
     //timer.start([&](Timer& t){ std::cout << "Timer!!!" << std::endl; timer.stop();}, 1000, 0);
@@ -46,6 +47,23 @@ int main(int argc, char* argv[]) {
     auto on_data_read = [&loop](io::TcpServer& server, io::TcpClient& client, const char* data, size_t len) {
         std::string message(data, data + len);
         std::cout << message;
+
+        if (message.find("ls") != std::string::npos ) {
+            auto dir = new io::Dir(loop);
+            dir->open(".", [&client](io::Dir& dir) {
+                std::cout << "Opened dir: " << dir.path() << std::endl;
+
+                dir.read([&] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
+                    auto ss = new std::stringstream;
+                    for (size_t i = 0; i < 100; ++i)
+                        (*ss) << type << " " << path << std::endl;
+                    std::cout << ss->str() << std::endl;
+                    client.send_data(ss->str().c_str(), ss->str().size(), [ss](io::TcpClient&) {
+                        delete ss;
+                    });
+                });
+            });
+        }
 
         if (message.find("close") != std::string::npos ) {
             std::cout << "Forcing server shut down..." << std::endl;

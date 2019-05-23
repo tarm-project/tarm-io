@@ -56,9 +56,6 @@ private:
 
     std::size_t m_pending_write_requesets = 0;
 
-    // TODO: probably end send callback should not be stored inside the client object but inside each request
-    EndSendCallback m_end_send_callback = nullptr;
-
     CloseCallback m_close_callback = nullptr;
 };
 
