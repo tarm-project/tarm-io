@@ -118,7 +118,7 @@ void File::on_open(uv_fs_t* req) {
     if (req->result < 0) {
         // TODO: error handling
         fprintf(stderr, "Open error: %s\n", uv_strerror(req->result));
-        std::cout << req->path << std::endl;
+        std::cout << "'" << req->path << "'" << std::endl;
         return;
     }
 

@@ -8,6 +8,26 @@
 #include <cstring>
 #include <sstream>
 
+std::string extract_parameter(const std::string& message) {
+    int sub_size = 0;
+
+    if (message.size() >= 1 && (message.back() == '\r' || message.back() == '\n')) {
+        ++sub_size;
+    }
+
+    if (message.size() >= 2 && (message[message.size() - 2] == '\r' || message[message.size() - 2] == '\n')) {
+        ++sub_size;
+    }
+
+    auto space_pos = message.rfind(" ");
+    if (space_pos == std::string::npos) {
+        return "";
+    }
+
+    space_pos += 1; // skip it
+
+    return message.substr(space_pos, message.size() - space_pos - sub_size);
+}
 
 int main(int argc, char* argv[]) {
     signal(SIGPIPE, SIG_IGN);
@@ -72,16 +92,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (message.find("open") != std::string::npos ) {
-            int sub_size = 0;
-            if (message.size() >= 1 && (message.back() == '\r' || message.back() == '\n')) {
-                ++sub_size;
-            }
-
-            if (message.size() >= 2 && (message[message.size() - 2] == '\r' || message[message.size() - 2] == '\n')) {
-                ++sub_size;
-            }
-
-            auto file_name = message.substr(5, message.size() - 5 - sub_size); // TODO: magic values
+            auto file_name = extract_parameter(message);
             auto file_ptr = new io::File(loop);
 
             file_ptr->open(file_name, [&client](io::File& file) {
