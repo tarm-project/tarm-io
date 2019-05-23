@@ -97,13 +97,13 @@ void Dir::on_open_dir(uv_fs_t* req) {
         return;
     }
 
-    if (this_.m_open_callback) {
-        this_.m_open_callback(this_);
-    }
-
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
     dir->dirents = this_.m_dirents;
     dir->nentries = Dir::DIRENTS_NUMBER;
+
+    if (this_.m_open_callback) {
+        this_.m_open_callback(this_);
+    }
 }
 
 void Dir::on_read_dir(uv_fs_t* req) {

@@ -53,9 +53,9 @@ int main(int argc, char* argv[]) {
             dir->open(".", [&client](io::Dir& dir) {
                 std::cout << "Opened dir: " << dir.path() << std::endl;
 
-                dir.read([&] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
+                dir.read([&client] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
                     auto ss = new std::stringstream;
-                    for (size_t i = 0; i < 100; ++i)
+                    //for (size_t i = 0; i < 100; ++i)
                         (*ss) << type << " " << path << std::endl;
                     std::cout << ss->str() << std::endl;
                     client.send_data(ss->str().c_str(), ss->str().size(), [ss](io::TcpClient&) {
