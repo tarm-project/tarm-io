@@ -18,7 +18,7 @@ TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
 
 TcpClient::~TcpClient() {
     std::cout << "TcpClient::~TcpClient" << std::endl;
-    uv_close(reinterpret_cast<uv_handle_t*>(&m_stream), nullptr/*on_close*/);
+    //close();
 }
 
 std::uint32_t TcpClient::ipv4_addr() const {
@@ -39,6 +39,7 @@ void TcpClient::set_port(std::uint16_t value) {
 
 void TcpClient::shutdown() {
     auto shutdown_req = new uv_shutdown_t;
+    shutdown_req->data = this;
     uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(&m_stream), TcpClient::on_shutdown);
 }
 
@@ -62,6 +63,22 @@ void TcpClient::send_data(const char* buffer, std::size_t size, EndSendCallback 
     ++m_pending_write_requesets;
 }
 
+void TcpClient::set_close_callback(CloseCallback callback) {
+    m_close_callback = callback;
+}
+
+void TcpClient::close() {
+    if (m_close_callback) {
+        m_close_callback(*this);
+    }
+
+    if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(&m_stream))) {
+        std::cout << "Closing client..." << std::endl;
+        uv_close(reinterpret_cast<uv_handle_t*>(&m_stream), nullptr);
+        std::cout << "Done" << std::endl;
+    }
+}
+
 std::size_t TcpClient::pending_write_requesets() const {
     return m_pending_write_requesets;
 }
@@ -76,6 +93,12 @@ TcpServer& TcpClient::server() {
 
 uv_tcp_t* TcpClient::tcp_client_stream() {
     return &m_stream;
+}
+
+void TcpClient::schedule_removal() {
+    close();
+
+    Disposable::schedule_removal();
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
@@ -101,11 +124,13 @@ void TcpClient::on_close_cb(uv_handle_t* handle) {
     uv_print_all_handles(handle->loop, stdout); // TODO: remove
 }
 
-
 void TcpClient::on_shutdown(uv_shutdown_t* req, int status) {
     std::cout << "on_client_shutdown" << std::endl;
-    uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpClient::on_close_cb);
 
+    auto& this_ = *reinterpret_cast<TcpClient*>(req->data);
+    this_.schedule_removal();
+
+    //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpClient::on_close_cb);
     delete req;
 }
 

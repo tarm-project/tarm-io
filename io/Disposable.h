@@ -13,7 +13,7 @@ public:
     virtual ~Disposable();
 
     // TODO: experimental, need explanation of approach!
-    void schedule_removal();
+    virtual void schedule_removal();
 
     // statics
     static void on_removal(uv_idle_t* handle);

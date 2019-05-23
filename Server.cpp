@@ -9,6 +9,8 @@
 
 
 int main(int argc, char* argv[]) {
+    signal(SIGPIPE, SIG_IGN);
+
     io::EventLoop loop;
     io::TcpServer server(loop);
 
@@ -22,6 +24,15 @@ int main(int argc, char* argv[]) {
 
     //io::Timer timer(loop);
     //timer.start([&](Timer& t){ std::cout << "Timer!!!" << std::endl; timer.stop();}, 1000, 0);
+
+    // auto my_file_ptr = new io::File(loop);
+    // my_file_ptr->open("/home/tarm/work/source/uv_cpp/build/3", [](io::File& file) {
+    //     std::cout << "Opened file: " << file.path() << std::endl;
+    //     file.read([](io::File& file, const char* buf, std::size_t size) {
+    //         //file.close();
+    //         file.schedule_removal();
+    //     });
+    // });
 
     auto on_new_connection = [](io::TcpServer& server, io::TcpClient& client) -> bool {
         std::cout << "New connection from " << io::ip4_addr_to_string(client.ipv4_addr()) << ":" << client.port() << std::endl;
@@ -57,6 +68,10 @@ int main(int argc, char* argv[]) {
 
             file_ptr->open(file_name, [&client](io::File& file) {
                 std::cout << "Opened file: " << file.path() << std::endl;
+                client.set_close_callback([&file](io::TcpClient& client){
+                    //file.close();
+                    file.schedule_removal();
+                });
 
                 file.read([&client](io::File& file, const char* buf, std::size_t size) {
                     if (client.pending_write_requesets() > 0) {
@@ -78,8 +93,9 @@ int main(int argc, char* argv[]) {
                         file.pause_read();
                     }
                 },
-                [](io::File& file){
-                    file.close();
+                [&client](io::File& file){
+                    client.set_close_callback(nullptr);
+                    //file.close();
                     file.schedule_removal();
                 });
             });

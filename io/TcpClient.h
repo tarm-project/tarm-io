@@ -15,6 +15,7 @@ class TcpClient : public Disposable {
 public:
     friend class TcpServer;
 
+    using CloseCallback = std::function<void(TcpClient&)>;
     using EndSendCallback = std::function<void(TcpClient&)>;
 
     TcpClient(EventLoop& loop, TcpServer& server);
@@ -27,10 +28,14 @@ public:
     void set_port(std::uint16_t value);
 
     void send_data(const char* buffer, std::size_t size, EndSendCallback callback = nullptr);
+    void set_close_callback(CloseCallback callback);
+    void close();
 
     std::size_t pending_write_requesets() const;
 
     void shutdown();
+
+    void schedule_removal() override;
 
     static void after_write(uv_write_t* req, int status);
 
@@ -53,6 +58,8 @@ private:
 
     // TODO: probably end send callback should not be stored inside the client object but inside each request
     EndSendCallback m_end_send_callback = nullptr;
+
+    CloseCallback m_close_callback = nullptr;
 };
 
 using TcpClientPtr = std::unique_ptr<TcpClient>;

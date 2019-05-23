@@ -41,6 +41,8 @@ public:
     void continue_read();
     ReadState read_state();
 
+    void schedule_removal() override;
+
     // statics
     static void on_open(uv_fs_t *req);
     static void on_read(uv_fs_t *req);

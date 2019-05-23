@@ -25,7 +25,27 @@ File::~File() {
     close();
 }
 
+void File::schedule_removal() {
+    close();
+
+    Disposable::schedule_removal();
+}
+
 void File::close() {
+    std::cout << "File::close " << m_path << std::endl;
+
+    m_read_state = ReadState::DONE;
+
+    uv_fs_t close_req;
+    int code = uv_fs_close(m_loop, &close_req, m_open_req.result, nullptr);
+    std::cout << uv_strerror(code) << std::endl;
+
+    // uv_cancel(reinterpret_cast<uv_req_t*>(&m_open_req));
+    // code = uv_cancel(reinterpret_cast<uv_req_t*>(&m_read_req));
+    // uv_cancel(reinterpret_cast<uv_req_t*>(&m_write_req));
+
+    std::cout << uv_strerror(code) << std::endl;
+
     uv_fs_req_cleanup(&m_open_req);
     uv_fs_req_cleanup(&m_read_req);
     uv_fs_req_cleanup(&m_write_req);
