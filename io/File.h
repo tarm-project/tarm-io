@@ -27,7 +27,6 @@ public:
     };
 
     File(EventLoop& loop);
-    ~File();
 
     void open(const std::string& path, OpenCallback callback); // TODO: pass open flags
     void read(ReadCallback callback);
@@ -46,6 +45,9 @@ public:
     // statics
     static void on_open(uv_fs_t *req);
     static void on_read(uv_fs_t *req);
+
+protected:
+    ~File();
 
 private:
     OpenCallback m_open_callback = nullptr;

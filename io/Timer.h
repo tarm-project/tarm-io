@@ -7,6 +7,7 @@
 
 namespace io {
 
+// TODO: inherit from Disposable??????
 class Timer : public uv_timer_t {
 public:
     using Callback = std::function<void(Timer&)>;

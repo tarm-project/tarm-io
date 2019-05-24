@@ -35,11 +35,14 @@ int main(int argc, char* argv[]) {
     io::EventLoop loop;
     io::TcpServer server(loop);
 
-    // io::Dir dir(loop);
-    // dir.open(".", [&](io::Dir& dir) {
+    // auto dr = new io::Dir(loop);
+    // dr->open(".", [](io::Dir& dir) {
     //     std::cout << "Opened dir: " << dir.path() << std::endl;
     //     dir.read([&] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
     //         std::cout << type << " " << path << std::endl;
+    //     },
+    //     [](io::Dir& dir) {
+    //         dir.schedule_removal();
     //     });
     // });
 

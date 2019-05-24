@@ -19,7 +19,6 @@ public:
     using EndSendCallback = std::function<void(TcpClient&)>;
 
     TcpClient(EventLoop& loop, TcpServer& server);
-    ~TcpClient();
 
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
@@ -42,6 +41,10 @@ public:
     // statics
     static void on_shutdown(uv_shutdown_t* req, int status);
     static void on_close_cb(uv_handle_t* handle);
+
+protected:
+    ~TcpClient();
+
 private:
     const TcpServer& server() const;
     TcpServer& server();

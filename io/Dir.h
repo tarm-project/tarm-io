@@ -57,7 +57,6 @@ public:
     using EndReadCallback = std::function<void(Dir&)>;
 
     Dir(EventLoop& loop);
-    ~Dir();
 
     void open(const std::string& path, OpenCallback callback);
     void read(ReadCallback read_callback, EndReadCallback end_read_callback = nullptr);
@@ -71,6 +70,10 @@ public:
     static void on_open_dir(uv_fs_t* req);
     static void on_read_dir(uv_fs_t* req);
     static void on_close_dir(uv_fs_t* req);
+
+protected:
+    ~Dir();
+
 private:
     static constexpr std::size_t DIRENTS_NUMBER = 1;
 
