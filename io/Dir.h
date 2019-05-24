@@ -53,12 +53,13 @@ public:
     using OpenCallback = std::function<void(Dir&)>; // TODO: error handling for this callback
     using ReadCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
     using CloseCallback = std::function<void(Dir&)>;
+    using EndReadCallback = std::function<void(Dir&)>;
 
     Dir(EventLoop& loop);
     ~Dir();
 
     void open(const std::string& path, OpenCallback callback);
-    void read(ReadCallback callback);
+    void read(ReadCallback read_callback, EndReadCallback end_read_callback = nullptr);
     void close();
 
     const std::string& path() const;
@@ -74,6 +75,7 @@ private:
 
     OpenCallback m_open_callback = nullptr;
     ReadCallback m_read_callback = nullptr;
+    EndReadCallback m_end_read_callback = nullptr;
 
     std::string m_path;
 

@@ -81,6 +81,9 @@ int main(int argc, char* argv[]) {
                     client.send_data(ss->str().c_str(), ss->str().size(), [ss](io::TcpClient&) {
                         delete ss;
                     });
+                },
+                [](io::Dir& dir) {
+                    std::cout << "End read dir " << std::endl;
                 });
             });
         }

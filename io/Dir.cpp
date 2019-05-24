@@ -55,10 +55,11 @@ void Dir::open(const std::string& path, OpenCallback callback) {
     uv_fs_opendir(m_loop, &m_open_dir_req, path.c_str(), Dir::on_open_dir);
 }
 
-void Dir::read(ReadCallback callback) {
+void Dir::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     // TODO: check if open
     m_read_dir_req.data = this;
-    m_read_callback = callback;
+    m_read_callback = read_callback;
+    m_end_read_callback = end_read_callback;
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(m_open_dir_req.ptr);
     uv_fs_readdir(m_loop, &m_read_dir_req, dir, on_read_dir);
@@ -112,7 +113,9 @@ void Dir::on_read_dir(uv_fs_t* req) {
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
 
     if (req->result == 0) {
-        this_.close();
+        if (this_.m_end_read_callback) {
+            this_.m_end_read_callback(this_);
+        }
     } else {
         if (this_.m_read_callback) {
             this_.m_read_callback(this_, this_.m_dirents[0].name, convert_direntry_type(this_.m_dirents[0].type));
