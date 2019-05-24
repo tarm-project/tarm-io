@@ -122,6 +122,7 @@ void Dir::on_read_dir(uv_fs_t* req) {
             this_.m_read_callback(this_, this_.m_dirents[0].name, convert_direntry_type(this_.m_dirents[0].type));
         }
 
+        uv_fs_req_cleanup(&this_.m_read_dir_req); // cleaning up previous request
         uv_fs_readdir(req->loop, &this_.m_read_dir_req, dir, Dir::on_read_dir);
     }
 }
