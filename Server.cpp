@@ -35,6 +35,13 @@ int main(int argc, char* argv[]) {
     io::EventLoop loop;
     io::TcpServer server(loop);
 
+    loop.add_work([]() {
+        std::cout << "Doing work!" << std::endl;
+    },
+    []() {
+        std::cout << "Work done!" << std::endl;
+    });
+
     // auto dr = new io::Dir(loop);
     // dr->open(".", [](io::Dir& dir) {
     //     std::cout << "Opened dir: " << dir.path() << std::endl;
@@ -149,6 +156,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    std::cout << "Running loop." << std::endl;
     return loop.run();
     std::cout << "Shutting down..." << std::endl;
 }

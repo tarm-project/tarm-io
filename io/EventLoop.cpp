@@ -20,8 +20,43 @@ EventLoop::~EventLoop() {
     }
 }
 
+namespace {
+
+struct Work : public uv_work_t {
+    EventLoop::WorkCallback work_callback;
+    EventLoop::WorkDoneCallback work_done_callback;
+};
+
+} // namespace
+
+void EventLoop::add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback) {
+    auto work = new Work;
+    work->work_callback = work_callback;
+    work->work_done_callback = work_done_callback;
+    int status = uv_queue_work(this, work, EventLoop::on_work, EventLoop::on_after_work);
+}
+
 int EventLoop::run() {
     return uv_run(this, UV_RUN_DEFAULT);
 }
+
+////////////////////////////////////// static //////////////////////////////////////
+void EventLoop::on_work(uv_work_t* req) {
+    auto& work = *reinterpret_cast<Work*>(req);
+    if (work.work_callback) {
+        work.work_callback();
+    }
+}
+
+void EventLoop::on_after_work(uv_work_t* req, int status) {
+    auto& work = *reinterpret_cast<Work*>(req);
+    // TODO: check cancel status????
+    if (work.work_done_callback) {
+        work.work_done_callback();
+    }
+
+    // TODO: memory pool for Work????
+}
+
 
 } // namespace io
