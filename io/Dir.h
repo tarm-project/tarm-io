@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "EventLoop.h"
+#include "Disposable.h"
 
 #include <string>
 #include <functional>
@@ -48,7 +49,7 @@ std::ostream& operator<< (std::ostream& os, DirectoryEntryType type)
     return os << static_cast<std::uint64_t>(type);
 }
 
-class Dir {
+class Dir : public Disposable {
 public:
     using OpenCallback = std::function<void(Dir&)>; // TODO: error handling for this callback
     using ReadCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
@@ -61,6 +62,8 @@ public:
     void open(const std::string& path, OpenCallback callback);
     void read(ReadCallback read_callback, EndReadCallback end_read_callback = nullptr);
     void close();
+
+    void schedule_removal() override;
 
     const std::string& path() const;
 

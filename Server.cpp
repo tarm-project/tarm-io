@@ -84,6 +84,7 @@ int main(int argc, char* argv[]) {
                 },
                 [](io::Dir& dir) {
                     std::cout << "End read dir " << std::endl;
+                    dir.schedule_removal();
                 });
             });
         }

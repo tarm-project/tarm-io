@@ -40,6 +40,7 @@ const std::string& Dir::path() const {
 }
 
 Dir::Dir(EventLoop& loop) :
+    Disposable(loop),
     m_loop(&loop) {
     memset(&m_open_dir_req, 0, sizeof(m_open_dir_req));
     memset(&m_read_dir_req, 0, sizeof(m_read_dir_req));
@@ -127,6 +128,12 @@ void Dir::on_read_dir(uv_fs_t* req) {
 
 void Dir::on_close_dir(uv_fs_t* req) {
 
+}
+
+void Dir::schedule_removal() {
+    close();
+
+    Disposable::schedule_removal();
 }
 
 } // namespace io
