@@ -74,6 +74,7 @@ private:
 
     ReadReq m_read_reqs[READ_BUFS_NUM];
     bool m_is_free[READ_BUFS_NUM];
+    char* m_bufs[READ_BUFS_NUM] = {0};
     //std::size_t m_used_read_bufs = 0;
     bool m_read_in_progress = false;
 

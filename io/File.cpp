@@ -18,6 +18,7 @@ File::File(EventLoop& loop) :
 
     for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
         m_is_free[i] = true;
+        memset(&m_read_reqs[i], 0, sizeof(m_read_reqs[i]));
     }
 
     /*
@@ -57,6 +58,11 @@ void File::close() {
     uv_fs_req_cleanup(&m_open_req);
     //uv_fs_req_cleanup(&m_read_req);
     uv_fs_req_cleanup(&m_write_req);
+
+    for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
+        uv_fs_req_cleanup(&m_read_reqs[i]);
+        delete[] m_bufs[i];
+    }
 
     m_open_callback = nullptr;
     m_read_callback = nullptr;
@@ -123,8 +129,13 @@ void File::schedule_read() {
 void File::schedule_read(ReadReq& req) {
     m_read_in_progress = true;
 
-    req.buf = std::shared_ptr<char>(new char[READ_BUF_SIZE], [this, &req](const char* p) {
-        delete[] p;
+    if (m_bufs[req.index] == nullptr) {
+        m_bufs[req.index] = new char[READ_BUF_SIZE];
+    }
+
+    // TODO: comments on this shared pointer
+    req.buf = std::shared_ptr<char>(m_bufs[req.index], [this, &req](const char* p) {
+        //delete[] p;
 
         m_is_free[req.index] = true;
         schedule_read();
