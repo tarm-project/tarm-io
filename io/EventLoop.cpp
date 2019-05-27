@@ -13,10 +13,10 @@ EventLoop::~EventLoop() {
     int status = uv_loop_close(this);
     if (status == UV_EBUSY) {
         // Making the last attemt to close everytjing and shut down gracefully
-        //std::cout << "status " << uv_err_name(status) << " " << uv_strerror(status) << std::endl; 
+        //std::cout << "status " << uv_err_name(status) << " " << uv_strerror(status) << std::endl;
         uv_run(this, UV_RUN_ONCE);
         /*status = */uv_loop_close(this);
-        //std::cout << "status " << uv_strerror(status) << std::endl; 
+        //std::cout << "status " << uv_strerror(status) << std::endl;
     }
 }
 
@@ -56,6 +56,7 @@ void EventLoop::on_after_work(uv_work_t* req, int status) {
     }
 
     // TODO: memory pool for Work????
+    delete &work;
 }
 
 
