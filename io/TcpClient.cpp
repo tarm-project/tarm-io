@@ -46,20 +46,22 @@ void TcpClient::shutdown() {
 namespace {
 
 struct WriteRequest : public uv_write_t {
-    uv_buf_t buf;
+    uv_buf_t uv_buf;
+    std::shared_ptr<const char> buf;
     TcpClient::EndSendCallback end_send_callback = nullptr;
 };
 
 } // namespace
 
-void TcpClient::send_data(const char* buffer, std::size_t size, EndSendCallback callback) {
+void TcpClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback) {
     auto req = new WriteRequest;
     req->end_send_callback = callback;
     req->data = this;
-    // const_cast is workaround for lack of constness support in uv_buf_t
-    req->buf = uv_buf_init(const_cast<char*>(buffer), size);
+    req->buf = buffer;
+    // const_cast is a workaround for lack of constness support in uv_buf_t
+    req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
 
-    uv_write(req, reinterpret_cast<uv_stream_t*>(&m_stream), &req->buf, 1, TcpClient::after_write);
+    uv_write(req, reinterpret_cast<uv_stream_t*>(&m_stream), &req->uv_buf, 1, TcpClient::after_write);
     ++m_pending_write_requesets;
 }
 

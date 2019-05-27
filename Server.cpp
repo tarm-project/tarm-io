@@ -84,13 +84,17 @@ int main(int argc, char* argv[]) {
                 std::cout << "Opened dir: " << dir.path() << std::endl;
 
                 dir.read([&client] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
-                    auto ss = new std::stringstream;
+                    std::stringstream ss;
                     //for (size_t i = 0; i < 100; ++i)
-                        (*ss) << type << " " << path << std::endl;
-                    std::cout << ss->str() << std::endl;
-                    client.send_data(ss->str().c_str(), ss->str().size(), [ss](io::TcpClient&) {
-                        delete ss;
-                    });
+                        ss << type << " " << path << std::endl;
+
+                    const auto str = ss.str();
+                    std::cout << str << std::endl;
+
+                    std::shared_ptr<char> ptr(new char[str.size()], [](const char* p) {delete [] p;});
+                    std::copy(str.c_str(), str.c_str() + str.size(), ptr.get());
+
+                    client.send_data(ptr, str.size());
                 },
                 [](io::Dir& dir) {
                     std::cout << "End read dir " << std::endl;
@@ -113,33 +117,36 @@ int main(int argc, char* argv[]) {
                 std::cout << "Opened file: " << file.path() << std::endl;
                 client.set_close_callback([&file](io::TcpClient& client){
                     //file.close();
-                    file.schedule_removal();
+                    //file.schedule_removal();
                 });
 
-                file.read([&client](io::File& file, const char* buf, std::size_t size) {
+                file.read([&client](io::File& file, std::shared_ptr<const char> buf, std::size_t size) {
+                    //std::cout.write(buf.get(), size);
+
                     if (client.pending_write_requesets() > 0) {
-                        std::cout << "pending_write_requesets " << client.pending_write_requesets() << std::endl;
+                        //std::cout << "pending_write_requesets " << client.pending_write_requesets() << std::endl;
                     }
 
                     client.send_data(buf, size, [&file](io::TcpClient& client) {
                         static int counter = 0;
                         std::cout << "TcpClient after send counter: " << counter++ << std::endl;
 
-                        if (file.read_state() == io::File::ReadState::PAUSE) {
-                            std::cout << "Continue read" << std::endl;
-                            file.continue_read();
-                        }
+                        // if (file.read_state() == io::File::ReadState::PAUSE) {
+                        //     std::cout << "Continue read" << std::endl;
+                        //     file.continue_read();
+                        // }
                     });
 
-                    if (client.pending_write_requesets() > 1) {
-                        std::cout << "Pause read" << std::endl;
-                        file.pause_read();
-                    }
+                    // if (client.pending_write_requesets() > 1) {
+                    //     std::cout << "Pause read" << std::endl;
+                    //     file.pause_read();
+                    // }
                 },
                 [&client](io::File& file){
-                    client.set_close_callback(nullptr);
+                    std::cout << "File end read!" << std::endl;
+                    //client.set_close_callback(nullptr);
                     //file.close();
-                    file.schedule_removal();
+                    //file.schedule_removal();
                 });
             });
         }
