@@ -24,12 +24,26 @@ File::File(EventLoop& loop) :
 File::~File() {
     std::cout << "File::~File " << m_path << std::endl;
     close();
+
+    uv_fs_req_cleanup(&m_open_req);
+    //uv_fs_req_cleanup(&m_read_req);
+    uv_fs_req_cleanup(&m_write_req);
+
+    for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
+        uv_fs_req_cleanup(&m_read_reqs[i]);
+    }
 }
 
 void File::schedule_removal() {
     std::cout << "File::schedule_removal " << m_path << std::endl;
 
     close();
+
+    if (has_read_buffers_in_use()) {
+        m_need_reschedule_remove = true;
+        std::cout << "File " << m_path << " has read buffers in use, postponing removal" << std::endl;
+        return;
+    }
 
     Disposable::schedule_removal();
 }
@@ -50,21 +64,9 @@ void File::close() {
     m_open_req.data = nullptr;
 
     uv_fs_t close_req;
-    int code = uv_fs_close(m_loop, &close_req, m_open_req.result, nullptr);
-    if (code != 0) {
-        std::cout << "File::close code: " << uv_strerror(code) << std::endl;
-    }
-
-    // uv_cancel(reinterpret_cast<uv_req_t*>(&m_open_req));
-    // code = uv_cancel(reinterpret_cast<uv_req_t*>(&m_read_req));
-    // uv_cancel(reinterpret_cast<uv_req_t*>(&m_write_req));
-
-    uv_fs_req_cleanup(&m_open_req);
-    //uv_fs_req_cleanup(&m_read_req);
-    uv_fs_req_cleanup(&m_write_req);
-
-    for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
-        uv_fs_req_cleanup(&m_read_reqs[i]);
+    int status = uv_fs_close(m_loop, &close_req, m_open_req.result, nullptr);
+    if (status != 0) {
+        std::cout << "File::close status: " << uv_strerror(status) << std::endl;
     }
 
     m_open_callback = nullptr;
@@ -115,6 +117,7 @@ void File::schedule_read() {
     }
 
     if (!found_free_buffer) {
+        std::cout << "No free buffer found" << std::endl;
         return;
     }
 
@@ -138,6 +141,14 @@ void File::schedule_read(ReadReq& req) {
     req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* p) {
         req.is_free = true;
 
+        if (this->m_need_reschedule_remove) {
+            if (!has_read_buffers_in_use()) {
+                this->schedule_removal();
+            }
+
+            return;
+        }
+
         if (m_done_read) {
             return;
         }
@@ -148,6 +159,16 @@ void File::schedule_read(ReadReq& req) {
     uv_buf_t buf = uv_buf_init(req.buf.get(), READ_BUF_SIZE);
     // TODO: error handling for uv_fs_read return value
     uv_fs_read(m_loop, &req, m_open_req.result, &buf, 1, -1, File::on_read);
+}
+
+bool File::has_read_buffers_in_use() const {
+    for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
+        if (!m_read_reqs[i].is_free) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /*

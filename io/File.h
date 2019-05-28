@@ -80,6 +80,9 @@ private:
 
     void schedule_read();
     void schedule_read(ReadReq& req);
+
+    bool has_read_buffers_in_use() const;
+
     /*
     char* current_read_buf();
     char* next_read_buf();
@@ -92,6 +95,7 @@ private:
     //std::size_t m_used_read_bufs = 0;
     bool m_read_in_progress = false;
     bool m_done_read = false; // TODO: make some states instead bunch of flags
+    bool m_need_reschedule_remove = false;
 
     uv_fs_t m_open_req;
     //uv_fs_t m_read_req;
