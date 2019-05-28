@@ -27,6 +27,8 @@ File::~File() {
 }
 
 void File::schedule_removal() {
+    std::cout << "File::schedule_removal " << m_path << std::endl;
+
     close();
 
     Disposable::schedule_removal();
@@ -50,7 +52,7 @@ void File::close() {
     uv_fs_t close_req;
     int code = uv_fs_close(m_loop, &close_req, m_open_req.result, nullptr);
     if (code != 0) {
-        std::cout << "File close code: " << uv_strerror(code) << std::endl;
+        std::cout << "File::close code: " << uv_strerror(code) << std::endl;
     }
 
     // uv_cancel(reinterpret_cast<uv_req_t*>(&m_open_req));
@@ -134,11 +136,12 @@ void File::schedule_read(ReadReq& req) {
 
     // TODO: comments on this shared pointer
     req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* p) {
+        req.is_free = true;
+
         if (m_done_read) {
             return;
         }
 
-        req.is_free = true;
         schedule_read();
     });
 
