@@ -27,6 +27,8 @@ public:
     void set_port(std::uint16_t value);
 
     void send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback = nullptr);
+    void send_data(const std::string& message, EndSendCallback callback = nullptr);
+
     void set_close_callback(CloseCallback callback);
     void close();
 

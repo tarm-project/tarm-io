@@ -65,6 +65,12 @@ void TcpClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, 
     ++m_pending_write_requesets;
 }
 
+void TcpClient::send_data(const std::string& message, EndSendCallback callback) {
+    std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete [] p;});
+    std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
+    send_data(ptr, message.size());
+}
+
 void TcpClient::set_close_callback(CloseCallback callback) {
     m_close_callback = callback;
 }
