@@ -1,7 +1,5 @@
 #include "File.h"
 
-#include <cstring>
-
 // TODO: remove
 #include <iostream>
 #include <assert.h>
@@ -15,13 +13,6 @@ File::File(EventLoop& loop) :
     //memset(&m_read_req, 0, sizeof(m_read_req));
     memset(&m_write_req, 0, sizeof(m_write_req));
 
-
-    for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
-        m_is_free[i] = true;
-        m_bufs[i] = nullptr;
-        memset(&m_read_reqs[i], 0, sizeof(m_read_reqs[i]));
-    }
-
     /*
     m_read_bufs.resize(READ_BUFS_NUM);
     for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
@@ -33,10 +24,6 @@ File::File(EventLoop& loop) :
 File::~File() {
     std::cout << "File::~File " << m_path << std::endl;
     close();
-
-    for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
-        delete[] m_bufs[i];
-    }
 }
 
 void File::schedule_removal() {
@@ -117,46 +104,41 @@ void File::schedule_read() {
     }
 
     size_t i = 0;
-    bool found = false;
+    bool found_free_buffer = false;
     for (; i < READ_BUFS_NUM; ++i) {
-        if (m_is_free[i]) {
-            found = true;
+        if (m_read_reqs[i].is_free) {
+            found_free_buffer = true;
             break;
         }
     }
 
-    if (!found) {
+    if (!found_free_buffer) {
         return;
     }
 
-    std::cout << "index: " << i << std::endl;
-
-    m_is_free[i] = false;
+    std::cout << "using buffer with index: " << i << std::endl;
 
     ReadReq& read_req = m_read_reqs[i];
+    read_req.is_free = false;
     read_req.data = this;
-    read_req.index = i;
 
     schedule_read(read_req);
-
-    //++m_used_read_bufs;
 }
 
 void File::schedule_read(ReadReq& req) {
     m_read_in_progress = true;
 
-    if (m_bufs[req.index] == nullptr) {
-        m_bufs[req.index] = new char[READ_BUF_SIZE];
+    if (req.raw_buf == nullptr) {
+        req.raw_buf = new char[READ_BUF_SIZE];
     }
 
     // TODO: comments on this shared pointer
-    req.buf = std::shared_ptr<char>(m_bufs[req.index], [this, &req](const char* p) {
-        //delete[] p;
+    req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* p) {
         if (m_done_read) {
             return;
         }
 
-        m_is_free[req.index] = true;
+        req.is_free = true;
         schedule_read();
     });
 

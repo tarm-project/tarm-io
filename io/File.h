@@ -8,12 +8,23 @@
 #include <functional>
 #include <vector>
 #include <memory>
+#include <cstring>
 
 namespace io {
 
 struct ReadReq : public uv_fs_t {
+    ReadReq() {
+        memset(this, 0, sizeof(uv_fs_t));
+    }
+
+    ~ReadReq() {
+        delete[] raw_buf;
+    }
+
     std::shared_ptr<char> buf;
-    int index = -1;
+
+    bool is_free = true;
+    char* raw_buf = nullptr;
 };
 
 class File : public Disposable {
@@ -75,8 +86,7 @@ private:
     EventLoop* m_loop;
 
     ReadReq m_read_reqs[READ_BUFS_NUM];
-    bool m_is_free[READ_BUFS_NUM];
-    char* m_bufs[READ_BUFS_NUM];
+
     //std::size_t m_used_read_bufs = 0;
     bool m_read_in_progress = false;
     bool m_done_read = false; // TODO: make some states instead bunch of flags
