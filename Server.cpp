@@ -88,19 +88,26 @@ int main(int argc, char* argv[]) {
                     //for (size_t i = 0; i < 100; ++i)
                         ss << type << " " << path << std::endl;
 
-                    const auto str = ss.str();
-                    std::cout << str << std::endl;
-
-                    std::shared_ptr<char> ptr(new char[str.size()], [](const char* p) {delete [] p;});
-                    std::copy(str.c_str(), str.c_str() + str.size(), ptr.get());
-
-                    client.send_data(ptr, str.size());
+                    client.send_data(ss.str());
                 },
                 [](io::Dir& dir) {
                     std::cout << "End read dir " << std::endl;
                     dir.schedule_removal();
                 });
             });
+        }
+
+        if (message.find("GET / HTTP/1.1") != std::string::npos ) {
+            std::string answer = "HTTP/1.1 200 OK\r\n"
+            "Date: Tue, 28 May 2019 13:13:01 GMT\r\n"
+            "Server: My\r\n"
+            "Content-Length: 6\r\n"
+            "Connection: keep-alive\r\n"
+            "Content-Type: text/html; charset=utf-8\r\n"
+            "\r\n"
+            "Hello!";
+
+            client.send_data(answer);
         }
 
         if (message.find("close") != std::string::npos ) {

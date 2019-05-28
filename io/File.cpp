@@ -226,33 +226,20 @@ void File::on_read(uv_fs_t* uv_req) {
         std::cout << this_.path() << std::endl;
         fprintf(stderr, "Read error: %s\n",  uv_strerror(req.result));
     } else if (req.result == 0) {
-        // std::cout << "Closing file: " << this_.path() << std::endl;
-
-        // auto close_req = new uv_fs_t;
-        // close_req->data = uv_req->data;
-        // uv_fs_close(req.loop, close_req, this_.m_open_req.result, File::on_close);
+        this_.m_done_read = true;
+        req.buf.reset();
 
         if (this_.m_end_read_callback) {
             this_.m_end_read_callback(this_);
         }
 
-        this_.m_done_read = true;
-
-        //this_.m_read_state = ReadState::DONE;
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             this_.m_read_callback(this_, req.buf, req.result);
         }
 
-        //if (this_.m_used_read_bufs < READ_BUFS_NUM) {
-            this_.schedule_read();
-        //}
-
+        this_.schedule_read();
         req.buf.reset();
-
-        //if (this_.m_read_state == ReadState::CONTINUE) {
-        //    this_.schedule_read();
-        //}
     }
 }
 
