@@ -116,8 +116,7 @@ int main(int argc, char* argv[]) {
             file_ptr->open(file_name, [&client](io::File& file) {
                 std::cout << "Opened file: " << file.path() << std::endl;
                 client.set_close_callback([&file](io::TcpClient& client){
-                    //file.close();
-                    //file.schedule_removal();
+                    file.schedule_removal();
                 });
 
                 file.read([&client](io::File& file, std::shared_ptr<const char> buf, std::size_t size) {
@@ -144,9 +143,8 @@ int main(int argc, char* argv[]) {
                 },
                 [&client](io::File& file){
                     std::cout << "File end read!" << std::endl;
-                    //client.set_close_callback(nullptr);
-                    //file.close();
-                    //file.schedule_removal();
+                    client.set_close_callback(nullptr);
+                    file.schedule_removal();
                 });
             });
         }

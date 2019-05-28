@@ -40,6 +40,7 @@ public:
     void read(ReadCallback read_callback, EndReadCallback end_read_callback);
 
     void close();
+    bool is_open() const;
 
     const std::string& path() const;
 
@@ -52,8 +53,9 @@ public:
     void schedule_removal() override;
 
     // statics
-    static void on_open(uv_fs_t *req);
-    static void on_read(uv_fs_t *req);
+    static void on_open(uv_fs_t* req);
+    static void on_read(uv_fs_t* req);
+    static void on_close(uv_fs_t* req);
 
 protected:
     ~File();
@@ -74,9 +76,10 @@ private:
 
     ReadReq m_read_reqs[READ_BUFS_NUM];
     bool m_is_free[READ_BUFS_NUM];
-    char* m_bufs[READ_BUFS_NUM] = {0};
+    char* m_bufs[READ_BUFS_NUM];
     //std::size_t m_used_read_bufs = 0;
     bool m_read_in_progress = false;
+    bool m_done_read = false; // TODO: make some states instead bunch of flags
 
     uv_fs_t m_open_req;
     //uv_fs_t m_read_req;

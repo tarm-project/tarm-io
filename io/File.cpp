@@ -18,6 +18,7 @@ File::File(EventLoop& loop) :
 
     for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
         m_is_free[i] = true;
+        m_bufs[i] = nullptr;
         memset(&m_read_reqs[i], 0, sizeof(m_read_reqs[i]));
     }
 
@@ -32,6 +33,10 @@ File::File(EventLoop& loop) :
 File::~File() {
     std::cout << "File::~File " << m_path << std::endl;
     close();
+
+    for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
+        delete[] m_bufs[i];
+    }
 }
 
 void File::schedule_removal() {
@@ -40,20 +45,30 @@ void File::schedule_removal() {
     Disposable::schedule_removal();
 }
 
+bool File::is_open() const {
+    return m_open_req.data == this;
+}
+
 void File::close() {
+    if (!is_open()) {
+        return;
+    }
+
     std::cout << "File::close " << m_path << std::endl;
 
     //m_read_state = ReadState::DONE;
 
+    m_open_req.data = nullptr;
+
     uv_fs_t close_req;
     int code = uv_fs_close(m_loop, &close_req, m_open_req.result, nullptr);
-    std::cout << uv_strerror(code) << std::endl;
+    if (code != 0) {
+        std::cout << "File close code: " << uv_strerror(code) << std::endl;
+    }
 
     // uv_cancel(reinterpret_cast<uv_req_t*>(&m_open_req));
     // code = uv_cancel(reinterpret_cast<uv_req_t*>(&m_read_req));
     // uv_cancel(reinterpret_cast<uv_req_t*>(&m_write_req));
-
-    std::cout << uv_strerror(code) << std::endl;
 
     uv_fs_req_cleanup(&m_open_req);
     //uv_fs_req_cleanup(&m_read_req);
@@ -61,7 +76,6 @@ void File::close() {
 
     for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
         uv_fs_req_cleanup(&m_read_reqs[i]);
-        delete[] m_bufs[i];
     }
 
     m_open_callback = nullptr;
@@ -70,6 +84,7 @@ void File::close() {
 }
 
 void File::open(const std::string& path, OpenCallback callback) {
+    // TODO: able to handle double open correctly (need to close previous file)
     m_path.clear();
     m_open_callback = callback;
     m_open_req.data = this;
@@ -79,6 +94,7 @@ void File::open(const std::string& path, OpenCallback callback) {
 void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     m_read_callback = read_callback;
     m_end_read_callback = end_read_callback;
+    m_done_read = false;
     //m_read_req.data = this;
     //m_read_state = ReadState::CONTINUE;
 
@@ -136,6 +152,9 @@ void File::schedule_read(ReadReq& req) {
     // TODO: comments on this shared pointer
     req.buf = std::shared_ptr<char>(m_bufs[req.index], [this, &req](const char* p) {
         //delete[] p;
+        if (m_done_read) {
+            return;
+        }
 
         m_is_free[req.index] = true;
         schedule_read();
@@ -201,14 +220,17 @@ void File::on_read(uv_fs_t* uv_req) {
         std::cout << this_.path() << std::endl;
         fprintf(stderr, "Read error: %s\n",  uv_strerror(req.result));
     } else if (req.result == 0) {
-        std::cout << "Closing file: " << this_.path() << std::endl;
-        uv_fs_t close_req;
-        // synchronous
-        uv_fs_close(req.loop, &close_req, this_.m_open_req.result, nullptr);
+        // std::cout << "Closing file: " << this_.path() << std::endl;
+
+        // auto close_req = new uv_fs_t;
+        // close_req->data = uv_req->data;
+        // uv_fs_close(req.loop, close_req, this_.m_open_req.result, File::on_close);
 
         if (this_.m_end_read_callback) {
             this_.m_end_read_callback(this_);
         }
+
+        this_.m_done_read = true;
 
         //this_.m_read_state = ReadState::DONE;
     } else if (req.result > 0) {
@@ -225,6 +247,14 @@ void File::on_read(uv_fs_t* uv_req) {
         //if (this_.m_read_state == ReadState::CONTINUE) {
         //    this_.schedule_read();
         //}
+    }
+}
+
+void File::on_close(uv_fs_t* req) {
+    auto& this_ = *reinterpret_cast<File*>(req->data);
+
+    if (this_.m_end_read_callback) {
+        this_.m_end_read_callback(this_);
     }
 }
 
