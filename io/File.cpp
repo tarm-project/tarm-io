@@ -12,6 +12,7 @@ File::File(EventLoop& loop) :
     memset(&m_open_req, 0, sizeof(m_open_req));
     //memset(&m_read_req, 0, sizeof(m_read_req));
     memset(&m_write_req, 0, sizeof(m_write_req));
+    memset(&m_stat_req, 0, sizeof(m_stat_req));
 
     /*
     m_read_bufs.resize(READ_BUFS_NUM);
@@ -94,6 +95,15 @@ void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
 
 void File::read(ReadCallback callback) {
     read(callback, nullptr);
+}
+
+void File::stat(StatCallback callback) {
+    // TODO: check if open
+
+    m_stat_req.data = this;
+    m_stat_callback = callback;
+
+    uv_fs_fstat(m_loop, &m_stat_req, m_open_req.result, File::on_stat);
 }
 
 const std::string& File::path() const {
@@ -248,6 +258,14 @@ void File::on_close(uv_fs_t* req) {
 
     if (this_.m_end_read_callback) {
         this_.m_end_read_callback(this_);
+    }
+}
+
+void File::on_stat(uv_fs_t* req) {
+    auto& this_ = *reinterpret_cast<File*>(req->data);
+
+    if (this_.m_stat_callback) {
+        this_.m_stat_callback(this_, *reinterpret_cast<io::Stat*>(&this_.m_stat_req.statbuf));
     }
 }
 

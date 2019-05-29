@@ -12,6 +12,11 @@
 
 namespace io {
 
+// TODO: move
+struct Stat : public uv_stat_t {
+};
+
+// TODO: move
 struct ReadReq : public uv_fs_t {
     ReadReq() {
         memset(this, 0, sizeof(uv_fs_t));
@@ -37,6 +42,7 @@ public:
     //       possible solution: memory pool for all files inside the EventLoop class
     using ReadCallback = std::function<void(File&, std::shared_ptr<const char>, std::size_t)>;
     using EndReadCallback = std::function<void(File&)>;
+    using StatCallback = std::function<void(File&, const Stat&)>;
 
     /*
     enum class ReadState {
@@ -49,13 +55,15 @@ public:
     File(EventLoop& loop);
 
     void open(const std::string& path, OpenCallback callback); // TODO: pass open flags
-    void read(ReadCallback callback);
-    void read(ReadCallback read_callback, EndReadCallback end_read_callback);
-
     void close();
     bool is_open() const;
 
+    void read(ReadCallback callback);
+    void read(ReadCallback read_callback, EndReadCallback end_read_callback);
+
     const std::string& path() const;
+
+    void stat(StatCallback callback);
 
     /*
     void pause_read();
@@ -69,6 +77,7 @@ public:
     static void on_open(uv_fs_t* req);
     static void on_read(uv_fs_t* req);
     static void on_close(uv_fs_t* req);
+    static void on_stat(uv_fs_t* req);
 
 protected:
     ~File();
@@ -77,6 +86,7 @@ private:
     OpenCallback m_open_callback = nullptr;
     ReadCallback m_read_callback = nullptr;
     EndReadCallback m_end_read_callback = nullptr;
+    StatCallback m_stat_callback = nullptr;
 
     void schedule_read();
     void schedule_read(ReadReq& req);
@@ -97,7 +107,10 @@ private:
     bool m_done_read = false; // TODO: make some states instead bunch of flags
     bool m_need_reschedule_remove = false;
 
+    // TODO: it may be not reasonable to store by pointers here because they take to much space (>400b)
+    //       also memory pool will help a lot
     uv_fs_t m_open_req;
+    uv_fs_t m_stat_req;
     //uv_fs_t m_read_req;
     uv_fs_t m_write_req;
 

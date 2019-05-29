@@ -122,6 +122,11 @@ int main(int argc, char* argv[]) {
 
             file_ptr->open(file_name, [&client](io::File& file) {
                 std::cout << "Opened file: " << file.path() << std::endl;
+
+                file.stat([](io::File& file, const io::Stat& stat) {
+                    std::cout << "File size is: " << stat.st_size << std::endl;
+                });
+
                 client.set_close_callback([&file](io::TcpClient& client){
                     file.schedule_removal();
                 });
