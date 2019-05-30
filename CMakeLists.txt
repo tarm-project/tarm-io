@@ -68,7 +68,7 @@ target_link_libraries(server ${SERVER_LIB_LIST})
 
 set(BUILD_WITH_TESTS ON)
 if (BUILD_WITH_TESTS)
-#    add_subdirectory(tests)
+    add_subdirectory(tests)
 endif()
 
 #############################################################
