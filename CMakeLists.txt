@@ -32,8 +32,8 @@ endif()
 # because below I do not have add include dirs and libs
 find_package(Boost REQUIRED)
 
-#message(FATAL_ERROR !${Boost_LIBRARIES}!)
-
+# TODO: need to find better name than io
+# TODO: looks like need to move io-related CMake code into io folder
 FILE(GLOB IO_SOURCE_LIST io/*.h)
 list(APPEND IO_SOURCE_LIST
         io/Common.cpp
@@ -48,16 +48,28 @@ list(APPEND IO_SOURCE_LIST
 
 source_group(io FILES ${IO_SOURCE_LIST})
 
-set(LIB_LIST)
-list(APPEND LIB_LIST ${LIBUV_LIBRARIES})
-#message(FATAL_ERROR "!${LIBUV_INCLUDE_DIR}!")
+set(IO_LIB_LIST)
+list(APPEND IO_LIB_LIST ${LIBUV_LIBRARIES} ${LIBUV_LDFLAGS})
+
+add_library(io SHARED ${IO_SOURCE_LIST})
+target_link_libraries(io ${IO_LIB_LIST})
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${LIBUV_INCLUDE_DIR})
 
-add_executable(client Client.cpp ${IO_SOURCE_LIST})
-target_link_libraries(client ${LIB_LIST} ${LIBUV_LDFLAGS})
+# TODO: put client and server into examples folder
+set(CLIENT_LIB_LIST io)
+add_executable(client Client.cpp)
+target_link_libraries(client ${CLIENT_LIB_LIST})
 
-add_executable(server Server.cpp ${IO_SOURCE_LIST})
-target_link_libraries(server ${LIB_LIST} ${LIBUV_LDFLAGS})
+set(SERVER_LIB_LIST io)
+add_executable(server Server.cpp)
+target_link_libraries(server ${SERVER_LIB_LIST})
+
+set(BUILD_WITH_TESTS ON)
+if (BUILD_WITH_TESTS)
+#    add_subdirectory(tests)
+endif()
 
 #############################################################
 # get_cmake_property(_variableNames VARIABLES)
