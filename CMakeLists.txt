@@ -30,7 +30,8 @@ endif()
 
 # TODO: need to check it if Boost installed to some location as /opt,
 # because below I do not have add include dirs and libs
-find_package(Boost REQUIRED)
+# TODO: system and filesystem should be required if we are building tests
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 # TODO: need to find better name than io
 # TODO: looks like need to move io-related CMake code into io folder
@@ -51,7 +52,7 @@ source_group(io FILES ${IO_SOURCE_LIST})
 set(IO_LIB_LIST)
 list(APPEND IO_LIB_LIST ${LIBUV_LIBRARIES} ${LIBUV_LDFLAGS})
 
-add_library(io SHARED ${IO_SOURCE_LIST})
+add_library(io ${IO_SOURCE_LIST})
 target_link_libraries(io ${IO_LIB_LIST})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

@@ -1,9 +1,4 @@
 find_package(GTest REQUIRED)
-#${GTEST_INCLUDE_DIRS}
-#GTest::GTest GTest::Main
-#target_link_libraries
-
-set(TESTS_EXE_NAME tests)
 
 list(APPEND TESTS_LIST
     DisposableTest.cpp
@@ -17,9 +12,18 @@ include_directories(
 )
 
 set(RUN_TEST_ENV) # TODO: currently this is unused but may be utilized with sanitizers
+set(TESTS_EXE_NAME tests)
 
 add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
-target_link_libraries(${TESTS_EXE_NAME} io GTest::GTest GTest::Main)
+target_link_libraries(${TESTS_EXE_NAME}
+    io
+    GTest::GTest
+    GTest::Main
+    Boost::system
+    Boost::filesystem
+)
+
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tmp)
 
 add_custom_target(RunTests
     DEPENDS ${TESTS_LIST}

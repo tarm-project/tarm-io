@@ -137,4 +137,22 @@ void Dir::schedule_removal() {
     Disposable::schedule_removal();
 }
 
+////////////////////////////////////// functions //////////////////////////////////////
+
+void make_temp_dir(EventLoop& loop, const std::string& name_template, TempDirCallback callback) {
+
+}
+
+std::string make_temp_dir(EventLoop& loop, const std::string& name_template) {
+    uv_fs_t request;
+    const int status = uv_fs_mkdtemp(&loop, &request, name_template.c_str(), nullptr);
+    if (status < 0) {
+        return "";
+    }
+
+    std::string result = request.path;
+    uv_fs_req_cleanup(&request);
+    return result;
+}
+
 } // namespace io
