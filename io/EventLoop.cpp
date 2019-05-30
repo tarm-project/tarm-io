@@ -30,6 +30,10 @@ struct Work : public uv_work_t {
 } // namespace
 
 void EventLoop::add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback) {
+    if (work_callback == nullptr) {
+        return;
+    }
+
     auto work = new Work;
     work->work_callback = work_callback;
     work->work_done_callback = work_done_callback;
