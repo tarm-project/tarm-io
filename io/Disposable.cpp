@@ -31,7 +31,6 @@ void Disposable::on_removal(uv_idle_t* handle) {
     uv_idle_stop(handle);
     uv_close(reinterpret_cast<uv_handle_t*>(handle), on_delete_idle_handle_close);
     delete reinterpret_cast<Disposable*>(handle->data);
-    //delete handle;
 }
 
 } // namespace io

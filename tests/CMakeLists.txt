@@ -6,6 +6,7 @@ find_package(GTest REQUIRED)
 set(TESTS_EXE_NAME tests)
 
 list(APPEND TESTS_LIST
+    DisposableTest.cpp
     EventLoopTest.cpp
     FileTest.cpp
 )
