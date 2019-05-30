@@ -62,6 +62,25 @@ TEST_F(FileTest, open_existing) {
 }
 
 TEST_F(FileTest, double_open) {
+    io::EventLoop loop;
+
+    bool opened_1 = false;
+    bool opened_2 = false;
+
+    auto file = new io::File(loop);
+    file->open(m_open_file_path, [&](io::File& file) {
+        opened_1 = true;
+    });
+
+    // Overwriting callback and state, previous one will never be executed
+    file->open(m_open_file_path, [&](io::File& file) {
+        opened_2 = true;
+        file.schedule_removal();
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_FALSE(opened_1);
+    EXPECT_TRUE(opened_2);
 
 }
 

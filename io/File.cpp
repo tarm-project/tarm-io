@@ -76,7 +76,15 @@ void File::close() {
 }
 
 void File::open(const std::string& path, OpenCallback callback) {
-    // TODO: able to handle double open correctly (need to close previous file)
+    if (is_open()) {
+        close();
+
+        std::cout << "m_open_req.flags " << m_open_req.flags << std::endl;
+        int status = uv_cancel(reinterpret_cast<uv_req_t*>(&m_open_req));
+        std::cout << "uv_cancel status: " << uv_strerror(status) << std::endl;
+        std::cout << "m_open_req.flags " << m_open_req.flags << std::endl;
+    }
+
     m_path.clear();
     m_open_callback = callback;
     m_open_req.data = this;
