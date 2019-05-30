@@ -109,7 +109,7 @@ private:
 
     // TODO: it may be not reasonable to store by pointers here because they take to much space (>400b)
     //       also memory pool will help a lot
-    uv_fs_t m_open_req;
+    uv_fs_t* m_open_request = nullptr;
     uv_fs_t m_stat_req;
     //uv_fs_t m_read_req;
     uv_fs_t m_write_req;

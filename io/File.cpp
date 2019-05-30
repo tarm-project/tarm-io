@@ -9,8 +9,7 @@ namespace io {
 File::File(EventLoop& loop) :
     Disposable(loop),
     m_loop(&loop) {
-    memset(&m_open_req, 0, sizeof(m_open_req));
-    //memset(&m_read_req, 0, sizeof(m_read_req));
+
     memset(&m_write_req, 0, sizeof(m_write_req));
     memset(&m_stat_req, 0, sizeof(m_stat_req));
 
@@ -26,7 +25,9 @@ File::~File() {
     std::cout << "File::~File " << m_path << std::endl;
     close();
 
-    uv_fs_req_cleanup(&m_open_req);
+    uv_fs_req_cleanup(m_open_request);
+    delete m_open_request;
+
     //uv_fs_req_cleanup(&m_read_req);
     uv_fs_req_cleanup(&m_write_req);
 
@@ -50,7 +51,7 @@ void File::schedule_removal() {
 }
 
 bool File::is_open() const {
-    return m_open_req.data == this;
+    return m_open_request != nullptr;
 }
 
 void File::close() {
@@ -60,35 +61,39 @@ void File::close() {
 
     std::cout << "File::close " << m_path << std::endl;
 
-    //m_read_state = ReadState::DONE;
-
-    m_open_req.data = nullptr;
-
     uv_fs_t close_req;
-    int status = uv_fs_close(m_loop, &close_req, m_open_req.result, nullptr);
+    int status = uv_fs_close(m_loop, &close_req, m_open_request->result, nullptr);
     if (status != 0) {
         std::cout << "File::close status: " << uv_strerror(status) << std::endl;
+    }
+
+    // open operation is in progress, postpone request deletion (will be deleted in callback)
+    if (m_open_request->work_req.work) {
+        m_open_request->data = nullptr;
+    } else {
+        // TODO: currently this is memory leak
+        //delete m_open_request;
+        m_open_request = nullptr;
     }
 
     m_open_callback = nullptr;
     m_read_callback = nullptr;
     m_end_read_callback = nullptr;
+
+    m_path.clear();
 }
 
 void File::open(const std::string& path, OpenCallback callback) {
     if (is_open()) {
         close();
-
-        std::cout << "m_open_req.flags " << m_open_req.flags << std::endl;
-        int status = uv_cancel(reinterpret_cast<uv_req_t*>(&m_open_req));
-        std::cout << "uv_cancel status: " << uv_strerror(status) << std::endl;
-        std::cout << "m_open_req.flags " << m_open_req.flags << std::endl;
     }
 
-    m_path.clear();
+    m_path = path;
+    m_open_request = new uv_fs_t;
+    std::memset(m_open_request, 0, sizeof(uv_fs_t));
     m_open_callback = callback;
-    m_open_req.data = this;
-    uv_fs_open(m_loop, &m_open_req, path.c_str(), UV_FS_O_RDWR, 0, File::on_open);
+    m_open_request->data = this;
+    uv_fs_open(m_loop, m_open_request, path.c_str(), UV_FS_O_RDWR, 0, File::on_open);
 }
 
 void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
@@ -111,7 +116,7 @@ void File::stat(StatCallback callback) {
     m_stat_req.data = this;
     m_stat_callback = callback;
 
-    uv_fs_fstat(m_loop, &m_stat_req, m_open_req.result, File::on_stat);
+    uv_fs_fstat(m_loop, &m_stat_req, m_open_request->result, File::on_stat);
 }
 
 const std::string& File::path() const {
@@ -176,7 +181,7 @@ void File::schedule_read(ReadReq& req) {
 
     uv_buf_t buf = uv_buf_init(req.buf.get(), READ_BUF_SIZE);
     // TODO: error handling for uv_fs_read return value
-    uv_fs_read(m_loop, &req, m_open_req.result, &buf, 1, -1, File::on_read);
+    uv_fs_read(m_loop, &req, m_open_request->result, &buf, 1, -1, File::on_read);
 }
 
 bool File::has_read_buffers_in_use() const {
@@ -218,6 +223,11 @@ File::ReadState File::read_state() {
 */
 // ////////////////////////////////////// static //////////////////////////////////////
 void File::on_open(uv_fs_t* req) {
+    if (req->data == nullptr) {
+        delete req;
+        return;
+    }
+
     auto& this_ = *reinterpret_cast<File*>(req->data);
 
     if (req->result < 0) {
@@ -227,7 +237,6 @@ void File::on_open(uv_fs_t* req) {
         return;
     }
 
-    this_.m_path = req->path;
     if (this_.m_open_callback) {
         this_.m_open_callback(this_);
     }
