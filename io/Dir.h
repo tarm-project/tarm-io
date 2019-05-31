@@ -93,6 +93,6 @@ private:
 
 using TempDirCallback = std::function<void(const std::string&)>;
 void make_temp_dir(EventLoop& loop, const std::string& name_template, TempDirCallback callback);
-std::string make_temp_dir(EventLoop& loop, const std::string& name_template);
+std::string make_temp_dir(const std::string& name_template);
 
 } // namespace io

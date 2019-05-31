@@ -8,8 +8,7 @@
 namespace {
 
 std::string create_file_for_open(const std::string& name_template) {
-    io::EventLoop loop;
-    const std::string tmp_dir_path = io::make_temp_dir(loop, name_template);
+    const std::string tmp_dir_path = io::make_temp_dir(name_template);
     if (tmp_dir_path.empty()) {
         return "";
     }

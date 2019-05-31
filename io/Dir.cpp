@@ -140,12 +140,13 @@ void Dir::schedule_removal() {
 ////////////////////////////////////// functions //////////////////////////////////////
 
 void make_temp_dir(EventLoop& loop, const std::string& name_template, TempDirCallback callback) {
-
+    // TODO: implement
+    assert(false);
 }
 
-std::string make_temp_dir(EventLoop& loop, const std::string& name_template) {
+std::string make_temp_dir(const std::string& name_template) {
     uv_fs_t request;
-    const int status = uv_fs_mkdtemp(&loop, &request, name_template.c_str(), nullptr);
+    const int status = uv_fs_mkdtemp(nullptr, &request, name_template.c_str(), nullptr);
     if (status < 0) {
         return "";
     }
