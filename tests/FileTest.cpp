@@ -21,7 +21,7 @@ std::string create_file_for_open(const std::string& name_template) {
     }
     ofile.close();
 
-    uv_print_all_handles(&loop, stderr);
+    //uv_print_all_handles(&loop, stderr);
 
     return file_path;
 }
@@ -88,7 +88,7 @@ TEST_F(FileTest, double_open) {
 
 }
 
-TEST_F(FileTest, DISABLED_open_in_open_callback) {
+TEST_F(FileTest, open_in_open_callback) {
     io::EventLoop loop;
 
     bool opened_1 = false;
