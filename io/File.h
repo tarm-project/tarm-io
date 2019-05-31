@@ -13,6 +13,24 @@
 namespace io {
 
 // TODO: move
+class ScopeExitGuard {
+public:
+    using Callback = std::function<void()>;
+
+    ScopeExitGuard(Callback callback) : m_callback(callback) {
+    }
+
+    ~ScopeExitGuard() {
+        if (m_callback) {
+            m_callback();
+        }
+
+    }
+private:
+    Callback m_callback;
+};
+
+// TODO: move
 struct Stat : public uv_stat_t {
 };
 
@@ -110,6 +128,7 @@ private:
     // TODO: it may be not reasonable to store by pointers here because they take to much space (>400b)
     //       also memory pool will help a lot
     uv_fs_t* m_open_request = nullptr;
+    decltype(uv_fs_t::result) m_file_handle = -1;
     uv_fs_t m_stat_req;
     //uv_fs_t m_read_req;
     uv_fs_t m_write_req;

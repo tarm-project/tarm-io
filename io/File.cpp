@@ -25,9 +25,6 @@ File::~File() {
     std::cout << "File::~File " << m_path << std::endl;
     close();
 
-    uv_fs_req_cleanup(m_open_request);
-    delete m_open_request;
-
     //uv_fs_req_cleanup(&m_read_req);
     uv_fs_req_cleanup(&m_write_req);
 
@@ -62,19 +59,15 @@ void File::close() {
     std::cout << "File::close " << m_path << std::endl;
 
     uv_fs_t close_req;
-    int status = uv_fs_close(m_loop, &close_req, m_open_request->result, nullptr);
+    int status = uv_fs_close(m_loop, &close_req, m_file_handle, nullptr);
     if (status != 0) {
         std::cout << "File::close status: " << uv_strerror(status) << std::endl;
     }
 
-    // open operation is in progress, postpone request deletion (will be deleted in callback)
-    if (m_open_request->work_req.work) {
-        m_open_request->data = nullptr;
-    } else {
-        // TODO: currently this is memory leak
-        //delete m_open_request;
-        m_open_request = nullptr;
-    }
+    // Setting request data to nullptr to allow any pending callback exit properly
+    m_file_handle = -1;
+    m_open_request->data = nullptr;
+    m_open_request = nullptr;
 
     m_open_callback = nullptr;
     m_read_callback = nullptr;
@@ -116,7 +109,7 @@ void File::stat(StatCallback callback) {
     m_stat_req.data = this;
     m_stat_callback = callback;
 
-    uv_fs_fstat(m_loop, &m_stat_req, m_open_request->result, File::on_stat);
+    uv_fs_fstat(m_loop, &m_stat_req, m_file_handle, File::on_stat);
 }
 
 const std::string& File::path() const {
@@ -181,7 +174,7 @@ void File::schedule_read(ReadReq& req) {
 
     uv_buf_t buf = uv_buf_init(req.buf.get(), READ_BUF_SIZE);
     // TODO: error handling for uv_fs_read return value
-    uv_fs_read(m_loop, &req, m_open_request->result, &buf, 1, -1, File::on_read);
+    uv_fs_read(m_loop, &req, m_file_handle, &buf, 1, -1, File::on_read);
 }
 
 bool File::has_read_buffers_in_use() const {
@@ -223,8 +216,12 @@ File::ReadState File::read_state() {
 */
 // ////////////////////////////////////// static //////////////////////////////////////
 void File::on_open(uv_fs_t* req) {
-    if (req->data == nullptr) {
+    ScopeExitGuard on_scope_exit([req]() {
+        uv_fs_req_cleanup(req);
         delete req;
+    });
+
+    if (req->data == nullptr) {
         return;
     }
 
@@ -236,6 +233,8 @@ void File::on_open(uv_fs_t* req) {
         std::cout << "'" << req->path << "'" << std::endl;
         return;
     }
+
+    this_.m_file_handle = req->result;
 
     if (this_.m_open_callback) {
         this_.m_open_callback(this_);

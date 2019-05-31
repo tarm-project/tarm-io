@@ -21,21 +21,24 @@ std::string create_file_for_open(const std::string& name_template) {
     }
     ofile.close();
 
+    uv_print_all_handles(&loop, stderr);
+
     return file_path;
 }
 
-}
+} // namespace
 
 struct FileTest : public testing::Test {
-    FileTest() :
-        m_tmp_path_template((boost::filesystem::temp_directory_path() / "XXXXXX").string()),
-        m_open_file_path(create_file_for_open(m_tmp_path_template)) {
-
+    FileTest() {
+        auto tmp_path = boost::filesystem::temp_directory_path() / "uv_cpp";
+        boost::filesystem::create_directories(tmp_path);
+        m_tmp_path_template = (tmp_path / "XXXXXX").string();
+        m_open_file_path = create_file_for_open(m_tmp_path_template);
     }
 
 protected:
-    const std::string m_tmp_path_template;
-    const std::string m_open_file_path;
+    std::string m_tmp_path_template;
+    std::string m_open_file_path;
 };
 
 TEST_F(FileTest, default_constructor) {
@@ -79,12 +82,40 @@ TEST_F(FileTest, double_open) {
     });
 
     ASSERT_EQ(0, loop.run());
+
     EXPECT_FALSE(opened_1);
     EXPECT_TRUE(opened_2);
 
 }
 
+TEST_F(FileTest, DISABLED_open_in_open_callback) {
+    io::EventLoop loop;
+
+    bool opened_1 = false;
+    bool opened_2 = false;
+
+    auto file = new io::File(loop);
+    file->open(m_open_file_path, [&](io::File& file) {
+        opened_1 = true;
+
+        file.open(m_open_file_path, [&](io::File& file) {
+            opened_2 = true;
+            file.schedule_removal();
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_TRUE(opened_1);
+    EXPECT_TRUE(opened_2);
+
+}
+
 TEST_F(FileTest, open_not_existing) {
+
+}
+
+TEST_F(FileTest, open_existing_open_not_existing) {
 
 }
 
