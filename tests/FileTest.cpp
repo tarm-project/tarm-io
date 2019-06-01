@@ -58,7 +58,7 @@ TEST_F(FileTest, open_existing) {
     bool opened = false;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file) {
+    file->open(path, [&](io::File& file, const io::Status& status) {
         opened = true;
         file.schedule_removal();
     });
@@ -77,12 +77,12 @@ TEST_F(FileTest, double_open) {
     bool opened_2 = false;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file) {
+    file->open(path, [&](io::File& file, const io::Status& status) {
         opened_1 = true;
     });
 
     // Overwriting callback and state, previous one will never be executed
-    file->open(path, [&](io::File& file) {
+    file->open(path, [&](io::File& file, const io::Status& status) {
         opened_2 = true;
         file.schedule_removal();
     });
@@ -104,10 +104,10 @@ TEST_F(FileTest, open_in_open_callback) {
     bool opened_2 = false;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file) {
+    file->open(path, [&](io::File& file, const io::Status& status) {
         opened_1 = true;
 
-        file.open(path, [&](io::File& file) {
+        file.open(path, [&](io::File& file, const io::Status& status) {
             opened_2 = true;
             file.schedule_removal();
         });
@@ -121,7 +121,23 @@ TEST_F(FileTest, open_in_open_callback) {
 }
 
 TEST_F(FileTest, open_not_existing) {
+    const std::string path = m_tmp_test_dir + "/not_exist";
 
+    io::EventLoop loop;
+
+    bool opened = false;
+    io::StatusCode status_code = io::StatusCode::UNDEFINED;
+
+    auto file = new io::File(loop);
+    file->open(path, [&](io::File& file, const io::Status& status) {
+        opened = status.ok();
+        status_code = status.status_code();
+    });
+
+    ASSERT_EQ(0, loop.run());
+
+    ASSERT_FALSE(opened);
+    EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status_code);
 }
 
 TEST_F(FileTest, open_existing_open_not_existing) {

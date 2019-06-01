@@ -227,17 +227,14 @@ void File::on_open(uv_fs_t* req) {
 
     auto& this_ = *reinterpret_cast<File*>(req->data);
 
-    if (req->result < 0) {
-        // TODO: error handling
-        fprintf(stderr, "Open error: %s\n", uv_strerror(req->result));
-        std::cout << "'" << req->path << "'" << std::endl;
-        return;
-    }
-
-    this_.m_file_handle = req->result;
+    Status status(req->result);
 
     if (this_.m_open_callback) {
-        this_.m_open_callback(this_);
+        this_.m_open_callback(this_, status);
+    }
+
+    if (status.ok()) {
+        this_.m_file_handle = req->result;
     }
 }
 

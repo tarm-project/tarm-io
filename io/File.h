@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Disposable.h"
 #include "EventLoop.h"
+#include "Status.h"
 
 #include <string>
 #include <functional>
@@ -55,9 +56,7 @@ public:
     static constexpr std::size_t READ_BUF_SIZE = 1024;
     static constexpr std::size_t READ_BUFS_NUM = 4;
 
-    using OpenCallback = std::function<void(File&)>; // TODO: error handling for this callback
-    // TODO: memory passed in the ReadCallback should be available even if File is dead
-    //       possible solution: memory pool for all files inside the EventLoop class
+    using OpenCallback = std::function<void(File&, const Status&)>;
     using ReadCallback = std::function<void(File&, std::shared_ptr<const char>, std::size_t)>;
     using EndReadCallback = std::function<void(File&)>;
     using StatCallback = std::function<void(File&, const Stat&)>;

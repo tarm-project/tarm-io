@@ -120,7 +120,13 @@ int main(int argc, char* argv[]) {
             auto file_name = extract_parameter(message);
             auto file_ptr = new io::File(loop);
 
-            file_ptr->open(file_name, [&client](io::File& file) {
+            file_ptr->open(file_name, [&client](io::File& file, const io::Status& status) {
+                if (status.fail()) {
+                    std::cerr << status.as_string() << " " << file.path() << std::endl;
+                    file.schedule_removal();
+                    return;
+                }
+
                 std::cout << "Opened file: " << file.path() << std::endl;
 
                 file.stat([](io::File& file, const io::Stat& stat) {
