@@ -9,6 +9,7 @@ namespace io {
 class Status {
 public:
     Status(int libuv_code);
+    Status(StatusCode status_code);
 
     StatusCode status_code() const;
     std::string as_string() const;

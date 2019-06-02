@@ -9,6 +9,11 @@ Status::Status(int libuv_code) :
     m_status_code(convert_from_uv(libuv_code)) {
 }
 
+    Status::Status(StatusCode status_code) :
+       m_status_code(status_code) {
+
+    }
+
 StatusCode Status::status_code() const {
     return m_status_code;
 }
@@ -16,6 +21,8 @@ StatusCode Status::status_code() const {
 std::string Status::as_string() const {
     if (m_status_code == StatusCode::OK) {
         return "OK";
+    } else if (m_status_code == StatusCode::FILE_NOT_OPEN) {
+            return "File is not opened";
     } else if (m_status_code == StatusCode::UNDEFINED) {
         return "Unknow status code from libuv: " + std::to_string(m_libuv_code);
     }

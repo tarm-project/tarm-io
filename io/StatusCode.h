@@ -11,6 +11,8 @@ namespace io {
 enum class StatusCode : uint32_t {
     OK = 0,
     UNDEFINED,
+    FILE_NOT_OPEN,
+
     ARGUMENT_LIST_TOO_LONG,
     PERMISSION_DENIED,
     ADDRESS_ALREADY_IN_USE,

@@ -90,6 +90,13 @@ void File::open(const std::string& path, OpenCallback callback) {
 }
 
 void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
+    if (!is_open()) {
+        if (read_callback) {
+            read_callback(*this, nullptr, 0, Status(StatusCode::FILE_NOT_OPEN));
+        }
+        return;
+    }
+
     m_read_callback = read_callback;
     m_end_read_callback = end_read_callback;
     m_done_read = false;
@@ -244,6 +251,7 @@ void File::on_read(uv_fs_t* uv_req) {
     this_.m_read_in_progress = false;
 
     if (req.result < 0) {
+        this_.m_done_read = true;
         req.buf.reset();
 
         if (this_.m_read_callback) {

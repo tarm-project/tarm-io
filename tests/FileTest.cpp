@@ -76,7 +76,11 @@ TEST_F(FileTest, open_existing) {
     io::StatusCode open_status_code = io::StatusCode::UNDEFINED;
 
     auto file = new io::File(loop);
+    ASSERT_FALSE(file->is_open());
+
     file->open(path, [&](io::File& file, const io::Status& status) {
+        ASSERT_TRUE(file.is_open());
+
         open_status_code = status.status_code();
         file.schedule_removal();
     });
@@ -204,6 +208,7 @@ TEST_F(FileTest, simple_read) {
         },
         [&](io::File& file) {
             end_read_called = true;
+            file.schedule_removal();
         });
     });
 
@@ -212,6 +217,30 @@ TEST_F(FileTest, simple_read) {
     ASSERT_EQ(io::StatusCode::OK, open_status_code);
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
     ASSERT_TRUE(end_read_called);
+}
+
+//TEST_F(FileTest, read_without_end_read_callback
+// schedure removal or close in read vallback
+
+TEST_F(FileTest, read_not_open_file) {
+
+    io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
+    bool end_read_called = false;
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+
+    file->read([&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+        read_status_code = read_status.status_code();
+    },
+    [&](io::File& file) {
+        end_read_called = true;
+    });
+
+    ASSERT_EQ(0, loop.run());
+
+    ASSERT_EQ(io::StatusCode::FILE_NOT_OPEN, read_status_code);
+    ASSERT_FALSE(end_read_called);
 }
 
 TEST_F(FileTest, error_handling_with_hack) {
