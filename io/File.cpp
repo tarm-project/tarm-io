@@ -227,14 +227,13 @@ void File::on_open(uv_fs_t* req) {
 
     auto& this_ = *reinterpret_cast<File*>(req->data);
 
-    Status status(req->result);
+    Status status(req->result > 0 ? 0 : req->result);
+    if (status.ok()) {
+        this_.m_file_handle = req->result;
+    }
 
     if (this_.m_open_callback) {
         this_.m_open_callback(this_, status);
-    }
-
-    if (status.ok()) {
-        this_.m_file_handle = req->result;
     }
 }
 
@@ -245,9 +244,16 @@ void File::on_read(uv_fs_t* uv_req) {
     this_.m_read_in_progress = false;
 
     if (req.result < 0) {
-        // TODO: error handling
+        req.buf.reset();
+
+        if (this_.m_read_callback) {
+            io::Status status(req.result);
+            this_.m_read_callback(this_, nullptr, 0, status);
+        }
+
+        // TODO: remove this later
         std::cout << this_.path() << std::endl;
-        fprintf(stderr, "Read error: %s\n",  uv_strerror(req.result));
+        fprintf(stderr, "File read error: %s\n",  uv_strerror(req.result));
     } else if (req.result == 0) {
         this_.m_done_read = true;
         req.buf.reset();
@@ -258,7 +264,8 @@ void File::on_read(uv_fs_t* uv_req) {
 
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
-            this_.m_read_callback(this_, req.buf, req.result);
+            io::Status status(0);
+            this_.m_read_callback(this_, req.buf, req.result, status);
         }
 
         this_.schedule_read();

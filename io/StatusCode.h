@@ -2,6 +2,10 @@
 
 #include <cstdint>
 
+// TODO: move with underlying_type
+#include <type_traits>
+#include <ostream>
+
 namespace io {
 
 enum class StatusCode : uint32_t {
@@ -84,5 +88,16 @@ enum class StatusCode : uint32_t {
 };
 
 StatusCode convert_from_uv(int libuv_code);
+
+// TODO: move
+template<typename T>
+typename std::underlying_type<T>::type as_integral(T t) {
+    return static_cast<typename std::underlying_type<T>::type>(t);
+}
+
+inline
+std::ostream& operator<<(std::ostream& out, io::StatusCode code) {
+    return out << as_integral(code);
+}
 
 } // namespace io

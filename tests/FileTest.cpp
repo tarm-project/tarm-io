@@ -3,10 +3,11 @@
 #include "io/File.h"
 #include "io/Dir.h"
 
+#include <cstdint>
 #include <boost/filesystem.hpp>
 
 namespace {
-
+// TODO: move to UT utils?????
 std::string create_temp_test_directory(const std::string& name_template) {
     const std::string tmp_dir_path = io::make_temp_dir(name_template);
     if (tmp_dir_path.empty()) {
@@ -24,6 +25,24 @@ std::string create_empty_file(const std::string& path_where_create) {
         return "";
     }
     ofile.close();
+
+    return file_path;
+}
+
+std::string create_file_for_read(const std::string& path_where_create, std::size_t size) {
+    if (size % 4 != 0) {
+        return "";
+    }
+
+    std::string file_path = path_where_create + "/file_" + std::to_string(size);
+    std::ofstream ofile(file_path, std::ios::binary);
+    if (ofile.fail()) {
+        return "";
+    }
+
+    for (std::uint32_t i = 0; i < size / 4; ++i) {
+        ofile.write(reinterpret_cast<char*>(&i), sizeof(i));
+    }
 
     return file_path;
 }
@@ -54,17 +73,16 @@ TEST_F(FileTest, open_existing) {
     ASSERT_FALSE(path.empty());
 
     io::EventLoop loop;
-
-    bool opened = false;
+    io::StatusCode open_status_code = io::StatusCode::UNDEFINED;
 
     auto file = new io::File(loop);
     file->open(path, [&](io::File& file, const io::Status& status) {
-        opened = true;
+        open_status_code = status.status_code();
         file.schedule_removal();
     });
 
     ASSERT_EQ(0, loop.run());
-    EXPECT_TRUE(opened);
+    EXPECT_EQ(io::StatusCode::OK, open_status_code);
 }
 
 TEST_F(FileTest, double_open) {
@@ -153,5 +171,49 @@ TEST_F(FileTest, close_not_open_file) {
 }
 
 TEST_F(FileTest, double_close) {
+
+}
+
+TEST_F(FileTest, simple_read) {
+    const std::size_t SIZE = 128;
+
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    io::StatusCode open_status_code = io::StatusCode::UNDEFINED;
+    io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
+    bool end_read_called = false;
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+    file->open(path, [&](io::File& file, const io::Status& open_status) {
+        open_status_code = open_status.status_code();
+
+        if (open_status.fail()) {
+            return;
+        }
+
+        file.read([&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+            read_status_code = read_status.status_code();
+            ASSERT_EQ(SIZE, size);
+
+            for(std::size_t i = 0; i < SIZE / 4; i ++) {
+                auto value = *reinterpret_cast<const std::uint32_t*>(buf.get() + (i * 4));
+                ASSERT_EQ(i, value);
+            }
+        },
+        [&](io::File& file) {
+            end_read_called = true;
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+
+    ASSERT_EQ(io::StatusCode::OK, open_status_code);
+    ASSERT_EQ(io::StatusCode::OK, read_status_code);
+    ASSERT_TRUE(end_read_called);
+}
+
+TEST_F(FileTest, error_handling_with_hack) {
 
 }

@@ -57,7 +57,7 @@ public:
     static constexpr std::size_t READ_BUFS_NUM = 4;
 
     using OpenCallback = std::function<void(File&, const Status&)>;
-    using ReadCallback = std::function<void(File&, std::shared_ptr<const char>, std::size_t)>;
+    using ReadCallback = std::function<void(File&, std::shared_ptr<const char>, std::size_t, const Status&)>;
     using EndReadCallback = std::function<void(File&)>;
     using StatCallback = std::function<void(File&, const Stat&)>;
 

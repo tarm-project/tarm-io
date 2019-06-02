@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
                     file.schedule_removal();
                 });
 
-                file.read([&client](io::File& file, std::shared_ptr<const char> buf, std::size_t size) {
+                file.read([&client](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
                     //std::cout.write(buf.get(), size);
 
                     if (client.pending_write_requesets() > 0) {
