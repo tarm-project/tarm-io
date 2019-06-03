@@ -11,7 +11,7 @@ public:
     Status(int libuv_code);
     Status(StatusCode status_code);
 
-    StatusCode status_code() const;
+    StatusCode code() const;
     std::string as_string() const;
 
     bool ok() const;

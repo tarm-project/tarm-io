@@ -81,7 +81,7 @@ TEST_F(FileTest, open_existing) {
     file->open(path, [&](io::File& file, const io::Status& status) {
         ASSERT_TRUE(file.is_open());
 
-        open_status_code = status.status_code();
+        open_status_code = status.code();
         file.schedule_removal();
     });
 
@@ -153,7 +153,7 @@ TEST_F(FileTest, open_not_existing) {
     auto file = new io::File(loop);
     file->open(path, [&](io::File& file, const io::Status& status) {
         opened = status.ok();
-        status_code = status.status_code();
+        status_code = status.code();
     });
 
     ASSERT_EQ(0, loop.run());
@@ -193,14 +193,14 @@ TEST_F(FileTest, simple_read) {
     io::EventLoop loop;
     auto file = new io::File(loop);
     file->open(path, [&](io::File& file, const io::Status& open_status) {
-        open_status_code = open_status.status_code();
+        open_status_code = open_status.code();
 
         if (open_status.fail()) {
             return;
         }
 
         file.read([&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
-            read_status_code = read_status.status_code();
+            read_status_code = read_status.code();
             ASSERT_EQ(SIZE, size);
 
             for(std::size_t i = 0; i < SIZE / 4; i ++) {
@@ -265,7 +265,7 @@ TEST_F(FileTest, read_not_open_file) {
     auto file = new io::File(loop);
 
     file->read([&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
-        read_status_code = read_status.status_code();
+        read_status_code = read_status.code();
     },
     [&](io::File& file) {
         end_read_called = true;
@@ -297,7 +297,7 @@ TEST_F(FileTest, read_block) {
             ASSERT_NE(nullptr, buf);
             ASSERT_EQ(16, size);
 
-            read_status_code = read_status.status_code();
+            read_status_code = read_status.code();
 
             EXPECT_EQ(2, *reinterpret_cast<const std::uint32_t*>(buf.get() + 0));
             EXPECT_EQ(3, *reinterpret_cast<const std::uint32_t*>(buf.get() + 4));
@@ -309,6 +309,28 @@ TEST_F(FileTest, read_block) {
     ASSERT_EQ(0, loop.run());
 
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
+
+    file->schedule_removal();
+}
+
+TEST_F(FileTest, read_block_not_existing) {
+    auto path = m_tmp_test_dir + "/not_exists";
+
+    io::EventLoop loop;
+
+    io::StatusCode read_status = io::StatusCode::UNDEFINED;
+
+    auto file = new io::File(loop);
+    file->read_block(0, 16, [&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& status) {
+        EXPECT_EQ(nullptr, buf);
+        EXPECT_EQ(0, size);
+        EXPECT_FALSE(status.ok());
+
+        read_status = status.code();
+    });
+
+    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(read_status, io::StatusCode::FILE_NOT_OPEN);
 
     file->schedule_removal();
 }

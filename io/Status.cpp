@@ -14,7 +14,7 @@ Status::Status(int libuv_code) :
 
     }
 
-StatusCode Status::status_code() const {
+StatusCode Status::code() const {
     return m_status_code;
 }
 
