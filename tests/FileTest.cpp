@@ -243,6 +243,38 @@ TEST_F(FileTest, read_not_open_file) {
     ASSERT_FALSE(end_read_called);
 }
 
+TEST_F(FileTest, read_block) {
+    const std::size_t SIZE = 128;
+
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+
+    io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
+
+    file->open(path, [&](io::File& file, const io::Status& open_status) {
+        ASSERT_TRUE(open_status.ok());
+
+        file.read_block(8, 16, [&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+            ASSERT_NE(nullptr, buf);
+            ASSERT_EQ(16, size);
+
+            read_status_code = read_status.status_code();
+
+            EXPECT_EQ(2, *reinterpret_cast<const std::uint32_t*>(buf.get() + 0));
+            EXPECT_EQ(3, *reinterpret_cast<const std::uint32_t*>(buf.get() + 4));
+            EXPECT_EQ(4, *reinterpret_cast<const std::uint32_t*>(buf.get() + 8));
+            EXPECT_EQ(5, *reinterpret_cast<const std::uint32_t*>(buf.get() + 12));
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+
+    ASSERT_EQ(io::StatusCode::OK, read_status_code);
+}
+
 TEST_F(FileTest, error_handling_with_hack) {
 
 }

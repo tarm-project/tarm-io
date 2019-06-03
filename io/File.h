@@ -78,6 +78,8 @@ public:
     void read(ReadCallback callback);
     void read(ReadCallback read_callback, EndReadCallback end_read_callback);
 
+    void read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback);
+
     const std::string& path() const;
 
     void stat(StatCallback callback);
@@ -93,6 +95,7 @@ public:
     // statics
     static void on_open(uv_fs_t* req);
     static void on_read(uv_fs_t* req);
+    static void on_read_block(uv_fs_t* req);
     static void on_close(uv_fs_t* req);
     static void on_stat(uv_fs_t* req);
 

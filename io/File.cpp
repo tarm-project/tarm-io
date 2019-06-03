@@ -106,6 +106,40 @@ void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     schedule_read();
 }
 
+namespace {
+
+struct ReadBlockReq : public uv_fs_t {
+    ReadBlockReq() {
+        memset(this, 0, sizeof(uv_fs_t));
+    }
+
+    ~ReadBlockReq() {
+    }
+
+    std::shared_ptr<char> buf;
+};
+
+}
+
+void File::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback) {
+    if (!is_open()) {
+        if (read_callback) {
+            read_callback(*this, nullptr, 0, Status(StatusCode::FILE_NOT_OPEN));
+        }
+        return;
+    }
+
+    m_read_callback = read_callback;
+
+    auto req = new ReadBlockReq;
+    req->buf = std::shared_ptr<char>(new char[bytes_count], [](char* p) {delete[] p;});
+    req->data = this;
+
+    uv_buf_t buf = uv_buf_init(req->buf.get(), bytes_count);
+    // TODO: error handling for uv_fs_read return value
+    uv_fs_read(m_loop, req, m_file_handle, &buf, 1, offset, File::on_read_block);
+}
+
 void File::read(ReadCallback callback) {
     read(callback, nullptr);
 }
@@ -242,6 +276,26 @@ void File::on_open(uv_fs_t* req) {
     if (this_.m_open_callback) {
         this_.m_open_callback(this_, status);
     }
+}
+
+void File::on_read_block(uv_fs_t* uv_req) {
+    auto& req = *reinterpret_cast<ReadBlockReq*>(uv_req);
+    auto& this_ = *reinterpret_cast<File*>(req.data);
+
+    if (req.result < 0) {
+        // TODO: error handling!
+
+        // TODO: remove this later
+        std::cout << this_.path() << std::endl;
+        fprintf(stderr, "File read error: %s\n",  uv_strerror(req.result));
+    } else if (req.result > 0) {
+        if (this_.m_read_callback) {
+            io::Status status(0);
+            this_.m_read_callback(this_, req.buf, req.result, status);
+        }
+    }
+
+    delete &req;
 }
 
 void File::on_read(uv_fs_t* uv_req) {
