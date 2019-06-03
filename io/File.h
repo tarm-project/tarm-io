@@ -53,7 +53,7 @@ struct ReadReq : public uv_fs_t {
 
 class File : public Disposable {
 public:
-    static constexpr std::size_t READ_BUF_SIZE = 1024;
+    static constexpr std::size_t READ_BUF_SIZE = 1024 * 4;
     static constexpr std::size_t READ_BUFS_NUM = 4;
 
     using OpenCallback = std::function<void(File&, const Status&)>;

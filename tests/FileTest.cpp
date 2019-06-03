@@ -221,6 +221,38 @@ TEST_F(FileTest, simple_read) {
     ASSERT_TRUE(end_read_called);
 }
 
+TEST_F(FileTest, read_10mb_file) {
+    const std::size_t SIZE = 10 * 1024 * 1024;
+    const std::size_t READ_BUF_SIZE = io::File::READ_BUF_SIZE;
+
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    size_t read_counter = 0;
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+    file->open(path, [&](io::File& file, const io::Status& open_status) {
+        ASSERT_FALSE(open_status.fail());
+
+        file.read([&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+            ASSERT_EQ(READ_BUF_SIZE, size);
+
+            for (size_t i = 0; i < size; i += 4) {
+                auto value = *reinterpret_cast<const std::uint32_t*>(buf.get() + i);
+                ASSERT_EQ(read_counter, value) << " read_counter= " << read_counter;
+
+                ++read_counter;
+            }
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(SIZE, read_counter * 4);
+
+    file->schedule_removal();
+}
+
 //TEST_F(FileTest, read_without_end_read_callback
 // schedure removal or close in read vallback
 
