@@ -48,7 +48,7 @@ void File::schedule_removal() {
 }
 
 bool File::is_open() const {
-    return m_open_request != nullptr;
+    return m_file_handle != -1;
 }
 
 void File::close() {

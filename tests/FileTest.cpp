@@ -203,6 +203,8 @@ TEST_F(FileTest, simple_read) {
             read_status_code = read_status.code();
             ASSERT_EQ(SIZE, size);
 
+            EXPECT_TRUE(file.is_open());
+
             for(std::size_t i = 0; i < SIZE / 4; i ++) {
                 auto value = *reinterpret_cast<const std::uint32_t*>(buf.get() + (i * 4));
                 ASSERT_EQ(i, value);
@@ -278,6 +280,47 @@ TEST_F(FileTest, read_not_open_file) {
 
     file->schedule_removal();
 }
+
+TEST_F(FileTest, close_in_read) {
+    const std::size_t SIZE = 1024 * 512;
+
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+
+    std::size_t counter = 0;
+    bool end_read_called = false;
+
+    file->open(path, [&counter, &end_read_called](io::File& file, const io::Status& open_status) {
+        ASSERT_TRUE(open_status.ok());
+
+        file.read([&counter](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+            ASSERT_TRUE(read_status.ok());
+            EXPECT_LT(counter, 5);
+
+            if (counter == 5) {
+                file.close();
+                EXPECT_FALSE(file.is_open());
+                return;
+            }
+
+            ++counter;
+        },
+        [&end_read_called](io::File& file) {
+            end_read_called = true;
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_EQ(5, counter);
+    EXPECT_FALSE(file->is_open());
+    EXPECT_FALSE(end_read_called);
+    file->schedule_removal();
+}
+
+// read in failed to opened file
 
 TEST_F(FileTest, read_block) {
     const std::size_t SIZE = 128;
