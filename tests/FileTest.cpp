@@ -160,6 +160,8 @@ TEST_F(FileTest, open_not_existing) {
 
     ASSERT_FALSE(opened);
     EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status_code);
+
+    file->schedule_removal();
 }
 
 TEST_F(FileTest, open_existing_open_not_existing) {
@@ -241,6 +243,8 @@ TEST_F(FileTest, read_not_open_file) {
 
     ASSERT_EQ(io::StatusCode::FILE_NOT_OPEN, read_status_code);
     ASSERT_FALSE(end_read_called);
+
+    file->schedule_removal();
 }
 
 TEST_F(FileTest, read_block) {
@@ -273,6 +277,8 @@ TEST_F(FileTest, read_block) {
     ASSERT_EQ(0, loop.run());
 
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
+
+    file->schedule_removal();
 }
 
 TEST_F(FileTest, error_handling_with_hack) {
