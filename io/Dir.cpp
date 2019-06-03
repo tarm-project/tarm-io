@@ -1,6 +1,7 @@
 #include "Dir.h"
 
 #include <cstring>
+#include <assert.h>
 
 // TODO: remove
 #include <iostream>

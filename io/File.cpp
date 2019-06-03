@@ -66,8 +66,10 @@ void File::close() {
 
     // Setting request data to nullptr to allow any pending callback exit properly
     m_file_handle = -1;
-    m_open_request->data = nullptr;
-    m_open_request = nullptr;
+    if (m_open_request) {
+        m_open_request->data = nullptr;
+        m_open_request = nullptr;
+    }
 
     m_open_callback = nullptr;
     m_read_callback = nullptr;
@@ -258,6 +260,10 @@ File::ReadState File::read_state() {
 // ////////////////////////////////////// static //////////////////////////////////////
 void File::on_open(uv_fs_t* req) {
     ScopeExitGuard on_scope_exit([req]() {
+        if (req->data) {
+            reinterpret_cast<File*>(req->data)->m_open_request = nullptr;
+        }
+
         uv_fs_req_cleanup(req);
         delete req;
     });
