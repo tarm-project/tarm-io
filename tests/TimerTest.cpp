@@ -34,7 +34,31 @@ TEST_F(TimerTest, no_repeat) {
     ASSERT_EQ(0, loop.run());
 
     const auto timer_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    EXPECT_GE(TIMEOUT_MS, timer_duration);
+    EXPECT_GE(timer_duration, TIMEOUT_MS);
+
+    EXPECT_EQ(1, call_counter);
+}
+
+TEST_F(TimerTest, zero_timeot) {
+    // Note: in this test we check that timer is called on next loop cycle
+
+    io::EventLoop loop;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto end_time = start_time;
+
+    size_t call_counter = 0;
+
+    io::Timer timer(loop);
+    timer.start(0, 0, [&](io::Timer& timer) {
+        end_time = std::chrono::high_resolution_clock::now();
+        ++call_counter;
+    });
+
+    ASSERT_EQ(0, loop.run());
+
+    const auto timer_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    EXPECT_LE(timer_duration, 100);
 
     EXPECT_EQ(1, call_counter);
 }
