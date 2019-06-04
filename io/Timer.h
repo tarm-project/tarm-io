@@ -8,7 +8,7 @@
 namespace io {
 
 // TODO: inherit from Disposable??????
-class Timer : public uv_timer_t {
+class Timer  {
 public:
     using Callback = std::function<void(Timer&)>;
 
@@ -28,7 +28,9 @@ public:
     // statics
     static void on_timer(uv_timer_t* handle);
 private:
-    std::reference_wrapper<EventLoop> m_loop;
+    uv_timer_t m_timer;
+
+    EventLoop* m_loop = nullptr;
     Callback m_callback = nullptr;
 };
 

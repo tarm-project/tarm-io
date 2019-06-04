@@ -4,6 +4,7 @@ list(APPEND TESTS_LIST
     DisposableTest.cpp
     EventLoopTest.cpp
     FileTest.cpp
+    TimerTest.cpp
 )
 
 include_directories(
