@@ -48,7 +48,7 @@ TEST_F(EventLoopTest, work_all_callbacks) {
     ASSERT_TRUE(done_executed);
 }
 
-TEST_F(EventLoopTest, work_only_work_done_callback) {
+TEST_F(EventLoopTest, only_work_done_callback) {
     // invalid case
     bool done_executed = false;
 
@@ -62,4 +62,22 @@ TEST_F(EventLoopTest, work_only_work_done_callback) {
 
     ASSERT_EQ(0, event_loop.run());
     ASSERT_FALSE(done_executed);
+}
+
+TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
+    io::EventLoop loop;
+
+    size_t counter = 0;
+    size_t handle = 0;
+
+    handle = loop.schedule_call_on_each_loop_cycle([&handle, &counter, &loop]() {
+        ++counter;
+
+        if (counter == 500) {
+            loop.stop_call_on_each_loop_cycle(handle);
+        }
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_EQ(500, counter);
 }
