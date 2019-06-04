@@ -378,6 +378,32 @@ TEST_F(FileTest, read_block_not_existing) {
     file->schedule_removal();
 }
 
+TEST_F(FileTest, slow_read_data_consumer) {
+    // TODO: add test description
+    const std::size_t SIZE = 512 * 1024;
+
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    io::EventLoop loop;
+
+    std::vector<std::shared_ptr<const char>> captured_bufs;
+
+    auto file = new io::File(loop);
+    file->open(path, [&captured_bufs](io::File& file, const io::Status& open_status) {
+        ASSERT_TRUE(open_status.ok());
+
+        file.read([&captured_bufs](io::File& file, std::shared_ptr<const char> buf, std::size_t, const io::Status& read_status){
+            ASSERT_TRUE(read_status.ok());
+
+            captured_bufs.push_back(buf);
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    file->schedule_removal();
+}
+
 TEST_F(FileTest, error_handling_with_hack) {
 
 }
