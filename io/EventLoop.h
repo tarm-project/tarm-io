@@ -43,6 +43,7 @@ public:
     static void on_idle(uv_idle_t* handle);
 
 private:
+    // TODO: handle wrap around
     std::size_t m_idle_it_counter = 0;
     std::unordered_map<size_t, std::unique_ptr<Idle>> m_each_loop_cycle_handlers;
 };
