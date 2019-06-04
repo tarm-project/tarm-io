@@ -298,7 +298,7 @@ TEST_F(FileTest, close_in_read) {
 
         file.read([&counter](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
             ASSERT_TRUE(read_status.ok());
-            EXPECT_LT(counter, 5);
+            EXPECT_LE(counter, 5);
 
             if (counter == 5) {
                 file.close();

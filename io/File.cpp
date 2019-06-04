@@ -162,6 +162,10 @@ const std::string& File::path() const {
 void File::schedule_read() {
     //assert(m_used_read_bufs <= READ_BUFS_NUM);
 
+    if (!is_open()) {
+        return;
+    }
+
     if (m_read_in_progress) {
         return;
     }
@@ -288,6 +292,10 @@ void File::on_read_block(uv_fs_t* uv_req) {
     auto& req = *reinterpret_cast<ReadBlockReq*>(uv_req);
     auto& this_ = *reinterpret_cast<File*>(req.data);
 
+    if (!this_.is_open()) {
+        return;
+    }
+
     if (req.result < 0) {
         // TODO: error handling!
 
@@ -307,6 +315,11 @@ void File::on_read_block(uv_fs_t* uv_req) {
 void File::on_read(uv_fs_t* uv_req) {
     auto& req = *reinterpret_cast<ReadReq*>(uv_req);
     auto& this_ = *reinterpret_cast<File*>(req.data);
+
+    if (!this_.is_open()) {
+        req.buf.reset();
+        return;
+    }
 
     this_.m_read_in_progress = false;
 
