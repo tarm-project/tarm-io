@@ -34,6 +34,10 @@ public:
     std::size_t schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback);
     void stop_call_on_each_loop_cycle(std::size_t handle);
 
+    // TODO: explain this
+    void start_dummy_idle();
+    void stop_dummy_idle();
+
     // TODO: handle(convert) error codes????
     int run();
 
@@ -42,10 +46,14 @@ public:
     static void on_after_work(uv_work_t* req, int status);
     static void on_idle(uv_idle_t* handle);
 
+    static void on_dummy_idle(uv_idle_t* handle);
+
 private:
     // TODO: handle wrap around
     std::size_t m_idle_it_counter = 0;
     std::unordered_map<size_t, std::unique_ptr<Idle>> m_each_loop_cycle_handlers;
+
+    uv_idle_t* m_dummy_idle = nullptr;
 };
 
 } // namespace io

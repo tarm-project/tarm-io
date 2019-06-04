@@ -2,6 +2,7 @@
 
 #include "io/File.h"
 #include "io/Dir.h"
+#include "io/Timer.h"
 
 #include <cstdint>
 #include <boost/filesystem.hpp>
@@ -380,7 +381,7 @@ TEST_F(FileTest, read_block_not_existing) {
 
 TEST_F(FileTest, slow_read_data_consumer) {
     // TODO: add test description
-    const std::size_t SIZE = 512 * 1024;
+    const std::size_t SIZE = io::File::READ_BUF_SIZE * io::File::READ_BUFS_NUM * 8;
 
     auto path = create_file_for_read(m_tmp_test_dir, SIZE);
     ASSERT_FALSE(path.empty());
@@ -389,14 +390,23 @@ TEST_F(FileTest, slow_read_data_consumer) {
 
     std::vector<std::shared_ptr<const char>> captured_bufs;
 
+    io::Timer timer(loop);
+    timer.start(500, 50, [&captured_bufs](io::Timer& timer) {
+        captured_bufs.clear();
+        // TODO: need check bufs data here
+    });
+
     auto file = new io::File(loop);
-    file->open(path, [&captured_bufs](io::File& file, const io::Status& open_status) {
+    file->open(path, [&captured_bufs, &timer](io::File& file, const io::Status& open_status) {
         ASSERT_TRUE(open_status.ok());
 
         file.read([&captured_bufs](io::File& file, std::shared_ptr<const char> buf, std::size_t, const io::Status& read_status){
             ASSERT_TRUE(read_status.ok());
 
             captured_bufs.push_back(buf);
+        },
+        [&timer](io::File& file) {
+            timer.stop();
         });
     });
 
