@@ -22,7 +22,10 @@ public:
     Timer(Timer&&) = default;
     Timer& operator=(Timer&&) = default;
 
-    void start(Callback callback, uint64_t timeout_ms, uint64_t repeat_ms);
+    // If timeout is zero, the callback fires on the next event loop iteration.
+    // If repeat is non-zero, the callback fires first after timeout milliseconds
+    // and then repeatedly after repeat milliseconds.
+    void start(uint64_t timeout_ms, uint64_t repeat_ms, Callback callback);
     void stop();
 
     // statics

@@ -16,7 +16,7 @@ Timer::~Timer() {
     uv_close(reinterpret_cast<uv_handle_t*>(&m_timer), nullptr);
 }
 
-void Timer::start(Callback callback, uint64_t timeout_ms, uint64_t repeat_ms) {
+void Timer::start(uint64_t timeout_ms, uint64_t repeat_ms, Callback callback) {
     uv_timer_start(&m_timer, Timer::on_timer, timeout_ms, repeat_ms);
     m_callback = callback;
 }
