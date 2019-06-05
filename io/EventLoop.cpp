@@ -72,26 +72,26 @@ void EventLoop::stop_call_on_each_loop_cycle(std::size_t handle) {
 }
 
 void EventLoop::start_dummy_idle() {
-    if (m_dummy_idle && m_dummy_idle->data) {
+    if (m_idle_ref_counter++) {
         return; // idle is already running
     }
 
     if (m_dummy_idle == nullptr) {
-        m_dummy_idle = new uv_idle_t;
-        uv_idle_init(this, m_dummy_idle);
+        m_dummy_idle = new uv_timer_t;
+        uv_timer_init(this, m_dummy_idle);
     }
 
     m_dummy_idle->data = this;
-    uv_idle_start(m_dummy_idle, EventLoop::on_dummy_idle);
+    uv_timer_start(m_dummy_idle, EventLoop::on_dummy_idle, 1, 1);
 }
 
 void EventLoop::stop_dummy_idle() {
-    if (m_dummy_idle == nullptr || m_dummy_idle->data == nullptr) {
+    if (--m_idle_ref_counter) {
         return;
     }
 
     m_dummy_idle->data = nullptr;
-    uv_idle_stop(m_dummy_idle);
+    uv_timer_stop(m_dummy_idle);
 }
 
 ////////////////////////////////////// static //////////////////////////////////////
@@ -125,7 +125,7 @@ void EventLoop::on_idle(uv_idle_t* handle) {
     }
 }
 
-void EventLoop::on_dummy_idle(uv_idle_t* handle) {
+void EventLoop::on_dummy_idle(uv_timer_t* handle) {
     // Do nothing
 }
 

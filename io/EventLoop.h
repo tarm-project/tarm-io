@@ -46,14 +46,16 @@ public:
     static void on_after_work(uv_work_t* req, int status);
     static void on_idle(uv_idle_t* handle);
 
-    static void on_dummy_idle(uv_idle_t* handle);
+    static void on_dummy_idle(uv_timer_t* handle);
 
 private:
     // TODO: handle wrap around
     std::size_t m_idle_it_counter = 0;
     std::unordered_map<size_t, std::unique_ptr<Idle>> m_each_loop_cycle_handlers;
 
-    uv_idle_t* m_dummy_idle = nullptr;
+    // TODO: timer is cheaper to use than callback called on every loop iteration like idle or check
+    uv_timer_t* m_dummy_idle = nullptr;
+    std::int64_t m_idle_ref_counter = 0;
 };
 
 } // namespace io
