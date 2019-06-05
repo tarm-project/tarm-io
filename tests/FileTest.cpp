@@ -153,6 +153,8 @@ TEST_F(FileTest, open_not_existing) {
 
     auto file = new io::File(loop);
     file->open(path, [&](io::File& file, const io::Status& status) {
+        EXPECT_FALSE(file.is_open());
+        
         opened = status.ok();
         status_code = status.code();
     });
@@ -357,9 +359,7 @@ TEST_F(FileTest, read_block) {
     file->schedule_removal();
 }
 
-TEST_F(FileTest, read_block_not_existing) {
-    auto path = m_tmp_test_dir + "/not_exists";
-
+TEST_F(FileTest, read_block_not_opened) {
     io::EventLoop loop;
 
     io::StatusCode read_status = io::StatusCode::UNDEFINED;

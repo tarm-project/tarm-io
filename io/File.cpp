@@ -181,10 +181,10 @@ void File::schedule_read() {
 
     if (!found_free_buffer) {
         std::cout << "No free buffer found" << std::endl;
-        m_loop->start_dummy_idle();
+        //m_loop->start_dummy_idle();
         return;
     } else {
-        m_loop->stop_dummy_idle();
+        //m_loop->stop_dummy_idle();
     }
 
 
@@ -348,7 +348,7 @@ void File::on_read(uv_fs_t* uv_req) {
         }
 
         uv_print_all_handles(this_.m_loop, stdout);
-        this_.m_loop->stop_dummy_idle();
+        //this_.m_loop->stop_dummy_idle();
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             io::Status status(0);
