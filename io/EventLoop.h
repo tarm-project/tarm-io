@@ -48,8 +48,6 @@ public:
     static void on_idle(uv_idle_t* handle);
     static void on_each_loop_cycle_handler_close(uv_handle_t* handle);
 
-    static void on_dummy_idle(uv_timer_t* handle);
-
 private:
     // TODO: handle wrap around
     std::size_t m_idle_it_counter = 0;
