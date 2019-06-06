@@ -11,9 +11,17 @@ Timer::Timer(EventLoop& loop) :
     m_timer.data = this;
 }
 
+namespace {
+
+void on_timer_close(uv_handle_t* handle) {
+
+}
+
+} // namespace
+
 Timer::~Timer() {
     uv_timer_stop(&m_timer);
-    uv_close(reinterpret_cast<uv_handle_t*>(&m_timer), nullptr);
+    uv_close(reinterpret_cast<uv_handle_t*>(&m_timer), on_timer_close);
 }
 
 void Timer::start(uint64_t timeout_ms, uint64_t repeat_ms, Callback callback) {

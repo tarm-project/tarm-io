@@ -10,6 +10,7 @@ namespace io {
 // TODO: move
 struct Idle : public uv_idle_t {
     std::function<void()> callback = nullptr;
+    std::size_t id = 0;
 };
 
 class EventLoop : public uv_loop_t {
@@ -45,6 +46,7 @@ public:
     static void on_work(uv_work_t* req);
     static void on_after_work(uv_work_t* req, int status);
     static void on_idle(uv_idle_t* handle);
+    static void on_each_loop_cycle_handler_close(uv_handle_t* handle);
 
     static void on_dummy_idle(uv_timer_t* handle);
 

@@ -52,6 +52,7 @@ std::size_t EventLoop::schedule_call_on_each_loop_cycle(EachLoopCycleCallback ca
     auto ptr = std::make_unique<Idle>();
     uv_idle_init(this, ptr.get());
     ptr->data = this;
+    ptr->id = m_idle_it_counter;
     ptr->callback = callback;
 
     uv_idle_start(ptr.get(), EventLoop::on_idle);
@@ -68,7 +69,7 @@ void EventLoop::stop_call_on_each_loop_cycle(std::size_t handle) {
     }
 
     uv_idle_stop(it->second.get());
-    m_each_loop_cycle_handlers.erase(it);
+    uv_close(reinterpret_cast<uv_handle_t*>(it->second.get()), EventLoop::on_each_loop_cycle_handler_close);
 }
 
 void EventLoop::start_dummy_idle() {
@@ -123,6 +124,18 @@ void EventLoop::on_idle(uv_idle_t* handle) {
     if (idle.callback) {
         idle.callback();
     }
+}
+
+void EventLoop::on_each_loop_cycle_handler_close(uv_handle_t* handle) {
+    auto& idle = *reinterpret_cast<Idle*>(handle);
+    auto& this_ = *reinterpret_cast<EventLoop*>(handle->data);
+
+    auto it = this_.m_each_loop_cycle_handlers.find(idle.id);
+    if (it == this_.m_each_loop_cycle_handlers.end()) {
+        return;
+    }
+
+    this_.m_each_loop_cycle_handlers.erase(it);
 }
 
 void EventLoop::on_dummy_idle(uv_timer_t* handle) {

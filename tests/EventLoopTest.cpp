@@ -81,3 +81,5 @@ TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
     ASSERT_EQ(0, loop.run());
     EXPECT_EQ(500, counter);
 }
+
+// TODO: multiple schedule_on_each_loop_cycle and stopping them not in order of creation
