@@ -12,7 +12,8 @@ namespace io {
 TcpServer::TcpServer(EventLoop& loop) :
     m_loop(&loop),
     m_pool(std::make_unique<boost::pool<>>(TcpServer::READ_BUFFER_SIZE)) {
-    uv_tcp_init(&loop, this);
+    uv_tcp_init(&loop, &m_server_handle);
+    m_server_handle.data = this;
 }
 
 TcpServer::~TcpServer() {
@@ -21,7 +22,7 @@ TcpServer::~TcpServer() {
 
 int TcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
     uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
-    return uv_tcp_bind(this, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
+    return uv_tcp_bind(&m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
 }
 
 int TcpServer::listen(DataReceivedCallback data_receive_callback,
@@ -29,7 +30,7 @@ int TcpServer::listen(DataReceivedCallback data_receive_callback,
                       int backlog_size) {
     m_data_receive_callback = data_receive_callback;
     m_new_connection_callback = new_connection_callback;
-    return uv_listen((uv_stream_t*) this, backlog_size, TcpServer::on_new_connection);
+    return uv_listen(reinterpret_cast<uv_stream_t*>(&m_server_handle), backlog_size, TcpServer::on_new_connection);
 }
 
 void TcpServer::shutdown() {
@@ -40,20 +41,10 @@ void TcpServer::shutdown() {
         v->shutdown();
     }
 
-
-    //uv_shutdown
-
-    // auto shutdown_req = new uv_shutdown_t;
-    //uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(this), TcpServer::on_server_shutdown);
-
-    uv_close(reinterpret_cast<uv_handle_t*>(this), nullptr /*on_close*/);
+    uv_close(reinterpret_cast<uv_handle_t*>(&m_server_handle), nullptr /*on_close*/);
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
-//static void close_cb(uv_handle_t* handle) {
-//
-//  free(conn);
-//}
 
 void TcpServer::alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     // TODO: probably use suggested_size via handling hash table of different pools by block size
@@ -114,7 +105,7 @@ void TcpServer::on_new_connection(uv_stream_t* server, int status) {
         return;
     }
 
-    auto& this_ = reinterpret_cast<TcpServer&>(*server);
+    auto& this_ = *reinterpret_cast<TcpServer*>(server->data);
     auto tcp_client = new TcpClient(*this_.m_loop, this_);
 
     if (uv_accept(server, reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream())) == 0) {

@@ -16,7 +16,7 @@
 
 namespace io {
 
-class TcpServer : public uv_tcp_t {
+class TcpServer {
 public:
     const size_t READ_BUFFER_SIZE = 65536;
 
@@ -52,6 +52,9 @@ public:
 private:
 
     EventLoop* m_loop; // TODO: reuse loop var from handles instead of holding custom one
+
+    uv_tcp_t m_server_handle;
+
     // TODO: most likely this data member is not need to be data member but some var on stack
     struct sockaddr_in m_unix_addr;
 
