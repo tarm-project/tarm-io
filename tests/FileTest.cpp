@@ -6,6 +6,8 @@
 
 #include <cstdint>
 #include <boost/filesystem.hpp>
+#include <thread>
+#include <mutex>
 
 namespace {
 // TODO: move to UT utils?????
@@ -154,7 +156,7 @@ TEST_F(FileTest, open_not_existing) {
     auto file = new io::File(loop);
     file->open(path, [&](io::File& file, const io::Status& status) {
         EXPECT_FALSE(file.is_open());
-        
+
         opened = status.ok();
         status_code = status.code();
     });
@@ -389,28 +391,68 @@ TEST_F(FileTest, slow_read_data_consumer) {
     io::EventLoop loop;
 
     std::vector<std::shared_ptr<const char>> captured_bufs;
+    std::mutex mutex;
+    bool exit_reseting_thread = false;
 
-    io::Timer timer(loop);
-    timer.start(500, 50, [&captured_bufs](io::Timer& timer) {
-        captured_bufs.clear();
-        // TODO: need check bufs data here
+    std::size_t bytes_read = 0;
+
+    // Using separate thread here instead of timer to not block event loop
+    // and ensure if read is paused loop will not exit and continue to block on loop.run()
+    std::thread t([&mutex, &captured_bufs, &exit_reseting_thread]() {
+        size_t iterations_counter = 0;
+
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            std::lock_guard<std::mutex> guard(mutex);
+            if (exit_reseting_thread) {
+                break;
+            }
+
+            if (captured_bufs.size() == io::File::READ_BUFS_NUM || iterations_counter == 3) {
+                iterations_counter = 0;
+                captured_bufs.clear();
+            }
+
+            ++iterations_counter;
+        }
+    });
+
+    io::ScopeExitGuard scope_guard([&]() {
+        t.join();
     });
 
     auto file = new io::File(loop);
-    file->open(path, [&captured_bufs, &timer](io::File& file, const io::Status& open_status) {
+    file->open(path, [&captured_bufs, &mutex, &exit_reseting_thread, &bytes_read](io::File& file, const io::Status& open_status) {
         ASSERT_TRUE(open_status.ok());
 
-        file.read([&captured_bufs](io::File& file, std::shared_ptr<const char> buf, std::size_t, const io::Status& read_status){
+        file.read([&captured_bufs, &mutex, &bytes_read](io::File& file,
+                                                        std::shared_ptr<const char> buf,
+                                                        std::size_t size,
+                                                        const io::Status& read_status){
             ASSERT_TRUE(read_status.ok());
 
+            bytes_read += size;
+
+            std::lock_guard<std::mutex> guard(mutex);
             captured_bufs.push_back(buf);
         },
-        [&timer](io::File& file) {
-            timer.stop();
+        [&mutex, &exit_reseting_thread](io::File& file) {
+            std::lock_guard<std::mutex> guard(mutex);
+            exit_reseting_thread = true;
         });
     });
 
     ASSERT_EQ(0, loop.run());
+    EXPECT_EQ(SIZE, bytes_read);
+
+    {
+        std::lock_guard<std::mutex> guard(mutex);
+        exit_reseting_thread = true;
+    }
+
+    //t.join();
+
     file->schedule_removal();
 }
 
