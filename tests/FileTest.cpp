@@ -443,6 +443,8 @@ TEST_F(FileTest, slow_read_data_consumer) {
         });
     });
 
+    // TODO: check from logger callback thatfor message like "No free buffer found"
+
     ASSERT_EQ(0, loop.run());
     EXPECT_EQ(SIZE, bytes_read);
 
@@ -450,8 +452,6 @@ TEST_F(FileTest, slow_read_data_consumer) {
         std::lock_guard<std::mutex> guard(mutex);
         exit_reseting_thread = true;
     }
-
-    //t.join();
 
     file->schedule_removal();
 }

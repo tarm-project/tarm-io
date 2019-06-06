@@ -187,7 +187,6 @@ void File::schedule_read() {
         //m_loop->stop_dummy_idle();
     }
 
-
     std::cout << "using buffer with index: " << i << std::endl;
 
     ReadReq& read_req = m_read_reqs[i];
@@ -199,6 +198,7 @@ void File::schedule_read() {
 
 void File::schedule_read(ReadReq& req) {
     m_read_in_progress = true;
+    m_loop->start_dummy_idle();
 
     if (req.raw_buf == nullptr) {
         req.raw_buf = new char[READ_BUF_SIZE];
@@ -207,6 +207,7 @@ void File::schedule_read(ReadReq& req) {
     // TODO: comments on this shared pointer
     req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* p) {
         req.is_free = true;
+        m_loop->stop_dummy_idle();
 
         if (this->m_need_reschedule_remove) {
             if (!has_read_buffers_in_use()) {
