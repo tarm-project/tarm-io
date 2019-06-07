@@ -9,16 +9,40 @@
 
 namespace io {
 
-TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
-    Disposable(loop),
-    m_server(&server) {
+TcpClient::TcpClient(EventLoop& loop) :
+    Disposable(loop) {
     uv_tcp_init(&loop, &m_stream);
     m_stream.data = this;
 }
 
+TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
+    TcpClient(loop) {
+    m_server = &server;
+}
+
 TcpClient::~TcpClient() {
     std::cout << "TcpClient::~TcpClient" << std::endl;
+
+    if (m_connect_req) {
+        delete m_connect_req;
+    }
+
     //close();
+}
+
+void TcpClient::connect(const std::string& address, std::uint16_t port, ConnectCallback callback) {
+    struct sockaddr_in addr;
+
+    uv_ip4_addr(address.c_str(), port, &addr); // TODO: error handling
+
+    if (m_connect_req == nullptr) {
+        m_connect_req = new uv_connect_t;
+        m_connect_req->data = this;
+    }
+
+    m_connect_callback = callback;
+
+    uv_tcp_connect(m_connect_req, &m_stream, reinterpret_cast<const struct sockaddr*>(&addr), TcpClient::on_connect);
 }
 
 std::uint32_t TcpClient::ipv4_addr() const {
@@ -68,7 +92,7 @@ void TcpClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, 
 void TcpClient::send_data(const std::string& message, EndSendCallback callback) {
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
-    send_data(ptr, message.size());
+    send_data(ptr, message.size(), callback);
 }
 
 void TcpClient::set_close_callback(CloseCallback callback) {
@@ -82,8 +106,7 @@ void TcpClient::close() {
 
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(&m_stream))) {
         std::cout << "Closing client..." << std::endl;
-        uv_close(reinterpret_cast<uv_handle_t*>(&m_stream), nullptr);
-        std::cout << "Done" << std::endl;
+        uv_close(reinterpret_cast<uv_handle_t*>(&m_stream), TcpClient::on_close);
     }
 }
 
@@ -104,9 +127,11 @@ uv_tcp_t* TcpClient::tcp_client_stream() {
 }
 
 void TcpClient::schedule_removal() {
+    //std::cout << "TcpClient::schedule_removal " << io::ip4_addr_to_string(ipv4_addr()) << " " << port() << std::endl;
+
     close();
 
-    Disposable::schedule_removal();
+    //Disposable::schedule_removal();
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
@@ -128,10 +153,6 @@ void TcpClient::after_write(uv_write_t* req, int status) {
     }
 }
 
-void TcpClient::on_close_cb(uv_handle_t* handle) {
-    uv_print_all_handles(handle->loop, stdout); // TODO: remove
-}
-
 void TcpClient::on_shutdown(uv_shutdown_t* req, int status) {
     std::cout << "on_client_shutdown" << std::endl;
 
@@ -140,6 +161,21 @@ void TcpClient::on_shutdown(uv_shutdown_t* req, int status) {
 
     //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpClient::on_close_cb);
     delete req;
+}
+
+void TcpClient::on_connect(uv_connect_t* req, int status) {
+    auto& this_ = *reinterpret_cast<TcpClient*>(req->data);
+
+    if (this_.m_connect_callback) {
+        this_.m_connect_callback(this_);
+    }
+}
+
+void TcpClient::on_close(uv_handle_t* handle) {
+    //uv_print_all_handles(handle->loop, stdout); // TODO: remove
+    auto& this_ = *reinterpret_cast<TcpClient*>(handle->data);
+
+    //delete &this_; // TODO: FIXME ()
 }
 
 } // namespace io
