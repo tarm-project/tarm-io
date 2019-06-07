@@ -31,6 +31,8 @@ public:
     void connect(const std::string& address, std::uint16_t port, ConnectCallback callback);
     void close();
 
+    bool is_open() const;
+
     void set_ipv4_addr(std::uint32_t value);
     void set_port(std::uint16_t value);
 
@@ -57,6 +59,8 @@ private:
     const TcpServer& server() const;
     TcpServer& server();
 
+    void init_stream();
+
     uv_tcp_t* tcp_client_stream();
 
     TcpServer* m_server = nullptr;
@@ -64,7 +68,9 @@ private:
     ConnectCallback m_connect_callback = nullptr;
     uv_connect_t* m_connect_req = nullptr;
 
-    uv_tcp_t m_stream;
+    bool m_is_open = false;
+
+    uv_tcp_t* m_tcp_stream = nullptr;
     std::uint32_t m_ipv4_addr;
     std::uint16_t m_port;
 

@@ -18,7 +18,7 @@ public:
     // statics
     static void on_removal(uv_idle_t* handle);
 
-private:
+protected:
     EventLoop* m_loop;
 };
 

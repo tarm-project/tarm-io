@@ -11,23 +11,35 @@ namespace io {
 
 TcpClient::TcpClient(EventLoop& loop) :
     Disposable(loop) {
-    uv_tcp_init(&loop, &m_stream);
-    m_stream.data = this;
 }
 
 TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
     TcpClient(loop) {
+    m_is_open = true;
     m_server = &server;
+    init_stream();
 }
 
 TcpClient::~TcpClient() {
     std::cout << "TcpClient::~TcpClient" << std::endl;
 
     if (m_connect_req) {
-        delete m_connect_req;
+        delete m_connect_req; // TODO: delete right after connect???
+    }
+
+    if (m_tcp_stream) {
+        delete m_tcp_stream;
     }
 
     //close();
+}
+
+void TcpClient::init_stream() {
+    if (m_tcp_stream == nullptr) {
+        m_tcp_stream = new uv_tcp_t;
+        uv_tcp_init(m_loop, m_tcp_stream);
+        m_tcp_stream->data = this;
+    }
 }
 
 void TcpClient::connect(const std::string& address, std::uint16_t port, ConnectCallback callback) {
@@ -40,9 +52,14 @@ void TcpClient::connect(const std::string& address, std::uint16_t port, ConnectC
         m_connect_req->data = this;
     }
 
+    m_port = port;
+    m_ipv4_addr = ntohl(addr.sin_addr.s_addr);
+    std::cout << io::ip4_addr_to_string(m_ipv4_addr) << std::endl;
+
+    init_stream();
     m_connect_callback = callback;
 
-    uv_tcp_connect(m_connect_req, &m_stream, reinterpret_cast<const struct sockaddr*>(&addr), TcpClient::on_connect);
+    uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(&addr), TcpClient::on_connect);
 }
 
 std::uint32_t TcpClient::ipv4_addr() const {
@@ -64,7 +81,7 @@ void TcpClient::set_port(std::uint16_t value) {
 void TcpClient::shutdown() {
     auto shutdown_req = new uv_shutdown_t;
     shutdown_req->data = this;
-    uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(&m_stream), TcpClient::on_shutdown);
+    uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), TcpClient::on_shutdown);
 }
 
 namespace {
@@ -85,7 +102,7 @@ void TcpClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, 
     // const_cast is a workaround for lack of constness support in uv_buf_t
     req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
 
-    uv_write(req, reinterpret_cast<uv_stream_t*>(&m_stream), &req->uv_buf, 1, TcpClient::after_write);
+    uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, TcpClient::after_write);
     ++m_pending_write_requesets;
 }
 
@@ -97,17 +114,6 @@ void TcpClient::send_data(const std::string& message, EndSendCallback callback) 
 
 void TcpClient::set_close_callback(CloseCallback callback) {
     m_close_callback = callback;
-}
-
-void TcpClient::close() {
-    if (m_close_callback) {
-        m_close_callback(*this);
-    }
-
-    if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(&m_stream))) {
-        std::cout << "Closing client..." << std::endl;
-        uv_close(reinterpret_cast<uv_handle_t*>(&m_stream), TcpClient::on_close);
-    }
 }
 
 std::size_t TcpClient::pending_write_requesets() const {
@@ -123,7 +129,7 @@ TcpServer& TcpClient::server() {
 }
 
 uv_tcp_t* TcpClient::tcp_client_stream() {
-    return &m_stream;
+    return m_tcp_stream;
 }
 
 void TcpClient::schedule_removal() {
@@ -131,7 +137,23 @@ void TcpClient::schedule_removal() {
 
     close();
 
-    //Disposable::schedule_removal();
+    Disposable::schedule_removal();
+}
+
+void TcpClient::close() {
+    if (m_close_callback) {
+        m_close_callback(*this);
+    }
+
+    if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
+        std::cout << "Closing client..." << std::endl;
+        uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), TcpClient::on_close);
+        m_tcp_stream = nullptr;
+    }
+}
+
+bool TcpClient::is_open() const {
+    return m_is_open;
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
@@ -165,6 +187,7 @@ void TcpClient::on_shutdown(uv_shutdown_t* req, int status) {
 
 void TcpClient::on_connect(uv_connect_t* req, int status) {
     auto& this_ = *reinterpret_cast<TcpClient*>(req->data);
+    this_.m_is_open = true; // if not error!
 
     if (this_.m_connect_callback) {
         this_.m_connect_callback(this_);
@@ -172,10 +195,14 @@ void TcpClient::on_connect(uv_connect_t* req, int status) {
 }
 
 void TcpClient::on_close(uv_handle_t* handle) {
-    //uv_print_all_handles(handle->loop, stdout); // TODO: remove
-    auto& this_ = *reinterpret_cast<TcpClient*>(handle->data);
+    if (handle->data) {
+        auto& this_ = *reinterpret_cast<TcpClient*>(handle->data);
+        this_.m_is_open = false;;
+        this_.m_port = 0;
+        this_.m_ipv4_addr = 0;
+    };
 
-    //delete &this_; // TODO: FIXME ()
+    delete reinterpret_cast<uv_tcp_t*>(handle);
 }
 
 } // namespace io
