@@ -170,7 +170,25 @@ TEST_F(FileTest, open_not_existing) {
 }
 
 TEST_F(FileTest, open_existing_open_not_existing) {
+    auto existing_path = create_empty_file(m_tmp_test_dir);
+    ASSERT_FALSE(existing_path.empty());
 
+    const std::string not_existing_path = m_tmp_test_dir + "/not_exist";
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+    file->open(existing_path, [&not_existing_path](io::File& file, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
+        EXPECT_TRUE(file.is_open());
+
+        file.open(not_existing_path, [](io::File& file, const io::Status& status) {
+            EXPECT_FALSE(status.ok());
+            EXPECT_FALSE(file.is_open());
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    file->schedule_removal();
 }
 
 TEST_F(FileTest, close_in_open_callback) {
