@@ -382,7 +382,9 @@ TEST_F(FileTest, read_block_not_opened) {
 }
 
 TEST_F(FileTest, slow_read_data_consumer) {
-    // TODO: add test description
+    // Test description: in this test we are checking that read is paused if data recepient can not process it fast
+    // Also loop should not exit despite that there are no active requests
+
     const std::size_t SIZE = io::File::READ_BUF_SIZE * io::File::READ_BUFS_NUM * 8;
 
     auto path = create_file_for_read(m_tmp_test_dir, SIZE);
