@@ -198,8 +198,6 @@ TEST_F(FileTest, close_in_open_callback) {
     io::EventLoop loop;
 
     auto file = new io::File(loop);
-    ASSERT_FALSE(file->is_open());
-
     file->open(path, [&](io::File& file, const io::Status& status) {
         EXPECT_TRUE(file.is_open());
 
@@ -212,7 +210,15 @@ TEST_F(FileTest, close_in_open_callback) {
 }
 
 TEST_F(FileTest, close_not_open_file) {
+    io::EventLoop loop;
 
+    auto file = new io::File(loop);
+    ASSERT_FALSE(file->is_open());
+    file->close();
+    ASSERT_FALSE(file->is_open());
+
+    ASSERT_EQ(0, loop.run());
+    file->schedule_removal();
 }
 
 TEST_F(FileTest, double_close) {
