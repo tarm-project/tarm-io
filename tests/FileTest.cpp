@@ -222,7 +222,23 @@ TEST_F(FileTest, close_not_open_file) {
 }
 
 TEST_F(FileTest, double_close) {
+    auto path = create_empty_file(m_tmp_test_dir);
+    ASSERT_FALSE(path.empty());
 
+    io::EventLoop loop;
+
+    auto file = new io::File(loop);
+    file->open(path, [&](io::File& file, const io::Status& status) {
+        EXPECT_TRUE(file.is_open());
+
+        file.close();
+        EXPECT_FALSE(file.is_open());
+        file.close();
+        EXPECT_FALSE(file.is_open());
+    });
+
+    ASSERT_EQ(0, loop.run());
+    file->schedule_removal();
 }
 
 TEST_F(FileTest, simple_read) {
