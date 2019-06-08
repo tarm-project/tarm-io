@@ -1,5 +1,7 @@
 #include "File.h"
 
+#include "ScopeExitGuard.h"
+
 // TODO: remove
 #include <iostream>
 #include <assert.h>

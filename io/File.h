@@ -14,24 +14,6 @@
 namespace io {
 
 // TODO: move
-class ScopeExitGuard {
-public:
-    using Callback = std::function<void()>;
-
-    ScopeExitGuard(Callback callback) : m_callback(callback) {
-    }
-
-    ~ScopeExitGuard() {
-        if (m_callback) {
-            m_callback();
-        }
-
-    }
-private:
-    Callback m_callback;
-};
-
-// TODO: move
 struct Stat : public uv_stat_t {
 };
 

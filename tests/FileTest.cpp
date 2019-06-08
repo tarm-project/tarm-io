@@ -3,6 +3,7 @@
 #include "io/File.h"
 #include "io/Dir.h"
 #include "io/Timer.h"
+#include "io/ScopeExitGuard.h"
 
 #include <cstdint>
 #include <boost/filesystem.hpp>
