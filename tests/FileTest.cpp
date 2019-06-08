@@ -316,8 +316,7 @@ TEST_F(FileTest, read_10mb_file) {
     file->schedule_removal();
 }
 
-//TEST_F(FileTest, read_without_end_read_callback
-// schedure removal or close in read vallback
+// TODO: test schedure removal in open, read, ... callback
 
 TEST_F(FileTest, read_not_open_file) {
 
