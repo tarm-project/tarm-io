@@ -2,12 +2,15 @@ find_package(GTest REQUIRED)
 
 # Note: tests are ordered from basic ones to advanced ones to allow check them from
 # top to bottom if multiple tests fail.
+FILE(GLOB TESTS_LIST *.h)
 list(APPEND TESTS_LIST
+    UTCommon.cpp
     DisposableTest.cpp
     ScopeExitGuardTest.cpp
     EventLoopTest.cpp
     TimerTest.cpp
     FileTest.cpp
+    DirTest.cpp
 )
 
 include_directories(

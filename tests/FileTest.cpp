@@ -11,16 +11,6 @@
 #include <mutex>
 
 namespace {
-// TODO: move to UT utils?????
-std::string create_temp_test_directory(const std::string& name_template) {
-    const std::string tmp_dir_path = io::make_temp_dir(name_template);
-    if (tmp_dir_path.empty()) {
-        assert(false);
-        return "";
-    }
-
-    return tmp_dir_path;
-}
 
 std::string create_empty_file(const std::string& path_where_create) {
     std::string file_path = path_where_create + "/empty";
@@ -55,9 +45,7 @@ std::string create_file_for_read(const std::string& path_where_create, std::size
 
 struct FileTest : public testing::Test {
     FileTest() {
-        auto tmp_path = boost::filesystem::temp_directory_path() / "uv_cpp";
-        boost::filesystem::create_directories(tmp_path);
-        m_tmp_test_dir = create_temp_test_directory((tmp_path / "XXXXXX").string());
+        m_tmp_test_dir = create_temp_test_directory();
     }
 
 protected:
