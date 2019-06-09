@@ -2,6 +2,9 @@
 
 #include "io/EventLoop.h"
 
+#include <thread>
+#include <mutex>
+
 struct EventLoopTest : public testing::Test {
 
 };
@@ -121,3 +124,39 @@ TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
     EXPECT_EQ(200, counter_2);
     EXPECT_EQ(300, counter_3);
 }
+
+TEST_F(EventLoopTest, loop_in_thread) {
+
+    std::mutex data_mutex;
+    size_t combined_counter = 0;
+
+    auto functor = [&combined_counter, &data_mutex]() {
+        io::EventLoop loop;
+        size_t counter = 0;
+
+        size_t handle = loop.schedule_call_on_each_loop_cycle([&counter, &loop, &handle]() {
+            ++counter;
+
+            if (counter == 200) {
+                loop.stop_call_on_each_loop_cycle(handle);
+            }
+        });
+
+        loop.run();
+
+        EXPECT_EQ(counter, 200);
+        std::lock_guard<decltype(data_mutex)> guard(data_mutex);
+        combined_counter += counter;
+    };
+
+    std::thread thread_1(functor);
+    std::thread thread_2(functor);
+    std::thread thread_3(functor);
+
+    thread_1.join();
+    thread_2.join();
+    thread_3.join();
+
+    EXPECT_EQ(combined_counter, 600);
+}
+

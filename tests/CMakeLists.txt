@@ -1,11 +1,13 @@
 find_package(GTest REQUIRED)
 
+# Note: tests are ordered from basic ones to advanced ones to allow check them from
+# top to bottom if multiple tests fail.
 list(APPEND TESTS_LIST
     DisposableTest.cpp
-    EventLoopTest.cpp
-    FileTest.cpp
     ScopeExitGuardTest.cpp
+    EventLoopTest.cpp
     TimerTest.cpp
+    FileTest.cpp
 )
 
 include_directories(
