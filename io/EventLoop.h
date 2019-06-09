@@ -7,14 +7,6 @@
 
 namespace io {
 
-// TODO: move
-struct Idle : public uv_idle_t {
-    std::function<void()> callback = nullptr;
-    std::size_t id = 0;
-};
-
-//
-
 class EventLoop {
 public:
     using WorkCallback = std::function<void()>;

@@ -7,6 +7,15 @@
 
 namespace io {
 
+namespace {
+
+struct Idle : public uv_idle_t {
+    std::function<void()> callback = nullptr;
+    std::size_t id = 0;
+};
+
+} // namespace
+
 class EventLoop::Impl : public uv_loop_t {
 public:
     Impl();
