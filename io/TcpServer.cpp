@@ -11,8 +11,9 @@ namespace io {
 
 TcpServer::TcpServer(EventLoop& loop) :
     m_loop(&loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
     m_pool(std::make_unique<boost::pool<>>(TcpServer::READ_BUFFER_SIZE)) {
-    uv_tcp_init(&loop, &m_server_handle);
+    uv_tcp_init(m_uv_loop, &m_server_handle);
     m_server_handle.data = this;
 }
 

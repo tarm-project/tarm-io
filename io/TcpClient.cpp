@@ -10,7 +10,8 @@
 namespace io {
 
 TcpClient::TcpClient(EventLoop& loop) :
-    Disposable(loop) {
+    Disposable(loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
 }
 
 TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
@@ -37,7 +38,7 @@ TcpClient::~TcpClient() {
 void TcpClient::init_stream() {
     if (m_tcp_stream == nullptr) {
         m_tcp_stream = new uv_tcp_t;
-        uv_tcp_init(m_loop, m_tcp_stream);
+        uv_tcp_init(m_uv_loop, m_tcp_stream);
         m_tcp_stream->data = this;
     }
 }

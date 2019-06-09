@@ -101,6 +101,7 @@ private:
     */
 
     EventLoop* m_loop;
+    uv_loop_t* m_uv_loop;
 
     ReadReq m_read_reqs[READ_BUFS_NUM];
 

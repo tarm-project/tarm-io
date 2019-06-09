@@ -77,7 +77,7 @@ protected:
 private:
     static constexpr std::size_t DIRENTS_NUMBER = 1;
 
-    EventLoop* m_loop;
+    uv_loop_t* m_uv_loop;
 
     OpenCallback m_open_callback = nullptr;
     ReadCallback m_read_callback = nullptr;

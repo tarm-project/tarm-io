@@ -42,7 +42,7 @@ const std::string& Dir::path() const {
 
 Dir::Dir(EventLoop& loop) :
     Disposable(loop),
-    m_loop(&loop) {
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
     memset(&m_open_dir_req, 0, sizeof(m_open_dir_req));
     memset(&m_read_dir_req, 0, sizeof(m_read_dir_req));
 }
@@ -54,7 +54,7 @@ void Dir::open(const std::string& path, OpenCallback callback) {
     m_path = path;
     m_open_callback = callback;
     m_open_dir_req.data = this;
-    uv_fs_opendir(m_loop, &m_open_dir_req, path.c_str(), Dir::on_open_dir);
+    uv_fs_opendir(m_uv_loop, &m_open_dir_req, path.c_str(), Dir::on_open_dir);
 }
 
 void Dir::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
@@ -64,7 +64,7 @@ void Dir::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     m_end_read_callback = end_read_callback;
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(m_open_dir_req.ptr);
-    uv_fs_readdir(m_loop, &m_read_dir_req, dir, on_read_dir);
+    uv_fs_readdir(m_uv_loop, &m_read_dir_req, dir, on_read_dir);
 }
 
 void Dir::close() {
@@ -84,7 +84,7 @@ void Dir::close() {
 
     // synchronous
     uv_fs_t closedir_req;
-    uv_fs_closedir(m_loop,
+    uv_fs_closedir(m_uv_loop,
                    &closedir_req,
                    dir,
                    nullptr);

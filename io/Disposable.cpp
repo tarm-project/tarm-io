@@ -23,7 +23,7 @@ Disposable::~Disposable() {
 void Disposable::schedule_removal() {
     auto idle_ptr = new uv_idle_t;
     idle_ptr->data = this;
-    uv_idle_init(m_loop, idle_ptr); // TODO: error handling
+    uv_idle_init(reinterpret_cast<uv_loop_t*>(m_loop->raw_loop()), idle_ptr); // TODO: error handling
     uv_idle_start(idle_ptr, Disposable::on_removal);
 }
 

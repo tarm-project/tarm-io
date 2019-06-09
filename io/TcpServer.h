@@ -51,7 +51,8 @@ public:
     static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf);
 private:
 
-    EventLoop* m_loop; // TODO: reuse loop var from handles instead of holding custom one
+    EventLoop* m_loop;
+    uv_loop_t* m_uv_loop;
 
     uv_tcp_t m_server_handle;
 

@@ -61,6 +61,8 @@ private:
 
     void init_stream();
 
+    uv_loop_t* m_uv_loop;
+
     uv_tcp_t* tcp_client_stream();
 
     TcpServer* m_server = nullptr;

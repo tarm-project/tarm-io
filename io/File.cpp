@@ -10,7 +10,8 @@ namespace io {
 
 File::File(EventLoop& loop) :
     Disposable(loop),
-    m_loop(&loop) {
+    m_loop(&loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
 
     memset(&m_write_req, 0, sizeof(m_write_req));
     memset(&m_stat_req, 0, sizeof(m_stat_req));
@@ -61,7 +62,7 @@ void File::close() {
     std::cout << "File::close " << m_path << std::endl;
 
     uv_fs_t close_req;
-    int status = uv_fs_close(m_loop, &close_req, m_file_handle, nullptr);
+    int status = uv_fs_close(m_uv_loop, &close_req, m_file_handle, nullptr);
     if (status != 0) {
         std::cout << "File::close status: " << uv_strerror(status) << std::endl;
     }
@@ -90,7 +91,7 @@ void File::open(const std::string& path, OpenCallback callback) {
     std::memset(m_open_request, 0, sizeof(uv_fs_t));
     m_open_callback = callback;
     m_open_request->data = this;
-    uv_fs_open(m_loop, m_open_request, path.c_str(), UV_FS_O_RDWR, 0, File::on_open);
+    uv_fs_open(m_uv_loop, m_open_request, path.c_str(), UV_FS_O_RDWR, 0, File::on_open);
 }
 
 void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
@@ -141,7 +142,7 @@ void File::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_c
 
     uv_buf_t buf = uv_buf_init(req->buf.get(), bytes_count);
     // TODO: error handling for uv_fs_read return value
-    uv_fs_read(m_loop, req, m_file_handle, &buf, 1, offset, File::on_read_block);
+    uv_fs_read(m_uv_loop, req, m_file_handle, &buf, 1, offset, File::on_read_block);
 }
 
 void File::read(ReadCallback callback) {
@@ -154,7 +155,7 @@ void File::stat(StatCallback callback) {
     m_stat_req.data = this;
     m_stat_callback = callback;
 
-    uv_fs_fstat(m_loop, &m_stat_req, m_file_handle, File::on_stat);
+    uv_fs_fstat(m_uv_loop, &m_stat_req, m_file_handle, File::on_stat);
 }
 
 const std::string& File::path() const {
@@ -228,7 +229,7 @@ void File::schedule_read(ReadReq& req) {
 
     uv_buf_t buf = uv_buf_init(req.buf.get(), READ_BUF_SIZE);
     // TODO: error handling for uv_fs_read return value
-    uv_fs_read(m_loop, &req, m_file_handle, &buf, 1, -1, File::on_read);
+    uv_fs_read(m_uv_loop, &req, m_file_handle, &buf, 1, -1, File::on_read);
 }
 
 bool File::has_read_buffers_in_use() const {
@@ -350,7 +351,7 @@ void File::on_read(uv_fs_t* uv_req) {
             this_.m_end_read_callback(this_);
         }
 
-        uv_print_all_handles(this_.m_loop, stdout);
+        //uv_print_all_handles(this_.m_uv_loop, stdout);
         //this_.m_loop->stop_dummy_idle();
     } else if (req.result > 0) {
         if (this_.m_read_callback) {

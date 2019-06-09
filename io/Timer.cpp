@@ -7,7 +7,7 @@ namespace io {
 
 Timer::Timer(EventLoop& loop) :
     m_loop(&loop) {
-    uv_timer_init(&loop, &m_timer);
+    uv_timer_init(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), &m_timer);
     m_timer.data = this;
 }
 
