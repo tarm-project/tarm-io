@@ -67,8 +67,12 @@ void Dir::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     uv_fs_readdir(m_uv_loop, &m_read_dir_req, dir, on_read_dir);
 }
 
+bool Dir::is_open() const {
+    return m_open_dir_req.data != nullptr;
+}
+
 void Dir::close() {
-    if (m_open_dir_req.data == nullptr) { // did not open // TODO: revise this for case when open occured with error
+    if (!is_open()) { // did not open // TODO: revise this for case when open occured with error
         return;
     }
 

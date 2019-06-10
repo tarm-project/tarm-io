@@ -58,8 +58,10 @@ public:
     Dir(EventLoop& loop);
 
     void open(const std::string& path, OpenCallback callback);
-    void read(ReadCallback read_callback, EndReadCallback end_read_callback = nullptr);
+    bool is_open() const;
     void close();
+
+    void read(ReadCallback read_callback, EndReadCallback end_read_callback = nullptr);
 
     void schedule_removal() override;
 
