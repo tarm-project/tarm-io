@@ -6,6 +6,7 @@ project(connection_test
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
@@ -73,6 +74,25 @@ target_link_libraries(server ${SERVER_LIB_LIST})
 set(BUILD_WITH_TESTS ON)
 if (BUILD_WITH_TESTS)
     add_subdirectory(tests)
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
+        include(CodeCoverage)
+        APPEND_COVERAGE_COMPILER_FLAGS()
+        set(COVERAGE_EXCLUDES
+            '*/include/*/bits/*'
+            '*/include/boost/*'
+            '*/include/*/c++/*'
+            '*/include/c++/*'
+            '*/include/node/*'
+            '*/include/gtest/*'
+            'tests/*'
+        )
+
+        SETUP_TARGET_FOR_COVERAGE(
+            NAME       coverage
+            EXECUTABLE tests
+        )
+    endif()
 endif()
 
 #############################################################
