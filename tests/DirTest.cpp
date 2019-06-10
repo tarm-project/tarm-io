@@ -37,6 +37,26 @@ TEST_F(DirTest, open_then_close) {
         EXPECT_TRUE(dir.path().empty());
         EXPECT_FALSE(dir.is_open());
     });
+    EXPECT_FALSE(dir->is_open());
+
+    ASSERT_EQ(0, loop.run());
+    dir->schedule_removal();
+}
+
+// TODO: open dir wich is file
+
+TEST_F(DirTest, open_not_existing) {
+    io::EventLoop loop;
+    auto dir = new io::Dir(loop);
+
+    dir->open((m_tmp_test_dir / "not_exists").string(), [&](io::Dir& dir) {
+        // TODO: error check here
+        EXPECT_TRUE(dir.path().empty());
+        EXPECT_FALSE(dir.is_open());
+        dir.close();
+        EXPECT_TRUE(dir.path().empty());
+        EXPECT_FALSE(dir.is_open());
+    });
 
     ASSERT_EQ(0, loop.run());
     dir->schedule_removal();

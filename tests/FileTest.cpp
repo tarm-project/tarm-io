@@ -76,6 +76,7 @@ TEST_F(FileTest, open_existing) {
         open_status_code = status.code();
         file.schedule_removal();
     });
+    EXPECT_FALSE(file->is_open());
 
     ASSERT_EQ(0, loop.run());
     EXPECT_EQ(io::StatusCode::OK, open_status_code);
@@ -505,3 +506,6 @@ TEST_F(FileTest, slow_read_data_consumer) {
 TEST_F(FileTest, error_handling_with_hack) {
 
 }
+
+
+// TODO: open file wich is dir
