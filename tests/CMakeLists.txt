@@ -5,6 +5,7 @@ find_package(GTest REQUIRED)
 FILE(GLOB TESTS_LIST *.h)
 list(APPEND TESTS_LIST
     UTCommon.cpp
+    CommonTest.cpp
     LoggerTest.cpp
     DisposableTest.cpp
     ScopeExitGuardTest.cpp
