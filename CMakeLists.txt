@@ -42,6 +42,7 @@ list(APPEND IO_SOURCE_LIST
         io/Disposable.cpp
         io/Dir.cpp
         io/File.cpp
+        io/Logger.cpp
         io/Status.cpp
         io/StatusCode.cpp
         io/Timer.cpp

@@ -25,8 +25,7 @@ enum class DirectoryEntryType {
 };
 
 inline
-std::ostream& operator<< (std::ostream& os, DirectoryEntryType type)
-{
+std::ostream& operator<< (std::ostream& os, DirectoryEntryType type) {
     switch (type) {
         case DirectoryEntryType::UNKNOWN:
             return os << "UNKNOWN";

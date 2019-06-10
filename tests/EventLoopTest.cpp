@@ -160,3 +160,4 @@ TEST_F(EventLoopTest, loop_in_thread) {
     EXPECT_EQ(combined_counter, 600);
 }
 
+// TODO: same loop run several times with different callbacks each time
