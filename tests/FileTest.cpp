@@ -448,7 +448,7 @@ TEST_F(FileTest, slow_read_data_consumer) {
     std::thread t([&mutex, &captured_bufs, &exit_reseting_thread]() {
         size_t iterations_counter = 0;
 
-        while (true) {
+        while (true) { // TODO: avoid potentially infinite loop
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             std::lock_guard<std::mutex> guard(mutex);
@@ -503,8 +503,60 @@ TEST_F(FileTest, slow_read_data_consumer) {
     file->schedule_removal();
 }
 
-TEST_F(FileTest, error_handling_with_hack) {
+TEST_F(FileTest, schedule_file_removal_from_read) {
+    // Test description: checking that File is removed only when all of its read buffers are released
 
+    const std::size_t SIZE = io::File::READ_BUF_SIZE; // space for one read operation
+
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    bool end_read_called = false;
+    std::shared_ptr<const char> captured_buf;
+
+    std::mutex mutex;
+    std::thread t([&mutex, &captured_buf]() {
+        while (true) { // TODO: avoid potentially infinite loop
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+            std::lock_guard<decltype(mutex)> guard(mutex);
+            if (captured_buf) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                captured_buf.reset();
+                break;
+            }
+        }
+    });
+
+    io::ScopeExitGuard scope_guard([&t]() {
+        t.join();
+    });
+
+    io::EventLoop loop;
+
+    auto file = new io::File(loop);
+    file->open(path, [&end_read_called, &captured_buf, &mutex](io::File& file, const io::Status& open_status) {
+        ASSERT_TRUE(open_status.ok());
+
+        file.read([&captured_buf, &mutex](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status){
+            {
+                std::lock_guard<decltype(mutex)> guard(mutex);
+                captured_buf = buf;
+            }
+
+            EXPECT_TRUE(file.is_open());
+            file.schedule_removal();
+            EXPECT_FALSE(file.is_open());
+        },
+        [&end_read_called](io::File& file) {
+            end_read_called = true;
+        });
+    });
+
+    // TODO: check from logger callback thatfor message like "No free buffer found"
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_FALSE(end_read_called);
 }
 
 
