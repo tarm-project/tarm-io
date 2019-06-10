@@ -88,6 +88,7 @@ private:
 
     uv_fs_t m_open_dir_req;
     uv_fs_t m_read_dir_req;
+    uv_dir_t* m_uv_dir = nullptr;
 
     uv_dirent_t m_dirents[DIRENTS_NUMBER];
 };

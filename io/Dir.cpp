@@ -63,12 +63,11 @@ void Dir::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     m_read_callback = read_callback;
     m_end_read_callback = end_read_callback;
 
-    uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(m_open_dir_req.ptr);
-    uv_fs_readdir(m_uv_loop, &m_read_dir_req, dir, on_read_dir);
+    uv_fs_readdir(m_uv_loop, &m_read_dir_req, m_uv_dir, on_read_dir);
 }
 
 bool Dir::is_open() const {
-    return m_open_dir_req.data != nullptr;
+    return m_uv_dir != nullptr;
 }
 
 void Dir::close() {
@@ -92,6 +91,8 @@ void Dir::close() {
                    &closedir_req,
                    dir,
                    nullptr);
+
+    m_uv_dir = nullptr;
 }
 
 ////////////////////////////////////// static //////////////////////////////////////
@@ -104,9 +105,9 @@ void Dir::on_open_dir(uv_fs_t* req) {
         return;
     }
 
-    uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
-    dir->dirents = this_.m_dirents;
-    dir->nentries = Dir::DIRENTS_NUMBER;
+    this_.m_uv_dir = reinterpret_cast<uv_dir_t*>(req->ptr);
+    this_.m_uv_dir->dirents = this_.m_dirents;
+    this_.m_uv_dir->nentries = Dir::DIRENTS_NUMBER;
 
     if (this_.m_open_callback) {
         this_.m_open_callback(this_);
