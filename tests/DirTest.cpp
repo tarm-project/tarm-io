@@ -46,7 +46,7 @@ TEST_F(DirTest, open_then_close) {
     dir->schedule_removal();
 }
 
-// TODO: open dir wich is file
+// TODO: open dir which is file
 
 TEST_F(DirTest, open_not_existing) {
     io::EventLoop loop;
@@ -72,8 +72,6 @@ TEST_F(DirTest, open_not_existing) {
     EXPECT_EQ("", dir->path());
     dir->schedule_removal();
 }
-
-// dir open not exist
 
 TEST_F(DirTest, list_elements) {
     boost::filesystem::create_directories(m_tmp_test_dir/ "dir_1");
@@ -130,6 +128,44 @@ TEST_F(DirTest, list_elements) {
     EXPECT_TRUE(dir_3_listed);
     EXPECT_TRUE(file_1_listed);
     EXPECT_TRUE(file_2_listed);
+}
+
+TEST_F(DirTest, close_in_list_callback) {
+    // TODO:
+}
+
+TEST_F(DirTest, list_symlink) {
+    auto file_path = m_tmp_test_dir / "some_file";
+    {
+        std::ofstream ofile(file_path.string());
+        ASSERT_FALSE(ofile.fail());
+    }
+
+    boost::filesystem::create_symlink(file_path, m_tmp_test_dir / "link");
+
+    std::size_t entries_count = 0;
+    bool link_found = false;
+
+    io::EventLoop loop;
+    auto dir = new io::Dir(loop);
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status&) {
+        dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
+            if (std::string(name) == "some_file") {
+                EXPECT_EQ(io::DirectoryEntryType::FILE, entry_type);
+            } else if (std::string(name) == "link") {
+                EXPECT_EQ(io::DirectoryEntryType::LINK, entry_type);
+                link_found = true;
+            }
+
+            ++entries_count;
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    dir->schedule_removal();
+
+    EXPECT_TRUE(link_found);
+    EXPECT_EQ(2, entries_count);
 }
 
 // dir iterate not existing
