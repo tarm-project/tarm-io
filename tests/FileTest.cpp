@@ -514,14 +514,18 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
     bool end_read_called = false;
     std::shared_ptr<const char> captured_buf;
 
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+
     std::mutex mutex;
-    std::thread t([&mutex, &captured_buf]() {
+    std::thread t([&mutex, &captured_buf, file]() {
         while (true) { // TODO: avoid potentially infinite loop
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             std::lock_guard<decltype(mutex)> guard(mutex);
             if (captured_buf) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                EXPECT_FALSE(file->is_open());
                 captured_buf.reset();
                 break;
             }
@@ -532,9 +536,6 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
         t.join();
     });
 
-    io::EventLoop loop;
-
-    auto file = new io::File(loop);
     file->open(path, [&end_read_called, &captured_buf, &mutex](io::File& file, const io::Status& open_status) {
         ASSERT_TRUE(open_status.ok());
 
