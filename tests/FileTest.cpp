@@ -566,5 +566,30 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
     EXPECT_FALSE(end_read_called);
 }
 
+TEST_F(FileTest, simple_stat) {
+    const std::size_t SIZE = 1236;
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+    file->open(path, [&SIZE](io::File& file, const io::Status& status) {
+        ASSERT_TRUE(status.ok());
+
+        file.stat([&SIZE](io::File& file, const io::Stat& stat){
+            EXPECT_EQ(SIZE, stat.st_size);
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    file->schedule_removal();
+}
+
+TEST_F(FileTest, stat_not_existing) {
+}
+
+TEST_F(FileTest, close_in_stat) {
+}
+
 
 // TODO: open file wich is dir
