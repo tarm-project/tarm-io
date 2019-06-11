@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "EventLoop.h"
 #include "Disposable.h"
+#include "Status.h"
 
 #include <string>
 #include <functional>
@@ -50,7 +51,7 @@ std::ostream& operator<< (std::ostream& os, DirectoryEntryType type) {
 
 class Dir : public Disposable {
 public:
-    using OpenCallback = std::function<void(Dir&)>; // TODO: error handling for this callback
+    using OpenCallback = std::function<void(Dir&, const Status&)>;
     using ReadCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
     using CloseCallback = std::function<void(Dir&)>;
     using EndReadCallback = std::function<void(Dir&)>;

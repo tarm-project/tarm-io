@@ -111,7 +111,8 @@ void Dir::on_open_dir(uv_fs_t* req) {
     }
 
     if (this_.m_open_callback) {
-        this_.m_open_callback(this_);
+        Status status(req->result);
+        this_.m_open_callback(this_, status);
     }
 
     if (req->result < 0 ) { // TODO: replace with if status.fail()

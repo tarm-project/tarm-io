@@ -18,8 +18,8 @@ public:
     bool fail() const;
 
 private:
-    int m_libuv_code;
-    StatusCode m_status_code;
+    int m_libuv_code = 0;
+    StatusCode m_status_code = StatusCode::OK;
 };
 
 } // namespace io

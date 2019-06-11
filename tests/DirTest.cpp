@@ -30,7 +30,10 @@ TEST_F(DirTest, open_then_close) {
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
 
-    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir) {
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
+        EXPECT_EQ(io::StatusCode::OK, status.code());
+
         EXPECT_EQ(m_tmp_test_dir, dir.path());
         EXPECT_TRUE(dir.is_open());
         dir.close();
@@ -52,7 +55,10 @@ TEST_F(DirTest, open_not_existing) {
     bool callback_called = false;
 
     auto path = (m_tmp_test_dir / "not_exists").string();
-    dir->open(path, [&](io::Dir& dir) {
+    dir->open(path, [&](io::Dir& dir, const io::Status& status) {
+        EXPECT_FALSE(status.ok());
+        EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status.code());
+
         callback_called = true;
 
         // TODO: error check here
@@ -90,7 +96,7 @@ TEST_F(DirTest, list_elements) {
 
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
-    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir) {
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status&) {
         dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
             if (std::string(name) == "dir_1") {
                 EXPECT_FALSE(dir_1_listed);

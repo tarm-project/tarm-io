@@ -4,15 +4,16 @@
 
 namespace io {
 
-Status::Status(int libuv_code) :
-    m_libuv_code(libuv_code),
-    m_status_code(convert_from_uv(libuv_code)) {
+Status::Status(int libuv_code) {
+    if (libuv_code < 0) {
+        m_libuv_code = libuv_code;
+        m_status_code = convert_from_uv(libuv_code);
+    }
 }
 
-    Status::Status(StatusCode status_code) :
-       m_status_code(status_code) {
-
-    }
+Status::Status(StatusCode status_code) :
+   m_status_code(status_code) {
+}
 
 StatusCode Status::code() const {
     return m_status_code;
