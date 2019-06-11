@@ -294,6 +294,10 @@ void File::on_open(uv_fs_t* req) {
     if (this_.m_open_callback) {
         this_.m_open_callback(this_, status);
     }
+
+    if (status.fail()) {
+        this_.m_path.clear();
+    }
 }
 
 void File::on_read_block(uv_fs_t* uv_req) {

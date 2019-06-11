@@ -104,15 +104,18 @@ void Dir::on_open_dir(uv_fs_t* req) {
 
         std::cerr << "Failed to open dir: " << req->path << std::endl;
         // TODO: error handling
-        return;
+    } else {
+        this_.m_uv_dir = reinterpret_cast<uv_dir_t*>(req->ptr);
+        this_.m_uv_dir->dirents = this_.m_dirents;
+        this_.m_uv_dir->nentries = Dir::DIRENTS_NUMBER;
     }
-
-    this_.m_uv_dir = reinterpret_cast<uv_dir_t*>(req->ptr);
-    this_.m_uv_dir->dirents = this_.m_dirents;
-    this_.m_uv_dir->nentries = Dir::DIRENTS_NUMBER;
 
     if (this_.m_open_callback) {
         this_.m_open_callback(this_);
+    }
+
+    if (req->result < 0 ) { // TODO: replace with if status.fail()
+        this_.m_path.clear();
     }
 }
 

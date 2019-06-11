@@ -69,17 +69,21 @@ TEST_F(FileTest, open_existing) {
 
     auto file = new io::File(loop);
     ASSERT_FALSE(file->is_open());
+    EXPECT_EQ("", file->path());
 
     file->open(path, [&](io::File& file, const io::Status& status) {
         ASSERT_TRUE(file.is_open());
+        EXPECT_EQ(path, file.path());
 
         open_status_code = status.code();
-        file.schedule_removal();
     });
     EXPECT_FALSE(file->is_open());
 
     ASSERT_EQ(0, loop.run());
     EXPECT_EQ(io::StatusCode::OK, open_status_code);
+    EXPECT_EQ(path, file->path());
+
+    file->schedule_removal();
 }
 
 TEST_F(FileTest, double_open) {
@@ -146,6 +150,7 @@ TEST_F(FileTest, open_not_existing) {
     auto file = new io::File(loop);
     file->open(path, [&](io::File& file, const io::Status& status) {
         EXPECT_FALSE(file.is_open());
+        EXPECT_EQ(path, file.path());
 
         opened = status.ok();
         status_code = status.code();
@@ -156,6 +161,7 @@ TEST_F(FileTest, open_not_existing) {
     ASSERT_FALSE(opened);
     EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status_code);
 
+    EXPECT_EQ("", file->path());
     file->schedule_removal();
 }
 

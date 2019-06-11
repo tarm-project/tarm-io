@@ -49,16 +49,21 @@ TEST_F(DirTest, open_not_existing) {
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
 
-    dir->open((m_tmp_test_dir / "not_exists").string(), [&](io::Dir& dir) {
+    bool callback_called = false;
+
+    auto path = (m_tmp_test_dir / "not_exists").string();
+    dir->open(path, [&](io::Dir& dir) {
+        callback_called = true;
+
         // TODO: error check here
-        EXPECT_TRUE(dir.path().empty());
-        EXPECT_FALSE(dir.is_open());
-        dir.close();
-        EXPECT_TRUE(dir.path().empty());
+        EXPECT_EQ(path, dir.path());
         EXPECT_FALSE(dir.is_open());
     });
 
     ASSERT_EQ(0, loop.run());
+
+    EXPECT_TRUE(callback_called);
+    EXPECT_EQ("", dir->path());
     dir->schedule_removal();
 }
 
