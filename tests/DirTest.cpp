@@ -5,6 +5,9 @@
 
 #include <boost/filesystem.hpp>
 
+#include <sys/stat.h>
+//#include <sys/sysmacros.h>
+
 struct DirTest : public testing::Test {
     DirTest() {
         m_tmp_test_dir = create_temp_test_directory();
@@ -167,5 +170,32 @@ TEST_F(DirTest, list_symlink) {
     EXPECT_TRUE(link_found);
     EXPECT_EQ(2, entries_count);
 }
+
+#if defined(__APPLE__) || defined(__linux__)
+TEST_F(DirTest, list_block_and_char_devices) {
+    std::size_t block_devices_count = 0;
+    std::size_t char_devices_count = 0;
+
+    io::EventLoop loop;
+    auto dir = new io::Dir(loop);
+    dir->open("/dev", [&](io::Dir& dir, const io::Status& status) {
+        ASSERT_TRUE(status.ok());
+
+        dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
+            if (entry_type == io::DirectoryEntryType::BLOCK) {
+                ++block_devices_count;
+            } else if (entry_type == io::DirectoryEntryType::CHAR) {
+                ++char_devices_count;
+            }
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    dir->schedule_removal();
+
+    EXPECT_GT(block_devices_count, 0);
+    EXPECT_GT(char_devices_count, 0);
+}
+#endif
 
 // dir iterate not existing
