@@ -100,6 +100,8 @@ void Dir::on_open_dir(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<Dir*>(req->data);
 
     if (req->result < 0 ) {
+        uv_fs_req_cleanup(&this_.m_open_dir_req);
+
         std::cerr << "Failed to open dir: " << req->path << std::endl;
         // TODO: error handling
         return;
