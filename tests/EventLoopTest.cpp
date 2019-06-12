@@ -160,4 +160,18 @@ TEST_F(EventLoopTest, loop_in_thread) {
     EXPECT_EQ(combined_counter, 600);
 }
 
+TEST_F(EventLoopTest, dummy_idle) {
+    io::EventLoop loop;
+
+    // crash tests
+    loop.start_dummy_idle();
+    loop.start_dummy_idle();
+    loop.stop_dummy_idle();
+    loop.stop_dummy_idle();
+    loop.start_dummy_idle();
+    loop.stop_dummy_idle();
+
+    ASSERT_EQ(0, loop.run());
+}
+
 // TODO: same loop run several times with different callbacks each time

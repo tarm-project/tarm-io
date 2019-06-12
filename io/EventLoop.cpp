@@ -72,9 +72,10 @@ EventLoop::Impl::~Impl() {
         //std::cout << "status " << uv_strerror(status) << std::endl;
     }
 
-    if (m_dummy_idle) {
-        delete m_dummy_idle;
-    }
+    // Deleted in close callback
+    //if (m_dummy_idle) {
+    //    delete m_dummy_idle;
+    //}
 }
 
 namespace {
@@ -131,8 +132,8 @@ void on_dummy_idle(uv_timer_t*) {
     // Do nothing
 }
 
-void on_dummy_idle_close(uv_handle_t*) {
-    // Do nothing
+void on_dummy_idle_close(uv_handle_t* handle) {
+    delete reinterpret_cast<uv_timer_t*>(handle);
 }
 
 } // namespace
@@ -142,10 +143,8 @@ void EventLoop::Impl::start_dummy_idle() {
         return; // idle is already running
     }
 
-    if (m_dummy_idle == nullptr) {
-        m_dummy_idle = new uv_timer_t;
-        uv_timer_init(this, m_dummy_idle);
-    }
+    m_dummy_idle = new uv_timer_t;
+    uv_timer_init(this, m_dummy_idle);
 
     m_dummy_idle->data = this;
     uv_timer_start(m_dummy_idle, on_dummy_idle, 1, 1);
@@ -159,6 +158,7 @@ void EventLoop::Impl::stop_dummy_idle() {
     m_dummy_idle->data = nullptr;
     uv_timer_stop(m_dummy_idle);
     uv_close(reinterpret_cast<uv_handle_t*>(m_dummy_idle), on_dummy_idle_close);
+    m_dummy_idle = nullptr;
 }
 
 /////////////////////////////////////////// static ///////////////////////////////////////////
