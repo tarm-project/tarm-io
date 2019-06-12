@@ -358,11 +358,12 @@ void File::on_read(uv_fs_t* uv_req) {
         fprintf(stderr, "File read error: %s\n",  uv_strerror(req.result));
     } else if (req.result == 0) {
         this_.m_done_read = true;
-        req.buf.reset();
 
         if (this_.m_end_read_callback) {
             this_.m_end_read_callback(this_);
         }
+
+        req.buf.reset();
 
         //uv_print_all_handles(this_.m_uv_loop, stdout);
         //this_.m_loop->stop_dummy_idle();
