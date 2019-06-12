@@ -376,11 +376,37 @@ TEST_F(FileTest, close_in_read) {
     file->schedule_removal();
 }
 
+TEST_F(FileTest, read_sequential_of_closed_file) {
+    const std::size_t SIZE = 1024 * 512;
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    io::EventLoop loop;
+
+    bool read_called = false;
+
+    auto file = new io::File(loop);
+    file->open(path, [&](io::File& file, const io::Status& status) {
+        ASSERT_TRUE(status.ok());
+
+        file.read([&](io::File&, std::shared_ptr<const char> buf, std::size_t size, const io::Status& status) {
+            EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, status.code());
+
+            read_called = true;
+        });
+        file.close();
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_TRUE(read_called);
+
+    file->schedule_removal();
+}
+
 // read in failed to opened file
 
 TEST_F(FileTest, read_block) {
     const std::size_t SIZE = 128;
-
     auto path = create_file_for_read(m_tmp_test_dir, SIZE);
     ASSERT_FALSE(path.empty());
 
@@ -428,6 +454,33 @@ TEST_F(FileTest, read_block_not_opened) {
 
     ASSERT_EQ(0, loop.run());
     ASSERT_EQ(read_status, io::StatusCode::FILE_NOT_OPEN);
+
+    file->schedule_removal();
+}
+
+TEST_F(FileTest, read_block_of_closed_file) {
+    const std::size_t SIZE = 1024 * 512;
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    io::EventLoop loop;
+
+    bool read_called = false;
+
+    auto file = new io::File(loop);
+    file->open(path, [&](io::File& file, const io::Status& status) {
+        ASSERT_TRUE(status.ok());
+
+        file.read_block(1024, 1024, [&](io::File&, std::shared_ptr<const char> buf, std::size_t size, const io::Status& status) {
+            EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, status.code());
+
+            read_called = true;
+        });
+        file.close();
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_TRUE(read_called);
 
     file->schedule_removal();
 }

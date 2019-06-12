@@ -74,9 +74,9 @@ void File::close() {
         m_open_request = nullptr;
     }
 
-    m_open_callback = nullptr;
-    m_read_callback = nullptr;
-    m_end_read_callback = nullptr;
+    //m_open_callback = nullptr;
+    //m_read_callback = nullptr;
+    //m_end_read_callback = nullptr;
 
     m_path.clear();
 }
@@ -305,6 +305,10 @@ void File::on_read_block(uv_fs_t* uv_req) {
     auto& this_ = *reinterpret_cast<File*>(req.data);
 
     if (!this_.is_open()) {
+        if (this_.m_read_callback) {
+            this_.m_read_callback(this_, nullptr, 0, Status(StatusCode::FILE_NOT_OPEN));
+        }
+
         return;
     }
 
@@ -330,6 +334,11 @@ void File::on_read(uv_fs_t* uv_req) {
 
     if (!this_.is_open()) {
         req.buf.reset();
+
+        if (this_.m_read_callback) {
+            this_.m_read_callback(this_, nullptr, 0, Status(StatusCode::FILE_NOT_OPEN));
+        }
+
         return;
     }
 
@@ -365,14 +374,6 @@ void File::on_read(uv_fs_t* uv_req) {
 
         this_.schedule_read();
         req.buf.reset();
-    }
-}
-
-void File::on_close(uv_fs_t* req) {
-    auto& this_ = *reinterpret_cast<File*>(req->data);
-
-    if (this_.m_end_read_callback) {
-        this_.m_end_read_callback(this_);
     }
 }
 

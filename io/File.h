@@ -78,7 +78,6 @@ public:
     static void on_open(uv_fs_t* req);
     static void on_read(uv_fs_t* req);
     static void on_read_block(uv_fs_t* req);
-    static void on_close(uv_fs_t* req);
     static void on_stat(uv_fs_t* req);
 
 protected:
