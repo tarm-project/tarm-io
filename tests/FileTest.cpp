@@ -514,6 +514,63 @@ TEST_F(FileTest, read_block) {
     file->schedule_removal();
 }
 
+TEST_F(FileTest, read_block_past_edge) {
+    const std::size_t SIZE = 128;
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+
+    io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
+
+    file->open(path, [&](io::File& file, const io::Status& open_status) {
+        ASSERT_TRUE(open_status.ok());
+
+        file.read_block(120, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+            read_status_code = read_status.code();
+            EXPECT_EQ(8, chunk.size);
+
+            EXPECT_EQ(30, *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + 0));
+            EXPECT_EQ(31, *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + 4));
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+
+    ASSERT_EQ(io::StatusCode::OK, read_status_code);
+
+    file->schedule_removal();
+}
+
+TEST_F(FileTest, DISABLED_read_block_not_existing) {
+    // TODO: need to finish test
+
+    const std::size_t SIZE = 128;
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+
+    io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
+
+    file->open(path, [&](io::File& file, const io::Status& open_status) {
+        ASSERT_TRUE(open_status.ok());
+
+        file.read_block(123456, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+            // TODO: this is not called
+            read_status_code = read_status.code();
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+
+    ASSERT_EQ(io::StatusCode::OK, read_status_code);
+
+    file->schedule_removal();
+}
+
 TEST_F(FileTest, read_block_not_opened) {
     io::EventLoop loop;
 
