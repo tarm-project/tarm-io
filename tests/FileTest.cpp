@@ -260,14 +260,14 @@ TEST_F(FileTest, simple_read) {
             return;
         }
 
-        file.read([&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+        file.read([&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
             read_status_code = read_status.code();
-            ASSERT_EQ(SIZE, size);
+            ASSERT_EQ(SIZE, chunk.size);
 
             EXPECT_TRUE(file.is_open());
 
             for(std::size_t i = 0; i < SIZE / 4; i ++) {
-                auto value = *reinterpret_cast<const std::uint32_t*>(buf.get() + (i * 4));
+                auto value = *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + (i * 4));
                 ASSERT_EQ(i, value);
             }
         },
@@ -295,7 +295,7 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
 
     std::function<void(io::File&, const io::Status&)> open;
 
-    auto read = [&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+    auto read = [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
         ASSERT_TRUE(read_status.ok());
         // TODO: fixme
         /*
@@ -341,11 +341,11 @@ TEST_F(FileTest, read_10mb_file) {
     file->open(path, [&](io::File& file, const io::Status& open_status) {
         ASSERT_FALSE(open_status.fail());
 
-        file.read([&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
-            ASSERT_EQ(READ_BUF_SIZE, size);
+        file.read([&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+            ASSERT_EQ(READ_BUF_SIZE, chunk.size);
 
-            for (size_t i = 0; i < size; i += 4) {
-                auto value = *reinterpret_cast<const std::uint32_t*>(buf.get() + i);
+            for (size_t i = 0; i < chunk.size; i += 4) {
+                auto value = *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + i);
                 ASSERT_EQ(read_counter, value) << " read_counter= " << read_counter;
 
                 ++read_counter;
@@ -369,7 +369,7 @@ TEST_F(FileTest, read_not_open_file) {
     io::EventLoop loop;
     auto file = new io::File(loop);
 
-    file->read([&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+    file->read([&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
         read_status_code = read_status.code();
     },
     [&](io::File& file) {
@@ -399,7 +399,7 @@ TEST_F(FileTest, close_in_read) {
     file->open(path, [&counter, &end_read_called](io::File& file, const io::Status& open_status) {
         ASSERT_TRUE(open_status.ok());
 
-        file.read([&counter](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+        file.read([&counter](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
             ASSERT_TRUE(read_status.ok());
             EXPECT_LE(counter, 5);
 
@@ -436,7 +436,7 @@ TEST_F(FileTest, read_sequential_of_closed_file) {
     file->open(path, [&](io::File& file, const io::Status& status) {
         ASSERT_TRUE(status.ok());
 
-        file.read([&](io::File&, std::shared_ptr<const char> buf, std::size_t size, const io::Status& status) {
+        file.read([&](io::File&, const io::DataChunk& chunk, const io::Status& status) {
             EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, status.code());
 
             read_called = true;
@@ -465,16 +465,16 @@ TEST_F(FileTest, read_block) {
     file->open(path, [&](io::File& file, const io::Status& open_status) {
         ASSERT_TRUE(open_status.ok());
 
-        file.read_block(8, 16, [&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
-            ASSERT_NE(nullptr, buf);
-            ASSERT_EQ(16, size);
+        file.read_block(8, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+            ASSERT_NE(nullptr, chunk.buf);
+            ASSERT_EQ(16, chunk.size);
 
             read_status_code = read_status.code();
 
-            EXPECT_EQ(2, *reinterpret_cast<const std::uint32_t*>(buf.get() + 0));
-            EXPECT_EQ(3, *reinterpret_cast<const std::uint32_t*>(buf.get() + 4));
-            EXPECT_EQ(4, *reinterpret_cast<const std::uint32_t*>(buf.get() + 8));
-            EXPECT_EQ(5, *reinterpret_cast<const std::uint32_t*>(buf.get() + 12));
+            EXPECT_EQ(2, *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + 0));
+            EXPECT_EQ(3, *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + 4));
+            EXPECT_EQ(4, *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + 8));
+            EXPECT_EQ(5, *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + 12));
         });
     });
 
@@ -491,9 +491,9 @@ TEST_F(FileTest, read_block_not_opened) {
     io::StatusCode read_status = io::StatusCode::UNDEFINED;
 
     auto file = new io::File(loop);
-    file->read_block(0, 16, [&](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& status) {
-        EXPECT_EQ(nullptr, buf);
-        EXPECT_EQ(0, size);
+    file->read_block(0, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Status& status) {
+        EXPECT_EQ(nullptr, chunk.buf);
+        EXPECT_EQ(0, chunk.size);
         EXPECT_FALSE(status.ok());
 
         read_status = status.code();
@@ -518,7 +518,7 @@ TEST_F(FileTest, read_block_of_closed_file) {
     file->open(path, [&](io::File& file, const io::Status& status) {
         ASSERT_TRUE(status.ok());
 
-        file.read_block(1024, 1024, [&](io::File&, std::shared_ptr<const char> buf, std::size_t size, const io::Status& status) {
+        file.read_block(1024, 1024, [&](io::File&, const io::DataChunk& chunk, const io::Status& status) {
             EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, status.code());
 
             read_called = true;
@@ -580,15 +580,14 @@ TEST_F(FileTest, slow_read_data_consumer) {
         ASSERT_TRUE(open_status.ok());
 
         file.read([&captured_bufs, &mutex, &bytes_read](io::File& file,
-                                                        std::shared_ptr<const char> buf,
-                                                        std::size_t size,
+                                                        const io::DataChunk& chunk,
                                                         const io::Status& read_status){
             ASSERT_TRUE(read_status.ok());
 
-            bytes_read += size;
+            bytes_read += chunk.size;
 
             std::lock_guard<std::mutex> guard(mutex);
-            captured_bufs.push_back(buf);
+            captured_bufs.push_back(chunk.buf);
         },
         [&mutex, &exit_reseting_thread](io::File& file) {
             std::lock_guard<std::mutex> guard(mutex);
@@ -645,10 +644,10 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
     file->open(path, [&end_read_called, &captured_buf, &mutex](io::File& file, const io::Status& open_status) {
         ASSERT_TRUE(open_status.ok());
 
-        file.read([&captured_buf, &mutex](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status){
+        file.read([&captured_buf, &mutex](io::File& file, const io::DataChunk& chunk, const io::Status& read_status){
             {
                 std::lock_guard<decltype(mutex)> guard(mutex);
-                captured_buf = buf;
+                captured_buf = chunk.buf;
             }
 
             EXPECT_TRUE(file.is_open());

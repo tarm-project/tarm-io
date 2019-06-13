@@ -33,13 +33,26 @@ struct ReadReq : public uv_fs_t {
     char* raw_buf = nullptr;
 };
 
+struct DataChunk {
+    DataChunk() = default;
+    DataChunk(std::shared_ptr<const char> b, std::size_t s, std::size_t o) :
+        buf(b),
+        size(s),
+        offset(o){
+    }
+
+    std::shared_ptr<const char> buf;
+    std::size_t size = 0;
+    std::size_t offset = 0;
+};
+
 class File : public Disposable {
 public:
     static constexpr std::size_t READ_BUF_SIZE = 1024 * 4;
     static constexpr std::size_t READ_BUFS_NUM = 4;
 
     using OpenCallback = std::function<void(File&, const Status&)>;
-    using ReadCallback = std::function<void(File&, std::shared_ptr<const char>, std::size_t, const Status&)>;
+    using ReadCallback = std::function<void(File&, const io::DataChunk&, const Status&)>;
     using EndReadCallback = std::function<void(File&)>;
     using StatCallback = std::function<void(File&, const Stat&)>;
 

@@ -97,7 +97,7 @@ void File::open(const std::string& path, OpenCallback callback) {
 void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     if (!is_open()) {
         if (read_callback) {
-            read_callback(*this, nullptr, 0, Status(StatusCode::FILE_NOT_OPEN));
+            read_callback(*this, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
         }
         return;
     }
@@ -129,7 +129,7 @@ struct ReadBlockReq : public uv_fs_t {
 void File::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback) {
     if (!is_open()) {
         if (read_callback) {
-            read_callback(*this, nullptr, 0, Status(StatusCode::FILE_NOT_OPEN));
+            read_callback(*this, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
         }
         return;
     }
@@ -306,7 +306,7 @@ void File::on_read_block(uv_fs_t* uv_req) {
 
     if (!this_.is_open()) {
         if (this_.m_read_callback) {
-            this_.m_read_callback(this_, nullptr, 0, Status(StatusCode::FILE_NOT_OPEN));
+            this_.m_read_callback(this_, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
         }
 
         return;
@@ -321,7 +321,8 @@ void File::on_read_block(uv_fs_t* uv_req) {
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             io::Status status(0);
-            this_.m_read_callback(this_, req.buf, req.result, status);
+            DataChunk data_chunk(req.buf, req.result, 0);
+            this_.m_read_callback(this_, data_chunk, status);
         }
     }
 
@@ -336,7 +337,7 @@ void File::on_read(uv_fs_t* uv_req) {
         req.buf.reset();
 
         if (this_.m_read_callback) {
-            this_.m_read_callback(this_, nullptr, 0, Status(StatusCode::FILE_NOT_OPEN));
+            this_.m_read_callback(this_, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
         }
 
         return;
@@ -350,7 +351,7 @@ void File::on_read(uv_fs_t* uv_req) {
 
         if (this_.m_read_callback) {
             io::Status status(req.result);
-            this_.m_read_callback(this_, nullptr, 0, status);
+            this_.m_read_callback(this_, DataChunk(), status);
         }
 
         // TODO: remove this later
@@ -370,7 +371,8 @@ void File::on_read(uv_fs_t* uv_req) {
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             io::Status status(0);
-            this_.m_read_callback(this_, req.buf, req.result, status);
+            DataChunk data_chunk(req.buf, req.result, 0);
+            this_.m_read_callback(this_, data_chunk, status);
         }
 
         this_.schedule_read();

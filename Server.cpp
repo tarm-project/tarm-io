@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 
         if (message.find("ls") != std::string::npos ) {
             auto dir = new io::Dir(loop);
-            dir->open(".", [&client](io::Dir& dir) {
+            dir->open(".", [&client](io::Dir& dir, const io::Status& status) {
                 std::cout << "Opened dir: " << dir.path() << std::endl;
 
                 dir.read([&client] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
@@ -137,14 +137,14 @@ int main(int argc, char* argv[]) {
                     file.schedule_removal();
                 });
 
-                file.read([&client](io::File& file, std::shared_ptr<const char> buf, std::size_t size, const io::Status& read_status) {
+                file.read([&client](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
                     //std::cout.write(buf.get(), size);
 
                     if (client.pending_write_requesets() > 0) {
                         //std::cout << "pending_write_requesets " << client.pending_write_requesets() << std::endl;
                     }
 
-                    client.send_data(buf, size, [&file](io::TcpClient& client) {
+                    client.send_data(chunk.buf, chunk.size, [&file](io::TcpClient& client) {
                         static int counter = 0;
                         std::cout << "TcpClient after send counter: " << counter++ << std::endl;
 
