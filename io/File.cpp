@@ -87,6 +87,7 @@ void File::open(const std::string& path, OpenCallback callback) {
     }
 
     m_path = path;
+    m_current_offset = 0;
     m_open_request = new uv_fs_t;
     std::memset(m_open_request, 0, sizeof(uv_fs_t));
     m_open_callback = callback;
@@ -115,6 +116,7 @@ namespace {
 
 struct ReadBlockReq : public uv_fs_t {
     ReadBlockReq() {
+        // TODO: remove memset????
         memset(this, 0, sizeof(uv_fs_t));
     }
 
@@ -122,6 +124,7 @@ struct ReadBlockReq : public uv_fs_t {
     }
 
     std::shared_ptr<char> buf;
+    std::size_t offset = 0;
 };
 
 }
@@ -139,6 +142,7 @@ void File::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_c
     auto req = new ReadBlockReq;
     req->buf = std::shared_ptr<char>(new char[bytes_count], [](char* p) {delete[] p;});
     req->data = this;
+    req->offset = offset;
 
     uv_buf_t buf = uv_buf_init(req->buf.get(), bytes_count);
     // TODO: error handling for uv_fs_read return value
@@ -190,7 +194,7 @@ void File::schedule_read() {
         //m_loop->stop_dummy_idle();
     }
 
-    std::cout << "using buffer with index: " << i << std::endl;
+    //std::cout << "using buffer with index: " << i << std::endl;
 
     ReadReq& read_req = m_read_reqs[i];
     read_req.is_free = false;
@@ -321,7 +325,7 @@ void File::on_read_block(uv_fs_t* uv_req) {
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             io::Status status(0);
-            DataChunk data_chunk(req.buf, req.result, 0);
+            DataChunk data_chunk(req.buf, req.result, req.offset);
             this_.m_read_callback(this_, data_chunk, status);
         }
     }
@@ -371,8 +375,9 @@ void File::on_read(uv_fs_t* uv_req) {
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             io::Status status(0);
-            DataChunk data_chunk(req.buf, req.result, 0);
+            DataChunk data_chunk(req.buf, req.result, this_.m_current_offset);
             this_.m_read_callback(this_, data_chunk, status);
+            this_.m_current_offset += req.result;
         }
 
         this_.schedule_read();

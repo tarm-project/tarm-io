@@ -116,6 +116,7 @@ private:
     uv_loop_t* m_uv_loop;
 
     ReadReq m_read_reqs[READ_BUFS_NUM];
+    std::size_t m_current_offset = 0;
 
     //std::size_t m_used_read_bufs = 0;
     bool m_read_in_progress = false;

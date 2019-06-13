@@ -297,12 +297,12 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
 
     auto read = [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
         ASSERT_TRUE(read_status.ok());
-        // TODO: fixme
-        /*
-        for(std::size_t i = 0; i < size / 4; i ++) {
-            auto value = *reinterpret_cast<const std::uint32_t*>(buf.get() + (i * 4));
-            ASSERT_EQ(i, value);
-        }*/
+        ASSERT_EQ(0, chunk.size % 4);
+
+        for(std::size_t i = 0; i < chunk.size / 4; i ++) {
+            auto read_value = *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + (i * 4));
+            ASSERT_EQ(i + chunk.offset / 4, read_value) << " i=" << i;
+        }
     };
 
     auto end_read = [&](io::File& file) {
@@ -467,6 +467,7 @@ TEST_F(FileTest, read_block) {
 
         file.read_block(8, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
             ASSERT_NE(nullptr, chunk.buf);
+            ASSERT_EQ(8, chunk.offset);
             ASSERT_EQ(16, chunk.size);
 
             read_status_code = read_status.code();
