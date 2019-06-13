@@ -384,6 +384,34 @@ TEST_F(FileTest, read_not_open_file) {
     file->schedule_removal();
 }
 
+TEST_F(FileTest, sequential_read_data_past_eof) {
+    const std::size_t SIZE = 1024 * 4;
+
+    auto path = create_file_for_read(m_tmp_test_dir, SIZE);
+    ASSERT_FALSE(path.empty());
+
+    bool second_read_called = false;
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+    file->open(path, [&second_read_called](io::File& file, const io::Status& open_status) {
+        ASSERT_TRUE(open_status.ok());
+
+        file.read([](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+            ASSERT_TRUE(read_status.ok());
+        },
+        [&second_read_called](io::File& file) { // end read
+            file.read([&second_read_called](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+                second_read_called = true;
+            });
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    ASSERT_FALSE(second_read_called);
+    file->schedule_removal();
+}
+
 TEST_F(FileTest, close_in_read) {
     const std::size_t SIZE = 1024 * 512;
 
