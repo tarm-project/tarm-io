@@ -306,6 +306,10 @@ void File::on_read_block(uv_fs_t* uv_req) {
     auto& req = *reinterpret_cast<ReadBlockReq*>(uv_req);
     auto& this_ = *reinterpret_cast<File*>(req.data);
 
+    io::ScopeExitGuard req_guard([&req]() {
+        delete &req;
+    });
+
     if (!this_.is_open()) {
         if (this_.m_read_callback) {
             this_.m_read_callback(this_, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
@@ -325,8 +329,6 @@ void File::on_read_block(uv_fs_t* uv_req) {
             this_.m_read_callback(this_, data_chunk, status);
         }
     }
-
-    delete &req;
 }
 
 void File::on_read(uv_fs_t* uv_req) {
