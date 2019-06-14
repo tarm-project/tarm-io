@@ -15,8 +15,12 @@ public:
         if (m_callback) {
             m_callback();
         }
-
     }
+
+    void reset() {
+        m_callback = nullptr;
+    }
+
 private:
     Callback m_callback;
 };

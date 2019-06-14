@@ -23,3 +23,11 @@ TEST_F(ScopeExitGuardTest, callback_is_called) {
     ASSERT_FALSE(callback_called_1);
     ASSERT_FALSE(callback_called_1);
 }
+
+TEST_F(ScopeExitGuardTest, reset) {
+    io::ScopeExitGuard guard([&]() {
+        ASSERT_FALSE(false); // fail test if callback was called
+    });
+
+    guard.reset();
+}
