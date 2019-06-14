@@ -2,7 +2,8 @@
 
 #include "io/Common.h"
 
-struct CommonTest : public testing::Test {
+struct CommonTest : public testing::Test,
+                    public LogRedirector {
 };
 
 TEST_F(CommonTest, ip4_addr_single_conversion) {

@@ -43,7 +43,8 @@ std::string create_file_for_read(const std::string& path_where_create, std::size
 
 } // namespace
 
-struct FileTest : public testing::Test {
+struct FileTest : public testing::Test,
+                  public LogRedirector {
     FileTest() {
         m_tmp_test_dir = create_temp_test_directory();
     }

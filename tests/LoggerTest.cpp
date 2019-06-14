@@ -2,7 +2,8 @@
 
 #include "io/Logger.h"
 
-struct LoggerTest : public testing::Test {
+struct LoggerTest : public testing::Test,
+                    public LogRedirector {
 
 };
 

@@ -8,7 +8,8 @@
 #include <sys/stat.h>
 //#include <sys/sysmacros.h>
 
-struct DirTest : public testing::Test {
+struct DirTest : public testing::Test,
+                 public LogRedirector {
     DirTest() {
         m_tmp_test_dir = create_temp_test_directory();
     }

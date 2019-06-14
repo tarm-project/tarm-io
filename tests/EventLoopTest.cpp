@@ -5,7 +5,8 @@
 #include <thread>
 #include <mutex>
 
-struct EventLoopTest : public testing::Test {
+struct EventLoopTest : public testing::Test,
+                       public LogRedirector {
 
 };
 

@@ -2,7 +2,8 @@
 
 #include "io/ScopeExitGuard.h"
 
-struct ScopeExitGuardTest : public testing::Test {
+struct ScopeExitGuardTest : public testing::Test,
+                            public LogRedirector {
 
 };
 

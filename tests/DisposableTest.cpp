@@ -5,7 +5,8 @@
 #include <chrono>
 #include <thread>
 
-struct DisposableTest : public testing::Test {
+struct DisposableTest : public testing::Test,
+                        public LogRedirector {
 };
 
 namespace {

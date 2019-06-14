@@ -4,7 +4,8 @@
 
 #include <chrono>
 
-struct TimerTest : public testing::Test {
+struct TimerTest : public testing::Test,
+                   public LogRedirector {
 
 };
 
