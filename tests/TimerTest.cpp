@@ -34,7 +34,7 @@ TEST_F(TimerTest, no_repeat) {
     ASSERT_EQ(0, loop.run());
 
     const auto timer_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    EXPECT_GE(timer_duration, TIMEOUT_MS);
+    EXPECT_GE(timer_duration, TIMEOUT_MS - 1); // -1 because sometime timer may wake up a bit earlier
 
     EXPECT_EQ(1, call_counter);
 }

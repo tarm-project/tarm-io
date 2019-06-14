@@ -76,7 +76,8 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
 
     if (nread < 0) {
         if (nread == UV_EOF) {
-            std::cout << "Connection end!" << std::endl;
+            this_.m_loop->log(Logger::Severity::TRACE, "TcpServer::on_read connection end ",
+                              io::ip4_addr_to_string(tcp_client.ipv4_addr()), ":", tcp_client.port());
             //tcp_client.close();
             tcp_client.schedule_removal();
         }
@@ -98,15 +99,17 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
 
 void TcpServer::on_new_connection(uv_stream_t* server, int status) {
     assert(server && "server should be not null");
-    std::cout << "on_new_connection" << std::endl;
+
+    auto& this_ = *reinterpret_cast<TcpServer*>(server->data);
+
+    this_.m_loop->log(Logger::Severity::TRACE, "TcpServer::on_new_connection");
+
     if (status < 0) {
-        // TODO: error handling!
-        //fprintf(stderr, "New connection error %s\n", uv_strerror(status));
-        // error!
+        this_.m_loop->log(Logger::Severity::ERROR, "TcpServer::on_new_connection error: ", uv_strerror(status));
+        // TODO: error handling
         return;
     }
 
-    auto& this_ = *reinterpret_cast<TcpServer*>(server->data);
     auto tcp_client = new TcpClient(*this_.m_loop, this_);
 
     if (uv_accept(server, reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream())) == 0) {

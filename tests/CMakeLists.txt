@@ -4,6 +4,7 @@ find_package(GTest REQUIRED)
 # top to bottom if multiple tests fail.
 FILE(GLOB TESTS_LIST *.h)
 list(APPEND TESTS_LIST
+    Main.cpp
     UTCommon.cpp
     CommonTest.cpp
     LoggerTest.cpp
@@ -27,7 +28,7 @@ add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
 target_link_libraries(${TESTS_EXE_NAME}
     io
     GTest::GTest
-    GTest::Main
+#    GTest::Main
     Boost::system
     Boost::filesystem
 )

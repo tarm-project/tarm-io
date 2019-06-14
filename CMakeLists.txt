@@ -36,8 +36,11 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 # TODO: need to find better name than io
 # TODO: looks like need to move io-related CMake code into io folder
-FILE(GLOB IO_SOURCE_LIST io/*.h)
+FILE(GLOB IO_SOURCE_LIST
+        io/*.h
+        io/global/*.h)
 list(APPEND IO_SOURCE_LIST
+        io/global/Configuration.cpp
         io/Common.cpp
         io/EventLoop.cpp
         io/Disposable.cpp

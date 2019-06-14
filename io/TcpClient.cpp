@@ -22,7 +22,7 @@ TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
 }
 
 TcpClient::~TcpClient() {
-    std::cout << "TcpClient::~TcpClient" << std::endl;
+    m_loop->log(Logger::Severity::ERROR, "TcpClient::~TcpClient");
 
     if (m_connect_req) {
         delete m_connect_req; // TODO: delete right after connect???
@@ -55,7 +55,8 @@ void TcpClient::connect(const std::string& address, std::uint16_t port, ConnectC
 
     m_port = port;
     m_ipv4_addr = ntohl(addr.sin_addr.s_addr);
-    std::cout << io::ip4_addr_to_string(m_ipv4_addr) << std::endl;
+
+    m_loop->log(Logger::Severity::DEBUG, "TcpClient::connect ", io::ip4_addr_to_string(m_ipv4_addr));
 
     init_stream();
     m_connect_callback = callback;
@@ -134,7 +135,7 @@ uv_tcp_t* TcpClient::tcp_client_stream() {
 }
 
 void TcpClient::schedule_removal() {
-    //std::cout << "TcpClient::schedule_removal " << io::ip4_addr_to_string(ipv4_addr()) << " " << port() << std::endl;
+    m_loop->log(Logger::Severity::TRACE, "TcpClient::schedule_removal ", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
 
     close();
 
@@ -142,12 +143,13 @@ void TcpClient::schedule_removal() {
 }
 
 void TcpClient::close() {
+    m_loop->log(Logger::Severity::TRACE, "TcpClient::close ", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
+
     if (m_close_callback) {
         m_close_callback(*this);
     }
 
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
-        std::cout << "Closing client..." << std::endl;
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), TcpClient::on_close);
         m_tcp_stream = nullptr;
     }
@@ -177,9 +179,10 @@ void TcpClient::after_write(uv_write_t* req, int status) {
 }
 
 void TcpClient::on_shutdown(uv_shutdown_t* req, int status) {
-    std::cout << "on_client_shutdown" << std::endl;
-
     auto& this_ = *reinterpret_cast<TcpClient*>(req->data);
+
+    this_.m_loop->log(Logger::Severity::TRACE, "TcpClient::on_shutdown ", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
+
     this_.schedule_removal();
 
     //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpClient::on_close_cb);

@@ -9,6 +9,8 @@ namespace io {
 class Logger {
 public:
     enum class Severity {
+        TRACE,
+        DEBUG,
         INFO,
         WARNING,
         ERROR
@@ -43,6 +45,10 @@ private:
 inline
 std::ostream& operator<< (std::ostream& os, Logger::Severity severity) {
     switch (severity) {
+        case Logger::Severity::TRACE:
+            return os << "TRACE";
+        case Logger::Severity::DEBUG:
+            return os << "DEBUG";
         case Logger::Severity::INFO:
             return os << "INFO";
         case Logger::Severity::WARNING:

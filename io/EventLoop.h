@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Common.h"
+#include "Logger.h"
 
 #include <functional>
 #include <memory>
 
 namespace io {
 
-class EventLoop {
+class EventLoop : public Logger {
 public:
     using WorkCallback = std::function<void()>;
     using WorkDoneCallback = std::function<void()>;

@@ -1,6 +1,8 @@
 #include "EventLoop.h"
+#include "global/Configuration.h"
 
 #include <unordered_map>
+#include <atomic>
 
 // TODO: remove
 #include <iostream>
@@ -18,7 +20,7 @@ struct Idle : public uv_idle_t {
 
 class EventLoop::Impl : public uv_loop_t {
 public:
-    Impl();
+    Impl(EventLoop& loop);
     ~Impl();
 
     Impl(const Impl& other) = delete;
@@ -48,34 +50,31 @@ public:
     static void on_each_loop_cycle_handler_close(uv_handle_t* handle);
 
 private:
+    EventLoop* m_loop;
     // TODO: handle wrap around
     std::size_t m_idle_it_counter = 0;
     std::unordered_map<size_t, std::unique_ptr<Idle>> m_each_loop_cycle_handlers;
 
-    // TODO: timer is cheaper to use than callback called on every loop iteration like idle or check
     uv_timer_t* m_dummy_idle = nullptr;
     std::int64_t m_idle_ref_counter = 0;
 };
 
 
-EventLoop::Impl::Impl() {
+EventLoop::Impl::Impl(EventLoop& loop) :
+    m_loop(&loop) {
     uv_loop_init(this);
 }
 
 EventLoop::Impl::~Impl() {
     int status = uv_loop_close(this);
     if (status == UV_EBUSY) {
-        // Making the last attemt to close everytjing and shut down gracefully
-        //std::cout << "status " << uv_err_name(status) << " " << uv_strerror(status) << std::endl;
-        uv_run(this, UV_RUN_ONCE);
-        /*status = */uv_loop_close(this);
-        //std::cout << "status " << uv_strerror(status) << std::endl;
-    }
+        m_loop->log(Severity::DEBUG, "Loop: returned EBUSY at close, running one more time");
 
-    // Deleted in close callback
-    //if (m_dummy_idle) {
-    //    delete m_dummy_idle;
-    //}
+        // Making the last attemt to close everytjing and shut down gracefully
+        uv_run(this, UV_RUN_ONCE);
+        uv_loop_close(this);
+        m_loop->log(Severity::DEBUG, "Loop: done");
+    }
 }
 
 namespace {
@@ -206,8 +205,18 @@ void EventLoop::Impl::on_each_loop_cycle_handler_close(uv_handle_t* handle) {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
+namespace {
+// TODO: handle wrap around
+std::atomic<std::size_t> m_loop_id_counter(0);
+
+} // namespace
+
 EventLoop::EventLoop() :
-    m_impl(new EventLoop::Impl) {
+    Logger("Loop-" + std::to_string(m_loop_id_counter++)),
+    m_impl(new EventLoop::Impl(*this)) {
+    if (global::logger_callback()) {
+        enable_log(global::logger_callback());
+    }
 }
 
 EventLoop::~EventLoop() {
