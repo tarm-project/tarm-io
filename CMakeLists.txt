@@ -55,7 +55,7 @@ list(APPEND IO_SOURCE_LIST
         io/TcpServer.cpp
 )
 
-source_group(io FILES ${IO_SOURCE_LIST})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${IO_SOURCE_LIST})
 
 set(IO_LIB_LIST)
 list(APPEND IO_LIB_LIST ${LIBUV_LIBRARIES} ${LIBUV_LDFLAGS})
