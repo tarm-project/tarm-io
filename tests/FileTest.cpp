@@ -717,7 +717,6 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
             std::lock_guard<decltype(mutex)> guard(mutex);
             if (captured_buf) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                EXPECT_FALSE(file->is_open());
                 captured_buf.reset();
                 break;
             }
