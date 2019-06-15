@@ -638,7 +638,7 @@ TEST_F(FileTest, slow_read_data_consumer) {
 
     // Using separate thread here instead of timer to not block event loop
     // and ensure if read is paused loop will not exit and continue to block on loop.run()
-    std::thread t([&mutex, &captured_bufs, &exit_reseting_thread]() {
+    std::thread t([&mutex, &captured_bufs, &exit_reseting_thread, &loop]() {
         size_t iterations_counter = 0;
 
         while (true) { // TODO: avoid potentially infinite loop
@@ -651,7 +651,11 @@ TEST_F(FileTest, slow_read_data_consumer) {
 
             if (captured_bufs.size() == io::File::READ_BUFS_NUM || iterations_counter == 3) {
                 iterations_counter = 0;
-                captured_bufs.clear();
+
+                // Modifying data of a loop is only allowed in the loop's thread, thereby we use async
+                loop.async([&captured_bufs](){
+                    captured_bufs.clear();
+                });
             }
 
             ++iterations_counter;
@@ -710,14 +714,18 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
     auto file = new io::File(loop);
 
     std::mutex mutex;
-    std::thread t([&mutex, &captured_buf, file]() {
+    std::thread t([&mutex, &captured_buf, &loop]() {
         while (true) { // TODO: avoid potentially infinite loop
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             std::lock_guard<decltype(mutex)> guard(mutex);
             if (captured_buf) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                captured_buf.reset();
+
+                // Modifying data of a loop is only allowed in the loop's thread, thereby we use async
+                loop.async([&captured_buf](){
+                    captured_buf.reset();
+                });
                 break;
             }
         }
@@ -745,7 +753,7 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
         });
     });
 
-    // TODO: check from logger callback thatfor message like "No free buffer found"
+    // TODO: check from logger callback for message like "No free buffer found"
 
     ASSERT_EQ(0, loop.run());
     EXPECT_FALSE(end_read_called);
