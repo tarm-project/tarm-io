@@ -710,7 +710,14 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
     bool end_read_called = false;
     std::shared_ptr<const char> captured_buf;
 
+    bool file_buffers_in_use_event_occured = false;
+
     io::EventLoop loop;
+    loop.enable_log([&file_buffers_in_use_event_occured](const std::string& msg){
+        if (msg.find("File has read buffers in use, postponing removal") != std::string::npos) {
+            file_buffers_in_use_event_occured = true;
+        }
+    });
     auto file = new io::File(loop);
 
     std::mutex mutex;
@@ -753,10 +760,9 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
         });
     });
 
-    // TODO: check from logger callback for message like "No free buffer found"
-
     ASSERT_EQ(0, loop.run());
     EXPECT_FALSE(end_read_called);
+    EXPECT_TRUE(file_buffers_in_use_event_occured);
 }
 
 TEST_F(FileTest, simple_stat) {
