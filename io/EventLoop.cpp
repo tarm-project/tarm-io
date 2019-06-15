@@ -1,4 +1,5 @@
 #include "EventLoop.h"
+#include "ScopeExitGuard.h"
 #include "global/Configuration.h"
 
 #include <unordered_map>
@@ -29,8 +30,9 @@ public:
     Impl(Impl&& other) = default;
     Impl& operator=(Impl&& other) = default;
 
-    // Async
     void add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback = nullptr);
+
+    void async(AsyncCallback callback);
 
     // Warning: do not perform heavy calculations or blocking calls here
     std::size_t schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback);
@@ -48,6 +50,7 @@ public:
     static void on_after_work(uv_work_t* req, int status);
     static void on_idle(uv_idle_t* handle);
     static void on_each_loop_cycle_handler_close(uv_handle_t* handle);
+    static void on_async(uv_async_t* handle);
 
 private:
     EventLoop* m_loop;
@@ -160,6 +163,22 @@ void EventLoop::Impl::stop_dummy_idle() {
     m_dummy_idle = nullptr;
 }
 
+namespace {
+
+struct Async : public uv_async_t {
+    EventLoop::AsyncCallback callback = nullptr;
+};
+
+} // namespace
+
+void EventLoop::Impl::async(AsyncCallback callback) {
+    auto async = new Async;
+    async->callback = callback;
+
+    uv_async_init(this, async, EventLoop::Impl::on_async);
+    uv_async_send(async);
+}
+
 /////////////////////////////////////////// static ///////////////////////////////////////////
 void EventLoop::Impl::on_work(uv_work_t* req) {
     auto& work = *reinterpret_cast<Work*>(req);
@@ -203,6 +222,17 @@ void EventLoop::Impl::on_each_loop_cycle_handler_close(uv_handle_t* handle) {
     this_.m_each_loop_cycle_handlers.erase(it);
 }
 
+void EventLoop::Impl::on_async(uv_async_t* handle) {
+    auto& async = *reinterpret_cast<Async*>(handle);
+    ScopeExitGuard scope_guard([&async](){
+        delete &async;
+    });
+
+    async.callback();
+
+    uv_close(reinterpret_cast<uv_handle_t*>(handle), nullptr);
+}
+
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 namespace {
@@ -220,6 +250,10 @@ EventLoop::EventLoop() :
 }
 
 EventLoop::~EventLoop() {
+}
+
+void EventLoop::async(AsyncCallback callback) {
+    m_impl->async(callback);
 }
 
 void EventLoop::add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback) {

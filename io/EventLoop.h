@@ -10,6 +10,7 @@ namespace io {
 
 class EventLoop : public Logger {
 public:
+    using AsyncCallback = std::function<void()>;
     using WorkCallback = std::function<void()>;
     using WorkDoneCallback = std::function<void()>;
     using EachLoopCycleCallback = std::function<void()>;
@@ -23,8 +24,11 @@ public:
     EventLoop(EventLoop&& other) = default;
     EventLoop& operator=(EventLoop&& other) = default;
 
-    // Async
+    // Executed on thread pool
     void add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback = nullptr);
+
+    // Call callback on the EventLoop's thread. Could be executed from any thread
+    void async(AsyncCallback callback);
 
     // Warning: do not perform heavy calculations or blocking calls here
     std::size_t schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback);

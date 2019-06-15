@@ -175,4 +175,19 @@ TEST_F(EventLoopTest, dummy_idle) {
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(EventLoopTest, async) {
+    io::EventLoop loop;
+
+    auto main_thread_id = std::this_thread::get_id();
+    bool async_called = false;
+
+    loop.async([&main_thread_id, &async_called](){
+        ASSERT_EQ(main_thread_id, std::this_thread::get_id());
+        async_called = true;
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_TRUE(async_called);
+}
+
 // TODO: same loop run several times with different callbacks each time
