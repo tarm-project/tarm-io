@@ -646,7 +646,9 @@ TEST_F(FileTest, slow_read_data_consumer) {
 
             std::lock_guard<std::mutex> guard(mutex);
 
-            if (captured_bufs.size() == io::File::READ_BUFS_NUM || iterations_counter == 3) {
+            if (captured_bufs.size() == io::File::READ_BUFS_NUM ||
+                iterations_counter == 3 ||
+                exit_reseting_thread) {
                 iterations_counter = 0;
 
                 // Modifying data of a loop is only allowed in the loop's thread, thereby we use async
