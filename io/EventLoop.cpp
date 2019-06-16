@@ -51,6 +51,8 @@ public:
     static void on_idle(uv_idle_t* handle);
     static void on_each_loop_cycle_handler_close(uv_handle_t* handle);
     static void on_async(uv_async_t* handle);
+    static void on_dummy_idle_tick(uv_timer_t*);
+    static void on_dummy_idle_close(uv_handle_t* handle);
 
 private:
     EventLoop* m_loop;
@@ -59,7 +61,7 @@ private:
     std::unordered_map<size_t, std::unique_ptr<Idle>> m_each_loop_cycle_handlers;
 
     uv_timer_t* m_dummy_idle = nullptr;
-    std::int64_t m_idle_ref_counter = 0;
+    std::int64_t m_dummy_idle_ref_counter = 0;
 };
 
 
@@ -69,6 +71,8 @@ EventLoop::Impl::Impl(EventLoop& loop) :
 }
 
 EventLoop::Impl::~Impl() {
+    m_loop->log(Severity::TRACE, "EventLoop::Impl::~Impl: dummy_idle_ref_counter: ", m_dummy_idle_ref_counter);
+
     int status = uv_loop_close(this);
     if (status == UV_EBUSY) {
         m_loop->log(Severity::DEBUG, "Loop: returned EBUSY at close, running one more time");
@@ -128,34 +132,31 @@ void EventLoop::Impl::stop_call_on_each_loop_cycle(std::size_t handle) {
     uv_close(reinterpret_cast<uv_handle_t*>(it->second.get()), EventLoop::Impl::on_each_loop_cycle_handler_close);
 }
 
-namespace {
-
-void on_dummy_idle(uv_timer_t*) {
-    // Do nothing
-}
-
-void on_dummy_idle_close(uv_handle_t* handle) {
-    delete reinterpret_cast<uv_timer_t*>(handle);
-}
-
-} // namespace
-
 void EventLoop::Impl::start_dummy_idle() {
-    if (m_idle_ref_counter++) {
+    m_loop->log(Logger::Severity::TRACE, "EventLoop::Impl::start_dummy_idle ref_counter:", m_dummy_idle_ref_counter);
+
+    if (m_dummy_idle_ref_counter++) {
         return; // idle is already running
     }
 
-    m_dummy_idle = new uv_timer_t;
-    uv_timer_init(this, m_dummy_idle);
+    m_loop->log(Logger::Severity::TRACE, "EventLoop::Impl::start_dummy_idle, starting timer");
 
+    m_dummy_idle = new uv_timer_t;
+    std::memset(m_dummy_idle, 0, sizeof(uv_timer_t));
+    uv_timer_init(this, m_dummy_idle);
     m_dummy_idle->data = this;
-    uv_timer_start(m_dummy_idle, on_dummy_idle, 1, 1);
+
+    uv_timer_start(m_dummy_idle, on_dummy_idle_tick, 1, 1);
 }
 
 void EventLoop::Impl::stop_dummy_idle() {
-    if (--m_idle_ref_counter) {
+    m_loop->log(Logger::Severity::TRACE, "EventLoop::Impl::stop_dummy_idle ref_counter:", m_dummy_idle_ref_counter);
+
+    if (--m_dummy_idle_ref_counter) {
         return;
     }
+
+    m_loop->log(Logger::Severity::TRACE, "EventLoop::Impl::stop_dummy_idle, close timer");
 
     m_dummy_idle->data = nullptr;
     uv_timer_stop(m_dummy_idle);
@@ -231,6 +232,18 @@ void EventLoop::Impl::on_async(uv_async_t* handle) {
     async.callback();
 
     uv_close(reinterpret_cast<uv_handle_t*>(handle), nullptr);
+}
+
+void EventLoop::Impl::on_dummy_idle_tick(uv_timer_t* handle) {
+    auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
+    this_.m_loop->log(Logger::Severity::TRACE, "on_dummy_idle_tick");
+}
+
+void EventLoop::Impl::on_dummy_idle_close(uv_handle_t* handle) {
+    auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->loop);
+    this_.m_loop->log(Logger::Severity::TRACE, "on_dummy_idle_close");
+
+    delete reinterpret_cast<uv_timer_t*>(handle);
 }
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////

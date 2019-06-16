@@ -645,9 +645,6 @@ TEST_F(FileTest, slow_read_data_consumer) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             std::lock_guard<std::mutex> guard(mutex);
-            if (exit_reseting_thread) {
-                break;
-            }
 
             if (captured_bufs.size() == io::File::READ_BUFS_NUM || iterations_counter == 3) {
                 iterations_counter = 0;
@@ -659,6 +656,10 @@ TEST_F(FileTest, slow_read_data_consumer) {
             }
 
             ++iterations_counter;
+
+            if (exit_reseting_thread) {
+                break;
+            }
         }
     });
 
@@ -678,6 +679,12 @@ TEST_F(FileTest, slow_read_data_consumer) {
             bytes_read += chunk.size;
 
             std::lock_guard<std::mutex> guard(mutex);
+
+            for(std::size_t i = 0; i < chunk.size / 4; i ++) {
+                auto read_value = *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + (i * 4));
+                ASSERT_EQ(i + chunk.offset / 4, read_value) << " i=" << i;
+            }
+
             captured_bufs.push_back(chunk.buf);
         },
         [&mutex, &exit_reseting_thread](io::File& file) {
@@ -686,9 +693,13 @@ TEST_F(FileTest, slow_read_data_consumer) {
         });
     });
 
-    // TODO: check from logger callback thatfor message like "No free buffer found"
+    // TODO: check from logger callback for message like "No free buffer found"
 
     ASSERT_EQ(0, loop.run());
+    {
+        std::lock_guard<std::mutex> guard(mutex);
+        EXPECT_EQ(0, captured_bufs.size());
+    }
     EXPECT_EQ(SIZE, bytes_read);
 
     {

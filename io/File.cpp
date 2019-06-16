@@ -87,6 +87,8 @@ void File::open(const std::string& path, OpenCallback callback) {
         close();
     }
 
+    m_loop->log(Logger::Severity::DEBUG, "File::open ", path);
+
     m_path = path;
     m_current_offset = 0;
     m_open_request = new uv_fs_t;
@@ -211,6 +213,8 @@ void File::schedule_read(ReadReq& req) {
 
     // TODO: comments on this shared pointer
     req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* p) {
+        this->m_loop->log(Logger::Severity::TRACE, this->m_path, " buffer freed");
+
         req.is_free = true;
         m_loop->stop_dummy_idle();
 
@@ -226,6 +230,7 @@ void File::schedule_read(ReadReq& req) {
             return;
         }
 
+        this->m_loop->log(Logger::Severity::TRACE, this->m_path, " schedule_read");
         schedule_read();
     });
 
