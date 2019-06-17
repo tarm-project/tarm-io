@@ -8,6 +8,7 @@
 #include <boost/dll.hpp>
 
 #include <fstream>
+#include <mutex>
 #include <assert.h>
 
 
@@ -35,6 +36,7 @@ public:
         assert(!m_ofstream.fail());
 
         io::global::set_logger_callback([this](const std::string& message) {
+            std::lock_guard<decltype(m_log_mutex)> guard(m_log_mutex);
             m_ofstream << message << std::endl;
         });
     }
@@ -42,4 +44,5 @@ public:
 private:
     boost::filesystem::path m_logs_directory;
     std::ofstream m_ofstream;
+    std::mutex m_log_mutex;
 };
