@@ -58,7 +58,7 @@ list(APPEND IO_SOURCE_LIST
 
 if (${CMAKE_VERSION} VERSION_LESS "3.8.2")
     source_group(io FILES ${IO_SOURCE_LIST})
-elseif()
+else()
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${IO_SOURCE_LIST})
 endif()
 
