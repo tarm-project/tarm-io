@@ -4,6 +4,7 @@
 
 #include <unordered_map>
 #include <atomic>
+#include <cstring>
 
 // TODO: remove
 #include <iostream>
