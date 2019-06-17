@@ -1,6 +1,7 @@
 #include "UTCommon.h"
 
 #include "io/EventLoop.h"
+#include "io/ScopeExitGuard.h"
 
 #include <thread>
 #include <mutex>
@@ -175,7 +176,7 @@ TEST_F(EventLoopTest, dummy_idle) {
     ASSERT_EQ(0, loop.run());
 }
 
-TEST_F(EventLoopTest, async) {
+TEST_F(EventLoopTest, async_from_main_thread) {
     io::EventLoop loop;
 
     auto main_thread_id = std::this_thread::get_id();
@@ -184,6 +185,32 @@ TEST_F(EventLoopTest, async) {
     loop.async([&main_thread_id, &async_called](){
         ASSERT_EQ(main_thread_id, std::this_thread::get_id());
         async_called = true;
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_TRUE(async_called);
+}
+
+TEST_F(EventLoopTest, DISABLED_async_from_other_thread) {
+    io::EventLoop loop;
+
+    auto main_thread_id = std::this_thread::get_id();
+    bool async_called = false;
+
+    loop.start_dummy_idle(); // need to hold loop running
+
+    std::thread thread([&loop, &async_called, &main_thread_id](){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        loop.async([&loop, &async_called, &main_thread_id](){
+            ASSERT_EQ(main_thread_id, std::this_thread::get_id());
+            async_called = true;
+            loop.stop_dummy_idle();
+        });
+    });
+
+    io::ScopeExitGuard scope_guard([&thread](){
+        thread.join();
     });
 
     ASSERT_EQ(0, loop.run());

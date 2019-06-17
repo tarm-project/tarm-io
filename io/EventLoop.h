@@ -28,6 +28,7 @@ public:
     void add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback = nullptr);
 
     // Call callback on the EventLoop's thread. Could be executed from any thread
+    // TODO: rename as call_on_loop_thread or something like that
     void async(AsyncCallback callback);
 
     // Warning: do not perform heavy calculations or blocking calls here
