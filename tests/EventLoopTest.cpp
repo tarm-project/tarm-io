@@ -191,7 +191,7 @@ TEST_F(EventLoopTest, async_from_main_thread) {
     EXPECT_TRUE(async_called);
 }
 
-TEST_F(EventLoopTest, DISABLED_async_from_other_thread) {
+TEST_F(EventLoopTest, async_from_other_thread) {
     io::EventLoop loop;
 
     auto main_thread_id = std::this_thread::get_id();

@@ -5,9 +5,16 @@
 #include <unordered_map>
 #include <atomic>
 #include <cstring>
+#include <thread>
+#include <mutex>
+#include <deque>
+#include <functional>
+
 
 // TODO: remove
 #include <iostream>
+
+
 
 namespace io {
 
@@ -63,12 +70,21 @@ private:
 
     uv_timer_t* m_dummy_idle = nullptr;
     std::int64_t m_dummy_idle_ref_counter = 0;
+
+    std::unique_ptr<uv_async_t> m_async;
+    std::deque<std::function<void()>> m_callbacks_queue;
+    std::mutex m_callbacks_queue_mutex;
 };
 
 
 EventLoop::Impl::Impl(EventLoop& loop) :
     m_loop(&loop) {
     uv_loop_init(this);
+
+    m_async = std::unique_ptr<uv_async_t>(new uv_async_t);
+    m_async->data = this;
+    uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
+    uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
 }
 
 EventLoop::Impl::~Impl() {
@@ -80,6 +96,7 @@ EventLoop::Impl::~Impl() {
 
         // Making the last attemt to close everytjing and shut down gracefully
         uv_run(this, UV_RUN_ONCE);
+
         uv_loop_close(this);
         m_loop->log(Severity::DEBUG, "Loop: done");
     }
@@ -106,7 +123,21 @@ void EventLoop::Impl::add_work(WorkCallback work_callback, WorkDoneCallback work
 }
 
 int EventLoop::Impl::run() {
-    return uv_run(this, UV_RUN_DEFAULT);
+    int run_status = uv_run(this, UV_RUN_DEFAULT);
+
+    {
+        std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
+
+        uv_close(reinterpret_cast<uv_handle_t*>(m_async.get()), nullptr);
+
+        m_loop->log(Severity::DEBUG, "EventLoop::Impl::~Impl: pending async events count: ", m_callbacks_queue.size());
+
+        for(auto& callback : m_callbacks_queue) {
+            callback();
+        }
+    }
+
+    return run_status;
 }
 
 std::size_t EventLoop::Impl::schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback) {
@@ -174,11 +205,12 @@ struct Async : public uv_async_t {
 } // namespace
 
 void EventLoop::Impl::async(AsyncCallback callback) {
-    auto async = new Async;
-    async->callback = callback;
+    {
+        std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
+        m_callbacks_queue.push_back(callback);
+    }
 
-    uv_async_init(this, async, EventLoop::Impl::on_async);
-    uv_async_send(async);
+    uv_async_send(m_async.get());
 }
 
 /////////////////////////////////////////// static ///////////////////////////////////////////
@@ -225,6 +257,18 @@ void EventLoop::Impl::on_each_loop_cycle_handler_close(uv_handle_t* handle) {
 }
 
 void EventLoop::Impl::on_async(uv_async_t* handle) {
+    auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
+
+    {
+        std::lock_guard<std::mutex> guard(this_.m_callbacks_queue_mutex);
+        for(auto& callback : this_.m_callbacks_queue) {
+            callback();
+        }
+
+        this_.m_callbacks_queue.clear();
+    }
+
+    /*
     auto& async = *reinterpret_cast<Async*>(handle);
     ScopeExitGuard scope_guard([&async](){
         delete &async;
@@ -233,6 +277,7 @@ void EventLoop::Impl::on_async(uv_async_t* handle) {
     async.callback();
 
     uv_close(reinterpret_cast<uv_handle_t*>(handle), nullptr);
+    */
 }
 
 void EventLoop::Impl::on_dummy_idle_tick(uv_timer_t* handle) {
