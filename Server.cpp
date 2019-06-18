@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if ((status = server.listen(on_data_read, on_new_connection)) != 0) {
+    if ((status = server.listen(on_new_connection, on_data_read)) != 0) {
         std::cerr << "[Server] Failed to listen. Reason: " << uv_strerror(status) << std::endl;
         return 1;
     }

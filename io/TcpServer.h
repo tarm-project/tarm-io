@@ -36,8 +36,8 @@ public:
     int bind(const std::string& ip_addr_str, std::uint16_t port);
 
     // On success, zero is returned
-    int listen(DataReceivedCallback data_receive_callback,
-               NewConnectionCallback new_connection_callback = nullptr,
+    int listen(NewConnectionCallback new_connection_callback,
+               DataReceivedCallback data_receive_callback,
                int backlog_size = 128);
 
     void shutdown();

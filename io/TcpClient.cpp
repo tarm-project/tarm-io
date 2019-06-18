@@ -149,6 +149,8 @@ void TcpClient::close() {
 
     m_loop->log(Logger::Severity::TRACE, "TcpClient::close ", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
 
+    m_is_open = false;
+
     if (m_close_callback) {
         m_close_callback(*this);
     }
@@ -205,7 +207,7 @@ void TcpClient::on_connect(uv_connect_t* req, int status) {
 void TcpClient::on_close(uv_handle_t* handle) {
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpClient*>(handle->data);
-        this_.m_is_open = false;;
+        //this_.m_is_open = false;;
         this_.m_port = 0;
         this_.m_ipv4_addr = 0;
     };

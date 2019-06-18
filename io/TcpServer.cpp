@@ -26,11 +26,11 @@ int TcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
     return uv_tcp_bind(&m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
 }
 
-int TcpServer::listen(DataReceivedCallback data_receive_callback,
-                      NewConnectionCallback new_connection_callback,
+int TcpServer::listen(NewConnectionCallback new_connection_callback,
+                      DataReceivedCallback data_receive_callback,
                       int backlog_size) {
-    m_data_receive_callback = data_receive_callback;
     m_new_connection_callback = new_connection_callback;
+    m_data_receive_callback = data_receive_callback;
     return uv_listen(reinterpret_cast<uv_stream_t*>(&m_server_handle), backlog_size, TcpServer::on_new_connection);
 }
 
