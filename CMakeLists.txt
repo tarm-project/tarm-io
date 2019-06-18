@@ -17,6 +17,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 endif()
 
+#export TSAN_OPTIONS="halt_on_error=1"
 set(IO_SANITIZER "thread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${IO_SANITIZER}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${IO_SANITIZER}")
