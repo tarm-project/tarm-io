@@ -138,6 +138,30 @@ TEST_F(DirTest, close_in_list_callback) {
     // TODO:
 }
 
+TEST_F(DirTest, empty_dir) {
+    io::EventLoop loop;
+    auto dir = new io::Dir(loop);
+
+    // TODO: rename???? to "list"
+    bool read_called = false;
+    bool end_read_called = false;
+
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status&) {
+        dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
+            read_called = true;
+        }, // end_read
+        [&](io::Dir& dir) {
+            end_read_called = true;
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    dir->schedule_removal();
+
+    EXPECT_FALSE(read_called);
+    EXPECT_TRUE(end_read_called);
+}
+
 TEST_F(DirTest, list_symlink) {
     auto file_path = m_tmp_test_dir / "some_file";
     {
