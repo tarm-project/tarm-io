@@ -544,7 +544,7 @@ TEST_F(FileTest, read_block_past_edge) {
     file->schedule_removal();
 }
 
-TEST_F(FileTest, DISABLED_read_block_not_existing) {
+TEST_F(FileTest, DISABLED_read_block_not_existing_chunk) {
     // TODO: need to finish test
 
     const std::size_t SIZE = 128;

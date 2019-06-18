@@ -14,6 +14,7 @@ list(APPEND TESTS_LIST
     TimerTest.cpp
     FileTest.cpp
     DirTest.cpp
+    TcpClientServerTest.cpp
 )
 
 include_directories(

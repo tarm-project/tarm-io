@@ -143,6 +143,10 @@ void TcpClient::schedule_removal() {
 }
 
 void TcpClient::close() {
+    if (!is_open()) {
+        return;
+    }
+
     m_loop->log(Logger::Severity::TRACE, "TcpClient::close ", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
 
     if (m_close_callback) {
