@@ -71,17 +71,25 @@ private:
     uv_timer_t* m_dummy_idle = nullptr;
     std::int64_t m_dummy_idle_ref_counter = 0;
 
-    std::unique_ptr<uv_async_t> m_async;
+    std::unique_ptr<uv_async_t, std::function<void(uv_async_t*)>> m_async;
     std::deque<std::function<void()>> m_callbacks_queue;
     std::mutex m_callbacks_queue_mutex;
 };
 
+namespace {
+
+void on_async_close(uv_handle_t* handle) {
+    delete reinterpret_cast<uv_async_t*>(handle);
+}
+
+} // namespace
 
 EventLoop::Impl::Impl(EventLoop& loop) :
-    m_loop(&loop) {
+    m_loop(&loop),
+    m_async(new uv_async_t, [](uv_async_t* async) {
+        uv_close(reinterpret_cast<uv_handle_t*>(async), on_async_close);
+    }) {
     uv_loop_init(this);
-
-    m_async = std::unique_ptr<uv_async_t>(new uv_async_t);
     m_async->data = this;
     uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
     uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
@@ -89,6 +97,12 @@ EventLoop::Impl::Impl(EventLoop& loop) :
 
 EventLoop::Impl::~Impl() {
     m_loop->log(Severity::TRACE, "EventLoop::Impl::~Impl: dummy_idle_ref_counter: ", m_dummy_idle_ref_counter);
+
+    {
+        std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
+        m_async.reset();
+        m_callbacks_queue.clear();
+    }
 
     int status = uv_loop_close(this);
     if (status == UV_EBUSY) {
@@ -127,8 +141,6 @@ int EventLoop::Impl::run() {
 
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
-
-        uv_close(reinterpret_cast<uv_handle_t*>(m_async.get()), nullptr);
 
         m_loop->log(Severity::DEBUG, "EventLoop::Impl::~Impl: pending async events count: ", m_callbacks_queue.size());
 
@@ -195,14 +207,6 @@ void EventLoop::Impl::stop_dummy_idle() {
     uv_close(reinterpret_cast<uv_handle_t*>(m_dummy_idle), on_dummy_idle_close);
     m_dummy_idle = nullptr;
 }
-
-namespace {
-
-struct Async : public uv_async_t {
-    EventLoop::AsyncCallback callback = nullptr;
-};
-
-} // namespace
 
 void EventLoop::Impl::async(AsyncCallback callback) {
     {
