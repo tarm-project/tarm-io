@@ -40,7 +40,7 @@ public:
 
     void add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback = nullptr);
 
-    void async(AsyncCallback callback);
+    void execute_on_loop_thread(AsyncCallback callback);
 
     // Warning: do not perform heavy calculations or blocking calls here
     std::size_t schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback);
@@ -208,7 +208,7 @@ void EventLoop::Impl::stop_dummy_idle() {
     m_dummy_idle = nullptr;
 }
 
-void EventLoop::Impl::async(AsyncCallback callback) {
+void EventLoop::Impl::execute_on_loop_thread(AsyncCallback callback) {
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
         m_callbacks_queue.push_back(callback);
@@ -315,8 +315,8 @@ EventLoop::EventLoop() :
 EventLoop::~EventLoop() {
 }
 
-void EventLoop::async(AsyncCallback callback) {
-    m_impl->async(callback);
+void EventLoop::execute_on_loop_thread(AsyncCallback callback) {
+    m_impl->execute_on_loop_thread(callback);
 }
 
 void EventLoop::add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback) {

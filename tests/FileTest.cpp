@@ -656,7 +656,7 @@ TEST_F(FileTest, slow_read_data_consumer) {
 
             if (need_reset_bufs) {
                 // Modifying data of a loop is only allowed in the loop's thread, thereby we use async
-                loop.async([&mutex, &captured_bufs](){
+                loop.execute_on_loop_thread([&mutex, &captured_bufs](){
                     std::lock_guard<std::mutex> guard(mutex);
                     captured_bufs.clear();
                 });
@@ -752,7 +752,7 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
                 // Modifying data of a loop is only allowed in the loop's thread, thereby we use async
-                loop.async([&captured_buf](){
+                loop.execute_on_loop_thread([&captured_buf](){
                     captured_buf.reset();
                 });
                 break;

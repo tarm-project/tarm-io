@@ -176,35 +176,35 @@ TEST_F(EventLoopTest, dummy_idle) {
     ASSERT_EQ(0, loop.run());
 }
 
-TEST_F(EventLoopTest, async_from_main_thread) {
+TEST_F(EventLoopTest, execute_on_loop_thread_from_main_thread) {
     io::EventLoop loop;
 
     auto main_thread_id = std::this_thread::get_id();
-    bool async_called = false;
+    bool execute_on_loop_thread_called = false;
 
-    loop.async([&main_thread_id, &async_called](){
+    loop.execute_on_loop_thread([&main_thread_id, &execute_on_loop_thread_called](){
         ASSERT_EQ(main_thread_id, std::this_thread::get_id());
-        async_called = true;
+        execute_on_loop_thread_called = true;
     });
 
     ASSERT_EQ(0, loop.run());
-    EXPECT_TRUE(async_called);
+    EXPECT_TRUE(execute_on_loop_thread_called);
 }
 
-TEST_F(EventLoopTest, async_from_other_thread) {
+TEST_F(EventLoopTest, execute_on_loop_thread_from_other_thread) {
     io::EventLoop loop;
 
     auto main_thread_id = std::this_thread::get_id();
-    bool async_called = false;
+    bool execute_on_loop_thread_called = false;
 
     loop.start_dummy_idle(); // need to hold loop running
 
-    std::thread thread([&loop, &async_called, &main_thread_id](){
+    std::thread thread([&loop, &execute_on_loop_thread_called, &main_thread_id](){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        loop.async([&loop, &async_called, &main_thread_id](){
+        loop.execute_on_loop_thread([&loop, &execute_on_loop_thread_called, &main_thread_id](){
             ASSERT_EQ(main_thread_id, std::this_thread::get_id());
-            async_called = true;
+            execute_on_loop_thread_called = true;
             loop.stop_dummy_idle();
         });
     });
@@ -214,7 +214,7 @@ TEST_F(EventLoopTest, async_from_other_thread) {
     });
 
     ASSERT_EQ(0, loop.run());
-    EXPECT_TRUE(async_called);
+    EXPECT_TRUE(execute_on_loop_thread_called);
 }
 
 // TODO: same loop run several times with different callbacks each time
