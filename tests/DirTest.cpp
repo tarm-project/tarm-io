@@ -162,6 +162,31 @@ TEST_F(DirTest, empty_dir) {
     EXPECT_TRUE(end_read_called);
 }
 
+TEST_F(DirTest, no_read_callback) {
+    {
+        std::ofstream ofile((m_tmp_test_dir/ "some_file").string());
+        ASSERT_FALSE(ofile.fail());
+    }
+
+    io::EventLoop loop;
+    auto dir = new io::Dir(loop);
+
+    // TODO: rename???? to "list"
+    bool end_read_called = false;
+
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status&) {
+        dir.read(nullptr,
+        [&](io::Dir& dir) { // end_read
+            end_read_called = true;
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    dir->schedule_removal();
+
+    EXPECT_TRUE(end_read_called);
+}
+
 TEST_F(DirTest, list_symlink) {
     auto file_path = m_tmp_test_dir / "some_file";
     {
