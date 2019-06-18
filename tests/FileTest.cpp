@@ -632,9 +632,7 @@ TEST_F(FileTest, slow_read_data_consumer) {
 
     std::vector<std::shared_ptr<const char>> captured_bufs;
     std::mutex mutex;
-    bool exit_reseting_thread = false;
-
-    std::size_t bytes_read = 0;
+    bool exit_reseting_thread(false);
 
     // Using separate thread here instead of timer to not block event loop
     // and ensure if read is paused loop will not exit and continue to block on loop.run()
@@ -642,32 +640,43 @@ TEST_F(FileTest, slow_read_data_consumer) {
         size_t iterations_counter = 0;
 
         while (true) { // TODO: avoid potentially infinite loop
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-            std::lock_guard<std::mutex> guard(mutex);
+            bool need_reset_bufs = false;
 
-            if (captured_bufs.size() == io::File::READ_BUFS_NUM ||
-                iterations_counter == 3 ||
-                exit_reseting_thread) {
-                iterations_counter = 0;
+            {
+                std::lock_guard<std::mutex> guard(mutex);
 
+                if (captured_bufs.size() == io::File::READ_BUFS_NUM || iterations_counter == 3 || exit_reseting_thread) {
+                    iterations_counter = 0;
+                    need_reset_bufs = true;
+                }
+            }
+
+            if (need_reset_bufs) {
                 // Modifying data of a loop is only allowed in the loop's thread, thereby we use async
-                loop.async([&captured_bufs](){
+                loop.async([&mutex, &captured_bufs](){
+                    std::lock_guard<std::mutex> guard(mutex);
                     captured_bufs.clear();
                 });
             }
 
-            ++iterations_counter;
-
-            if (exit_reseting_thread) {
-                break;
+            {
+                std::lock_guard<std::mutex> guard(mutex);
+                if (exit_reseting_thread && captured_bufs.empty()) {
+                    break;
+                }
             }
+
+            ++iterations_counter;
         }
     });
 
     io::ScopeExitGuard scope_guard([&]() {
         t.join();
     });
+
+    std::size_t bytes_read = 0;
 
     auto file = new io::File(loop);
     file->open(path, [&captured_bufs, &mutex, &exit_reseting_thread, &bytes_read](io::File& file, const io::Status& open_status) {
@@ -677,7 +686,6 @@ TEST_F(FileTest, slow_read_data_consumer) {
                                                         const io::DataChunk& chunk,
                                                         const io::Status& read_status){
             ASSERT_TRUE(read_status.ok());
-
             bytes_read += chunk.size;
 
             std::lock_guard<std::mutex> guard(mutex);
