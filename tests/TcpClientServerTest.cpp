@@ -42,8 +42,10 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     },
     [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
         data_received = true;
+        std::string received_message(buf, size);
+
         EXPECT_EQ(size, message.length());
-        EXPECT_EQ(buf, message);
+        EXPECT_EQ(received_message, message);
         server.shutdown();
     });
 
@@ -62,7 +64,64 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     EXPECT_TRUE(data_received);
 }
 
+TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
+    io::EventLoop loop;
 
+    const std::string message = "Hello world!";
+
+    bool data_received_1 = false;
+    bool data_received_2 = false;
+
+    io::TcpServer server(loop);
+    ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
+    server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+        return true;
+    },
+    [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+        EXPECT_EQ(size, message.length() + 1);
+
+        std::string received_message(buf, size);
+
+        if (message + "1" == received_message) {
+            data_received_1 = true;
+        } else if (message + "2" == received_message) {
+            data_received_2 = true;
+        }
+
+        if (data_received_1 && data_received_2) {
+            server.shutdown();
+        }
+    });
+
+    bool data_sent_1 = false;
+
+    auto client_1 = new io::TcpClient(loop);
+    client_1->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+        client.send_data(message + "1", [&](io::TcpClient& client) {
+            data_sent_1 = true;
+            client.schedule_removal();
+        });
+    });
+
+    bool data_sent_2 = false;
+
+    auto client_2 = new io::TcpClient(loop);
+    client_2->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+        client.send_data(message + "2", [&](io::TcpClient& client) {
+            data_sent_2 = true;
+            client.schedule_removal();
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_TRUE(data_sent_1);
+    EXPECT_TRUE(data_sent_2);
+    EXPECT_TRUE(data_received_1);
+    EXPECT_TRUE(data_received_2);
+}
 
 // TODO: client and server on separate threads
 // TODO: server sends data to client frirs, right after connecting
+// TODO: double shutdown test
+// TODO: shutdown not connected test
