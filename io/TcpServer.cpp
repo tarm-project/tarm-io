@@ -94,7 +94,6 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
         if (nread == UV_EOF) {
             this_.m_loop->log(Logger::Severity::TRACE, "TcpServer::on_read connection end ",
                               io::ip4_addr_to_string(tcp_client.ipv4_addr()), ":", tcp_client.port());
-            //tcp_client.close();
             tcp_client.schedule_removal();
         }
 
@@ -109,8 +108,6 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
     }
 
     this_.m_pool->free(buf->base);
-
-    //delete[] buf->base;
 }
 
 void TcpServer::on_new_connection(uv_stream_t* server, int status) {
@@ -159,8 +156,8 @@ void TcpServer::on_new_connection(uv_stream_t* server, int status) {
             }
 
         } else {
-            // close???
-            std::cerr << "[Server] uv_tcp_getpeername failed. Reason: " << uv_strerror(status) << std::endl;
+            // TODO: call close???
+            this_.m_loop->log(Logger::Severity::ERROR, "uv_tcp_getpeername failed. Reason: ", uv_strerror(status));
         }
     } else {
         //uv_close(reinterpret_cast<uv_handle_t*>(tcp_client), nullptr/*on_close*/);
