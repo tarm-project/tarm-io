@@ -13,8 +13,6 @@ TcpServer::TcpServer(EventLoop& loop) :
     m_loop(&loop),
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
     m_pool(std::make_unique<boost::pool<>>(TcpServer::READ_BUFFER_SIZE)) {
-    uv_tcp_init(m_uv_loop, &m_server_handle);
-    m_server_handle.data = this;
 }
 
 TcpServer::~TcpServer() {
@@ -22,8 +20,12 @@ TcpServer::~TcpServer() {
 }
 
 int TcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
+    m_server_handle = new uv_tcp_t;
+    auto init_status = uv_tcp_init(m_uv_loop, m_server_handle);
+    m_server_handle->data = this;
+
     uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
-    return uv_tcp_bind(&m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
+    return uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
 }
 
 int TcpServer::listen(NewConnectionCallback new_connection_callback,
@@ -31,18 +33,32 @@ int TcpServer::listen(NewConnectionCallback new_connection_callback,
                       int backlog_size) {
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
-    return uv_listen(reinterpret_cast<uv_stream_t*>(&m_server_handle), backlog_size, TcpServer::on_new_connection);
+    return uv_listen(reinterpret_cast<uv_stream_t*>(m_server_handle), backlog_size, TcpServer::on_new_connection);
 }
 
 void TcpServer::shutdown() {
-    for (auto& v : m_client_connections) {
-        // TODO: close from client side??? See comment below
-        //uv_close(reinterpret_cast<uv_handle_t*>(key_value.first), nullptr /*on_close*/);
-
-        v->shutdown();
+    for (auto& client : m_client_connections) {
+        client->shutdown(); // TODO: shutdown with schedule_removal?????
     }
 
-    uv_close(reinterpret_cast<uv_handle_t*>(&m_server_handle), nullptr /*on_close*/);
+    m_client_connections.clear();
+
+    // shutdown only works on connected sockets but m_server_handle does not connects to anyone
+    /*
+    auto shutdown_req = new uv_shutdown_t;
+    int status = uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(m_server_handle), TcpServer::on_shutdown);
+    if (status < 0) {
+        m_loop->log(Logger::Severity::DEBUG, "TcpServer::shutdown failer to start shutdown, reason: ", uv_strerror(status));
+    }
+    */
+
+    uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), TcpServer::on_close);
+}
+
+void TcpServer::close() {
+    // TODO: clients close??????
+
+    uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), TcpServer::on_close);
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
@@ -84,7 +100,7 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
 
         auto it = this_.m_client_connections.find(&tcp_client);
         if (it != this_.m_client_connections.end()) {
-            this_.m_client_connections.erase(it);
+            this_.m_client_connections.erase(it); // TODO: who will delete client's memory?????
         } else {
             // error unknown connection
         }
@@ -150,6 +166,18 @@ void TcpServer::on_new_connection(uv_stream_t* server, int status) {
         //uv_close(reinterpret_cast<uv_handle_t*>(tcp_client), nullptr/*on_close*/);
         // TODO: schedule TcpClient removal here
     }
+}
+
+void TcpServer::on_close(uv_handle_t* handle) {
+    auto& this_ = *reinterpret_cast<TcpServer*>(handle->data);
+    this_.m_server_handle = nullptr;
+    delete reinterpret_cast<uv_tcp_t*>(handle);
+}
+
+// TODO: candidate for removal
+void TcpServer::on_shutdown(uv_shutdown_t* req, int status) {
+    uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpServer::on_close);
+    delete req;
 }
 
 } // namespace io

@@ -27,12 +27,6 @@ TcpClient::~TcpClient() {
     if (m_connect_req) {
         delete m_connect_req; // TODO: delete right after connect???
     }
-
-    if (m_tcp_stream) {
-        delete m_tcp_stream;
-    }
-
-    //close();
 }
 
 void TcpClient::init_stream() {
@@ -157,6 +151,7 @@ void TcpClient::close() {
 
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), TcpClient::on_close);
+        m_tcp_stream->data = nullptr;
         m_tcp_stream = nullptr;
     }
 }
@@ -189,8 +184,7 @@ void TcpClient::on_shutdown(uv_shutdown_t* req, int status) {
 
     this_.m_loop->log(Logger::Severity::TRACE, "TcpClient::on_shutdown ", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
 
-    this_.schedule_removal();
-
+    // TODO: need close????
     //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpClient::on_close_cb);
     delete req;
 }
@@ -202,6 +196,10 @@ void TcpClient::on_connect(uv_connect_t* req, int status) {
     if (this_.m_connect_callback) {
         this_.m_connect_callback(this_);
     }
+
+    //TODO: set ip and port
+    this_.set_ipv4_addr(0);
+    this_.set_port(0);
 }
 
 void TcpClient::on_close(uv_handle_t* handle) {

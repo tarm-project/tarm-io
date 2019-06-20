@@ -28,7 +28,7 @@ TEST_F(TcpClientServerTest, client_default_constructor) {
     client->schedule_removal();
 }
 
-TEST_F(TcpClientServerTest, DISABLED_1_client_sends_data_to_server) {
+TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     io::EventLoop loop;
     io::TcpServer server(loop);
 

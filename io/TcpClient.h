@@ -73,8 +73,8 @@ private:
     bool m_is_open = false;
 
     uv_tcp_t* m_tcp_stream = nullptr;
-    std::uint32_t m_ipv4_addr;
-    std::uint16_t m_port;
+    std::uint32_t m_ipv4_addr = 0;
+    std::uint16_t m_port = 0;
 
     std::size_t m_pending_write_requesets = 0;
 

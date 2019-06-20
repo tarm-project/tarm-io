@@ -41,20 +41,22 @@ public:
                int backlog_size = 128);
 
     void shutdown();
+    void close();
 
-    // TODO: implement
-    //TcpServer(Loop& loop, const uint32_t ip4_addr_num, std::uint16_t);
-
+    // statics
     static void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 
     static void on_new_connection(uv_stream_t* server, int status);
     static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf);
+
+    static void on_close(uv_handle_t* handle);
+    static void on_shutdown(uv_shutdown_t* req, int status);
 private:
 
     EventLoop* m_loop;
     uv_loop_t* m_uv_loop;
 
-    uv_tcp_t m_server_handle;
+    uv_tcp_t* m_server_handle = nullptr;
 
     // TODO: most likely this data member is not need to be data member but some var on stack
     struct sockaddr_in m_unix_addr;
