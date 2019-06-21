@@ -21,8 +21,19 @@ TcpServer::~TcpServer() {
 
 int TcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
     m_server_handle = new uv_tcp_t;
-    auto init_status = uv_tcp_init(m_uv_loop, m_server_handle);
+    auto init_status = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
     m_server_handle->data = this;
+
+    /*
+    uv_os_fd_t handle;
+    int status = uv_fileno((uv_handle_t*)m_server_handle, &handle);
+    if (status < 0) {
+        std::cout << uv_strerror(status) << std::endl;
+    }
+    // Enable SO_REUSEPORT on it, before we have a chance to listen on it.
+    int enable = 1;
+    setsockopt(handle, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
+    */
 
     uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
     return uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
@@ -33,7 +44,11 @@ int TcpServer::listen(NewConnectionCallback new_connection_callback,
                       int backlog_size) {
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
-    return uv_listen(reinterpret_cast<uv_stream_t*>(m_server_handle), backlog_size, TcpServer::on_new_connection);
+    int status = uv_listen(reinterpret_cast<uv_stream_t*>(m_server_handle), backlog_size, TcpServer::on_new_connection);
+    if (status < 0) {
+        std::cout << uv_strerror(status) << std::endl;
+    }
+    return status;
 }
 
 void TcpServer::shutdown() {
@@ -52,7 +67,9 @@ void TcpServer::shutdown() {
     }
     */
 
-    uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), TcpServer::on_close);
+   if (m_server_handle && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_server_handle))) {
+        uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), TcpServer::on_close);
+   }
 }
 
 void TcpServer::close() {
