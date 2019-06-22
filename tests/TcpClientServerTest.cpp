@@ -2,8 +2,10 @@
 
 #include "io/TcpClient.h"
 #include "io/TcpServer.h"
+#include "io/ScopeExitGuard.h"
 
 #include <cstdint>
+#include <thread>
 
 struct TcpClientServerTest : public testing::Test,
                              public LogRedirector {
@@ -121,7 +123,58 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     EXPECT_TRUE(data_received_2);
 }
 
+TEST_F(TcpClientServerTest, client_and_server_in_threads) {
+    const std::string message = "Hello!";
+
+    bool send_called = false;
+    bool receive_called = false;
+
+    std::thread server_thread([this, &message, &receive_called]() {
+        io::EventLoop loop;
+        io::TcpServer server(loop);
+        ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
+        server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+            return true;
+        },
+        [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+            EXPECT_EQ(size, message.length());
+            EXPECT_EQ(std::string(buf, size), message);
+            receive_called = true;
+            server.shutdown();
+        });
+
+        EXPECT_EQ(0, loop.run());
+        EXPECT_TRUE(receive_called);
+    });
+
+    std::thread client_thread([this, &message, &send_called](){
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+        io::EventLoop loop;
+        auto client = new io::TcpClient(loop);
+        client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+            client.send_data(message, [&](io::TcpClient& client) {
+                send_called = true;
+                client.schedule_removal();
+            });
+        });
+
+        EXPECT_EQ(0, loop.run());
+        EXPECT_TRUE(send_called);
+    });
+
+    io::ScopeExitGuard guard([&server_thread, &client_thread](){
+        client_thread.join();
+        server_thread.join();
+    });
+}
+
+// tripple send in a row (check that data will be sent sequential)
+
 // TODO: client and server on separate threads
 // TODO: server sends data to client frirs, right after connecting
 // TODO: double shutdown test
 // TODO: shutdown not connected test
+// TODO: send-receive large ammount of data (client -> server, server -> client)
+// TODO: simultaneous send/receive for both client and server
+
