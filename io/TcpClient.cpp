@@ -27,6 +27,10 @@ TcpClient::~TcpClient() {
     if (m_connect_req) {
         delete m_connect_req; // TODO: delete right after connect???
     }
+
+    if (m_read_buf) {
+        delete[] m_read_buf;
+    }
 }
 
 void TcpClient::init_stream() {
@@ -37,7 +41,10 @@ void TcpClient::init_stream() {
     }
 }
 
-void TcpClient::connect(const std::string& address, std::uint16_t port, ConnectCallback callback) {
+void TcpClient::connect(const std::string& address,
+                        std::uint16_t port,
+                        ConnectCallback connect_callback,
+                        DataReceiveCallback receive_callback) {
     struct sockaddr_in addr;
 
     uv_ip4_addr(address.c_str(), port, &addr); // TODO: error handling
@@ -53,7 +60,8 @@ void TcpClient::connect(const std::string& address, std::uint16_t port, ConnectC
     m_loop->log(Logger::Severity::DEBUG, "TcpClient::connect ", io::ip4_addr_to_string(m_ipv4_addr));
 
     init_stream();
-    m_connect_callback = callback;
+    m_connect_callback = connect_callback;
+    m_receive_callback = receive_callback;
 
     uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(&addr), TcpClient::on_connect);
 }
@@ -197,6 +205,12 @@ void TcpClient::on_connect(uv_connect_t* req, int status) {
         this_.m_connect_callback(this_);
     }
 
+    if (this_.m_receive_callback) {
+        uv_read_start(req->handle,
+                      TcpClient::alloc_buffer,
+                      TcpClient::on_read);
+    }
+
     //TODO: set ip and port
     this_.set_ipv4_addr(0);
     this_.set_port(0);
@@ -211,6 +225,28 @@ void TcpClient::on_close(uv_handle_t* handle) {
     };
 
     delete reinterpret_cast<uv_tcp_t*>(handle);
+}
+
+void TcpClient::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
+    auto& this_ = *reinterpret_cast<TcpClient*>(handle->data);
+
+    if (nread > 0) {
+        if (this_.m_receive_callback) {
+            this_.m_receive_callback(this_, buf->base,  nread);
+        }
+    }
+}
+
+void TcpClient::alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+    auto& this_ = *reinterpret_cast<TcpClient*>(handle->data);
+
+    if (this_.m_read_buf == nullptr) {
+        io::default_alloc_buffer(handle, suggested_size, buf);
+        this_.m_read_buf = buf->base;
+    } else {
+        buf->base = this_.m_read_buf;
+        buf->len = this_.m_read_buf_size;
+    }
 }
 
 } // namespace io

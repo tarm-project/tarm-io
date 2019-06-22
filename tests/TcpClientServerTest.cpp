@@ -54,12 +54,13 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     bool data_sent = false;
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+    client->connect(m_default_addr,m_default_port, [&](io::TcpClient& client) {
         client.send_data(message, [&](io::TcpClient& client) {
             data_sent = true;
             client.schedule_removal();
         });
-    });
+    },
+    nullptr);
 
     ASSERT_EQ(0, loop.run());
     EXPECT_TRUE(data_sent);
@@ -103,7 +104,8 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
             data_sent_1 = true;
             client.schedule_removal();
         });
-    });
+    },
+    nullptr);
 
     bool data_sent_2 = false;
 
@@ -113,7 +115,8 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
             data_sent_2 = true;
             client.schedule_removal();
         });
-    });
+    },
+    nullptr);
 
     ASSERT_EQ(0, loop.run());
 
@@ -157,7 +160,8 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
                 send_called = true;
                 client.schedule_removal();
             });
-        });
+        },
+        nullptr);
 
         EXPECT_EQ(0, loop.run());
         EXPECT_TRUE(send_called);
@@ -169,12 +173,57 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
     });
 }
 
+TEST_F(TcpClientServerTest, server_sends_data_first) {
+    io::EventLoop loop;
+
+    const std::string message = "Hello world!";
+
+    bool data_sent = false;
+
+    io::TcpServer server(loop);
+    ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
+    server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+        client.send_data(message);
+        data_sent = true;
+        return true;
+    },
+    [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+        server.shutdown(); // receive 'shutdown' message
+    });
+
+
+    bool data_received = false;
+
+    auto client = new io::TcpClient(loop);
+    client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+
+    },
+    [&](io::TcpClient& client, const char* buf, size_t size) {
+        EXPECT_EQ(size, message.length());
+        EXPECT_EQ(std::string(buf, size), message);
+        data_received = true;
+
+        client.send_data("shutdown", [&](io::TcpClient& client) {
+            client.schedule_removal();
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_TRUE(data_sent);
+    EXPECT_TRUE(data_received);
+}
+
+// TODO: server sends data to client frirs, right after connecting
+
 // tripple send in a row (check that data will be sent sequential)
 
 // TODO: client and server on separate threads
-// TODO: server sends data to client frirs, right after connecting
+
 // TODO: double shutdown test
 // TODO: shutdown not connected test
 // TODO: send-receive large ammount of data (client -> server, server -> client)
 // TODO: simultaneous send/receive for both client and server
 
+// send data of size 0
+
+// investigate from libuv: test-tcp-write-to-half-open-connection.c

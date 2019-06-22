@@ -19,6 +19,7 @@ public:
 
     using CloseCallback = std::function<void(TcpClient&)>;
     using EndSendCallback = std::function<void(TcpClient&)>;
+    using DataReceiveCallback = std::function<void(TcpClient&, const char*, size_t)>;
 
     TcpClient(EventLoop& loop);
     TcpClient(EventLoop& loop, TcpServer& server);
@@ -28,7 +29,10 @@ public:
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
 
-    void connect(const std::string& address, std::uint16_t port, ConnectCallback callback);
+    void connect(const std::string& address,
+                 std::uint16_t port,
+                 ConnectCallback connect_callback,
+                 DataReceiveCallback receive_callback);
     void close();
 
     bool is_open() const;
@@ -48,9 +52,11 @@ public:
     static void after_write(uv_write_t* req, int status);
 
     // statics
+    static void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
     static void on_shutdown(uv_shutdown_t* req, int status);
     static void on_close(uv_handle_t* handle);
     static void on_connect(uv_connect_t* req, int status);
+    static void on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
 
 protected:
     ~TcpClient();
@@ -69,6 +75,12 @@ private:
 
     ConnectCallback m_connect_callback = nullptr;
     uv_connect_t* m_connect_req = nullptr;
+
+    DataReceiveCallback m_receive_callback = nullptr;
+
+    // TODO: need to ensure that one buffer is enough
+    char* m_read_buf = nullptr;
+    std::size_t m_read_buf_size = 0;
 
     bool m_is_open = false;
 
