@@ -213,7 +213,74 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
     EXPECT_TRUE(data_received);
 }
 
-// TODO: server sends data to client frirs, right after connecting
+TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
+    // Note: in this test verifying that data send is queued and delivered in order
+
+    const std::size_t CHUNK_SIZE = 65536;
+    const std::size_t CHUNKS_COUNT = 20;
+    const std::size_t TOTAL_BYTES = CHUNK_SIZE * CHUNKS_COUNT;
+
+    ASSERT_EQ(0, CHUNK_SIZE % sizeof(std::uint32_t));
+
+    std::thread server_thread([this, TOTAL_BYTES]() {
+        io::EventLoop loop;
+        io::TcpServer server(loop);
+
+        std::size_t bytes_received = 0;
+
+        std::vector<unsigned char> total_bytes_received;
+
+        ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
+        server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+            return true;
+        },
+        [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+            total_bytes_received.insert(total_bytes_received.end(), buf, buf + size);
+            bytes_received += size;
+            if (bytes_received >= TOTAL_BYTES) {
+                server.shutdown();
+            }
+        });
+
+        EXPECT_EQ(0, loop.run());
+        EXPECT_EQ(TOTAL_BYTES, bytes_received);
+        EXPECT_EQ(TOTAL_BYTES, total_bytes_received.size());
+        for (std::size_t i = 0; i < total_bytes_received.size(); i += 4) {
+            ASSERT_EQ(i / 4, *reinterpret_cast<std::uint32_t*>((&total_bytes_received[0] + i)));
+        }
+    });
+
+    std::thread client_thread([this, CHUNK_SIZE, CHUNKS_COUNT]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+        std::size_t counter = 0;
+        std::function<void(io::TcpClient&)> on_data_sent = [&](io::TcpClient& client) {
+            if (++counter == CHUNKS_COUNT) {
+                client.schedule_removal();
+            }
+        };
+
+        io::EventLoop loop;
+        auto client = new io::TcpClient(loop);
+        client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+            for (size_t i = 0; i < CHUNKS_COUNT; ++i) {
+                std::shared_ptr<char> buf(new char[CHUNK_SIZE], [](const char* p) { delete[] p; });
+                for (std::size_t k = 0; k < CHUNK_SIZE; k += 4) {
+                    (*reinterpret_cast<std::uint32_t*>(buf.get() + k) ) = k / 4 + i * CHUNK_SIZE / 4;
+                }
+                client.send_data(buf, CHUNK_SIZE, on_data_sent);
+            }
+        },
+        nullptr);
+
+        EXPECT_EQ(0, loop.run());
+    });
+
+    io::ScopeExitGuard guard([&server_thread, &client_thread](){
+        client_thread.join();
+        server_thread.join();
+    });
+}
 
 // tripple send in a row (check that data will be sent sequential)
 
@@ -227,3 +294,4 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
 // send data of size 0
 
 // investigate from libuv: test-tcp-write-to-half-open-connection.c
+// client connect to nonexisting server
