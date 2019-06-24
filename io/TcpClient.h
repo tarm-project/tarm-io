@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Disposable.h"
 #include "EventLoop.h"
+#include "Status.h"
 
 #include <memory>
 
@@ -15,7 +16,7 @@ class TcpClient : public Disposable {
 public:
     friend class TcpServer;
 
-    using ConnectCallback = std::function<void(TcpClient& )>;
+    using ConnectCallback = std::function<void(TcpClient&, const Status&)>;
 
     using CloseCallback = std::function<void(TcpClient&)>;
     using EndSendCallback = std::function<void(TcpClient&)>;

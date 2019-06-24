@@ -54,7 +54,9 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     bool data_sent = false;
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr,m_default_port, [&](io::TcpClient& client) {
+    client->connect(m_default_addr,m_default_port, [&](io::TcpClient& client, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
+
         client.send_data(message, [&](io::TcpClient& client) {
             data_sent = true;
             client.schedule_removal();
@@ -99,7 +101,9 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     bool data_sent_1 = false;
 
     auto client_1 = new io::TcpClient(loop);
-    client_1->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+    client_1->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
+
         client.send_data(message + "1", [&](io::TcpClient& client) {
             data_sent_1 = true;
             client.schedule_removal();
@@ -110,7 +114,9 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     bool data_sent_2 = false;
 
     auto client_2 = new io::TcpClient(loop);
-    client_2->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+    client_2->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
+
         client.send_data(message + "2", [&](io::TcpClient& client) {
             data_sent_2 = true;
             client.schedule_removal();
@@ -155,7 +161,9 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
 
         io::EventLoop loop;
         auto client = new io::TcpClient(loop);
-        client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+        client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
+
             client.send_data(message, [&](io::TcpClient& client) {
                 send_called = true;
                 client.schedule_removal();
@@ -195,8 +203,9 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
     bool data_received = false;
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
-
+    client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
+        // do not send data
     },
     [&](io::TcpClient& client, const char* buf, size_t size) {
         EXPECT_EQ(size, message.length());
@@ -262,7 +271,9 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
 
         io::EventLoop loop;
         auto client = new io::TcpClient(loop);
-        client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client) {
+        client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
+
             for (size_t i = 0; i < CHUNKS_COUNT; ++i) {
                 std::shared_ptr<char> buf(new char[CHUNK_SIZE], [](const char* p) { delete[] p; });
                 for (std::size_t k = 0; k < CHUNK_SIZE; k += 4) {
@@ -282,9 +293,27 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
     });
 }
 
-// tripple send in a row (check that data will be sent sequential)
+TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server) {
+    bool callback_called = false;
 
-// TODO: client and server on separate threads
+    io::EventLoop loop;
+    auto client = new io::TcpClient(loop);
+    client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
+        EXPECT_TRUE(status.fail());
+        EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, status.code());
+        callback_called = true;
+
+        // TODO: check client.is_open()
+
+        client.schedule_removal();
+    },
+    nullptr);
+
+    EXPECT_EQ(0, loop.run());
+    EXPECT_TRUE(callback_called);
+}
+
+
 
 // TODO: double shutdown test
 // TODO: shutdown not connected test
@@ -294,4 +323,3 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
 // send data of size 0
 
 // investigate from libuv: test-tcp-write-to-half-open-connection.c
-// client connect to nonexisting server

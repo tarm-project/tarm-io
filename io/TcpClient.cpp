@@ -197,12 +197,17 @@ void TcpClient::on_shutdown(uv_shutdown_t* req, int status) {
     delete req;
 }
 
-void TcpClient::on_connect(uv_connect_t* req, int status) {
+void TcpClient::on_connect(uv_connect_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<TcpClient*>(req->data);
     this_.m_is_open = true; // if not error!
 
+    Status status(uv_status);
     if (this_.m_connect_callback) {
-        this_.m_connect_callback(this_);
+        this_.m_connect_callback(this_, uv_status);
+    }
+
+    if (status.fail()) {
+        return;
     }
 
     if (this_.m_receive_callback) {
