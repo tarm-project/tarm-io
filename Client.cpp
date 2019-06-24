@@ -25,7 +25,8 @@ int main(int argc, char* argv[]) {
 
             client.schedule_removal();
         });
-    });
+    },
+    nullptr);
 
     return loop.run();
 }
