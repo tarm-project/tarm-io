@@ -3,6 +3,7 @@
 #include "io/TcpClient.h"
 #include "io/TcpServer.h"
 #include "io/ScopeExitGuard.h"
+#include "io/Timer.h"
 
 #include <cstdint>
 #include <thread>
@@ -313,7 +314,58 @@ TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server) {
     EXPECT_TRUE(callback_called);
 }
 
+TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callback) {
+    io::EventLoop loop;
+    io::TcpServer server(loop);
 
+    bool server_receive_callback_called = false;
+    bool client_receive_callback_called = false;
+    bool client_close_callback_called = false;
+
+    const std::string server_message = "Go away!";
+
+    std::vector<unsigned char> total_bytes_received;
+
+    ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
+    server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+        client.send_data(server_message);
+        return false;
+    },
+    [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+        server_receive_callback_called = true;
+    });
+
+
+    auto client = new io::TcpClient(loop);
+    client->set_close_callback([&](io::TcpClient& client) {
+        client_close_callback_called = true;
+    });
+    client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
+        client.send_data("Hello!");
+    },
+    [&](io::TcpClient& client, const char* buf, size_t size) {
+        client_receive_callback_called = true;
+        EXPECT_EQ(std::string(buf, size), server_message);
+    });
+
+    io::Timer timer(loop);
+    timer.start(500, [&](io::Timer& timer) {
+        client->schedule_removal();
+        server.shutdown();
+    });
+
+    EXPECT_EQ(0, loop.run());
+    EXPECT_FALSE(server_receive_callback_called);
+    EXPECT_TRUE(client_receive_callback_called);
+    EXPECT_TRUE(client_close_callback_called);
+}
+
+TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback) {
+
+}
+
+// TODO: client disconnects from server
 
 // TODO: double shutdown test
 // TODO: shutdown not connected test

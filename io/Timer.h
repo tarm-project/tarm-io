@@ -26,6 +26,9 @@ public:
     // If repeat is non-zero, the callback fires first after timeout milliseconds
     // and then repeatedly after repeat milliseconds.
     void start(uint64_t timeout_ms, uint64_t repeat_ms, Callback callback);
+
+    void start(uint64_t timeout_ms, Callback callback); // TODO: unit test this
+
     void stop();
 
     // statics

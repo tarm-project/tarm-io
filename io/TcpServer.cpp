@@ -170,6 +170,7 @@ void TcpServer::on_new_connection(uv_stream_t* server, int status) {
                 // We can send message to client that server is not ready and disconnect from client side
                 // uv_close(reinterpret_cast<uv_handle_t*>(tcp_client), nullptr/*on_close*/);
                 // close;
+                tcp_client->schedule_removal();
             }
 
         } else {
