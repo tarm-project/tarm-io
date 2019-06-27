@@ -46,6 +46,8 @@ public:
     void shutdown();
     void close();
 
+    std::size_t connected_clients_count() const;
+
     // statics
     static void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 

@@ -332,6 +332,7 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
     ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
     server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
         client.send_data(server_message);
+        EXPECT_EQ(0, server.connected_clients_count());
         return false;
     },
     [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
@@ -381,6 +382,7 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     [&](io::TcpServer& server, io::TcpClient& client, const char* buf, std::size_t size) {
         EXPECT_EQ(std::string(buf, size), client_message);
         client.close();
+        EXPECT_EQ(0, server.connected_clients_count());
         // TODO: also test with shutdown
         //client.shutdown();
     });
@@ -411,6 +413,8 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     EXPECT_EQ(0, loop.run());
     EXPECT_TRUE(disconnect_called);
 }
+
+// TODO: client's write after close in server receive callback
 
 // TODO: client disconnects from server
 

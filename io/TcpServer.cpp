@@ -83,6 +83,10 @@ void TcpServer::remove_client_connection(TcpClient* client) {
     client->schedule_removal();
 }
 
+std::size_t TcpServer::connected_clients_count() const {
+    return m_client_connections.size();
+}
+
 // ////////////////////////////////////// static //////////////////////////////////////
 
 void TcpServer::alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
