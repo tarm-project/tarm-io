@@ -141,6 +141,7 @@ uv_tcp_t* TcpClient::tcp_client_stream() {
 void TcpClient::schedule_removal() {
     m_loop->log(Logger::Severity::TRACE, "TcpClient::schedule_removal ", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
 
+    m_server = nullptr;
     close();
 
     Disposable::schedule_removal();

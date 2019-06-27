@@ -380,8 +380,9 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     },
     [&](io::TcpServer& server, io::TcpClient& client, const char* buf, std::size_t size) {
         EXPECT_EQ(std::string(buf, size), client_message);
-        //client.close();
-        client.shutdown();
+        client.close();
+        // TODO: also test with shutdown
+        //client.shutdown();
     });
 
     bool disconnect_called = false;

@@ -80,6 +80,7 @@ void TcpServer::close() {
 
 void TcpServer::remove_client_connection(TcpClient* client) {
     m_client_connections.erase(client);
+    client->schedule_removal();
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
@@ -118,13 +119,15 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
             tcp_client.schedule_removal();
         }
 
+        // TODO: this code was replaced by remove_client_connection. Remove it later
+        /*
         auto it = this_.m_client_connections.find(&tcp_client);
         if (it != this_.m_client_connections.end()) {
             this_.m_client_connections.erase(it); // TODO: who will delete client's memory?????
         } else {
             // error unknown connection
         }
-
+         */
         //uv_close((uv_handle_t*) client, nullptr /*on_close*/);
     }
 
