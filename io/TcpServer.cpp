@@ -78,6 +78,10 @@ void TcpServer::close() {
     uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), TcpServer::on_close);
 }
 
+void TcpServer::remove_client_connection(TcpClient* client) {
+    m_client_connections.erase(client);
+}
+
 // ////////////////////////////////////// static //////////////////////////////////////
 
 void TcpServer::alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {

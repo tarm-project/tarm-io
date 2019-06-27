@@ -17,7 +17,6 @@ public:
     friend class TcpServer;
 
     using ConnectCallback = std::function<void(TcpClient&, const Status&)>;
-
     using CloseCallback = std::function<void(TcpClient&)>;
     using EndSendCallback = std::function<void(TcpClient&)>;
     using DataReceiveCallback = std::function<void(TcpClient&, const char*, size_t)>;
@@ -33,7 +32,8 @@ public:
     void connect(const std::string& address,
                  std::uint16_t port,
                  ConnectCallback connect_callback,
-                 DataReceiveCallback receive_callback);
+                 DataReceiveCallback receive_callback,
+                 CloseCallback close_callback = nullptr);
     void close();
 
     bool is_open() const;
@@ -53,7 +53,7 @@ public:
     static void after_write(uv_write_t* req, int status);
 
     // statics
-    static void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
+    static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
     static void on_shutdown(uv_shutdown_t* req, int status);
     static void on_close(uv_handle_t* handle);
     static void on_connect(uv_connect_t* req, int status);

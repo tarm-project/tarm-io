@@ -18,6 +18,8 @@ namespace io {
 
 class TcpServer {
 public:
+    friend class TcpClient;
+
     const size_t READ_BUFFER_SIZE = 65536;
 
     // TODO: replace 'int status' with some error
@@ -33,6 +35,7 @@ public:
     TcpServer(TcpServer&& other) = default;
     TcpServer& operator=(TcpServer&& other) = delete; // default
 
+    // TODO: need to return some enum (or StatusCode) instead of int
     int bind(const std::string& ip_addr_str, std::uint16_t port);
 
     // On success, zero is returned
@@ -52,6 +55,7 @@ public:
     static void on_close(uv_handle_t* handle);
     static void on_shutdown(uv_shutdown_t* req, int status);
 private:
+    void remove_client_connection(TcpClient* client);
 
     EventLoop* m_loop;
     uv_loop_t* m_uv_loop;

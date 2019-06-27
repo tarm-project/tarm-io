@@ -44,7 +44,8 @@ void TcpClient::init_stream() {
 void TcpClient::connect(const std::string& address,
                         std::uint16_t port,
                         ConnectCallback connect_callback,
-                        DataReceiveCallback receive_callback) {
+                        DataReceiveCallback receive_callback,
+                        CloseCallback close_callback) {
     struct sockaddr_in addr;
 
     uv_ip4_addr(address.c_str(), port, &addr); // TODO: error handling
@@ -62,6 +63,7 @@ void TcpClient::connect(const std::string& address,
     init_stream();
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;
+    m_close_callback = close_callback;
 
     uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(&addr), TcpClient::on_connect);
 }
@@ -157,6 +159,10 @@ void TcpClient::close() {
         m_close_callback(*this);
     }
 
+    if (m_server) {
+        m_server->remove_client_connection(this);
+    }
+
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), TcpClient::on_close);
         m_tcp_stream->data = nullptr;
@@ -193,7 +199,7 @@ void TcpClient::on_shutdown(uv_shutdown_t* req, int status) {
     this_.m_loop->log(Logger::Severity::TRACE, "TcpClient::on_shutdown ", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
 
     // TODO: need close????
-    //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpClient::on_close_cb);
+    //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpClient::on_close);
     delete req;
 }
 
@@ -212,7 +218,7 @@ void TcpClient::on_connect(uv_connect_t* req, int uv_status) {
 
     if (this_.m_receive_callback) {
         uv_read_start(req->handle,
-                      TcpClient::alloc_buffer,
+                      TcpClient::alloc_read_buffer,
                       TcpClient::on_read);
     }
 
@@ -239,10 +245,17 @@ void TcpClient::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
         if (this_.m_receive_callback) {
             this_.m_receive_callback(this_, buf->base,  nread);
         }
+    } else if (nread <= 0) {
+        Status status(nread);
+
+        if (status.code() == io::StatusCode::END_OF_FILE &&
+            this_.m_close_callback) {
+            this_.m_close_callback(this_);
+        }
     }
 }
 
-void TcpClient::alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+void TcpClient::alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<TcpClient*>(handle->data);
 
     if (this_.m_read_buf == nullptr) {
