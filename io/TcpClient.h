@@ -41,7 +41,7 @@ public:
     void set_ipv4_addr(std::uint32_t value);
     void set_port(std::uint16_t value);
 
-    void send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback = nullptr);
+    void send_data(std::shared_ptr<char> buffer, std::size_t size, EndSendCallback callback = nullptr);
     void send_data(const std::string& message, EndSendCallback callback = nullptr);
 
     void set_close_callback(CloseCallback callback);
@@ -50,9 +50,11 @@ public:
 
     void shutdown();
 
-    static void after_write(uv_write_t* req, int status);
+    void set_user_data(void* data);
+    void* user_data();
 
     // statics
+    static void after_write(uv_write_t* req, int status);
     static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
     static void on_shutdown(uv_shutdown_t* req, int status);
     static void on_close(uv_handle_t* handle);
@@ -92,6 +94,8 @@ private:
     std::size_t m_pending_write_requesets = 0;
 
     CloseCallback m_close_callback = nullptr;
+
+    void* m_user_data = nullptr;
 };
 
 using TcpClientPtr = std::unique_ptr<TcpClient>;

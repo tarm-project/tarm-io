@@ -7,6 +7,8 @@
 
 #include <cstdint>
 #include <thread>
+#include <vector>
+#include <memory>
 
 struct TcpClientServerTest : public testing::Test,
                              public LogRedirector {
@@ -414,10 +416,88 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     EXPECT_TRUE(disconnect_called);
 }
 
+TEST_F(TcpClientServerTest, connect_and_simultaneous_send_multiple_participants) {
+    io::EventLoop server_loop;
+
+    std::size_t connections_counter = 0;
+    std::size_t server_reads_counter = 0;
+
+    const std::size_t NUMBER_OF_CLIENTS = 1000;
+    std::vector<bool> clinets_data_log(NUMBER_OF_CLIENTS, false);
+
+    io::TcpServer server(server_loop);
+    ASSERT_EQ(0, server.bind(m_default_addr, m_default_port));
+    server.listen([&connections_counter](io::TcpServer& server, io::TcpClient& client) -> bool {
+        ++connections_counter;
+        return true;
+    },
+    [&clinets_data_log, &server_reads_counter](io::TcpServer& server, io::TcpClient& client, const char* buf, std::size_t size) {
+        ++server_reads_counter;
+        ASSERT_EQ(sizeof(std::size_t), size);
+        const auto value = *reinterpret_cast<const std::size_t*>(buf);
+        ASSERT_LT(value, clinets_data_log.size());
+        clinets_data_log[value] = true;
+
+        if (server_reads_counter == NUMBER_OF_CLIENTS - 1) {
+            server.shutdown();
+        }
+    });
+
+    std::thread client_thread([this, NUMBER_OF_CLIENTS]() {
+        io::EventLoop clients_loop;
+
+        std::vector<io::TcpClient*> all_clients;
+        all_clients.reserve(NUMBER_OF_CLIENTS);
+
+        auto send_all_clients = [&all_clients]() {
+            for(std::size_t i = 0; i < all_clients.size(); ++i) {
+                auto data_value = reinterpret_cast<std::size_t>(all_clients[i]->user_data());
+                std::shared_ptr<char> data(new char[sizeof(std::size_t)], [](const char* p) { delete[] p;});
+                *reinterpret_cast<std::size_t*>(data.get()) = data_value;
+                all_clients[i]->send_data(data, sizeof(std::size_t),
+                    [](io::TcpClient& client) {
+                        client.schedule_removal();
+                    });
+            }
+        };
+
+        for(std::size_t i = 0; i < NUMBER_OF_CLIENTS; ++i) {
+            auto tcp_client = new io::TcpClient(clients_loop);
+            tcp_client->set_user_data(reinterpret_cast<void*>(i));
+            tcp_client->connect(m_default_addr, m_default_port,
+                [i, tcp_client, NUMBER_OF_CLIENTS, send_all_clients, &all_clients]
+                (io::TcpClient& client, const io::Status& status) {
+                    EXPECT_TRUE(status.ok());
+                    all_clients.push_back(tcp_client);
+
+                    if (i == NUMBER_OF_CLIENTS - 1) {
+                        ASSERT_EQ(NUMBER_OF_CLIENTS, all_clients.size());
+                        send_all_clients();
+                    }
+                },
+            nullptr);
+        }
+
+        EXPECT_EQ(0, clients_loop.run());
+    });
+
+    io::ScopeExitGuard guard([&client_thread](){
+        client_thread.join();
+    });
+
+    EXPECT_EQ(0, server_loop.run());
+    EXPECT_EQ(NUMBER_OF_CLIENTS, connections_counter);
+    EXPECT_EQ(NUMBER_OF_CLIENTS, server_reads_counter);
+
+    for(std::size_t i = 0; i < NUMBER_OF_CLIENTS; ++i) {
+        ASSERT_TRUE(clinets_data_log[i]) << " i= " << i;
+    }
+}
+
 // TODO: client's write after close in server receive callback
 
 // TODO: client disconnects from server
-
+// TODO: write large chunks of data and schedule removal
 // TODO: double shutdown test
 // TODO: shutdown not connected test
 // TODO: send-receive large ammount of data (client -> server, server -> client)

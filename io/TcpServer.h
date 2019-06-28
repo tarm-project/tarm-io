@@ -24,7 +24,7 @@ public:
 
     // TODO: replace 'int status' with some error
     using NewConnectionCallback = std::function<bool(TcpServer&, TcpClient&)>;
-    using DataReceivedCallback = std::function<void(TcpServer&, TcpClient&, const char*, size_t)>;
+    using DataReceivedCallback = std::function<void(TcpServer&, TcpClient&, const char*, std::size_t)>;
 
     TcpServer(EventLoop& loop);
     ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server

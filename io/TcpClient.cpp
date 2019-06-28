@@ -85,6 +85,10 @@ void TcpClient::set_port(std::uint16_t value) {
 }
 
 void TcpClient::shutdown() {
+    if (!is_open()) {
+        return;
+    }
+
     auto shutdown_req = new uv_shutdown_t;
     shutdown_req->data = this;
     uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), TcpClient::on_shutdown);
@@ -100,7 +104,7 @@ struct WriteRequest : public uv_write_t {
 
 } // namespace
 
-void TcpClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback) {
+void TcpClient::send_data(std::shared_ptr<char> buffer, std::size_t size, EndSendCallback callback) {
     auto req = new WriteRequest;
     req->end_send_callback = callback;
     req->data = this;
@@ -173,6 +177,14 @@ void TcpClient::close() {
 
 bool TcpClient::is_open() const {
     return m_is_open;
+}
+
+void TcpClient::set_user_data(void* data)  {
+    m_user_data = data;
+}
+
+void* TcpClient::user_data() {
+    return m_user_data;
 }
 
 // ////////////////////////////////////// static //////////////////////////////////////
