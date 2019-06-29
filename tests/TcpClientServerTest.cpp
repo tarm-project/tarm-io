@@ -341,7 +341,6 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
         server_receive_callback_called = true;
     });
 
-
     auto client = new io::TcpClient(loop);
     client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
         EXPECT_TRUE(status.ok());

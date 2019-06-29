@@ -274,6 +274,7 @@ void TcpClient::alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv
     if (this_.m_read_buf == nullptr) {
         io::default_alloc_buffer(handle, suggested_size, buf);
         this_.m_read_buf = buf->base;
+        this_.m_read_buf_size = buf->len;
     } else {
         buf->base = this_.m_read_buf;
         buf->len = this_.m_read_buf_size;
