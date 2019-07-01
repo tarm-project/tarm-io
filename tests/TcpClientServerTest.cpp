@@ -415,7 +415,7 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     EXPECT_TRUE(disconnect_called);
 }
 
-TEST_F(TcpClientServerTest, connect_and_simultaneous_send_multiple_participants) {
+TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
     io::EventLoop server_loop;
 
     std::size_t connections_counter = 0;
@@ -493,9 +493,53 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_multiple_participants)
     }
 }
 
-// TODO: client's write after close in server receive callback
+TEST_F(TcpClientServerTest, client_disconnects_from_server) {
+    io::EventLoop loop;
 
-// TODO: client disconnects from server
+    io::TcpServer server(loop);
+    server.bind(m_default_addr, m_default_port);
+
+    bool client_close_called = false;
+    io::TcpClient::CloseCallback on_client_close =
+        [&](io::TcpClient& client) {
+            client_close_called = true;
+        };
+
+    io::TcpServer::NewConnectionCallback on_server_new_connection =
+        [=](io::TcpServer& server, io::TcpClient& client) ->bool {
+            client.set_close_callback(on_client_close);
+            return true;
+        };
+
+    io::TcpServer::DataReceivedCallback on_server_receive_data =
+        [](io::TcpServer& server, io::TcpClient& client, const char* buf, std::size_t size) {
+
+        };
+
+    server.listen(on_server_new_connection, on_server_receive_data);
+
+    io::TcpClient::ConnectCallback connect_callback =
+        [](io::TcpClient& client, const io::Status status) {
+            client.close();
+        };
+
+    auto client = new io::TcpClient(loop);
+    client->connect(m_default_addr, m_default_port, connect_callback, nullptr);
+
+    io::Timer timer(loop);
+    timer.start(500, [&](io::Timer& timer) {
+        // Disconnect should be called before timer callback
+        EXPECT_TRUE(client_close_called);
+
+        client->schedule_removal();
+        server.shutdown();
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_TRUE(client_close_called);
+}
+
+// TODO: client's write after close in server receive callback
 // TODO: write large chunks of data and schedule removal
 // TODO: double shutdown test
 // TODO: shutdown not connected test

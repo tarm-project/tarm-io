@@ -45,6 +45,8 @@ int TcpServer::listen(NewConnectionCallback new_connection_callback,
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
     int status = uv_listen(reinterpret_cast<uv_stream_t*>(m_server_handle), backlog_size, TcpServer::on_new_connection);
+
+    // TODO: instead of returning status code need to call TcpServer::on_new_connection with appropriate status set
     if (status < 0) {
         std::cout << uv_strerror(status) << std::endl;
     }
