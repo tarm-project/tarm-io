@@ -267,6 +267,8 @@ void TcpClient::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
             } else {
                 // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
                 this_.m_close_callback(this_, status);
+
+                //TODO: if close callback is not set (probably) need to call read callback with error status
             }
         }
     }
