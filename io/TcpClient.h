@@ -17,7 +17,7 @@ public:
     friend class TcpServer;
 
     using ConnectCallback = std::function<void(TcpClient&, const Status&)>;
-    using CloseCallback = std::function<void(TcpClient&)>;
+    using CloseCallback = std::function<void(TcpClient&, const Status&)>;
     using EndSendCallback = std::function<void(TcpClient&)>;
     using DataReceiveCallback = std::function<void(TcpClient&, const char*, size_t)>;
 

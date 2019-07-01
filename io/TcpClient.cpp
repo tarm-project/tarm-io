@@ -161,7 +161,7 @@ void TcpClient::close() {
     m_is_open = false;
 
     if (m_close_callback) {
-        m_close_callback(*this);
+        m_close_callback(*this, Status(0));
     }
 
     if (m_server) {
@@ -259,11 +259,15 @@ void TcpClient::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
             this_.m_receive_callback(this_, buf->base,  nread);
         }
     } else if (nread <= 0) {
-        Status status(nread);
+        if (this_.m_close_callback) {
+            Status status(nread);
 
-        if (status.code() == io::StatusCode::END_OF_FILE &&
-            this_.m_close_callback) {
-            this_.m_close_callback(this_);
+            if (status.code() == io::StatusCode::END_OF_FILE) {
+                this_.m_close_callback(this_, Status(0)); // OK
+            } else {
+                // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
+                this_.m_close_callback(this_, status);
+            }
         }
     }
 }

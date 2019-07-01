@@ -351,7 +351,8 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
         EXPECT_EQ(std::string(buf, size), server_message);
     });
 
-    client->set_close_callback([&](io::TcpClient& client) {
+    client->set_close_callback([&](io::TcpClient& client, const io::Status& status) {
+        // Not checking status here bacause could be connection reset error
         client_close_callback_called = true;
     });
 
@@ -398,7 +399,7 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
         },
         [](io::TcpClient& client, const char* buf, size_t size) {
         },
-        [&](io::TcpClient& client) {
+        [&](io::TcpClient& client, const io::Status& status) {
             disconnect_called = true;
         });
 
@@ -501,7 +502,8 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
 
     bool client_close_called = false;
     io::TcpClient::CloseCallback on_client_close =
-        [&](io::TcpClient& client) {
+        [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
             client_close_called = true;
         };
 
