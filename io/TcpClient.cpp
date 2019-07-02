@@ -65,7 +65,14 @@ void TcpClient::connect(const std::string& address,
     m_receive_callback = receive_callback;
     m_close_callback = close_callback;
 
-    uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(&addr), TcpClient::on_connect);
+    int uv_status = uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(&addr), TcpClient::on_connect);
+    if (uv_status < 0) {
+        Status status(uv_status);
+        if (m_connect_callback) {
+            m_connect_callback(*this, uv_status);
+        }
+    }
+
 }
 
 std::uint32_t TcpClient::ipv4_addr() const {
@@ -112,7 +119,10 @@ void TcpClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, 
     // const_cast is a workaround for lack of constness support in uv_buf_t
     req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
 
-    uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, TcpClient::after_write);
+    int uv_code = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, TcpClient::after_write);
+    if (uv_code < 0) {
+        std::cout << "!!! " << uv_strerror(uv_code) << std::endl;
+    }
     ++m_pending_write_requesets;
 }
 

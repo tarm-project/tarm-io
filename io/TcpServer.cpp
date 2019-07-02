@@ -148,6 +148,8 @@ void TcpServer::on_new_connection(uv_stream_t* server, int status) {
     this_.m_loop->log(Logger::Severity::TRACE, "TcpServer::on_new_connection");
 
     if (status < 0) {
+        // TODO: need to find better error reporting solution in case when TOO_MANY_OPEN_FILES_ERROR
+        //       because it spams log. For example, could record last error and log only when last error != current one
         this_.m_loop->log(Logger::Severity::ERROR, "TcpServer::on_new_connection error: ", uv_strerror(status));
         // TODO: error handling
         return;
