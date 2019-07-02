@@ -104,7 +104,7 @@ struct WriteRequest : public uv_write_t {
 
 } // namespace
 
-void TcpClient::send_data(std::shared_ptr<char> buffer, std::size_t size, EndSendCallback callback) {
+void TcpClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback) {
     auto req = new WriteRequest;
     req->end_send_callback = callback;
     req->data = this;

@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
                     std::cout << "File size is: " << stat.st_size << std::endl;
                 });
 
-                client.set_close_callback([&file](io::TcpClient& client){
+                client.set_close_callback([&file](io::TcpClient& client, const io::Status& status){
                     file.schedule_removal();
                 });
 
