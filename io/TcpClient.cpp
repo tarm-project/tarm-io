@@ -22,7 +22,7 @@ TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
 }
 
 TcpClient::~TcpClient() {
-    m_loop->log(Logger::Severity::ERROR, "TcpClient::~TcpClient");
+    m_loop->log(Logger::Severity::TRACE, this, "TcpClient::~TcpClient");
 
     if (m_connect_req) {
         delete m_connect_req; // TODO: delete right after connect???
@@ -208,7 +208,7 @@ void TcpClient::after_write(uv_write_t* req, int status) {
     std::unique_ptr<WriteRequest> guard(request);
 
     if (status < 0) {
-        std::cerr << "TcpClient::after_write: " << uv_strerror(status) << std::endl;
+        std::cerr << "!!! TcpClient::after_write: " << uv_strerror(status) << std::endl;
     }
 
     if (request->end_send_callback) {

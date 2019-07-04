@@ -422,7 +422,7 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
     std::size_t connections_counter = 0;
     std::size_t server_reads_counter = 0;
 
-    const std::size_t NUMBER_OF_CLIENTS = 1000;
+    const std::size_t NUMBER_OF_CLIENTS = 100;
     std::vector<bool> clinets_data_log(NUMBER_OF_CLIENTS, false);
 
     io::TcpServer server(server_loop);

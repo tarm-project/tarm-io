@@ -109,7 +109,7 @@ EventLoop::Impl::~Impl() {
         m_loop->log(Severity::DEBUG, "Loop: returned EBUSY at close, running one more time");
 
         // Making the last attemt to close everytjing and shut down gracefully
-        uv_run(this, UV_RUN_ONCE);
+        status = uv_run(this, UV_RUN_ONCE);
 
         uv_loop_close(this);
         m_loop->log(Severity::DEBUG, "Loop: done");
