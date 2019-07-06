@@ -14,6 +14,7 @@ list(APPEND TESTS_LIST
     TimerTest.cpp
     FileTest.cpp
     DirTest.cpp
+    UdpClientServerTest.cpp
     TcpClientServerTest.cpp
 )
 

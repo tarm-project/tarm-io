@@ -52,6 +52,10 @@ list(APPEND IO_SOURCE_LIST
         io/Logger.cpp
         io/Status.cpp
         io/StatusCode.cpp
+        io/UdpClient.cpp
+        io/UdpClient.h
+        io/UdpServer.h
+        io/UdpServer.cpp
         io/Timer.cpp
         io/TcpClient.cpp
         io/TcpServer.cpp
