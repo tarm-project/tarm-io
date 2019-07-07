@@ -550,4 +550,6 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
 
 // send data of size 0
 
+// TODO: test with invalid ipv4 address and port
+
 // investigate from libuv: test-tcp-write-to-half-open-connection.c

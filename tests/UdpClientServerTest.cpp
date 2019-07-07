@@ -20,7 +20,10 @@ protected:
     std::string m_default_addr = "127.0.0.1";
 };
 
-TEST_F(UdpClientServerTest, default_constructor) {
+TEST_F(UdpClientServerTest, server_default_constructor) {
+    io::EventLoop loop;
+    io::UdpServer server(loop);
 
+    ASSERT_EQ(0, loop.run());
 }
 

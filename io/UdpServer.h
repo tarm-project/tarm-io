@@ -1,9 +1,20 @@
 #pragma once
 
+#include "EventLoop.h"
+#include "Disposable.h"
+
+#include <memory>
+
 namespace io {
 
-class UdpServer {
+class UdpServer : public Disposable {
+public:
+    UdpServer(EventLoop& loop);
+    ~UdpServer();
 
+private:
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 } // namespace io
