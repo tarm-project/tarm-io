@@ -10,6 +10,8 @@ namespace io {
 class UdpServer : public Disposable {
 public:
     UdpServer(EventLoop& loop);
+
+protected:
     ~UdpServer();
 
 private:

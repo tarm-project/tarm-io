@@ -22,8 +22,16 @@ protected:
 
 TEST_F(UdpClientServerTest, server_default_constructor) {
     io::EventLoop loop;
-    io::UdpServer server(loop);
+    auto server = new io::UdpServer(loop);
 
     ASSERT_EQ(0, loop.run());
+    server->schedule_removal();// TODO: describe in docs that schedule removal after loop  run is valid case
 }
 
+TEST_F(UdpClientServerTest, client_default_constructor) {
+    io::EventLoop loop;
+    auto client = new io::UdpClient(loop);
+
+    ASSERT_EQ(0, loop.run());
+    client->schedule_removal();
+}
