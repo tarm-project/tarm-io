@@ -29,6 +29,7 @@ public:
     TcpServer(EventLoop& loop);
     ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server
 
+    // TODO: some sort of macro here???
     TcpServer(const TcpServer& other) = delete;
     TcpServer& operator=(const TcpServer& other) = delete;
 

@@ -541,6 +541,8 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
     EXPECT_TRUE(client_close_called);
 }
 
+// TODO: server sends lot of data to many connected clients
+
 // TODO: client's write after close in server receive callback
 // TODO: write large chunks of data and schedule removal
 // TODO: double shutdown test
