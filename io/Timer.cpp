@@ -1,12 +1,12 @@
 #include "Timer.h"
 
-// TODO: remove
-#include <iostream>
+#include <assert.h>
 
 namespace io {
 
 Timer::Timer(EventLoop& loop) :
     m_loop(&loop) {
+    // TODO: check return value
     uv_timer_init(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), &m_timer);
     m_timer.data = this;
 }
@@ -14,7 +14,7 @@ Timer::Timer(EventLoop& loop) :
 namespace {
 
 void on_timer_close(uv_handle_t* handle) {
-
+    // do nothing
 }
 
 } // namespace
@@ -39,9 +39,7 @@ void Timer::stop() {
 
 ///////////////////////////// static /////////////////////////////
 void Timer::on_timer(uv_timer_t* handle) {
-    if (handle->data == nullptr) {
-        return;
-    }
+    assert(handle->data);
 
     auto& this_ = *reinterpret_cast<Timer*>(handle);
 

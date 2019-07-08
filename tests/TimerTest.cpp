@@ -74,3 +74,72 @@ TEST_F(TimerTest, zero_timeot) {
 
     EXPECT_EQ(1, timer_counter);
 }
+
+TEST_F(TimerTest, no_callback) {
+    // Note: this case handles some sort of idle to prevent loop from exit during desired time
+    io::EventLoop loop;
+
+    io::Timer timer(loop);
+    timer.start(100, nullptr);
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto end_time = start_time;
+
+    ASSERT_EQ(0, loop.run());
+    const auto timer_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+
+    EXPECT_LE(timer_duration, 100);
+}
+
+TEST_F(TimerTest, stop_after_start) {
+    io::EventLoop loop;
+
+    bool callback_called = false;
+
+    io::Timer timer(loop);
+    timer.start(100, [&](io::Timer& ) {
+        callback_called = true;
+    });
+    timer.stop();
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_FALSE(callback_called);
+}
+
+TEST_F(TimerTest, stop_in_callback) {
+    io::EventLoop loop;
+
+    std::size_t calls_counter = 0;
+
+    io::Timer timer(loop);
+    timer.start(100, 100, [&](io::Timer& timer) {
+        ++calls_counter;
+        timer.stop();
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_EQ(1, calls_counter);
+}
+
+TEST_F(TimerTest, start_stop_start_stop) {
+    io::EventLoop loop;
+
+    bool first_callback_called = false;
+    bool second_callback_called = false;
+
+    io::Timer timer(loop);
+    timer.start(100, 100, [&](io::Timer& timer) {
+        first_callback_called = true;
+    });
+
+    timer.stop();
+
+    timer.start(100, 100, [&](io::Timer& timer) {
+        second_callback_called = true;
+        timer.stop();
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_FALSE(first_callback_called);
+    EXPECT_TRUE(second_callback_called);
+}
