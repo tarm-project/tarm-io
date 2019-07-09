@@ -28,9 +28,8 @@ set(TESTS_EXE_NAME tests)
 
 add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
 target_link_libraries(${TESTS_EXE_NAME}
-    io
+    ${COMMON_LIB_LIST}
     GTest::GTest
-#    GTest::Main
     Boost::system
     Boost::filesystem
 )

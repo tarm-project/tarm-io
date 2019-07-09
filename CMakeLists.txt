@@ -7,6 +7,7 @@ project(connection_test
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
+include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
@@ -17,6 +18,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 endif()
 
+set(IO_LIBUV_VERSION "1.30.1")
+
 #export TSAN_OPTIONS="halt_on_error=1"
 set(IO_SANITIZER "address")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${IO_SANITIZER}")
@@ -24,13 +27,65 @@ set(IO_SANITIZER "address")
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
 #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
 
-if (UNIX AND NOT MACOSX)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(LIBUV REQUIRED libuv)
-elseif(MACOSX)
-    find_library(LIBUV_LIBRARIES uv PATHS /usr/local/lib)
-    find_path(LIBUV_INCLUDE_DIR uv.h PATHS /usr/local/include/)
+#if (UNIX AND NOT MACOSX)
+#    find_package(PkgConfig REQUIRED)
+#    pkg_check_modules(LIBUV REQUIRED libuv)
+#elseif(MACOSX)
+#    find_library(LIBUV_LIBRARIES uv PATHS /usr/local/lib)
+#    find_path(LIBUV_INCLUDE_DIR uv.h PATHS /usr/local/include/)
+#endif()
+
+# TODO: need to put these ifs elsewhere
+if(WIN32)
+  list(APPEND UV_LIB_DEPS
+       advapi32
+       iphlpapi
+       psapi
+       shell32
+       user32
+       userenv
+       ws2_32)
+else()
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+        # Android has pthread as part of its c library, not as a separate
+        # libpthread.so.
+        list(APPEND UV_LIB_DEPS pthread)
+    endif()
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "AIX")
+    list(APPEND UV_LIB_DEPS perfstat)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Android")
+    list(APPEND uv_libs dl)
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES "DragonFly|FreeBSD|NetBSD|OpenBSD")
+    list(APPEND UV_LIB_DEPS kvm)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND UV_LIB_DEPS dl rt)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
+    list(APPEND UV_LIB_DEPS kstat nsl sendfile socket)
+endif()
+
+set(LIBUV_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/libuv")
+set(LIBUV_STATIC_LIB_PATH "${LIBUV_PREFIX}/install/lib/libuv_a.a")
+set(LIBUV_INCLUDE_PATH "${LIBUV_PREFIX}/install/include")
+ExternalProject_Add(libuv
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/libuv-${IO_LIBUV_VERSION}"
+    PREFIX "${LIBUV_PREFIX}"
+    BINARY_DIR "${LIBUV_PREFIX}/build"
+    INSTALL_DIR "${LIBUV_PREFIX}/install"
+    CMAKE_ARGS -Dlibuv_buildtests=OFF
+               -DCMAKE_INSTALL_PREFIX=${LIBUV_PREFIX}/install
+               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+)
+include_directories(${LIBUV_INCLUDE_PATH})
 
 # TODO: need to check it if Boost installed to some location as /opt,
 # because below I do not have add include dirs and libs
@@ -52,13 +107,13 @@ list(APPEND IO_SOURCE_LIST
         io/Logger.cpp
         io/Status.cpp
         io/StatusCode.cpp
+        io/Timer.cpp
+        io/TcpClient.cpp
+        io/TcpServer.cpp
         io/UdpClient.cpp
         io/UdpClient.h
         io/UdpServer.h
         io/UdpServer.cpp
-        io/Timer.cpp
-        io/TcpClient.cpp
-        io/TcpServer.cpp
 )
 
 if (${CMAKE_VERSION} VERSION_LESS "3.8.2")
@@ -70,20 +125,25 @@ endif()
 set(IO_LIB_LIST)
 list(APPEND IO_LIB_LIST ${LIBUV_LIBRARIES} ${LIBUV_LDFLAGS})
 
-add_library(io ${IO_SOURCE_LIST})
-target_link_libraries(io ${IO_LIB_LIST})
+add_library(io SHARED ${IO_SOURCE_LIST})
+
+add_dependencies(io libuv)
+
+#target_link_libraries(io ${IO_LIB_LIST} ${LIBUV_STATIC_LIB_PATH})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${LIBUV_INCLUDE_DIR})
 
-# TODO: put client and server into examples folder
-set(CLIENT_LIB_LIST io)
-add_executable(client Client.cpp)
-target_link_libraries(client ${CLIENT_LIB_LIST})
+list(APPEND COMMON_LIB_LIST io)
+list(APPEND COMMON_LIB_LIST ${LIBUV_STATIC_LIB_PATH})
+list(APPEND COMMON_LIB_LIST ${UV_LIB_DEPS})
 
-set(SERVER_LIB_LIST io)
+# TODO: put client and server into examples folder
+add_executable(client Client.cpp)
+target_link_libraries(client ${COMMON_LIB_LIST})
+
 add_executable(server Server.cpp)
-target_link_libraries(server ${SERVER_LIB_LIST})
+target_link_libraries(server ${COMMON_LIB_LIST})
 
 set(BUILD_WITH_TESTS ON)
 if (BUILD_WITH_TESTS)
