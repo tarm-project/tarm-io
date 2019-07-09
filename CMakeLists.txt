@@ -90,7 +90,9 @@ include_directories(${LIBUV_INCLUDE_PATH})
 # TODO: need to check it if Boost installed to some location as /opt,
 # because below I do not have add include dirs and libs
 # TODO: system and filesystem should be required if we are building tests
+set(Boost_NO_BOOST_CMAKE ON)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
 
 # TODO: need to find better name than io
 # TODO: looks like need to move io-related CMake code into io folder
@@ -122,14 +124,14 @@ else()
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${IO_SOURCE_LIST})
 endif()
 
-set(IO_LIB_LIST)
-list(APPEND IO_LIB_LIST ${LIBUV_LIBRARIES} ${LIBUV_LDFLAGS})
+#set(IO_LIB_LIST)
+#list(APPEND IO_LIB_LIST ${LIBUV_LIBRARIES} ${LIBUV_LDFLAGS})
 
 add_library(io SHARED ${IO_SOURCE_LIST})
+target_link_libraries(io ${LIBUV_STATIC_LIB_PATH})
+#target_link_libraries(io ${IO_LIB_LIST} ${LIBUV_STATIC_LIB_PATH})
 
 add_dependencies(io libuv)
-
-#target_link_libraries(io ${IO_LIB_LIST} ${LIBUV_STATIC_LIB_PATH})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${LIBUV_INCLUDE_DIR})
