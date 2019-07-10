@@ -2,6 +2,7 @@
 
 #include "EventLoop.h"
 #include "Disposable.h"
+#include "Status.h"
 
 #include <memory>
 
@@ -12,7 +13,7 @@ class UdpClient;
 
 class UdpServer : public Disposable {
 public:
-    using DataReceivedCallback = std::function<void(UdpServer&, UdpClient&, const char*, std::size_t)>;
+    using DataReceivedCallback = std::function<void(UdpServer&, std::uint32_t, std::uint16_t, const char*, std::size_t, const Status&)>;
 
     UdpServer(EventLoop& loop);
 
@@ -25,8 +26,7 @@ public:
     // TODO: need to return some enum (or StatusCode) instead of int
     int bind(const std::string& ip_addr_str, std::uint16_t port);
 
-    // On success, zero is returned
-    int listen(DataReceivedCallback data_receive_callback);
+    void start_receive(DataReceivedCallback receive_callback);
 
     void shutdown();
     void close();

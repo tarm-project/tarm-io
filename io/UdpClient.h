@@ -9,7 +9,11 @@ namespace io {
 
 class UdpClient : public Disposable {
 public:
+    using EndSendCallback = std::function<void(UdpClient&)>;
+
     UdpClient(EventLoop& loop);
+
+    void send_data(std::shared_ptr<const char> buffer, std::size_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
 
 protected:
     ~UdpClient();
