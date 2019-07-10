@@ -84,6 +84,7 @@ ExternalProject_Add(libuv
     CMAKE_ARGS -Dlibuv_buildtests=OFF
                -DCMAKE_INSTALL_PREFIX=${LIBUV_PREFIX}/install
                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+               -DCMAKE_C_FLAGS=-fPIC
 )
 include_directories(${LIBUV_INCLUDE_PATH})
 
