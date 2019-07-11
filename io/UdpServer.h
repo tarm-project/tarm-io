@@ -17,6 +17,8 @@ public:
 
     UdpServer(EventLoop& loop);
 
+    void schedule_removal() override;
+
     UdpServer(const UdpServer& other) = delete;
     UdpServer& operator=(const UdpServer& other) = delete;
 
@@ -28,7 +30,6 @@ public:
 
     void start_receive(DataReceivedCallback receive_callback);
 
-    void shutdown();
     void close();
 
 protected:
