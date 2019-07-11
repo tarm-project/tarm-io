@@ -1,5 +1,7 @@
 #include "UdpServer.h"
 
+#include <assert.h>
+
 namespace io {
 
 class UdpServer::Impl : public uv_udp_t {
