@@ -127,8 +127,21 @@ TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
     EXPECT_EQ(300, counter_3);
 }
 
-TEST_F(EventLoopTest, loop_in_thread) {
+TEST_F(EventLoopTest, is_running) {
+    io::EventLoop event_loop;
 
+    std::size_t handle = 0; // TODO: make some value as invalid handle
+    handle = event_loop.schedule_call_on_each_loop_cycle([&]() {
+        EXPECT_TRUE(event_loop.is_running());
+        event_loop.stop_call_on_each_loop_cycle(handle);
+    });
+
+    EXPECT_FALSE(event_loop.is_running());
+    ASSERT_EQ(0, event_loop.run());
+    EXPECT_FALSE(event_loop.is_running());
+}
+
+TEST_F(EventLoopTest, loop_in_thread) {
     std::mutex data_mutex;
     size_t combined_counter = 0;
 

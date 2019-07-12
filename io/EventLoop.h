@@ -42,11 +42,11 @@ public:
     // TODO: handle(convert) error codes????
     int run();
 
+    bool is_running() const;
+
     // TODO: make private
     void* raw_loop();
 private:
-
-
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };

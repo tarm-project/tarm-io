@@ -53,6 +53,8 @@ public:
     // TODO: handle(convert) error codes????
     int run();
 
+    bool is_running() const;
+
     // statics
     static void on_work(uv_work_t* req);
     static void on_after_work(uv_work_t* req, int status);
@@ -74,6 +76,8 @@ private:
     std::unique_ptr<uv_async_t, std::function<void(uv_async_t*)>> m_async;
     std::deque<std::function<void()>> m_callbacks_queue;
     std::mutex m_callbacks_queue_mutex;
+
+    bool m_is_running = false;
 };
 
 namespace {
@@ -137,7 +141,9 @@ void EventLoop::Impl::add_work(WorkCallback work_callback, WorkDoneCallback work
 }
 
 int EventLoop::Impl::run() {
+    m_is_running = true;
     int run_status = uv_run(this, UV_RUN_DEFAULT);
+    m_is_running = false;
 
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
@@ -215,6 +221,10 @@ void EventLoop::Impl::execute_on_loop_thread(AsyncCallback callback) {
     }
 
     uv_async_send(m_async.get());
+}
+
+bool EventLoop::Impl::is_running() const {
+    return m_is_running;
 }
 
 /////////////////////////////////////////// static ///////////////////////////////////////////
@@ -341,6 +351,10 @@ void EventLoop::stop_dummy_idle() {
 
 int EventLoop::run() {
     return m_impl->run();
+}
+
+bool EventLoop::is_running() const {
+    return m_impl->is_running();
 }
 
 void* EventLoop::raw_loop() {
