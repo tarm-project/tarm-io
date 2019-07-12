@@ -21,6 +21,10 @@ Disposable::~Disposable() {
 }
 
 void Disposable::schedule_removal() {
+    if (!m_loop->is_running()) {
+        m_loop->log(Logger::Severity::ERROR, "Scheduling removal after the loop finished run. This may lead to memory leaks or memory corruption.");
+    }
+
     auto idle_ptr = new uv_idle_t;
     idle_ptr->data = this;
     uv_idle_init(reinterpret_cast<uv_loop_t*>(m_loop->raw_loop()), idle_ptr); // TODO: error handling
