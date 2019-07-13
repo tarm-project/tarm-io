@@ -36,6 +36,16 @@ TEST_F(UdpClientServerTest, server_default_constructor) {
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(UdpClientServerTest, server_bind) {
+    io::EventLoop loop;
+
+    auto server = new io::UdpServer(loop);
+    ASSERT_EQ(0, server->bind(m_default_addr, m_default_port));
+    server->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
 TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
     io::EventLoop loop;
 
