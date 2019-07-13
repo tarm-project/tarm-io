@@ -39,4 +39,14 @@ bool Status::fail() const {
     return m_status_code != StatusCode::OK;
 }
 
+///////////////////////////////// free functions /////////////////////////////////
+
+bool operator==(const Status& s1, const Status& s2) {
+    return s1.code() == s2.code();
+}
+
+bool operator!=(const Status& s1, const Status& s2) {
+    return !operator==(s1, s2);
+}
+
 } // namespace io

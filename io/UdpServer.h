@@ -25,8 +25,7 @@ public:
     UdpServer(UdpServer&& other) = default;
     UdpServer& operator=(UdpServer&& other) = default;
 
-    // TODO: need to return some enum (or StatusCode) instead of int
-    int bind(const std::string& ip_addr_str, std::uint16_t port);
+    Status bind(const std::string& ip_addr_str, std::uint16_t port);
 
     void start_receive(DataReceivedCallback receive_callback);
 

@@ -22,4 +22,7 @@ private:
     StatusCode m_status_code = StatusCode::OK;
 };
 
+bool operator==(const Status& s1, const Status& s2);
+bool operator!=(const Status& s1, const Status& s2);
+
 } // namespace io

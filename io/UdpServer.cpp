@@ -8,7 +8,7 @@ class UdpServer::Impl : public uv_udp_t {
 public:
     Impl(EventLoop& loop, UdpServer& parent);
 
-    int bind(const std::string& ip_addr_str, std::uint16_t port);
+    Status bind(const std::string& ip_addr_str, std::uint16_t port);
     void start_receive(DataReceivedCallback data_receive_callback);
 
     void close();
@@ -39,11 +39,12 @@ UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
     this->data = &parent;
 }
 
-int UdpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
+Status UdpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
     struct sockaddr_in unix_addr;
     uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
 
-    auto status = uv_udp_bind(this, reinterpret_cast<const struct sockaddr*>(&unix_addr), UV_UDP_REUSEADDR);
+    auto uv_status = uv_udp_bind(this, reinterpret_cast<const struct sockaddr*>(&unix_addr), UV_UDP_REUSEADDR);
+    Status status(uv_status);
     return status;
 }
 
@@ -119,7 +120,7 @@ UdpServer::UdpServer(EventLoop& loop) :
 UdpServer::~UdpServer() {
 }
 
-int UdpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
+Status UdpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
     return m_impl->bind(ip_addr_str, port);
 }
 

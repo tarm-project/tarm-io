@@ -40,7 +40,17 @@ TEST_F(UdpClientServerTest, server_bind) {
     io::EventLoop loop;
 
     auto server = new io::UdpServer(loop);
-    ASSERT_EQ(0, server->bind(m_default_addr, m_default_port));
+    ASSERT_TRUE(server->bind(m_default_addr, m_default_port).ok());
+    server->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(UdpClientServerTest, bind_privileged) {
+    io::EventLoop loop;
+
+    auto server = new io::UdpServer(loop);
+    ASSERT_EQ(io::Status(io::StatusCode::PERMISSION_DENIED), server->bind(m_default_addr, 80));
     server->schedule_removal();
 
     ASSERT_EQ(0, loop.run());
