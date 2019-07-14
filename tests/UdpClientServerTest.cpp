@@ -126,3 +126,23 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
     EXPECT_TRUE(data_sent);
     EXPECT_TRUE(data_received);
 }
+
+TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
+    io::EventLoop loop;
+
+    std::size_t SIZE = 100 * 1024;
+
+    std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
+    std::memset(message.get(), 0, SIZE);
+
+
+    auto client = new io::UdpClient(loop);
+    client->send_data(message, SIZE, 0x7F000001, m_default_port,
+        [&](io::UdpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.fail());
+            EXPECT_EQ(io::StatusCode::MESSAGE_TOO_LONG, status.code());
+            client.schedule_removal();
+        });
+
+    ASSERT_EQ(0, loop.run());
+}
