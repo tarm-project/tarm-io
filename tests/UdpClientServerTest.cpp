@@ -67,6 +67,7 @@ TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
     auto server = new io::UdpServer(loop);
     ASSERT_EQ(0, server->bind(m_default_addr, m_default_port));
     server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const char* buf, std::size_t size, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
         data_received = true;
         std::string s(buf, size);
         EXPECT_EQ(message, s);
@@ -75,6 +76,46 @@ TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
 
     auto client = new io::UdpClient(loop);
     client->send_data(message, 0x7F000001, m_default_port,
+        [&](io::UdpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
+            data_sent = true;
+            client.schedule_removal();
+        });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_TRUE(data_sent);
+    EXPECT_TRUE(data_received);
+}
+
+TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
+    io::EventLoop loop;
+
+    std::size_t SIZE = 5000;
+
+    bool data_sent = false;
+    bool data_received = false;
+
+    auto server = new io::UdpServer(loop);
+    ASSERT_EQ(0, server->bind(m_default_addr, m_default_port));
+    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const char* buf, std::size_t size, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
+        EXPECT_EQ(SIZE, size);
+        data_received = true;
+
+        for (size_t i = 0; i < SIZE / 2; ++i) {
+            ASSERT_EQ(i, *(reinterpret_cast<const std::uint16_t*>(buf) + i))  << "i =" << i;
+        }
+
+        server.schedule_removal();
+    });
+
+    std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
+    for (size_t i = 0; i < SIZE / 2; ++i) {
+        *(reinterpret_cast<std::uint16_t*>(message.get()) + i) = i;
+    }
+
+    auto client = new io::UdpClient(loop);
+    client->send_data(message, SIZE, 0x7F000001, m_default_port,
         [&](io::UdpClient& client, const io::Status& status) {
             EXPECT_TRUE(status.ok());
             data_sent = true;
