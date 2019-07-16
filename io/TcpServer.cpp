@@ -1,5 +1,7 @@
 #include "TcpServer.h"
 
+#include "ByteSwap.h"
+
 #include <assert.h>
 
 // TODO: move
@@ -157,8 +159,8 @@ void TcpServer::on_new_connection(uv_stream_t* server, int status) {
                                         &info_len);
         if (status == 0) {
             auto addr_info = reinterpret_cast<sockaddr_in*>(&info);
-            tcp_client->set_port(ntohs(addr_info->sin_port));
-            tcp_client->set_ipv4_addr(ntohl(addr_info->sin_addr.s_addr));
+            tcp_client->set_port(network_to_host(addr_info->sin_port));
+            tcp_client->set_ipv4_addr(network_to_host(addr_info->sin_addr.s_addr));
 
             bool allow_connection = true;
             if (this_.m_new_connection_callback) {

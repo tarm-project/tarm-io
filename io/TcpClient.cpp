@@ -1,5 +1,6 @@
 #include "TcpClient.h"
 
+#include "ByteSwap.h"
 #include "TcpServer.h"
 
 #include <assert.h>
@@ -56,7 +57,7 @@ void TcpClient::connect(const std::string& address,
     }
 
     m_port = port;
-    m_ipv4_addr = ntohl(addr.sin_addr.s_addr);
+    m_ipv4_addr = network_to_host(addr.sin_addr.s_addr);
 
     m_loop->log(Logger::Severity::DEBUG, "TcpClient::connect ", io::ip4_addr_to_string(m_ipv4_addr));
 

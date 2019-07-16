@@ -1,4 +1,5 @@
 #include "UdpServer.h"
+#include "ByteSwap.h"
 
 #include <assert.h>
 
@@ -89,7 +90,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
             if (addr && nread) {
                 const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
                 DataChunk data_chunk(std::shared_ptr<const char>(buf->base, std::default_delete<char[]>()), std::size_t(nread));
-                this_.m_data_receive_callback(parent, ntohl(address->sin_addr.s_addr), ntohs(address->sin_port), data_chunk, status);
+                this_.m_data_receive_callback(parent, network_to_host(address->sin_addr.s_addr), network_to_host(address->sin_port), data_chunk, status);
             }
         } else {
             // TODO: implement
