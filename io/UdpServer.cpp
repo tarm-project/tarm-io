@@ -94,11 +94,10 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
             }
         } else {
             DataChunk data(nullptr, 0);
+            // TODO: log here???
             this_.m_data_receive_callback(parent, 0, 0, data, status);
         }
     }
-
-    //delete[] buf->base;
 }
 
 void UdpServer::Impl::on_close(uv_handle_t* handle) {
