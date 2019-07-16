@@ -93,7 +93,8 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                 this_.m_data_receive_callback(parent, network_to_host(address->sin_addr.s_addr), network_to_host(address->sin_port), data_chunk, status);
             }
         } else {
-            // TODO: implement
+            DataChunk data(nullptr, 0);
+            this_.m_data_receive_callback(parent, 0, 0, data, status);
         }
     }
 
