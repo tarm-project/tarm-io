@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EventLoop.h"
+//#include "DataChunk.h"
 #include "Disposable.h"
 #include "Status.h"
 
@@ -14,6 +15,8 @@ public:
 
     UdpClient(EventLoop& loop);
 
+    // TODO: implement???
+    //void send_data(const DataChunk& data_chunk, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
     void send_data(std::shared_ptr<const char> buffer, std::size_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
     void send_data(const std::string& message, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
 

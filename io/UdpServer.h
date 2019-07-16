@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EventLoop.h"
+#include "DataChunk.h"
 #include "Disposable.h"
 #include "Status.h"
 
@@ -13,7 +14,7 @@ class UdpClient;
 
 class UdpServer : public Disposable {
 public:
-    using DataReceivedCallback = std::function<void(UdpServer&, std::uint32_t, std::uint16_t, const char*, std::size_t, const Status&)>;
+    using DataReceivedCallback = std::function<void(UdpServer&, std::uint32_t, std::uint16_t, const DataChunk&, const Status&)>;
 
     UdpServer(EventLoop& loop);
 

@@ -66,10 +66,10 @@ TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
 
     auto server = new io::UdpServer(loop);
     ASSERT_EQ(0, server->bind(m_default_addr, m_default_port));
-    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const char* buf, std::size_t size, const io::Status& status) {
+    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Status& status) {
         EXPECT_TRUE(status.ok());
         data_received = true;
-        std::string s(buf, size);
+        std::string s(data.buf.get(), data.size);
         EXPECT_EQ(message, s);
         server.schedule_removal();
     });
@@ -97,13 +97,13 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
 
     auto server = new io::UdpServer(loop);
     ASSERT_EQ(0, server->bind(m_default_addr, m_default_port));
-    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const char* buf, std::size_t size, const io::Status& status) {
+    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Status& status) {
         EXPECT_TRUE(status.ok());
-        EXPECT_EQ(SIZE, size);
+        EXPECT_EQ(SIZE, data.size);
         data_received = true;
 
         for (size_t i = 0; i < SIZE / 2; ++i) {
-            ASSERT_EQ(i, *(reinterpret_cast<const std::uint16_t*>(buf) + i))  << "i =" << i;
+            ASSERT_EQ(i, *(reinterpret_cast<const std::uint16_t*>(data.buf.get()) + i))  << "i =" << i;
         }
 
         server.schedule_removal();

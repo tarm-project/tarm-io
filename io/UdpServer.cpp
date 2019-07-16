@@ -88,14 +88,15 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
         if (status.ok()) {
             if (addr && nread) {
                 const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
-                this_.m_data_receive_callback(parent, ntohl(address->sin_addr.s_addr), ntohs(address->sin_port), buf->base, nread, status);
+                DataChunk data_chunk(std::shared_ptr<const char>(buf->base, std::default_delete<char[]>()), std::size_t(nread));
+                this_.m_data_receive_callback(parent, ntohl(address->sin_addr.s_addr), ntohs(address->sin_port), data_chunk, status);
             }
         } else {
             // TODO: implement
         }
     }
 
-    delete[] buf->base;
+    //delete[] buf->base;
 }
 
 void UdpServer::Impl::on_close(uv_handle_t* handle) {

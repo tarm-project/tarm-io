@@ -12,6 +12,12 @@ struct DataChunk {
         offset(o){
     }
 
+    DataChunk(std::shared_ptr<const char> b, std::size_t s) :
+        buf(b),
+        size(s),
+        offset(0) {
+    }
+
     std::shared_ptr<const char> buf;
     std::size_t size = 0;
     std::size_t offset = 0;
