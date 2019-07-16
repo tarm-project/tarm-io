@@ -122,20 +122,10 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
         if (nread == UV_EOF) {
             this_.m_loop->log(Logger::Severity::TRACE, "TcpServer::on_read connection end ",
                               io::ip4_addr_to_string(tcp_client.ipv4_addr()), ":", tcp_client.port());
-            //tcp_client.schedule_removal();
             this_.remove_client_connection(&tcp_client);
         }
 
-        // TODO: this code was replaced by remove_client_connection. Remove it later
-        /*
-        auto it = this_.m_client_connections.find(&tcp_client);
-        if (it != this_.m_client_connections.end()) {
-            this_.m_client_connections.erase(it); // TODO: who will delete client's memory?????
-        } else {
-            // error unknown connection
-        }
-         */
-        //uv_close((uv_handle_t*) client, nullptr /*on_close*/);
+        // TODO: uv_close on error????
     }
 
     this_.m_pool->free(buf->base);
