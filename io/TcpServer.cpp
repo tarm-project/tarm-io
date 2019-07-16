@@ -122,7 +122,8 @@ void TcpServer::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf)
         if (nread == UV_EOF) {
             this_.m_loop->log(Logger::Severity::TRACE, "TcpServer::on_read connection end ",
                               io::ip4_addr_to_string(tcp_client.ipv4_addr()), ":", tcp_client.port());
-            tcp_client.schedule_removal();
+            //tcp_client.schedule_removal();
+            this_.remove_client_connection(&tcp_client);
         }
 
         // TODO: this code was replaced by remove_client_connection. Remove it later
