@@ -4,6 +4,7 @@
 #include "EventLoop.h"
 
 #include <functional>
+#include <memory>
 
 namespace io {
 
@@ -31,13 +32,9 @@ public:
 
     void stop();
 
-    // statics
-    static void on_timer(uv_timer_t* handle);
 private:
-    uv_timer_t m_timer;
-
-    EventLoop* m_loop = nullptr;
-    Callback m_callback = nullptr;
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 } // namespace io
