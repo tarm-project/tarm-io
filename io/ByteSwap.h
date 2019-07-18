@@ -2,6 +2,7 @@
 
 #include <netinet/in.h>
 #include <stdint.h>
+/*
 #include <endian.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -13,7 +14,7 @@
         #define htonll(x) htobe64(x)
     #endif
 #endif
-
+*/
 namespace io {
 
 template <typename T>
@@ -30,13 +31,13 @@ inline uint32_t network_to_host(uint32_t v) { return ntohl(v); }
 
 template <>
 inline int32_t network_to_host(int32_t v) { return ntohl(v); }
-
+/*
 template <>
 inline uint64_t network_to_host(uint64_t v) { return ntohll(v); }
 
 template <>
 inline int64_t network_to_host(int64_t v) { return ntohll(v); }
-
+*/
 
 template <typename T>
 T host_to_network(T v);
@@ -52,11 +53,11 @@ inline uint32_t host_to_network(uint32_t v) { return htonl(v); }
 
 template <>
 inline int32_t host_to_network(int32_t v) { return htonl(v); }
-
+/*
 template <>
 inline uint64_t host_to_network(uint64_t v) { return htonll(v); }
 
 template <>
 inline int64_t host_to_network(int64_t v) { return htonll(v); }
-
+*/
 } // namespace io
