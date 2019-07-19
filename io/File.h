@@ -15,16 +15,16 @@
 namespace io {
 
 // TODO: move
-struct Stat : public uv_stat_t {
+struct StatData : public uv_stat_t {
 };
 
 // TODO: move
-struct ReadReq : public uv_fs_t {
-    ReadReq() {
+struct ReadRequest : public uv_fs_t {
+    ReadRequest() {
         memset(this, 0, sizeof(uv_fs_t));
     }
 
-    ~ReadReq() {
+    ~ReadRequest() {
         delete[] raw_buf;
     }
 
@@ -42,15 +42,7 @@ public:
     using OpenCallback = std::function<void(File&, const Status&)>;
     using ReadCallback = std::function<void(File&, const io::DataChunk&, const Status&)>;
     using EndReadCallback = std::function<void(File&)>;
-    using StatCallback = std::function<void(File&, const Stat&)>;
-
-    /*
-    enum class ReadState {
-        CONTINUE = 0,
-        PAUSE,
-        DONE
-    };
-    */
+    using StatCallback = std::function<void(File&, const StatData&)>;
 
     File(EventLoop& loop);
 
@@ -66,12 +58,6 @@ public:
     const std::string& path() const;
 
     void stat(StatCallback callback);
-
-    /*
-    void pause_read();
-    void continue_read();
-    ReadState read_state();
-    */
 
     void schedule_removal() override;
 
@@ -91,24 +77,19 @@ private:
     StatCallback m_stat_callback = nullptr;
 
     void schedule_read();
-    void schedule_read(ReadReq& req);
+    void schedule_read(ReadRequest& req);
 
     bool has_read_buffers_in_use() const;
-
-    /*
-    char* current_read_buf();
-    char* next_read_buf();
-    */
 
     EventLoop* m_loop;
     uv_loop_t* m_uv_loop;
 
-    ReadReq m_read_reqs[READ_BUFS_NUM];
+    ReadRequest m_read_reqs[READ_BUFS_NUM];
     std::size_t m_current_offset = 0;
 
-    //std::size_t m_used_read_bufs = 0;
+    // TODO: make some states instead bunch of flags
     bool m_read_in_progress = false;
-    bool m_done_read = false; // TODO: make some states instead bunch of flags
+    bool m_done_read = false;
     bool m_need_reschedule_remove = false;
 
     // TODO: it may be not reasonable to store by pointers here because they take to much space (>400b)
@@ -116,14 +97,7 @@ private:
     uv_fs_t* m_open_request = nullptr;
     decltype(uv_fs_t::result) m_file_handle = -1;
     uv_fs_t m_stat_req;
-    //uv_fs_t m_read_req;
     uv_fs_t m_write_req;
-
-    // TODO: revise this. Probably allocation via heap or pool will be better
-    //char [READ_BUF_SIZE] = {0};
-    //std::vector<std::unique_ptr<char[]>> m_read_bufs;
-    //size_t m_current_read_buf_idx = 0;
-    //ReadState m_read_state = ReadState::CONTINUE;
 
     std::string m_path;
 };

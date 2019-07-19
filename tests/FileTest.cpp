@@ -797,7 +797,7 @@ TEST_F(FileTest, simple_stat) {
     file->open(path, [&SIZE](io::File& file, const io::Status& status) {
         ASSERT_TRUE(status.ok());
 
-        file.stat([&SIZE](io::File& file, const io::Stat& stat){
+        file.stat([&SIZE](io::File& file, const io::StatData& stat){
             EXPECT_EQ(SIZE, stat.st_size);
         });
     });

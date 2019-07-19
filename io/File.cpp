@@ -196,14 +196,14 @@ void File::schedule_read() {
 
     m_loop->log(Logger::Severity::TRACE, "File ", m_path, " using buffer with index: ", i);
 
-    ReadReq& read_req = m_read_reqs[i];
+    ReadRequest& read_req = m_read_reqs[i];
     read_req.is_free = false;
     read_req.data = this;
 
     schedule_read(read_req);
 }
 
-void File::schedule_read(ReadReq& req) {
+void File::schedule_read(ReadRequest& req) {
     m_read_in_progress = true;
     m_loop->start_dummy_idle();
 
@@ -249,34 +249,7 @@ bool File::has_read_buffers_in_use() const {
     return false;
 }
 
-/*
-char* File::current_read_buf() {
-    return m_read_bufs[m_current_read_buf_idx].get();
-}
-
-char* File::next_read_buf() {
-    m_current_read_buf_idx = (m_current_read_buf_idx + 1) % READ_BUFS_NUM;
-    return current_read_buf();
-}
-
-void File::pause_read() {
-    if (m_read_state == ReadState::CONTINUE) {
-        m_read_state = ReadState::PAUSE;
-    }
-}
-
-void File::continue_read() {
-    if (m_read_state == ReadState::PAUSE) {
-        m_read_state = ReadState::CONTINUE;
-        schedule_read();
-    }
-}
-
-File::ReadState File::read_state() {
-    return m_read_state;
-}
-*/
-// ////////////////////////////////////// static //////////////////////////////////////
+////////////////////////////////////////////// static //////////////////////////////////////////////
 void File::on_open(uv_fs_t* req) {
     ScopeExitGuard on_scope_exit([req]() {
         if (req->data) {
@@ -337,7 +310,7 @@ void File::on_read_block(uv_fs_t* uv_req) {
 }
 
 void File::on_read(uv_fs_t* uv_req) {
-    auto& req = *reinterpret_cast<ReadReq*>(uv_req);
+    auto& req = *reinterpret_cast<ReadRequest*>(uv_req);
     auto& this_ = *reinterpret_cast<File*>(req.data);
 
     if (!this_.is_open()) {
@@ -390,7 +363,7 @@ void File::on_stat(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<File*>(req->data);
 
     if (this_.m_stat_callback) {
-        this_.m_stat_callback(this_, *reinterpret_cast<io::Stat*>(&this_.m_stat_req.statbuf));
+        this_.m_stat_callback(this_, *reinterpret_cast<StatData*>(&this_.m_stat_req.statbuf));
     }
 }
 
