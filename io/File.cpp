@@ -3,28 +3,95 @@
 #include "ScopeExitGuard.h"
 
 // TODO: remove
-#include <iostream>
 #include <assert.h>
 
 namespace io {
 
-File::File(EventLoop& loop) :
-    Disposable(loop),
+struct ReadRequest : public uv_fs_t {
+    ReadRequest() {
+        memset(this, 0, sizeof(uv_fs_t));
+    }
+
+    ~ReadRequest() {
+        delete[] raw_buf;
+    }
+
+    std::shared_ptr<char> buf;
+
+    bool is_free = true;
+    char* raw_buf = nullptr;
+};
+
+class File::Impl {
+public:
+    Impl(EventLoop& loop, File& parent);
+    ~Impl();
+
+    void open(const std::string& path, OpenCallback callback);
+    void close();
+    bool is_open() const;
+
+    void read(ReadCallback callback);
+    void read(ReadCallback read_callback, EndReadCallback end_read_callback);
+
+    void read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback);
+
+    const std::string& path() const;
+
+    void stat(StatCallback callback);
+
+    bool schedule_removal();
+
+protected:
+    // statics
+    static void on_open(uv_fs_t* req);
+    static void on_read(uv_fs_t* req);
+    static void on_read_block(uv_fs_t* req);
+    static void on_stat(uv_fs_t* req);
+
+private:
+    void schedule_read();
+    void schedule_read(ReadRequest& req);
+    bool has_read_buffers_in_use() const;
+
+    OpenCallback m_open_callback = nullptr;
+    ReadCallback m_read_callback = nullptr;
+    EndReadCallback m_end_read_callback = nullptr;
+    StatCallback m_stat_callback = nullptr;
+
+    File* m_parent = nullptr;
+
+    EventLoop* m_loop = nullptr;
+    uv_loop_t* m_uv_loop = nullptr;
+
+    ReadRequest m_read_reqs[READ_BUFS_NUM];
+    std::size_t m_current_offset = 0;
+
+    // TODO: make some states instead bunch of flags
+    bool m_read_in_progress = false;
+    bool m_done_read = false;
+    bool m_need_reschedule_remove = false;
+
+    // TODO: it may be not reasonable to store by pointers here because they take to much space (>400b)
+    //       also memory pool will help a lot
+    uv_fs_t* m_open_request = nullptr;
+    decltype(uv_fs_t::result) m_file_handle = -1;
+    uv_fs_t m_stat_req;
+    uv_fs_t m_write_req;
+
+    std::string m_path;
+};
+
+File::Impl::Impl(EventLoop& loop, File& parent) :
+    m_parent(&parent),
     m_loop(&loop),
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
 
     memset(&m_write_req, 0, sizeof(m_write_req));
     memset(&m_stat_req, 0, sizeof(m_stat_req));
-
-    /*
-    m_read_bufs.resize(READ_BUFS_NUM);
-    for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
-        m_read_bufs[i].reset(new char[READ_BUF_SIZE]);
-    }
-    */
 }
 
-File::~File() {
+File::Impl::~Impl() {
     m_loop->log(Logger::Severity::TRACE, "File::~File");
 
     close();
@@ -36,7 +103,7 @@ File::~File() {
     }
 }
 
-void File::schedule_removal() {
+bool File::Impl::schedule_removal() {
     m_loop->log(Logger::Severity::TRACE, "File::schedule_removal ", m_path);
 
     close();
@@ -44,17 +111,17 @@ void File::schedule_removal() {
     if (has_read_buffers_in_use()) {
         m_need_reschedule_remove = true;
         m_loop->log(Logger::Severity::TRACE, "File has read buffers in use, postponing removal");
-        return;
+        return false;
     }
 
-    Disposable::schedule_removal();
+    return true;
 }
 
-bool File::is_open() const {
+bool File::Impl::is_open() const {
     return m_file_handle != -1;
 }
 
-void File::close() {
+void File::Impl::close() {
     if (!is_open()) {
         return;
     }
@@ -82,7 +149,7 @@ void File::close() {
     m_path.clear();
 }
 
-void File::open(const std::string& path, OpenCallback callback) {
+void File::Impl::open(const std::string& path, OpenCallback callback) {
     if (is_open()) {
         close();
     }
@@ -95,22 +162,21 @@ void File::open(const std::string& path, OpenCallback callback) {
     std::memset(m_open_request, 0, sizeof(uv_fs_t));
     m_open_callback = callback;
     m_open_request->data = this;
-    uv_fs_open(m_uv_loop, m_open_request, path.c_str(), UV_FS_O_RDWR, 0, File::on_open);
+    uv_fs_open(m_uv_loop, m_open_request, path.c_str(), UV_FS_O_RDWR, 0, on_open);
 }
 
-void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
+void File::Impl::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     if (!is_open()) {
         if (read_callback) {
-            read_callback(*this, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
+            read_callback(*m_parent, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
         }
+
         return;
     }
 
     m_read_callback = read_callback;
     m_end_read_callback = end_read_callback;
     m_done_read = false;
-    //m_read_req.data = this;
-    //m_read_state = ReadState::CONTINUE;
 
     schedule_read();
 }
@@ -130,13 +196,14 @@ struct ReadBlockReq : public uv_fs_t {
     std::size_t offset = 0;
 };
 
-}
+} // namespace
 
-void File::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback) {
+void File::Impl::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback) {
     if (!is_open()) {
         if (read_callback) {
-            read_callback(*this, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
+            read_callback(*m_parent, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
         }
+
         return;
     }
 
@@ -149,27 +216,27 @@ void File::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_c
 
     uv_buf_t buf = uv_buf_init(req->buf.get(), bytes_count);
     // TODO: error handling for uv_fs_read return value
-    uv_fs_read(m_uv_loop, req, m_file_handle, &buf, 1, offset, File::on_read_block);
+    uv_fs_read(m_uv_loop, req, m_file_handle, &buf, 1, offset, on_read_block);
 }
 
-void File::read(ReadCallback callback) {
+void File::Impl::read(ReadCallback callback) {
     read(callback, nullptr);
 }
 
-void File::stat(StatCallback callback) {
+void File::Impl::stat(StatCallback callback) {
     // TODO: check if open
 
     m_stat_req.data = this;
     m_stat_callback = callback;
 
-    uv_fs_fstat(m_uv_loop, &m_stat_req, m_file_handle, File::on_stat);
+    uv_fs_fstat(m_uv_loop, &m_stat_req, m_file_handle, on_stat);
 }
 
-const std::string& File::path() const {
+const std::string& File::Impl::path() const {
     return m_path;
 }
 
-void File::schedule_read() {
+void File::Impl::schedule_read() {
     //assert(m_used_read_bufs <= READ_BUFS_NUM);
 
     if (!is_open()) {
@@ -203,7 +270,7 @@ void File::schedule_read() {
     schedule_read(read_req);
 }
 
-void File::schedule_read(ReadRequest& req) {
+void File::Impl::schedule_read(ReadRequest& req) {
     m_read_in_progress = true;
     m_loop->start_dummy_idle();
 
@@ -220,7 +287,7 @@ void File::schedule_read(ReadRequest& req) {
 
         if (this->m_need_reschedule_remove) {
             if (!has_read_buffers_in_use()) {
-                this->schedule_removal();
+                m_parent->schedule_removal();
             }
 
             return;
@@ -236,10 +303,10 @@ void File::schedule_read(ReadRequest& req) {
 
     uv_buf_t buf = uv_buf_init(req.buf.get(), READ_BUF_SIZE);
     // TODO: error handling for uv_fs_read return value
-    uv_fs_read(m_uv_loop, &req, m_file_handle, &buf, 1, -1, File::on_read);
+    uv_fs_read(m_uv_loop, &req, m_file_handle, &buf, 1, -1, on_read);
 }
 
-bool File::has_read_buffers_in_use() const {
+bool File::Impl::has_read_buffers_in_use() const {
     for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
         if (!m_read_reqs[i].is_free) {
             return true;
@@ -250,10 +317,10 @@ bool File::has_read_buffers_in_use() const {
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
-void File::on_open(uv_fs_t* req) {
+void File::Impl::on_open(uv_fs_t* req) {
     ScopeExitGuard on_scope_exit([req]() {
         if (req->data) {
-            reinterpret_cast<File*>(req->data)->m_open_request = nullptr;
+            reinterpret_cast<File::Impl*>(req->data)->m_open_request = nullptr;
         }
 
         uv_fs_req_cleanup(req);
@@ -264,7 +331,7 @@ void File::on_open(uv_fs_t* req) {
         return;
     }
 
-    auto& this_ = *reinterpret_cast<File*>(req->data);
+    auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
 
     Status status(req->result > 0 ? 0 : req->result);
     if (status.ok()) {
@@ -272,7 +339,7 @@ void File::on_open(uv_fs_t* req) {
     }
 
     if (this_.m_open_callback) {
-        this_.m_open_callback(this_, status);
+        this_.m_open_callback(*this_.m_parent, status);
     }
 
     if (status.fail()) {
@@ -280,9 +347,9 @@ void File::on_open(uv_fs_t* req) {
     }
 }
 
-void File::on_read_block(uv_fs_t* uv_req) {
+void File::Impl::on_read_block(uv_fs_t* uv_req) {
     auto& req = *reinterpret_cast<ReadBlockReq*>(uv_req);
-    auto& this_ = *reinterpret_cast<File*>(req.data);
+    auto& this_ = *reinterpret_cast<File::Impl*>(req.data);
 
     io::ScopeExitGuard req_guard([&req]() {
         delete &req;
@@ -290,7 +357,7 @@ void File::on_read_block(uv_fs_t* uv_req) {
 
     if (!this_.is_open()) {
         if (this_.m_read_callback) {
-            this_.m_read_callback(this_, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
+            this_.m_read_callback(*this_.m_parent, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
         }
 
         return;
@@ -304,20 +371,20 @@ void File::on_read_block(uv_fs_t* uv_req) {
         if (this_.m_read_callback) {
             io::Status status(0);
             DataChunk data_chunk(req.buf, req.result, req.offset);
-            this_.m_read_callback(this_, data_chunk, status);
+            this_.m_read_callback(*this_.m_parent, data_chunk, status);
         }
     }
 }
 
-void File::on_read(uv_fs_t* uv_req) {
+void File::Impl::on_read(uv_fs_t* uv_req) {
     auto& req = *reinterpret_cast<ReadRequest*>(uv_req);
-    auto& this_ = *reinterpret_cast<File*>(req.data);
+    auto& this_ = *reinterpret_cast<File::Impl*>(req.data);
 
     if (!this_.is_open()) {
         req.buf.reset();
 
         if (this_.m_read_callback) {
-            this_.m_read_callback(this_, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
+            this_.m_read_callback(*this_.m_parent, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
         }
 
         return;
@@ -333,13 +400,13 @@ void File::on_read(uv_fs_t* uv_req) {
 
         if (this_.m_read_callback) {
             io::Status status(req.result);
-            this_.m_read_callback(this_, DataChunk(), status);
+            this_.m_read_callback(*this_.m_parent, DataChunk(), status);
         }
     } else if (req.result == 0) {
         this_.m_done_read = true;
 
         if (this_.m_end_read_callback) {
-            this_.m_end_read_callback(this_);
+            this_.m_end_read_callback(*this_.m_parent);
         }
 
         req.buf.reset();
@@ -350,7 +417,7 @@ void File::on_read(uv_fs_t* uv_req) {
         if (this_.m_read_callback) {
             io::Status status(0);
             DataChunk data_chunk(req.buf, req.result, this_.m_current_offset);
-            this_.m_read_callback(this_, data_chunk, status);
+            this_.m_read_callback(*this_.m_parent, data_chunk, status);
             this_.m_current_offset += req.result;
         }
 
@@ -359,11 +426,60 @@ void File::on_read(uv_fs_t* uv_req) {
     }
 }
 
-void File::on_stat(uv_fs_t* req) {
-    auto& this_ = *reinterpret_cast<File*>(req->data);
+void File::Impl::on_stat(uv_fs_t* req) {
+    auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
 
     if (this_.m_stat_callback) {
-        this_.m_stat_callback(this_, *reinterpret_cast<StatData*>(&this_.m_stat_req.statbuf));
+        this_.m_stat_callback(*this_.m_parent, *reinterpret_cast<StatData*>(&this_.m_stat_req.statbuf));
+    }
+}
+
+///////////////////////////////////////// implementation ///////////////////////////////////////////
+
+File::File(EventLoop& loop) :
+    Disposable(loop),
+    m_impl(new Impl(loop, *this)) {
+}
+
+File::~File() {
+}
+
+void File::open(const std::string& path, OpenCallback callback) {
+    return m_impl->open(path, callback);
+}
+
+void File::close() {
+    return m_impl->close();
+}
+
+bool File::is_open() const {
+    return m_impl->is_open();
+}
+
+void File::read(ReadCallback callback) {
+    return m_impl->read(callback);
+}
+
+void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
+    return m_impl->read(read_callback, end_read_callback);
+}
+
+void File::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback) {
+    return m_impl->read_block(offset, bytes_count, read_callback);
+}
+
+const std::string& File::path() const {
+    return m_impl->path();
+}
+
+void File::stat(StatCallback callback) {
+    return m_impl->stat(callback);
+}
+
+void File::schedule_removal() {
+    const bool ready_to_remove = m_impl->schedule_removal();
+    if (ready_to_remove) {
+        Disposable::schedule_removal();
     }
 }
 
