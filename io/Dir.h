@@ -6,8 +6,9 @@
 #include "Disposable.h"
 #include "Status.h"
 
-#include <string>
 #include <functional>
+#include <memory>
+#include <string>
 
 namespace io {
 
@@ -30,30 +31,12 @@ public:
 
     const std::string& path() const;
 
-    // statics
-    static void on_open_dir(uv_fs_t* req);
-    static void on_read_dir(uv_fs_t* req);
-    static void on_close_dir(uv_fs_t* req);
-
 protected:
     ~Dir();
 
 private:
-    static constexpr std::size_t DIRENTS_NUMBER = 1;
-
-    uv_loop_t* m_uv_loop;
-
-    OpenCallback m_open_callback = nullptr;
-    ReadCallback m_read_callback = nullptr;
-    EndReadCallback m_end_read_callback = nullptr;
-
-    std::string m_path;
-
-    uv_fs_t m_open_dir_req;
-    uv_fs_t m_read_dir_req;
-    uv_dir_t* m_uv_dir = nullptr;
-
-    uv_dirent_t m_dirents[DIRENTS_NUMBER];
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 using TempDirCallback = std::function<void(const std::string&)>;
