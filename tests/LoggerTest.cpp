@@ -87,3 +87,13 @@ TEST_F(LoggerTest, log_via_macro) {
     });
     IO_LOG((&logger), WARNING, "Message", 12345);
 }
+
+TEST_F(LoggerTest, log_pointer) {
+    std::unique_ptr<S> ptr(new S(42));
+
+    io::Logger logger;
+    logger.enable_log([](const std::string& message) {
+        EXPECT_NE(std::string::npos, message.find("[ERROR] [LoggerTest.cpp:98] Message 0x"));
+    });
+    IO_LOG((&logger), ERROR, "Message", ptr.get());
+}

@@ -2,8 +2,9 @@
 
 #include "detail/ConstexprString.h"
 
-#include <ostream>
 #include <functional>
+#include <iomanip>
+#include <ostream>
 #include <sstream>
 
 #define IO_LOG(LOGGER_PTR, SEVERITY, ...) LOGGER_PTR->log_with_file_and_line(io::Logger::Severity::SEVERITY, ::io::detail::extract_file_name_from_path(__FILE__), __LINE__, __VA_ARGS__);
@@ -35,14 +36,30 @@ public:
 
 private:
     template<typename M, typename... T>
-    void log(std::ostream& os, const M& message_chunk, T... t) {
+    void log_impl(std::ostream& os, const M& message_chunk, T... t) {
         os << " " << message_chunk;
-        log(os, t...);
+        log_impl(os, t...);
     }
 
     template<typename M>
-    void log(std::ostream& os, const M& message_chunk) {
+    void log_impl(std::ostream& os, const M& message_chunk) {
         os << " " << message_chunk;
+    }
+
+    // Specialisations with pointer work perfectly fine with char* so additional one for char* case is not needed here
+    template<typename M, typename... T>
+    void log_impl(std::ostream& os, const M* message_chunk, T... t) {
+        std::ios_base::fmtflags format_flags(os.flags());
+        os << " " << std::hex << message_chunk;
+        os.flags(format_flags);
+        log_impl(os, t...);
+    }
+
+    template<typename M>
+    void log_impl(std::ostream& os, const M* message_chunk) {
+        std::ios_base::fmtflags format_flags(os.flags());
+        os << " " << std::hex << message_chunk;
+        os.flags(format_flags);
     }
 
     void out_common_prefix(std::ostream& ss, Logger::Severity severity);
@@ -78,7 +95,7 @@ void Logger::log(Severity severity, T... t) {
 
     std::stringstream ss;
     out_common_prefix(ss, severity);
-    log(ss, t...);
+    log_impl(ss, t...);
 
     m_callback(ss.str());
 }
@@ -92,7 +109,7 @@ void Logger::log_with_file_and_line(Severity severity, const char* const file, s
     std::stringstream ss;
     out_common_prefix(ss, severity);
     ss << " [" << file << ":" << line << "]";
-    log(ss, t...);
+    log_impl(ss, t...);
 
     m_callback(ss.str());
 }
