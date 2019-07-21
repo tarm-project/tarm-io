@@ -92,7 +92,7 @@ File::Impl::Impl(EventLoop& loop, File& parent) :
 }
 
 File::Impl::~Impl() {
-    m_loop->log(Logger::Severity::TRACE, "File::~File");
+    IO_LOG(m_loop, TRACE, "File::~File");
 
     close();
 
@@ -104,13 +104,13 @@ File::Impl::~Impl() {
 }
 
 bool File::Impl::schedule_removal() {
-    m_loop->log(Logger::Severity::TRACE, "File::schedule_removal ", m_path);
+    IO_LOG(m_loop, TRACE, "File::schedule_removal ", m_path);
 
     close();
 
     if (has_read_buffers_in_use()) {
         m_need_reschedule_remove = true;
-        m_loop->log(Logger::Severity::TRACE, "File has read buffers in use, postponing removal");
+        IO_LOG(m_loop, TRACE, "File has read buffers in use, postponing removal");
         return false;
     }
 
@@ -126,12 +126,12 @@ void File::Impl::close() {
         return;
     }
 
-    m_loop->log(Logger::Severity::DEBUG, "File::close ", m_path);
+    IO_LOG(m_loop, DEBUG, "File::close ", m_path);
 
     uv_fs_t close_req;
     int status = uv_fs_close(m_uv_loop, &close_req, m_file_handle, nullptr);
     if (status != 0) {
-        m_loop->log(Logger::Severity::WARNING, "File::close status: ", uv_strerror(status));
+        IO_LOG(m_loop, WARNING, "File::close status: ", uv_strerror(status));
         // TODO: error handing????
     }
 
@@ -154,7 +154,7 @@ void File::Impl::open(const std::string& path, OpenCallback callback) {
         close();
     }
 
-    m_loop->log(Logger::Severity::DEBUG, "File::open ", path);
+    IO_LOG(m_loop, DEBUG, "File::open ", path);
 
     m_path = path;
     m_current_offset = 0;
@@ -257,11 +257,11 @@ void File::Impl::schedule_read() {
     }
 
     if (!found_free_buffer) {
-        m_loop->log(Logger::Severity::TRACE, "File ", m_path, " no free buffer found");
+        IO_LOG(m_loop, TRACE, "File ", m_path, " no free buffer found");
         return;
     }
 
-    m_loop->log(Logger::Severity::TRACE, "File ", m_path, " using buffer with index: ", i);
+    IO_LOG(m_loop, TRACE, "File ", m_path, " using buffer with index: ", i);
 
     ReadRequest& read_req = m_read_reqs[i];
     read_req.is_free = false;
@@ -280,7 +280,7 @@ void File::Impl::schedule_read(ReadRequest& req) {
 
     // TODO: comments on this shared pointer
     req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* p) {
-        this->m_loop->log(Logger::Severity::TRACE, this->m_path, " buffer freed");
+        IO_LOG(this->m_loop, TRACE, this->m_path, " buffer freed");
 
         req.is_free = true;
         m_loop->stop_dummy_idle();
@@ -297,7 +297,7 @@ void File::Impl::schedule_read(ReadRequest& req) {
             return;
         }
 
-        this->m_loop->log(Logger::Severity::TRACE, this->m_path, " schedule_read");
+        IO_LOG(this->m_loop, TRACE, this->m_path, " schedule_read");
         schedule_read();
     });
 
@@ -366,7 +366,7 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
     if (req.result < 0) {
         // TODO: error handling!
 
-        this_.m_loop->log(Logger::Severity::ERROR, "File: ", this_.m_path, " read error: ", uv_strerror(req.result));
+        IO_LOG(this_.m_loop, ERROR, "File: ", this_.m_path, " read error: ", uv_strerror(req.result));
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             io::Status status(0);
@@ -396,7 +396,7 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         this_.m_done_read = true;
         req.buf.reset();
 
-        this_.m_loop->log(Logger::Severity::ERROR, "File: ", this_.m_path, " read error: ", uv_strerror(req.result));
+        IO_LOG(this_.m_loop, ERROR, "File: ", this_.m_path, " read error: ", uv_strerror(req.result));
 
         if (this_.m_read_callback) {
             io::Status status(req.result);

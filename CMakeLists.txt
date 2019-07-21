@@ -88,8 +88,6 @@ ExternalProject_Add(libuv
 )
 include_directories(${LIBUV_INCLUDE_PATH})
 
-# TODO: need to check it if Boost installed to some location as /opt,
-# because below I do not have add include dirs and libs
 # TODO: system and filesystem should be required if we are building tests
 set(Boost_NO_BOOST_CMAKE ON)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
@@ -99,7 +97,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 # TODO: looks like need to move io-related CMake code into io folder
 FILE(GLOB IO_SOURCE_LIST
         io/*.h
-        io/global/*.h)
+        io/global/*.h
+        io/detail/*.h)
 list(APPEND IO_SOURCE_LIST
         io/global/Configuration.cpp
         io/Common.cpp
