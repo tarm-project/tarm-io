@@ -41,6 +41,13 @@ public:
         });
     }
 
+    void log_to_stdout() {
+        io::global::set_logger_callback([this](const std::string& message) {
+            std::lock_guard<decltype(m_log_mutex)> guard(m_log_mutex);
+            std::cout << message << std::endl;
+        });
+    }
+
 private:
     boost::filesystem::path m_logs_directory;
     std::ofstream m_ofstream;
