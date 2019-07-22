@@ -7,7 +7,11 @@
 #include <ostream>
 #include <sstream>
 
-#define IO_LOG(LOGGER_PTR, SEVERITY, ...) (LOGGER_PTR)->log_with_file_and_line(io::Logger::Severity::SEVERITY, ::io::detail::extract_file_name_from_path(__FILE__), __LINE__, __VA_ARGS__);
+#ifdef _MSC_VER
+#define __func__ __FUNCTION__
+#endif
+
+#define IO_LOG(LOGGER_PTR, SEVERITY, ...) (LOGGER_PTR)->log_with_compile_context(io::Logger::Severity::SEVERITY, ::io::detail::extract_file_name_from_path(__FILE__), __LINE__, __func__, __VA_ARGS__);
 
 namespace io {
 
@@ -32,7 +36,7 @@ public:
     void log(Severity severity, T... t);
 
     template<typename... T>
-    void log_with_file_and_line(Severity severity, const char* const file, std::size_t line, T... t);
+    void log_with_compile_context(Severity severity, const char* const file, std::size_t line, const char* const func, T... t);
 
 private:
     template<typename M, typename... T>
@@ -101,7 +105,7 @@ void Logger::log(Severity severity, T... t) {
 }
 
 template<typename... T>
-void Logger::log_with_file_and_line(Severity severity, const char* const file, std::size_t line, T... t) {
+void Logger::log_with_compile_context(Severity severity, const char* const file, std::size_t line, const char* const func, T... t) {
     if (m_callback == nullptr) {
         return;
     }
@@ -109,7 +113,13 @@ void Logger::log_with_file_and_line(Severity severity, const char* const file, s
     std::stringstream ss;
     out_common_prefix(ss, severity);
     ss << " [" << file << ":" << line << "]";
+    if (func) {
+        ss << " (" << func << ")";
+    }
+
     log_impl(ss, t...);
+
+
 
     m_callback(ss.str());
 }

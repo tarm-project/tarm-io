@@ -175,7 +175,7 @@ void TcpServer::Impl::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t
 
     if (nread < 0) {
         if (nread == UV_EOF) {
-            IO_LOG(this_.m_loop, TRACE, "TcpServer::on_read connection end ",
+            IO_LOG(this_.m_loop, TRACE, "connection end address:",
                               io::ip4_addr_to_string(tcp_client.ipv4_addr()), ":", tcp_client.port());
             this_.remove_client_connection(&tcp_client);
         }
@@ -191,12 +191,12 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
     auto& this_ = *reinterpret_cast<TcpServer::Impl*>(server->data);
 
-    IO_LOG(this_.m_loop, TRACE, "TcpServer::on_new_connection");
+    IO_LOG(this_.m_loop, TRACE, "_");
 
     if (status < 0) {
         // TODO: need to find better error reporting solution in case when TOO_MANY_OPEN_FILES_ERROR
         //       because it spams log. For example, could record last error and log only when last error != current one
-        IO_LOG(this_.m_loop, ERROR, "TcpServer::on_new_connection error: ", uv_strerror(status));
+        IO_LOG(this_.m_loop, ERROR, "error:", uv_strerror(status));
         // TODO: error handling
         return;
     }
@@ -236,7 +236,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
         } else {
             // TODO: call close???
-            IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason: ", uv_strerror(status));
+            IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", uv_strerror(status));
         }
     } else {
         //uv_close(reinterpret_cast<uv_handle_t*>(tcp_client), nullptr/*on_close*/);

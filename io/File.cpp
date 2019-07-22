@@ -92,7 +92,7 @@ File::Impl::Impl(EventLoop& loop, File& parent) :
 }
 
 File::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, "File::~File");
+    IO_LOG(m_loop, TRACE, "_");
 
     close();
 
@@ -104,7 +104,7 @@ File::Impl::~Impl() {
 }
 
 bool File::Impl::schedule_removal() {
-    IO_LOG(m_loop, TRACE, "File::schedule_removal ", m_path);
+    IO_LOG(m_loop, TRACE, "path:", m_path);
 
     close();
 
@@ -126,12 +126,12 @@ void File::Impl::close() {
         return;
     }
 
-    IO_LOG(m_loop, DEBUG, "File::close ", m_path);
+    IO_LOG(m_loop, DEBUG, "path: ", m_path);
 
     uv_fs_t close_req;
     int status = uv_fs_close(m_uv_loop, &close_req, m_file_handle, nullptr);
     if (status != 0) {
-        IO_LOG(m_loop, WARNING, "File::close status: ", uv_strerror(status));
+        IO_LOG(m_loop, WARNING, "status: ", uv_strerror(status));
         // TODO: error handing????
     }
 
@@ -154,7 +154,7 @@ void File::Impl::open(const std::string& path, OpenCallback callback) {
         close();
     }
 
-    IO_LOG(m_loop, DEBUG, "File::open ", path);
+    IO_LOG(m_loop, DEBUG, "path:", path);
 
     m_path = path;
     m_current_offset = 0;
@@ -257,11 +257,11 @@ void File::Impl::schedule_read() {
     }
 
     if (!found_free_buffer) {
-        IO_LOG(m_loop, TRACE, "File ", m_path, " no free buffer found");
+        IO_LOG(m_loop, TRACE, "File", m_path, "no free buffer found");
         return;
     }
 
-    IO_LOG(m_loop, TRACE, "File ", m_path, " using buffer with index: ", i);
+    IO_LOG(m_loop, TRACE, "File", m_path, "using buffer with index: ", i);
 
     ReadRequest& read_req = m_read_reqs[i];
     read_req.is_free = false;
@@ -280,7 +280,7 @@ void File::Impl::schedule_read(ReadRequest& req) {
 
     // TODO: comments on this shared pointer
     req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* p) {
-        IO_LOG(this->m_loop, TRACE, this->m_path, " buffer freed");
+        IO_LOG(this->m_loop, TRACE, this->m_path, "buffer freed");
 
         req.is_free = true;
         m_loop->stop_dummy_idle();
@@ -297,7 +297,7 @@ void File::Impl::schedule_read(ReadRequest& req) {
             return;
         }
 
-        IO_LOG(this->m_loop, TRACE, this->m_path, " schedule_read");
+        IO_LOG(this->m_loop, TRACE, this->m_path, "schedule_read again");
         schedule_read();
     });
 
@@ -366,7 +366,7 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
     if (req.result < 0) {
         // TODO: error handling!
 
-        IO_LOG(this_.m_loop, ERROR, "File: ", this_.m_path, " read error: ", uv_strerror(req.result));
+        IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(req.result));
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             io::Status status(0);
@@ -396,7 +396,7 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         this_.m_done_read = true;
         req.buf.reset();
 
-        IO_LOG(this_.m_loop, ERROR, "File: ", this_.m_path, " read error: ", uv_strerror(req.result));
+        IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(req.result));
 
         if (this_.m_read_callback) {
             io::Status status(req.result);

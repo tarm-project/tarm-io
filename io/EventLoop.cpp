@@ -100,7 +100,7 @@ EventLoop::Impl::Impl(EventLoop& loop) :
 }
 
 EventLoop::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, "EventLoop::Impl::~Impl: dummy_idle_ref_counter:", m_dummy_idle_ref_counter);
+    IO_LOG(m_loop, TRACE, "dummy_idle_ref_counter:", m_dummy_idle_ref_counter);
 
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
@@ -110,13 +110,13 @@ EventLoop::Impl::~Impl() {
 
     int status = uv_loop_close(this);
     if (status == UV_EBUSY) {
-        IO_LOG(m_loop, DEBUG, "Loop: returned EBUSY at close, running one more time");
+        IO_LOG(m_loop, DEBUG, "loop returned EBUSY at close, running one more time");
 
         // Making the last attemt to close everytjing and shut down gracefully
         status = uv_run(this, UV_RUN_ONCE);
 
         uv_loop_close(this);
-        IO_LOG(m_loop, DEBUG, "Loop: done");
+        IO_LOG(m_loop, DEBUG, "Done");
     }
 }
 
@@ -148,7 +148,7 @@ int EventLoop::Impl::run() {
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
 
-        IO_LOG(m_loop, DEBUG, "EventLoop::Impl::~Impl: pending async events count: ", m_callbacks_queue.size());
+        IO_LOG(m_loop, DEBUG, "pending async events count:", m_callbacks_queue.size());
 
         for(auto& callback : m_callbacks_queue) {
             callback();
@@ -183,13 +183,13 @@ void EventLoop::Impl::stop_call_on_each_loop_cycle(std::size_t handle) {
 }
 
 void EventLoop::Impl::start_dummy_idle() {
-    IO_LOG(m_loop, TRACE, "EventLoop::Impl::start_dummy_idle ref_counter:", m_dummy_idle_ref_counter);
+    IO_LOG(m_loop, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
 
     if (m_dummy_idle_ref_counter++) {
         return; // idle is already running
     }
 
-    IO_LOG(m_loop, TRACE, "EventLoop::Impl::start_dummy_idle, starting timer");
+    IO_LOG(m_loop, TRACE, "starting timer");
 
     m_dummy_idle = new uv_timer_t;
     std::memset(m_dummy_idle, 0, sizeof(uv_timer_t));
@@ -200,13 +200,13 @@ void EventLoop::Impl::start_dummy_idle() {
 }
 
 void EventLoop::Impl::stop_dummy_idle() {
-    IO_LOG(m_loop, TRACE, "EventLoop::Impl::stop_dummy_idle ref_counter:", m_dummy_idle_ref_counter);
+    IO_LOG(m_loop, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
 
     if (--m_dummy_idle_ref_counter) {
         return;
     }
 
-    IO_LOG(m_loop, TRACE, "EventLoop::Impl::stop_dummy_idle, close timer");
+    IO_LOG(m_loop, TRACE, "closing timer");
 
     m_dummy_idle->data = nullptr;
     uv_timer_stop(m_dummy_idle);
@@ -296,12 +296,12 @@ void EventLoop::Impl::on_async(uv_async_t* handle) {
 
 void EventLoop::Impl::on_dummy_idle_tick(uv_timer_t* handle) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
-    IO_LOG(this_.m_loop, TRACE, "on_dummy_idle_tick");
+    IO_LOG(this_.m_loop, TRACE, "_");
 }
 
 void EventLoop::Impl::on_dummy_idle_close(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->loop);
-    IO_LOG(this_.m_loop, TRACE, "on_dummy_idle_close");
+    IO_LOG(this_.m_loop, TRACE, "_");
 
     delete reinterpret_cast<uv_timer_t*>(handle);
 }

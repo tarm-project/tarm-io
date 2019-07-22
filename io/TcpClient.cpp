@@ -23,7 +23,7 @@ TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
 }
 
 TcpClient::~TcpClient() {
-    IO_LOG(m_loop, TRACE, this, "TcpClient::~TcpClient");
+    IO_LOG(m_loop, TRACE, this, "_");
 
     if (m_connect_req) {
         delete m_connect_req; // TODO: delete right after connect???
@@ -59,7 +59,7 @@ void TcpClient::connect(const std::string& address,
     m_port = port;
     m_ipv4_addr = network_to_host(addr.sin_addr.s_addr);
 
-    IO_LOG(m_loop, DEBUG, "TcpClient::connect ", io::ip4_addr_to_string(m_ipv4_addr));
+    IO_LOG(m_loop, DEBUG, "address:", io::ip4_addr_to_string(m_ipv4_addr)); // TODO: port???
 
     init_stream();
     m_connect_callback = connect_callback;
@@ -154,7 +154,7 @@ uv_tcp_t* TcpClient::tcp_client_stream() {
 }
 
 void TcpClient::schedule_removal() {
-    IO_LOG(m_loop, TRACE, "TcpClient::schedule_removal ", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
+    IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
 
     m_server = nullptr;
     close();
@@ -167,7 +167,7 @@ void TcpClient::close() {
         return;
     }
 
-    IO_LOG(m_loop, TRACE, "TcpClient::close ", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
+    IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
 
     m_is_open = false;
 
@@ -220,7 +220,7 @@ void TcpClient::after_write(uv_write_t* req, int status) {
 void TcpClient::on_shutdown(uv_shutdown_t* req, int status) {
     auto& this_ = *reinterpret_cast<TcpClient*>(req->data);
 
-    IO_LOG(this_.m_loop, TRACE, "TcpClient::on_shutdown ", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
+    IO_LOG(this_.m_loop, TRACE, "address:", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
 
     // TODO: need close????
     //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpClient::on_close);
