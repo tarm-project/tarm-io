@@ -159,7 +159,7 @@ int EventLoop::Impl::run() {
 }
 
 std::size_t EventLoop::Impl::schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback) {
-    auto ptr = std::make_unique<Idle>();
+    std::unique_ptr<Idle> ptr(new Idle);
     uv_idle_init(this, ptr.get());
     ptr->data = this;
     ptr->id = m_idle_it_counter;

@@ -4,7 +4,7 @@ project(connection_test
         VERSION 1.0.0
         LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)

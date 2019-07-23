@@ -67,7 +67,7 @@ TcpServer::Impl::Impl(EventLoop& loop, TcpServer& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
-    m_pool(std::make_unique<boost::pool<>>(TcpServer::READ_BUFFER_SIZE)) {
+    m_pool(new boost::pool<>(TcpServer::READ_BUFFER_SIZE)) {
 }
 
 TcpServer::Impl::~Impl() {
