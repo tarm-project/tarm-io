@@ -9,20 +9,14 @@
 
 namespace io {
 
-// TODO: move to fwd header
-class TcpServer;
-
 class TcpClient : public Disposable {
 public:
-    friend class TcpServer;
-
     using ConnectCallback = std::function<void(TcpClient&, const Status&)>;
     using CloseCallback = std::function<void(TcpClient&, const Status&)>;
     using EndSendCallback = std::function<void(TcpClient&)>;
     using DataReceiveCallback = std::function<void(TcpClient&, const char*, size_t)>;
 
     TcpClient(EventLoop& loop);
-    TcpClient(EventLoop& loop, TcpServer& server);
 
     void schedule_removal() override;
 
@@ -65,16 +59,9 @@ protected:
     ~TcpClient();
 
 private:
-    const TcpServer& server() const;
-    TcpServer& server();
-
     void init_stream();
 
     uv_loop_t* m_uv_loop;
-
-    uv_tcp_t* tcp_client_stream();
-
-    TcpServer* m_server = nullptr;
 
     ConnectCallback m_connect_callback = nullptr;
     uv_connect_t* m_connect_req = nullptr;

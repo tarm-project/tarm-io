@@ -15,13 +15,6 @@ TcpClient::TcpClient(EventLoop& loop) :
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
 }
 
-TcpClient::TcpClient(EventLoop& loop, TcpServer& server) :
-    TcpClient(loop) {
-    m_is_open = true;
-    m_server = &server;
-    init_stream();
-}
-
 TcpClient::~TcpClient() {
     IO_LOG(m_loop, TRACE, this, "_");
 
@@ -141,22 +134,9 @@ std::size_t TcpClient::pending_write_requesets() const {
     return m_pending_write_requesets;
 }
 
-const TcpServer& TcpClient::server() const {
-    return *m_server;
-}
-
-TcpServer& TcpClient::server() {
-    return *m_server;
-}
-
-uv_tcp_t* TcpClient::tcp_client_stream() {
-    return m_tcp_stream;
-}
-
 void TcpClient::schedule_removal() {
     IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
 
-    m_server = nullptr;
     close();
 
     Disposable::schedule_removal();
@@ -173,10 +153,6 @@ void TcpClient::close() {
 
     if (m_close_callback) {
         m_close_callback(*this, Status(0));
-    }
-
-    if (m_server) {
-        //m_server->remove_client_connection(this);
     }
 
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
