@@ -47,42 +47,12 @@ public:
     void set_user_data(void* data);
     void* user_data();
 
-    // statics
-    static void after_write(uv_write_t* req, int status);
-    static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
-    static void on_shutdown(uv_shutdown_t* req, int status);
-    static void on_close(uv_handle_t* handle);
-    static void on_connect(uv_connect_t* req, int status);
-    static void on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
-
 protected:
     ~TcpClient();
 
 private:
-    void init_stream();
-
-    uv_loop_t* m_uv_loop;
-
-    ConnectCallback m_connect_callback = nullptr;
-    uv_connect_t* m_connect_req = nullptr;
-
-    DataReceiveCallback m_receive_callback = nullptr;
-
-    // TODO: need to ensure that one buffer is enough
-    char* m_read_buf = nullptr;
-    std::size_t m_read_buf_size = 0;
-
-    bool m_is_open = false;
-
-    uv_tcp_t* m_tcp_stream = nullptr;
-    std::uint32_t m_ipv4_addr = 0;
-    std::uint16_t m_port = 0;
-
-    std::size_t m_pending_write_requesets = 0;
-
-    CloseCallback m_close_callback = nullptr;
-
-    void* m_user_data = nullptr;
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 using TcpClientPtr = std::unique_ptr<TcpClient>;

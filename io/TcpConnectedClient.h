@@ -21,8 +21,8 @@ public:
     using EndSendCallback = std::function<void(TcpConnectedClient&)>;
     using DataReceiveCallback = std::function<void(TcpConnectedClient&, const char*, size_t)>;
 
-    TcpConnectedClient(EventLoop& loop);
-    TcpConnectedClient(EventLoop& loop, TcpServer& server);
+    TcpConnectedClient(EventLoop& loop); // TODO: remove
+    TcpConnectedClient(EventLoop& loop, TcpServer& server); // TODO: make protected
 
     void schedule_removal() override;
 
