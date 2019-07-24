@@ -42,10 +42,10 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
 
     io::TcpServer server(loop);
     ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
-    auto listen_result = server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+    auto listen_result = server.listen([&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
         return true;
     },
-    [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, size_t size) {
         data_received = true;
         std::string received_message(buf, size);
 
@@ -84,10 +84,10 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
 
     io::TcpServer server(loop);
     ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
-    server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+    server.listen([&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
         return true;
     },
-    [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, size_t size) {
         EXPECT_EQ(size, message.length() + 1);
 
         std::string received_message(buf, size);
@@ -147,10 +147,10 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
         io::EventLoop loop;
         io::TcpServer server(loop);
         ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
-        server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+        server.listen([&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
             return true;
         },
-        [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, size_t size) {
             EXPECT_EQ(size, message.length());
             EXPECT_EQ(std::string(buf, size), message);
             receive_called = true;
@@ -195,12 +195,12 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
 
     io::TcpServer server(loop);
     ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
-    server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+    server.listen([&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
         client.send_data(message);
         data_sent = true;
         return true;
     },
-    [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, size_t size) {
         server.shutdown(); // receive 'shutdown' message
     });
 
@@ -245,10 +245,10 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
         std::vector<unsigned char> total_bytes_received;
 
         ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
-        server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+        server.listen([&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
             return true;
         },
-        [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, size_t size) {
             total_bytes_received.insert(total_bytes_received.end(), buf, buf + size);
             bytes_received += size;
             if (bytes_received >= TOTAL_BYTES) {
@@ -332,12 +332,12 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
     std::vector<unsigned char> total_bytes_received;
 
     ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
-    server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+    server.listen([&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
         client.send_data(server_message);
         EXPECT_EQ(0, server.connected_clients_count());
         return false;
     },
-    [&](io::TcpServer& server, io::TcpClient& client, const char* buf, size_t size) {
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, size_t size) {
         server_receive_callback_called = true;
     });
 
@@ -378,10 +378,10 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
 
     io::TcpServer server(loop);
     ASSERT_EQ(0, server.bind(m_default_addr, m_default_port));
-    server.listen([&](io::TcpServer& server, io::TcpClient& client) -> bool {
+    server.listen([&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
         return true;
     },
-    [&](io::TcpServer& server, io::TcpClient& client, const char* buf, std::size_t size) {
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
         EXPECT_EQ(std::string(buf, size), client_message);
         client.close();
         EXPECT_EQ(0, server.connected_clients_count());
@@ -427,11 +427,11 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
 
     io::TcpServer server(server_loop);
     ASSERT_EQ(0, server.bind(m_default_addr, m_default_port));
-    server.listen([&connections_counter](io::TcpServer& server, io::TcpClient& client) -> bool {
+    server.listen([&connections_counter](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
         ++connections_counter;
         return true;
     },
-    [&clinets_data_log, &server_reads_counter](io::TcpServer& server, io::TcpClient& client, const char* buf, std::size_t size) {
+    [&clinets_data_log, &server_reads_counter](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
         ++server_reads_counter;
         ASSERT_EQ(sizeof(std::size_t), size);
         const auto value = *reinterpret_cast<const std::size_t*>(buf);
@@ -501,20 +501,20 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
     server.bind(m_default_addr, m_default_port);
 
     bool client_close_called = false;
-    io::TcpClient::CloseCallback on_client_close =
-        [&](io::TcpClient& client, const io::Status& status) {
+    io::TcpConnectedClient::CloseCallback on_client_close =
+        [&](io::TcpConnectedClient& client, const io::Status& status) {
             EXPECT_TRUE(status.ok());
             client_close_called = true;
         };
 
     io::TcpServer::NewConnectionCallback on_server_new_connection =
-        [=](io::TcpServer& server, io::TcpClient& client) ->bool {
+        [=](io::TcpServer& server, io::TcpConnectedClient& client) ->bool {
             client.set_close_callback(on_client_close);
             return true;
         };
 
     io::TcpServer::DataReceivedCallback on_server_receive_data =
-        [](io::TcpServer& server, io::TcpClient& client, const char* buf, std::size_t size) {
+        [](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
 
         };
 

@@ -29,7 +29,7 @@ public:
 
     std::size_t connected_clients_count() const;
 
-    void remove_client_connection(TcpClient* client);
+    void remove_client_connection(TcpConnectedClient* client);
 
 protected:
     // statics
@@ -56,8 +56,8 @@ private:
 
     // Using such interesting kind of mapping here to be able find connections by raw C pointer
     // and also have benefits of RAII with unique_ptr
-    //std::map<uv_tcp_t*, TcpClientPtr> m_client_connections;
-    std::set<TcpClient*> m_client_connections;
+    //std::map<uv_tcp_t*, TcpConnectedClientPtr> m_client_connections;
+    std::set<TcpConnectedClient*> m_client_connections;
 
     // Made as unique_ptr because boost::pool has no move constructor defined
     std::unique_ptr<boost::pool<>> m_pool;
@@ -135,7 +135,7 @@ void TcpServer::Impl::close() {
     uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
 }
 
-void TcpServer::Impl::remove_client_connection(TcpClient* client) {
+void TcpServer::Impl::remove_client_connection(TcpConnectedClient* client) {
     m_client_connections.erase(client);
     client->schedule_removal();
 }
@@ -149,7 +149,7 @@ std::size_t TcpServer::Impl::connected_clients_count() const {
 void TcpServer::Impl::alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     // TODO: probably use suggested_size via handling hash table of different pools by block size
 
-    auto& client = *reinterpret_cast<TcpClient*>(handle->data);
+    auto& client = *reinterpret_cast<TcpConnectedClient*>(handle->data);
     auto& this_ = *client.server().m_impl.get();
     buf->base = reinterpret_cast<char*>(this_.m_pool->malloc());
     buf->len = TcpServer::READ_BUFFER_SIZE;
@@ -163,7 +163,7 @@ void TcpServer::Impl::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t
     // TODO: capture buf by unique_ptr
     // buf
 
-    auto& tcp_client = *reinterpret_cast<TcpClient*>(client->data);
+    auto& tcp_client = *reinterpret_cast<TcpConnectedClient*>(client->data);
     auto& this_ = *tcp_client.server().m_impl.get();
 
     if (nread > 0) {
@@ -201,7 +201,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
         return;
     }
 
-    auto tcp_client = new TcpClient(*this_.m_loop, *this_.m_parent);
+    auto tcp_client = new TcpConnectedClient(*this_.m_loop, *this_.m_parent);
 
     if (uv_accept(server, reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream())) == 0) {
         //sockaddr_storage info;
@@ -240,7 +240,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
         }
     } else {
         //uv_close(reinterpret_cast<uv_handle_t*>(tcp_client), nullptr/*on_close*/);
-        // TODO: schedule TcpClient removal here
+        // TODO: schedule TcpConnectedClient removal here
     }
 }
 
@@ -288,7 +288,7 @@ std::size_t TcpServer::connected_clients_count() const {
     return m_impl->connected_clients_count();
 }
 
-void TcpServer::remove_client_connection(TcpClient* client) {
+void TcpServer::remove_client_connection(TcpConnectedClient* client) {
     return m_impl->remove_client_connection(client);
 }
 

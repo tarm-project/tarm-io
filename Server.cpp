@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     //     });
     // });
 
-    auto on_new_connection = [](io::TcpServer& server, io::TcpClient& client) -> bool {
+    auto on_new_connection = [](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
         std::cout << "New connection from " << io::ip4_addr_to_string(client.ipv4_addr()) << ":" << client.port() << std::endl;
 
         // std::memcpy(write_data_buf.get(), "Hello", 5);
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
         return true;
     };
 
-    auto on_data_read = [&loop](io::TcpServer& server, io::TcpClient& client, const char* data, size_t len) {
+    auto on_data_read = [&loop](io::TcpServer& server, io::TcpConnectedClient& client, const char* data, size_t len) {
         std::string message(data, data + len);
         std::cout << message;
 
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
                     std::cout << "File size is: " << stat.st_size << std::endl;
                 });
 
-                client.set_close_callback([&file](io::TcpClient& client, const io::Status& status){
+                client.set_close_callback([&file](io::TcpConnectedClient& client, const io::Status& status){
                     file.schedule_removal();
                 });
 
@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
                         //std::cout << "pending_write_requesets " << client.pending_write_requesets() << std::endl;
                     }
 
-                    client.send_data(chunk.buf, chunk.size, [&file](io::TcpClient& client) {
+                    client.send_data(chunk.buf, chunk.size, [&file](io::TcpConnectedClient& client) {
                         static int counter = 0;
                         std::cout << "TcpClient after send counter: " << counter++ << std::endl;
 

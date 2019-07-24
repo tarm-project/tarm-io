@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Common.h"
-#include "TcpClient.h"
+
+#include "TcpConnectedClient.h"
 
 // TODO: forward declare this???
 #include "EventLoop.h"
@@ -18,13 +19,13 @@ namespace io {
 
 class TcpServer {
 public:
-    friend class TcpClient;
+    friend class TcpConnectedClient;
 
     static const size_t READ_BUFFER_SIZE = 65536;
 
     // TODO: replace 'int status' with some error
-    using NewConnectionCallback = std::function<bool(TcpServer&, TcpClient&)>;
-    using DataReceivedCallback = std::function<void(TcpServer&, TcpClient&, const char*, std::size_t)>;
+    using NewConnectionCallback = std::function<bool(TcpServer&, TcpConnectedClient&)>;
+    using DataReceivedCallback = std::function<void(TcpServer&, TcpConnectedClient&, const char*, std::size_t)>;
 
     TcpServer(EventLoop& loop);
     ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server
@@ -50,7 +51,7 @@ public:
     std::size_t connected_clients_count() const;
 
 private:
-    void remove_client_connection(TcpClient* client);
+    void remove_client_connection(TcpConnectedClient* client);
 
     class Impl;
     std::unique_ptr<Impl> m_impl;

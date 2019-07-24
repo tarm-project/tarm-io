@@ -111,6 +111,7 @@ list(APPEND IO_SOURCE_LIST
         io/StatusCode.cpp
         io/Timer.cpp
         io/TcpClient.cpp
+        io/TcpConnectedClient.cpp
         io/TcpServer.cpp
         io/UdpClient.cpp
         io/UdpClient.h
