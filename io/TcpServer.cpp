@@ -171,6 +171,7 @@ void TcpServer::Impl::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t
             this_.m_data_receive_callback(*this_.m_parent, tcp_client, buf->base, nread);
         }
         return;
+        // TODO: not freeing buf->base (memory is accumulated by the pool but freed at the end) need test for memory usage
     }
 
     if (nread < 0) {
