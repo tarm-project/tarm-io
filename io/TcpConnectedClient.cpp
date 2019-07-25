@@ -10,15 +10,11 @@
 
 namespace io {
 
-TcpConnectedClient::TcpConnectedClient(EventLoop& loop) :
-    Disposable(loop),
-    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
-}
-
 TcpConnectedClient::TcpConnectedClient(EventLoop& loop, TcpServer& server) :
-    TcpConnectedClient(loop) {
-    m_is_open = true;
-    m_server = &server;
+    Disposable(loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
+    m_is_open(true),
+    m_server(&server) {
     init_stream();
 }
 
@@ -40,40 +36,6 @@ void TcpConnectedClient::init_stream() {
         uv_tcp_init(m_uv_loop, m_tcp_stream);
         m_tcp_stream->data = this;
     }
-}
-
-void TcpConnectedClient::connect(const std::string& address,
-                        std::uint16_t port,
-                        ConnectCallback connect_callback,
-                        DataReceiveCallback receive_callback,
-                        CloseCallback close_callback) {
-    struct sockaddr_in addr;
-
-    uv_ip4_addr(address.c_str(), port, &addr); // TODO: error handling
-
-    if (m_connect_req == nullptr) {
-        m_connect_req = new uv_connect_t;
-        m_connect_req->data = this;
-    }
-
-    m_port = port;
-    m_ipv4_addr = network_to_host(addr.sin_addr.s_addr);
-
-    IO_LOG(m_loop, DEBUG, "address:", io::ip4_addr_to_string(m_ipv4_addr)); // TODO: port???
-
-    init_stream();
-    m_connect_callback = connect_callback;
-    m_receive_callback = receive_callback;
-    m_close_callback = close_callback;
-
-    int uv_status = uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(&addr), TcpConnectedClient::on_connect);
-    if (uv_status < 0) {
-        Status status(uv_status);
-        if (m_connect_callback) {
-            m_connect_callback(*this, uv_status);
-        }
-    }
-
 }
 
 std::uint32_t TcpConnectedClient::ipv4_addr() const {
@@ -226,7 +188,7 @@ void TcpConnectedClient::on_shutdown(uv_shutdown_t* req, int status) {
     //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpConnectedClient::on_close);
     delete req;
 }
-
+/*
 void TcpConnectedClient::on_connect(uv_connect_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<TcpConnectedClient*>(req->data);
     this_.m_is_open = true; // if not error!
@@ -250,7 +212,7 @@ void TcpConnectedClient::on_connect(uv_connect_t* req, int uv_status) {
     this_.set_ipv4_addr(0);
     this_.set_port(0);
 }
-
+ */
 void TcpConnectedClient::on_close(uv_handle_t* handle) {
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpConnectedClient*>(handle->data);

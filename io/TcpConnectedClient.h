@@ -12,28 +12,20 @@ namespace io {
 // TODO: move to fwd header
 class TcpServer;
 
+// TODO: make protected inheritance????
 class TcpConnectedClient : public Disposable {
 public:
     friend class TcpServer;
 
-    using ConnectCallback = std::function<void(TcpConnectedClient&, const Status&)>;
     using CloseCallback = std::function<void(TcpConnectedClient&, const Status&)>;
     using EndSendCallback = std::function<void(TcpConnectedClient&)>;
     using DataReceiveCallback = std::function<void(TcpConnectedClient&, const char*, size_t)>;
-
-    TcpConnectedClient(EventLoop& loop); // TODO: remove
-    TcpConnectedClient(EventLoop& loop, TcpServer& server); // TODO: make protected
 
     void schedule_removal() override;
 
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
 
-    void connect(const std::string& address,
-                 std::uint16_t port,
-                 ConnectCallback connect_callback,
-                 DataReceiveCallback receive_callback,
-                 CloseCallback close_callback = nullptr);
     void close();
 
     bool is_open() const;
@@ -58,10 +50,10 @@ public:
     static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
     static void on_shutdown(uv_shutdown_t* req, int status);
     static void on_close(uv_handle_t* handle);
-    static void on_connect(uv_connect_t* req, int status);
     static void on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
 
 protected:
+    TcpConnectedClient(EventLoop& loop, TcpServer& server);
     ~TcpConnectedClient();
 
 private:
@@ -76,7 +68,6 @@ private:
 
     TcpServer* m_server = nullptr;
 
-    ConnectCallback m_connect_callback = nullptr;
     uv_connect_t* m_connect_req = nullptr;
 
     DataReceiveCallback m_receive_callback = nullptr;
