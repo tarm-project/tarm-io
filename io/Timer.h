@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "EventLoop.h"
+#include "UserDataHolder.h"
 
 #include <functional>
 #include <memory>
@@ -9,7 +10,7 @@
 namespace io {
 
 // TODO: inherit from Disposable??????
-class Timer  {
+class Timer : public UserDataHolder {
 public:
     using Callback = std::function<void(Timer&)>;
 

@@ -117,6 +117,7 @@ list(APPEND IO_SOURCE_LIST
         io/UdpClient.h
         io/UdpServer.h
         io/UdpServer.cpp
+        io/UserDataHolder.cpp
 )
 
 if (${CMAKE_VERSION} VERSION_LESS "3.8.2")

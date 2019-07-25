@@ -5,6 +5,7 @@
 #include "DirectoryEntryType.h"
 #include "Disposable.h"
 #include "Status.h"
+#include "UserDataHolder.h"
 
 #include <functional>
 #include <memory>
@@ -12,7 +13,8 @@
 
 namespace io {
 
-class Dir : public Disposable {
+class Dir : public Disposable,
+            public UserDataHolder {
 public:
     using OpenCallback = std::function<void(Dir&, const Status&)>;
     using ReadCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;

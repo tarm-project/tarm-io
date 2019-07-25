@@ -4,12 +4,14 @@
 //#include "DataChunk.h"
 #include "Disposable.h"
 #include "Status.h"
+#include "UserDataHolder.h"
 
 #include <memory>
 
 namespace io {
 
-class UdpClient : public Disposable {
+class UdpClient : public Disposable,
+                  public UserDataHolder {
 public:
     using EndSendCallback = std::function<void(UdpClient&, const Status&)>;
 

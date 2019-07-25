@@ -1,4 +1,6 @@
 #include "EventLoop.h"
+
+#include "Logger.h"
 #include "ScopeExitGuard.h"
 #include "global/Configuration.h"
 

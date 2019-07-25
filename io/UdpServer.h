@@ -4,6 +4,7 @@
 #include "DataChunk.h"
 #include "Disposable.h"
 #include "Status.h"
+#include "UserDataHolder.h"
 
 #include <memory>
 
@@ -12,7 +13,8 @@ namespace io {
 // TODO: fwd include
 class UdpClient;
 
-class UdpServer : public Disposable {
+class UdpServer : public Disposable,
+                  public UserDataHolder {
 public:
     using DataReceivedCallback = std::function<void(UdpServer&, std::uint32_t, std::uint16_t, const DataChunk&, const Status&)>;
 

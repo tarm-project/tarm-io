@@ -7,6 +7,7 @@ list(APPEND TESTS_LIST
     Main.cpp
     UTCommon.cpp
     CommonTest.cpp
+    UserDataHolderTest.cpp
     LoggerTest.cpp
     DisposableTest.cpp
     ScopeExitGuardTest.cpp

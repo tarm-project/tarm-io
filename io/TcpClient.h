@@ -1,15 +1,17 @@
 #pragma once
 
 #include "Common.h"
-#include "Disposable.h"
 #include "EventLoop.h"
+#include "Disposable.h"
+#include "UserDataHolder.h"
 #include "Status.h"
 
 #include <memory>
 
 namespace io {
 
-class TcpClient : public Disposable {
+class TcpClient : public Disposable,
+                  public UserDataHolder {
 public:
     using ConnectCallback = std::function<void(TcpClient&, const Status&)>;
     using CloseCallback = std::function<void(TcpClient&, const Status&)>;
@@ -43,9 +45,6 @@ public:
     std::size_t pending_write_requesets() const;
 
     void shutdown();
-
-    void set_user_data(void* data);
-    void* user_data();
 
 protected:
     ~TcpClient();

@@ -41,9 +41,6 @@ public:
 
     void shutdown();
 
-    void set_user_data(void* data);
-    void* user_data();
-
 protected:
     // statics
     static void after_write(uv_write_t* req, int status);
@@ -239,14 +236,6 @@ void TcpClient::Impl::close() {
 bool TcpClient::Impl::is_open() const {
     return m_is_open;
 }
-// TODO: inroduce some UserDataHolder class
-void TcpClient::Impl::set_user_data(void* data)  {
-    m_user_data = data;
-}
-
-void* TcpClient::Impl::user_data() {
-    return m_user_data;
-}
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 void TcpClient::Impl::after_write(uv_write_t* req, int status) {
@@ -413,15 +402,6 @@ std::size_t TcpClient::pending_write_requesets() const {
 
 void TcpClient::shutdown() {
     return m_impl->shutdown();
-}
-
-// TODO: UserDataHolder class needed
-void TcpClient::set_user_data(void* data) {
-    return m_impl->set_user_data(data);
-}
-
-void* TcpClient::user_data() {
-    return m_impl->user_data();
 }
 
 } // namespace io

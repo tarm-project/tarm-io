@@ -2,13 +2,15 @@
 
 #include "Common.h"
 #include "Logger.h"
+#include "UserDataHolder.h"
 
 #include <functional>
 #include <memory>
 
 namespace io {
 
-class EventLoop : public Logger {
+class EventLoop : public Logger,
+                  public UserDataHolder {
 public:
     using AsyncCallback = std::function<void()>;
     using WorkCallback = std::function<void()>;

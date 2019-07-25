@@ -4,6 +4,7 @@
 #include "Disposable.h"
 #include "EventLoop.h"
 #include "Status.h"
+#include "UserDataHolder.h"
 
 #include <memory>
 
@@ -13,7 +14,8 @@ namespace io {
 class TcpServer;
 
 // TODO: make protected inheritance????
-class TcpConnectedClient : public Disposable {
+class TcpConnectedClient : public Disposable,
+                           public UserDataHolder {
 public:
     friend class TcpServer;
 

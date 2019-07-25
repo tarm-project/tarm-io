@@ -3,6 +3,7 @@
 #include "Common.h"
 
 #include "TcpConnectedClient.h"
+#include "UserDataHolder.h"
 
 // TODO: forward declare this???
 #include "EventLoop.h"
@@ -19,7 +20,7 @@ namespace io {
 
 class TcpConnectedClient;
 
-class TcpServer {
+class TcpServer : public UserDataHolder{
 public:
     friend class TcpConnectedClient;
 
