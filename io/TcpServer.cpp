@@ -145,7 +145,7 @@ std::size_t TcpServer::Impl::connected_clients_count() const {
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
-
+/*
 void TcpServer::Impl::alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     // TODO: probably use suggested_size via handling hash table of different pools by block size
 
@@ -186,7 +186,7 @@ void TcpServer::Impl::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t
 
     this_.m_pool->free(buf->base);
 }
-
+ */
 void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
     assert(server && "server should be not null");
 
@@ -224,9 +224,12 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
             if (allow_connection) {
                 this_.m_client_connections.insert(tcp_client);
 
+                tcp_client->start_read(this_.m_data_receive_callback);
+                /*
                 uv_read_start(reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream()),
                               alloc_buffer,
                               on_read);
+                 */
             } else {
                 // TODO: probably closing connection from the server side is not the best idea
                 // We can send message to client that server is not ready and disconnect from client side

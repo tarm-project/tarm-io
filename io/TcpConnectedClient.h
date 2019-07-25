@@ -19,7 +19,7 @@ public:
 
     using CloseCallback = std::function<void(TcpConnectedClient&, const Status&)>;
     using EndSendCallback = std::function<void(TcpConnectedClient&)>;
-    using DataReceiveCallback = std::function<void(TcpConnectedClient&, const char*, size_t)>;
+    using DataReceiveCallback = std::function<void(TcpServer&, TcpConnectedClient&, const char*, std::size_t)>;
 
     void schedule_removal() override;
 
@@ -57,6 +57,9 @@ protected:
     ~TcpConnectedClient();
 
 private:
+    void start_read(DataReceiveCallback data_receive_callback);
+    uv_tcp_t* tcp_client_stream();
+
     const TcpServer& server() const;
     TcpServer& server();
 
@@ -64,11 +67,8 @@ private:
 
     uv_loop_t* m_uv_loop;
 
-    uv_tcp_t* tcp_client_stream();
 
     TcpServer* m_server = nullptr;
-
-    uv_connect_t* m_connect_req = nullptr;
 
     DataReceiveCallback m_receive_callback = nullptr;
 

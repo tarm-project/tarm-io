@@ -17,6 +17,8 @@
 
 namespace io {
 
+class TcpConnectedClient;
+
 class TcpServer {
 public:
     friend class TcpConnectedClient;
