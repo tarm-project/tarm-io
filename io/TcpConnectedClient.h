@@ -62,9 +62,6 @@ private:
     void start_read(DataReceiveCallback data_receive_callback);
     uv_tcp_t* tcp_client_stream();
 
-    const TcpServer& server() const;
-    TcpServer& server();
-
     void init_stream();
 
     uv_loop_t* m_uv_loop;

@@ -99,14 +99,6 @@ std::size_t TcpConnectedClient::pending_write_requesets() const {
     return m_pending_write_requesets;
 }
 
-const TcpServer& TcpConnectedClient::server() const {
-    return *m_server;
-}
-
-TcpServer& TcpConnectedClient::server() {
-    return *m_server;
-}
-
 uv_tcp_t* TcpConnectedClient::tcp_client_stream() {
     return m_tcp_stream;
 }
