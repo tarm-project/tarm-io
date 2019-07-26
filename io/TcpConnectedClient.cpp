@@ -199,31 +199,6 @@ void TcpConnectedClient::start_read(DataReceiveCallback data_receive_callback) {
     set_port(0);
 }
 
-/*
-void TcpConnectedClient::on_connect(uv_connect_t* req, int uv_status) {
-    auto& this_ = *reinterpret_cast<TcpConnectedClient*>(req->data);
-    this_.m_is_open = true; // if not error!
-
-    Status status(uv_status);
-    if (this_.m_connect_callback) {
-        this_.m_connect_callback(this_, uv_status);
-    }
-
-    if (status.fail()) {
-        return;
-    }
-
-    if (this_.m_receive_callback) {
-        uv_read_start(req->handle,
-                      TcpConnectedClient::alloc_read_buffer,
-                      TcpConnectedClient::on_read);
-    }
-
-    //TODO: set ip and port
-    this_.set_ipv4_addr(0);
-    this_.set_port(0);
-}
- */
 void TcpConnectedClient::on_close(uv_handle_t* handle) {
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpConnectedClient*>(handle->data);
@@ -243,7 +218,7 @@ void TcpConnectedClient::on_read(uv_stream_t* handle, ssize_t nread, const uv_bu
             this_.m_receive_callback(*this_.m_server, this_, buf->base, nread);
         }
         return;
-        // TODO: not freeing buf->base (memory is accumulated by the pool but freed at the end) need test for memory usage
+        // TODO: not freeing buf->base
     }
 
     if (nread <= 0) {
@@ -258,21 +233,13 @@ void TcpConnectedClient::on_read(uv_stream_t* handle, ssize_t nread, const uv_bu
                               io::ip4_addr_to_string(this_.ipv4_addr()), ":", this_.port());
             this_.m_server->remove_client_connection(&this_);
         } else {
+            //TODO: need to call read callback with error status here
+
             // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
             if (this_.m_close_callback) {
                 this_.m_close_callback(this_, status);
             }
-
-            //TODO: if close callback is not set (probably) need to call read callback with error status
         }
-
-        /*
-        if (nread == UV_EOF) {
-            IO_LOG(this_.m_loop, TRACE, "connection end address:",
-                              io::ip4_addr_to_string(this_.ipv4_addr()), ":", this_.port());
-            this_.m_server->remove_client_connection(&this_);
-        }
-        */
 
         // TODO: uv_close on error????
     }
@@ -280,30 +247,6 @@ void TcpConnectedClient::on_read(uv_stream_t* handle, ssize_t nread, const uv_bu
     //this_.m_pool->free(buf->base);
 }
 
-/*
-void TcpConnectedClient::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
-    auto& this_ = *reinterpret_cast<TcpConnectedClient*>(handle->data);
-
-    if (nread > 0) {
-        if (this_.m_receive_callback) {
-            this_.m_receive_callback(this_, buf->base,  nread);
-        }
-    } else if (nread <= 0) {
-        if (this_.m_close_callback) {
-            Status status(nread);
-
-            if (status.code() == io::StatusCode::END_OF_FILE) {
-                this_.m_close_callback(this_, Status(0)); // OK
-            } else {
-                // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
-                this_.m_close_callback(this_, status);
-
-                //TODO: if close callback is not set (probably) need to call read callback with error status
-            }
-        }
-    }
-}
- */
 void TcpConnectedClient::alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<TcpConnectedClient*>(handle->data);
 

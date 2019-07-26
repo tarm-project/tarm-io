@@ -145,48 +145,6 @@ std::size_t TcpServer::Impl::connected_clients_count() const {
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
-/*
-void TcpServer::Impl::alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-    // TODO: probably use suggested_size via handling hash table of different pools by block size
-
-    auto& client = *reinterpret_cast<TcpConnectedClient*>(handle->data);
-    auto& this_ = *client.server().m_impl.get();
-    buf->base = reinterpret_cast<char*>(this_.m_pool->malloc());
-    buf->len = TcpServer::READ_BUFFER_SIZE;
-}
-
-void TcpServer::Impl::on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf) {
-    if (client->data == nullptr) {
-        // TODO: error handling here
-    }
-
-    // TODO: capture buf by unique_ptr
-    // buf
-
-    auto& tcp_client = *reinterpret_cast<TcpConnectedClient*>(client->data);
-    auto& this_ = *tcp_client.server().m_impl.get();
-
-    if (nread > 0) {
-        if (this_.m_data_receive_callback) {
-            this_.m_data_receive_callback(*this_.m_parent, tcp_client, buf->base, nread);
-        }
-        return;
-        // TODO: not freeing buf->base (memory is accumulated by the pool but freed at the end) need test for memory usage
-    }
-
-    if (nread < 0) {
-        if (nread == UV_EOF) {
-            IO_LOG(this_.m_loop, TRACE, "connection end address:",
-                              io::ip4_addr_to_string(tcp_client.ipv4_addr()), ":", tcp_client.port());
-            this_.remove_client_connection(&tcp_client);
-        }
-
-        // TODO: uv_close on error????
-    }
-
-    this_.m_pool->free(buf->base);
-}
- */
 void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
     assert(server && "server should be not null");
 
@@ -225,11 +183,6 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
                 this_.m_client_connections.insert(tcp_client);
 
                 tcp_client->start_read(this_.m_data_receive_callback);
-                /*
-                uv_read_start(reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream()),
-                              alloc_buffer,
-                              on_read);
-                 */
             } else {
                 // TODO: probably closing connection from the server side is not the best idea
                 // We can send message to client that server is not ready and disconnect from client side
