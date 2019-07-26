@@ -166,7 +166,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
         //sockaddr_storage info;
         struct sockaddr info;
         int info_len = sizeof info;
-        int status = uv_tcp_getpeername(tcp_client->tcp_client_stream(),
+        int status = uv_tcp_getpeername(reinterpret_cast<uv_tcp_t*>(tcp_client->tcp_client_stream()),
                                         &info,
                                         &info_len);
         if (status == 0) {
