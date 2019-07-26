@@ -140,14 +140,6 @@ bool TcpConnectedClient::is_open() const {
     return m_is_open;
 }
 
-void TcpConnectedClient::set_user_data(void* data)  {
-    m_user_data = data;
-}
-
-void* TcpConnectedClient::user_data() {
-    return m_user_data;
-}
-
 // ////////////////////////////////////// static //////////////////////////////////////
 void TcpConnectedClient::after_write(uv_write_t* req, int status) {
     auto& this_ = *reinterpret_cast<TcpConnectedClient*>(req->data);

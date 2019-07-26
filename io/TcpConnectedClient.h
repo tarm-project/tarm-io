@@ -44,9 +44,6 @@ public:
 
     void shutdown();
 
-    void set_user_data(void* data);
-    void* user_data();
-
     // statics
     static void after_write(uv_write_t* req, int status);
     static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
@@ -84,10 +81,6 @@ private:
     std::size_t m_pending_write_requesets = 0;
 
     CloseCallback m_close_callback = nullptr;
-
-    void* m_user_data = nullptr;
 };
-
-using TcpConnectedClientPtr = std::unique_ptr<TcpConnectedClient>;
 
 } // namespace io

@@ -75,8 +75,6 @@ private:
     std::size_t m_pending_write_requesets = 0;
 
     CloseCallback m_close_callback = nullptr;
-
-    void* m_user_data = nullptr;
 };
 
 
