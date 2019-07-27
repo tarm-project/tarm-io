@@ -2,11 +2,12 @@
 
 #include "ByteSwap.h"
 #include "TcpServer.h"
+#include "detail/TcpClientImplBase.h"
 
 #include <assert.h>
 
 namespace io {
-class TcpConnectedClient::Impl {
+class TcpConnectedClient::Impl : public detail::TcpClientImplBase<TcpConnectedClient::Impl> {
 public:
     Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent);
     ~Impl();
@@ -46,10 +47,7 @@ protected:
 private:
     void init_stream();
 
-    EventLoop* m_loop;
-    uv_loop_t* m_uv_loop;
     TcpConnectedClient* m_parent;
-
     TcpServer* m_server = nullptr;
 
     DataReceiveCallback m_receive_callback = nullptr;
@@ -71,8 +69,7 @@ private:
 
 
 TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent) :
-    m_loop(&loop),
-    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
+    TcpClientImplBase(loop),
     m_parent(&parent),
     m_server(&server),
     m_is_open(true) {
