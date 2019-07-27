@@ -196,8 +196,10 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
     io::TcpServer server(loop);
     ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
     server.listen([&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
-        client.send_data(message);
-        data_sent = true;
+        client.send_data(message, [&](io::TcpConnectedClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
+            data_sent = true;
+        });
         return true;
     },
     [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, size_t size) {

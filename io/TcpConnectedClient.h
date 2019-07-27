@@ -20,7 +20,7 @@ public:
     friend class TcpServer;
 
     using CloseCallback = std::function<void(TcpConnectedClient&, const Status&)>;
-    using EndSendCallback = std::function<void(TcpConnectedClient&)>;
+    using EndSendCallback = std::function<void(TcpConnectedClient&, const Status&)>;
     using DataReceiveCallback = std::function<void(TcpServer&, TcpConnectedClient&, const char*, std::size_t)>;
 
     std::uint32_t ipv4_addr() const;

@@ -141,10 +141,17 @@ void TcpConnectedClient::Impl::send_data(std::shared_ptr<const char> buffer, std
     req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
 
     int uv_code = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write);
-    if (uv_code < 0) {
-        // TODO: FIXME
-        //std::cout << "!!! " << uv_strerror(uv_code) << std::endl;
+    Status status(uv_code);
+
+    if (status.fail()) {
+        IO_LOG(m_loop, ERROR, m_parent, "Error:", uv_strerror(uv_code));
+        if (callback) {
+            callback(*m_parent, status);
+        }
+        delete req;
+        return;
     }
+
     ++m_pending_write_requesets;
 }
 
@@ -204,7 +211,7 @@ bool TcpConnectedClient::Impl::is_open() const {
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
-void TcpConnectedClient::Impl::after_write(uv_write_t* req, int status) {
+void TcpConnectedClient::Impl::after_write(uv_write_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(req->data);
 
     assert(this_.m_pending_write_requesets >= 1);
@@ -213,13 +220,13 @@ void TcpConnectedClient::Impl::after_write(uv_write_t* req, int status) {
     auto request = reinterpret_cast<WriteRequest*>(req);
     std::unique_ptr<WriteRequest> guard(request);
 
-    if (status < 0) {
-        // TODO: fixme!!!!
-        //std::cerr << "!!! TcpConnectedClient::after_write: " << uv_strerror(status) << std::endl;
+    Status status(uv_status);
+    if (status.fail()) {
+        IO_LOG(this_.m_loop, ERROR, this_.m_parent, "Error:", uv_strerror(uv_status));
     }
 
     if (request->end_send_callback) {
-        request->end_send_callback(*this_.m_parent);
+        request->end_send_callback(*this_.m_parent, status);
     }
 }
 

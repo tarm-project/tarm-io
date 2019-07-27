@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
                         //std::cout << "pending_write_requesets " << client.pending_write_requesets() << std::endl;
                     }
 
-                    client.send_data(chunk.buf, chunk.size, [&file](io::TcpConnectedClient& client) {
+                    client.send_data(chunk.buf, chunk.size, [&file](io::TcpConnectedClient& client, const io::Status& status) {
                         static int counter = 0;
                         std::cout << "TcpClient after send counter: " << counter++ << std::endl;
 
