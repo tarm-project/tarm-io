@@ -11,7 +11,7 @@
 
 namespace io {
 
-class TcpClient::Impl : public detail::TcpClientImplBase<TcpClient::Impl> {
+class TcpClient::Impl : public detail::TcpClientImplBase<TcpClient, TcpClient::Impl> {
 public:
     Impl(EventLoop& loop, TcpClient& parent);
     ~Impl();
@@ -33,9 +33,6 @@ public:
     void set_ipv4_addr(std::uint32_t value);
     void set_port(std::uint16_t value);
 
-    void send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback = nullptr);
-    void send_data(const std::string& message, EndSendCallback callback = nullptr);
-
     void set_close_callback(CloseCallback callback);
 
     std::size_t pending_write_requesets() const;
@@ -44,7 +41,6 @@ public:
 
 protected:
     // statics
-    static void after_write(uv_write_t* req, int status);
     static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
     static void on_shutdown(uv_shutdown_t* req, int status);
     static void on_close(uv_handle_t* handle);
@@ -53,8 +49,6 @@ protected:
 
 private:
     void init_stream();
-
-    TcpClient* m_parent;
 
     ConnectCallback m_connect_callback = nullptr;
     uv_connect_t* m_connect_req = nullptr;
@@ -67,18 +61,14 @@ private:
 
     bool m_is_open = false;
 
-    uv_tcp_t* m_tcp_stream = nullptr;
     std::uint32_t m_ipv4_addr = 0;
     std::uint16_t m_port = 0;
-
-    std::size_t m_pending_write_requesets = 0;
 
     CloseCallback m_close_callback = nullptr;
 };
 
 TcpClient::Impl::Impl(EventLoop& loop, TcpClient& parent) :
-    TcpClientImplBase(loop),
-    m_parent(&parent) {
+    TcpClientImplBase(loop, parent) {
 }
 
 TcpClient::Impl::~Impl() {
@@ -161,37 +151,6 @@ void TcpClient::Impl::shutdown() {
     uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), on_shutdown);
 }
 
-namespace {
-
-struct WriteRequest : public uv_write_t {
-    uv_buf_t uv_buf;
-    std::shared_ptr<const char> buf;
-    TcpClient::EndSendCallback end_send_callback = nullptr;
-};
-
-} // namespace
-
-void TcpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback) {
-    auto req = new WriteRequest;
-    req->end_send_callback = callback;
-    req->data = this;
-    req->buf = buffer;
-    // const_cast is a workaround for lack of constness support in uv_buf_t
-    req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
-
-    int uv_code = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write);
-    if (uv_code < 0) {
-        std::cout << "!!! " << uv_strerror(uv_code) << std::endl;
-    }
-    ++m_pending_write_requesets;
-}
-
-void TcpClient::Impl::send_data(const std::string& message, EndSendCallback callback) {
-    std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
-    std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
-    send_data(ptr, message.size(), callback);
-}
-
 void TcpClient::Impl::set_close_callback(CloseCallback callback) {
     m_close_callback = callback;
 }
@@ -233,24 +192,6 @@ bool TcpClient::Impl::is_open() const {
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
-void TcpClient::Impl::after_write(uv_write_t* req, int status) {
-    auto& this_ = *reinterpret_cast<TcpClient::Impl*>(req->data);
-
-    assert(this_.m_pending_write_requesets >= 1);
-    --this_.m_pending_write_requesets;
-
-    auto request = reinterpret_cast<WriteRequest*>(req);
-    std::unique_ptr<WriteRequest> guard(request);
-
-    if (status < 0) {
-        std::cerr << "!!! TcpClient::after_write: " << uv_strerror(status) << std::endl;
-    }
-
-    if (request->end_send_callback) {
-        request->end_send_callback(*this_.m_parent);
-    }
-}
-
 void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(req->data);
 

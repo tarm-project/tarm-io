@@ -62,7 +62,8 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     client->connect(m_default_addr,m_default_port, [&](io::TcpClient& client, const io::Status& status) {
         EXPECT_TRUE(status.ok());
 
-        client.send_data(message, [&](io::TcpClient& client) {
+        client.send_data(message, [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
             data_sent = true;
             client.schedule_removal();
         });
@@ -109,7 +110,8 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     client_1->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
         EXPECT_TRUE(status.ok());
 
-        client.send_data(message + "1", [&](io::TcpClient& client) {
+        client.send_data(message + "1", [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
             data_sent_1 = true;
             client.schedule_removal();
         });
@@ -122,7 +124,8 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     client_2->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
         EXPECT_TRUE(status.ok());
 
-        client.send_data(message + "2", [&](io::TcpClient& client) {
+        client.send_data(message + "2", [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
             data_sent_2 = true;
             client.schedule_removal();
         });
@@ -169,7 +172,8 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
         client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
             EXPECT_TRUE(status.ok());
 
-            client.send_data(message, [&](io::TcpClient& client) {
+            client.send_data(message, [&](io::TcpClient& client, const io::Status& status) {
+                EXPECT_TRUE(status.ok());
                 send_called = true;
                 client.schedule_removal();
             });
@@ -219,7 +223,8 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
         EXPECT_EQ(std::string(buf, size), message);
         data_received = true;
 
-        client.send_data("shutdown", [&](io::TcpClient& client) {
+        client.send_data("shutdown", [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
             client.schedule_removal();
         });
     });
@@ -270,7 +275,8 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         std::size_t counter = 0;
-        std::function<void(io::TcpClient&)> on_data_sent = [&](io::TcpClient& client) {
+        std::function<void(io::TcpClient&, const io::Status&)> on_data_sent = [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
             if (++counter == CHUNKS_COUNT) {
                 client.schedule_removal();
             }
@@ -457,7 +463,8 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
                 std::shared_ptr<char> data(new char[sizeof(std::size_t)], [](const char* p) { delete[] p;});
                 *reinterpret_cast<std::size_t*>(data.get()) = data_value;
                 all_clients[i]->send_data(data, sizeof(std::size_t),
-                    [](io::TcpClient& client) {
+                    [](io::TcpClient& client, const io::Status& status) {
+                        EXPECT_FALSE(status.fail());
                         client.schedule_removal();
                     });
             }

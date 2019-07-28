@@ -15,7 +15,7 @@ class TcpClient : public Disposable,
 public:
     using ConnectCallback = std::function<void(TcpClient&, const Status&)>;
     using CloseCallback = std::function<void(TcpClient&, const Status&)>;
-    using EndSendCallback = std::function<void(TcpClient&)>;
+    using EndSendCallback = std::function<void(TcpClient&, const Status&)>;
     using DataReceiveCallback = std::function<void(TcpClient&, const char*, size_t)>;
 
     TcpClient(EventLoop& loop);
