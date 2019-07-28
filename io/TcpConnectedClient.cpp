@@ -35,7 +35,6 @@ public:
 
 protected:
     // statics
-    static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
     static void on_shutdown(uv_shutdown_t* req, int status);
     static void on_close(uv_handle_t* handle);
     static void on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
@@ -46,10 +45,6 @@ private:
     TcpServer* m_server = nullptr;
 
     DataReceiveCallback m_receive_callback = nullptr;
-
-    // TODO: need to ensure that one buffer is enough
-    char* m_read_buf = nullptr;
-    std::size_t m_read_buf_size = 0;
 
     bool m_is_open = false;
 
@@ -66,11 +61,6 @@ TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedC
 
 TcpConnectedClient::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, this, "_");
-
-    // TODO: need to revise this. Some read request may be in progress
-    if (m_read_buf) {
-        delete[] m_read_buf;
-    }
 }
 
 void TcpConnectedClient::Impl::init_stream() {
@@ -228,19 +218,6 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
     }
 
     //this_.m_pool->free(buf->base);
-}
-
-void TcpConnectedClient::Impl::alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-    auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
-
-    if (this_.m_read_buf == nullptr) {
-        io::default_alloc_buffer(handle, suggested_size, buf);
-        this_.m_read_buf = buf->base;
-        this_.m_read_buf_size = buf->len;
-    } else {
-        buf->base = this_.m_read_buf;
-        buf->len = this_.m_read_buf_size;
-    }
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////

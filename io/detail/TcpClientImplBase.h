@@ -9,11 +9,8 @@ namespace detail {
 template<typename ParentType, typename ImplType>
 class TcpClientImplBase {
 public:
-    TcpClientImplBase(EventLoop& loop, ParentType& parent) :
-        m_loop(&loop),
-        m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
-        m_parent(&parent) {
-    }
+    TcpClientImplBase(EventLoop& loop, ParentType& parent);
+    ~TcpClientImplBase();
 
     void send_data(std::shared_ptr<const char> buffer, std::size_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
@@ -21,6 +18,7 @@ public:
 protected:
     // statics
     static void after_write(uv_write_t* req, int status);
+    static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 
     // data
     EventLoop* m_loop;
@@ -33,6 +31,10 @@ protected:
     std::uint32_t m_ipv4_addr = 0;
     std::uint16_t m_port = 0;
 
+    // TODO: need to ensure that one buffer is enough
+    char* m_read_buf = nullptr;
+    std::size_t m_read_buf_size = 0;
+
 private:
     struct WriteRequest : public uv_write_t {
         uv_buf_t uv_buf;
@@ -42,6 +44,22 @@ private:
 };
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
+
+template<typename ParentType, typename ImplType>
+TcpClientImplBase<ParentType, ImplType>::TcpClientImplBase(EventLoop& loop, ParentType& parent) :
+    m_loop(&loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
+    m_parent(&parent) {
+}
+
+template<typename ParentType, typename ImplType>
+TcpClientImplBase<ParentType, ImplType>::~TcpClientImplBase() {
+    // TODO: need to revise this. Some read request may be in progress
+    //       move to on_close() ???
+    if (m_read_buf) {
+        delete[] m_read_buf;
+    }
+}
 
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::size_t size, typename ParentType::EndSendCallback callback) {
@@ -92,6 +110,20 @@ void TcpClientImplBase<ParentType, ImplType>::after_write(uv_write_t* req, int u
 
     if (request->end_send_callback) {
         request->end_send_callback(*this_.m_parent, status);
+    }
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+    auto& this_ = *reinterpret_cast<ImplType*>(handle->data);
+
+    if (this_.m_read_buf == nullptr) {
+        io::default_alloc_buffer(handle, suggested_size, buf);
+        this_.m_read_buf = buf->base;
+        this_.m_read_buf_size = buf->len;
+    } else {
+        buf->base = this_.m_read_buf;
+        buf->len = this_.m_read_buf_size;
     }
 }
 
