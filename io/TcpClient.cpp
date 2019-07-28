@@ -61,9 +61,6 @@ private:
 
     bool m_is_open = false;
 
-    std::uint32_t m_ipv4_addr = 0;
-    std::uint16_t m_port = 0;
-
     CloseCallback m_close_callback = nullptr;
 };
 
