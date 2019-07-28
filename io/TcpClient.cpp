@@ -1,13 +1,9 @@
 #include "TcpClient.h"
 
 #include "ByteSwap.h"
-//#include "TcpServer.h"
 #include "detail/TcpClientImplBase.h"
 
 #include <assert.h>
-
-// TODO: move
-#include <iostream>
 
 namespace io {
 
@@ -18,9 +14,6 @@ public:
 
     bool schedule_removal();
 
-    std::uint32_t ipv4_addr() const;
-    std::uint16_t port() const;
-
     void connect(const std::string& address,
                  std::uint16_t port,
                  ConnectCallback connect_callback,
@@ -29,9 +22,6 @@ public:
     void close();
 
     bool is_open() const;
-
-    void set_ipv4_addr(std::uint32_t value);
-    void set_port(std::uint16_t value);
 
     void set_close_callback(CloseCallback callback);
 
@@ -111,22 +101,6 @@ void TcpClient::Impl::connect(const std::string& address,
         }
     }
 
-}
-
-std::uint32_t TcpClient::Impl::ipv4_addr() const {
-    return m_ipv4_addr;
-}
-
-std::uint16_t TcpClient::Impl::port() const {
-    return m_port;
-}
-
-void TcpClient::Impl::set_ipv4_addr(std::uint32_t value) {
-    m_ipv4_addr = value;
-}
-
-void TcpClient::Impl::set_port(std::uint16_t value) {
-    m_port = value;
 }
 
 void TcpClient::Impl::shutdown() {
@@ -285,14 +259,6 @@ void TcpClient::close() {
 
 bool TcpClient::is_open() const {
     return m_impl->is_open();
-}
-
-void TcpClient::set_ipv4_addr(std::uint32_t value) {
-    return m_impl->set_ipv4_addr(value);
-}
-
-void TcpClient::set_port(std::uint16_t value) {
-    return m_impl->set_port(value);
 }
 
 void TcpClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback) {

@@ -15,6 +15,12 @@ public:
     void send_data(std::shared_ptr<const char> buffer, std::size_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
 
+    void set_ipv4_addr(std::uint32_t value);
+    void set_port(std::uint16_t value);
+
+    std::uint32_t ipv4_addr() const;
+    std::uint16_t port() const;
+
 protected:
     // statics
     static void after_write(uv_write_t* req, int status);
@@ -90,6 +96,26 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(const std::string& messa
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
     send_data(ptr, message.size(), callback);
+}
+
+template<typename ParentType, typename ImplType>
+std::uint32_t TcpClientImplBase<ParentType, ImplType>::ipv4_addr() const {
+    return m_ipv4_addr;
+}
+
+template<typename ParentType, typename ImplType>
+std::uint16_t TcpClientImplBase<ParentType, ImplType>::port() const {
+    return m_port;
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::set_ipv4_addr(std::uint32_t value) {
+    m_ipv4_addr = value;
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::set_port(std::uint16_t value) {
+    m_port = value;
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////

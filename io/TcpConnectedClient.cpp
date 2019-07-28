@@ -14,15 +14,9 @@ public:
 
     bool schedule_removal();
 
-    std::uint32_t ipv4_addr() const;
-    std::uint16_t port() const;
-
     void close();
 
     bool is_open() const;
-
-    void set_ipv4_addr(std::uint32_t value);
-    void set_port(std::uint16_t value);
 
     void set_close_callback(CloseCallback callback);
 
@@ -69,22 +63,6 @@ void TcpConnectedClient::Impl::init_stream() {
         uv_tcp_init(m_uv_loop, m_tcp_stream);
         m_tcp_stream->data = this;
     }
-}
-
-std::uint32_t TcpConnectedClient::Impl::ipv4_addr() const {
-    return m_ipv4_addr;
-}
-
-std::uint16_t TcpConnectedClient::Impl::port() const {
-    return m_port;
-}
-
-void TcpConnectedClient::Impl::set_ipv4_addr(std::uint32_t value) {
-    m_ipv4_addr = value;
-}
-
-void TcpConnectedClient::Impl::set_port(std::uint16_t value) {
-    m_port = value;
 }
 
 void TcpConnectedClient::Impl::shutdown() {
