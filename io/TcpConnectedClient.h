@@ -26,16 +26,14 @@ public:
     std::uint16_t port() const;
 
     void close();
+    void shutdown();
     bool is_open() const;
-
-    void send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback = nullptr);
-    void send_data(const std::string& message, EndSendCallback callback = nullptr);
 
     void set_close_callback(CloseCallback callback);
 
+    void send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback = nullptr);
+    void send_data(const std::string& message, EndSendCallback callback = nullptr);
     std::size_t pending_write_requesets() const;
-
-    void shutdown();
 
 protected:
     TcpConnectedClient(EventLoop& loop, TcpServer& server);

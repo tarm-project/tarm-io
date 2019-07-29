@@ -137,7 +137,6 @@ void TcpServer::Impl::close() {
 
 void TcpServer::Impl::remove_client_connection(TcpConnectedClient* client) {
     m_client_connections.erase(client);
-    client->schedule_removal();
 }
 
 std::size_t TcpServer::Impl::connected_clients_count() const {
@@ -184,11 +183,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
                 tcp_client->start_read(this_.m_data_receive_callback);
             } else {
-                // TODO: probably closing connection from the server side is not the best idea
-                // We can send message to client that server is not ready and disconnect from client side
-                // uv_close(reinterpret_cast<uv_handle_t*>(tcp_client), nullptr/*on_close*/);
-                // close;
-                tcp_client->schedule_removal();
+                tcp_client->close();
             }
 
         } else {

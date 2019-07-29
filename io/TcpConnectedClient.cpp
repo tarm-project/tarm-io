@@ -12,8 +12,6 @@ public:
     Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent);
     ~Impl();
 
-    bool schedule_removal();
-
     void close();
 
     bool is_open() const;
@@ -53,6 +51,10 @@ TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedC
 
 TcpConnectedClient::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, this, "_");
+
+    // TODO: move to base class
+    assert(m_tcp_stream != nullptr);
+    delete m_tcp_stream;
 }
 
 void TcpConnectedClient::Impl::shutdown() {
@@ -77,15 +79,6 @@ uv_tcp_t* TcpConnectedClient::Impl::tcp_client_stream() {
     return m_tcp_stream;
 }
 
-bool TcpConnectedClient::Impl::schedule_removal() {
-    IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
-
-    m_server = nullptr;
-    close();
-
-    return true;
-}
-
 void TcpConnectedClient::Impl::close() {
     if (!is_open()) {
         return;
@@ -99,15 +92,13 @@ void TcpConnectedClient::Impl::close() {
         m_close_callback(*m_parent, Status(0));
     }
 
-    if (m_server) {
-        m_server->remove_client_connection(m_parent);
-    }
+    m_server->remove_client_connection(m_parent);
 
-    if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
+    //if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
-        m_tcp_stream->data = nullptr;
-        m_tcp_stream = nullptr;
-    }
+        //m_tcp_stream->data = nullptr;
+        //m_tcp_stream = nullptr;
+    //}
 }
 
 bool TcpConnectedClient::Impl::is_open() const {
@@ -141,14 +132,13 @@ void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callb
 }
 
 void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
-    if (handle->data) {
-        auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
-        //this_.m_is_open = false;;
-        this_.m_port = 0;
-        this_.m_ipv4_addr = 0;
-    };
+    auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
+    this_.m_port = 0;
+    this_.m_ipv4_addr = 0;
 
-    delete reinterpret_cast<uv_tcp_t*>(handle);
+    this_.m_parent->schedule_removal();
+
+    //delete reinterpret_cast<uv_tcp_t*>(handle);
 }
 
 void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
@@ -174,7 +164,9 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
         }
         //---------------------------------------------
 
-        this_.m_server->remove_client_connection(this_.m_parent);
+        this_.close();
+        //this_.m_server->remove_client_connection(this_.m_parent);
+        //this_.m_parent->schedule_removal();
     }
 }
 
@@ -189,10 +181,7 @@ TcpConnectedClient::~TcpConnectedClient() {
 }
 
 void TcpConnectedClient::schedule_removal() {
-    const bool ready_to_remove = m_impl->schedule_removal();
-    if (ready_to_remove) {
-        Disposable::schedule_removal();
-    }
+    Disposable::schedule_removal();
 }
 
 std::uint32_t TcpConnectedClient::ipv4_addr() const {
