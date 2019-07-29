@@ -37,8 +37,6 @@ protected:
     static void on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
 
 private:
-    void init_stream();
-
     ConnectCallback m_connect_callback = nullptr;
     uv_connect_t* m_connect_req = nullptr;
 
@@ -58,14 +56,6 @@ TcpClient::Impl::~Impl() {
 
     if (m_connect_req) {
         delete m_connect_req; // TODO: delete right after connect???
-    }
-}
-
-void TcpClient::Impl::init_stream() {
-    if (m_tcp_stream == nullptr) {
-        m_tcp_stream = new uv_tcp_t;
-        uv_tcp_init(m_uv_loop, m_tcp_stream);
-        m_tcp_stream->data = this;
     }
 }
 
@@ -97,7 +87,7 @@ void TcpClient::Impl::connect(const std::string& address,
     if (uv_status < 0) {
         Status status(uv_status);
         if (m_connect_callback) {
-            m_connect_callback(*m_parent, uv_status);
+            m_connect_callback(*m_parent, status);
         }
     }
 

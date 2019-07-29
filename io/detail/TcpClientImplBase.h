@@ -22,6 +22,8 @@ public:
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
 
+    void init_stream();
+
 protected:
     // statics
     static void after_write(uv_write_t* req, int status);
@@ -66,6 +68,15 @@ TcpClientImplBase<ParentType, ImplType>::~TcpClientImplBase() {
     if (m_read_buf) {
         delete[] m_read_buf;
     }
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::init_stream() {
+    assert (m_tcp_stream == nullptr);
+
+    m_tcp_stream = new uv_tcp_t;
+    uv_tcp_init(m_uv_loop, m_tcp_stream);
+    m_tcp_stream->data = this;
 }
 
 template<typename ParentType, typename ImplType>

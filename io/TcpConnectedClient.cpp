@@ -34,8 +34,6 @@ protected:
     static void on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
 
 private:
-    void init_stream();
-
     TcpServer* m_server = nullptr;
 
     DataReceiveCallback m_receive_callback = nullptr;
@@ -55,14 +53,6 @@ TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedC
 
 TcpConnectedClient::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, this, "_");
-}
-
-void TcpConnectedClient::Impl::init_stream() {
-    if (m_tcp_stream == nullptr) {
-        m_tcp_stream = new uv_tcp_t;
-        uv_tcp_init(m_uv_loop, m_tcp_stream);
-        m_tcp_stream->data = this;
-    }
 }
 
 void TcpConnectedClient::Impl::shutdown() {
@@ -101,7 +91,7 @@ void TcpConnectedClient::Impl::close() {
         return;
     }
 
-    IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
+    IO_LOG(m_loop, TRACE, "address:", ip4_addr_to_string(m_ipv4_addr), ":", port());
 
     m_is_open = false;
 
