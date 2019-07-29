@@ -200,21 +200,18 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
 void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(handle->data);
 
-    if (nread > 0) {
+    Status status(nread);
+    if (status.ok()) {
         if (this_.m_receive_callback) {
             this_.m_receive_callback(*this_.m_parent, buf->base,  nread);
         }
-    } else if (nread <= 0) {
+    } else {
         if (this_.m_close_callback) {
-            Status status(nread);
-
             if (status.code() == io::StatusCode::END_OF_FILE) {
                 this_.m_close_callback(*this_.m_parent, Status(0)); // OK
             } else {
                 // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
                 this_.m_close_callback(*this_.m_parent, status);
-
-                //TODO: if close callback is not set (probably) need to call read callback with error status
             }
         }
     }

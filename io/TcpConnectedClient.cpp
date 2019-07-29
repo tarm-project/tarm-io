@@ -169,23 +169,20 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
         if (this_.m_receive_callback) {
             this_.m_receive_callback(*this_.m_server, *this_.m_parent, buf->base, nread);
         }
-        return;
-    }
+    } else {
+        // TODO: this is common code with TcpCLient. Extract to TcpClientImplBase???
+        //---------------------------------------------
+        IO_LOG(this_.m_loop, DEBUG, "connection end address:", ip4_addr_to_string(this_.ipv4_addr()), ":", this_.port(), "reason:", status.as_string());
 
-    if (status.fail()) {
-        if (status.code() == io::StatusCode::END_OF_FILE) {
-            if (this_.m_close_callback) {
+        if (this_.m_close_callback) {
+            if (status.code() == io::StatusCode::END_OF_FILE) {
                 this_.m_close_callback(*this_.m_parent, Status(0)); // OK
-            }
-
-            IO_LOG(this_.m_loop, TRACE, "connection end address:",
-                              io::ip4_addr_to_string(this_.ipv4_addr()), ":", this_.port());
-        } else {
-            // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
-            if (this_.m_close_callback) {
+            } else {
+                // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
                 this_.m_close_callback(*this_.m_parent, status);
             }
         }
+        //---------------------------------------------
 
         this_.m_server->remove_client_connection(this_.m_parent);
     }
