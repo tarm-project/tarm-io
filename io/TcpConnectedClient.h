@@ -13,8 +13,7 @@ namespace io {
 // TODO: move to fwd header
 class TcpServer;
 
-// TODO: make protected inheritance????
-class TcpConnectedClient : public Disposable,
+class TcpConnectedClient : protected Disposable,
                            public UserDataHolder {
 public:
     friend class TcpServer;
