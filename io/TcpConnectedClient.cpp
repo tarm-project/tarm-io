@@ -164,17 +164,15 @@ void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
 void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
 
-    if (nread > 0) {
+    Status status(nread);
+    if (status.ok()) {
         if (this_.m_receive_callback) {
             this_.m_receive_callback(*this_.m_server, *this_.m_parent, buf->base, nread);
         }
         return;
-        // TODO: not freeing buf->base
     }
 
-    if (nread <= 0) {
-        Status status(nread);
-
+    if (status.fail()) {
         if (status.code() == io::StatusCode::END_OF_FILE) {
             if (this_.m_close_callback) {
                 this_.m_close_callback(*this_.m_parent, Status(0)); // OK
@@ -182,20 +180,15 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
 
             IO_LOG(this_.m_loop, TRACE, "connection end address:",
                               io::ip4_addr_to_string(this_.ipv4_addr()), ":", this_.port());
-            this_.m_server->remove_client_connection(this_.m_parent);
         } else {
-            //TODO: need to call read callback with error status here
-
             // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
             if (this_.m_close_callback) {
                 this_.m_close_callback(*this_.m_parent, status);
             }
         }
 
-        // TODO: uv_close on error????
+        this_.m_server->remove_client_connection(this_.m_parent);
     }
-
-    //this_.m_pool->free(buf->base);
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
