@@ -12,7 +12,7 @@ TEST_F(UserDataHolderTest, default_constructor) {
 
     ASSERT_EQ(nullptr, holder.user_data());
 }
-/*
+
 TEST_F(UserDataHolderTest, accessor) {
     int value = 42;
 
@@ -21,4 +21,4 @@ TEST_F(UserDataHolderTest, accessor) {
 
     ASSERT_EQ(&value, holder.user_data());
 }
-*/
+
