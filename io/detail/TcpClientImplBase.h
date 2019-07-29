@@ -2,6 +2,7 @@
 
 #include <uv.h>
 #include <memory>
+#include <assert.h>
 
 namespace io {
 namespace detail {
