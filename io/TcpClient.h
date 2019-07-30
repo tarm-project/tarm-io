@@ -28,7 +28,7 @@ public:
     void connect(const std::string& address,
                  std::uint16_t port,
                  ConnectCallback connect_callback,
-                 DataReceiveCallback receive_callback,
+                 DataReceiveCallback receive_callback = nullptr,
                  CloseCallback close_callback = nullptr);
     void close();
 

@@ -550,6 +550,61 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
     EXPECT_TRUE(client_close_called);
 }
 
+TEST_F(TcpClientServerTest, DISABLED_pending_write_requesets) {
+    io::EventLoop loop;
+
+    io::TcpServer server(loop);
+    server.bind(m_default_addr, m_default_port);
+    server.listen(
+        [](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
+            return true;
+        },
+        [](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+            EXPECT_EQ(0, client.pending_write_requesets());
+            client.send_data("world", [](io::TcpConnectedClient& client, const io::Status& status) {
+                EXPECT_TRUE(status.ok());
+                EXPECT_EQ(1, client.pending_write_requesets());
+            });
+            EXPECT_EQ(1, client.pending_write_requesets());
+            client.send_data("!", [&server](io::TcpConnectedClient& client, const io::Status& status) {
+                EXPECT_TRUE(status.ok());
+                EXPECT_EQ(0, client.pending_write_requesets());
+                //server.shutdown();
+            });
+            EXPECT_EQ(2, client.pending_write_requesets());
+        }
+    );
+
+    auto client = new io::TcpClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(0, client.pending_write_requesets());
+            client.send_data("H");
+            client.send_data("e");
+            client.send_data("l");
+            client.send_data("l");
+            client.send_data("o");
+            client.send_data(" ",
+                [&](io::TcpClient& client, const io::Status& status) {
+                    EXPECT_TRUE(status.ok());
+                    EXPECT_EQ(0, client.pending_write_requesets());
+                }
+            );
+            EXPECT_EQ(6, client.pending_write_requesets());
+
+            //client.schedule_removal(); // TODO: FIXME, remove from here, because server was shutting down connection
+        },
+        nullptr,
+        [](io::TcpClient& client, const io::Status& status) {
+            //client.schedule_removal(); // TODO: FIXME
+            std::cout << "close" << std::endl;
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
+}
+
 // TODO: server sends lot of data to many connected clients
 
 // TODO: client's write after close in server receive callback

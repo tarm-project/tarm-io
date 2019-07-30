@@ -33,6 +33,8 @@ public:
 
     void send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback = nullptr);
     void send_data(const std::string& message, EndSendCallback callback = nullptr);
+
+    // TODO: rename as pending_send_requesets??? Because name is inconsistent.
     std::size_t pending_write_requesets() const;
 
 protected:
