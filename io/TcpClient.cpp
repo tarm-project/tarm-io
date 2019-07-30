@@ -21,8 +21,6 @@ public:
                  CloseCallback close_callback = nullptr);
     void close();
 
-    bool is_open() const;
-
     void set_close_callback(CloseCallback callback);
 
     void shutdown();
@@ -39,8 +37,6 @@ private:
     uv_connect_t* m_connect_req = nullptr;
 
     DataReceiveCallback m_receive_callback = nullptr;
-
-    bool m_is_open = false;
 
     CloseCallback m_close_callback = nullptr;
 };
@@ -133,10 +129,6 @@ void TcpClient::Impl::close() {
     }
 }
 
-bool TcpClient::Impl::is_open() const {
-    return m_is_open;
-}
-
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(req->data);
@@ -150,11 +142,12 @@ void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 
 void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(req->data);
-    this_.m_is_open = true; // if not error!
 
     Status status(uv_status);
+    this_.m_is_open = status.ok();
+
     if (this_.m_connect_callback) {
-        this_.m_connect_callback(*this_.m_parent, uv_status);
+        this_.m_connect_callback(*this_.m_parent, status);
     }
 
     if (status.fail()) {
@@ -173,7 +166,7 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
 void TcpClient::Impl::on_close(uv_handle_t* handle) {
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpClient::Impl*>(handle->data);
-        //this_.m_is_open = false;;
+        //this_.m_is_open = false;
         this_.m_port = 0;
         this_.m_ipv4_addr = 0;
     };
@@ -192,6 +185,7 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
     } else {
         if (this_.m_close_callback) {
             if (status.code() == io::StatusCode::END_OF_FILE) {
+                this_.m_is_open = false;
                 this_.m_close_callback(*this_.m_parent, Status(0)); // OK
             } else {
                 // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example

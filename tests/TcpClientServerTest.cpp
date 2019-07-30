@@ -46,6 +46,8 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
         return true;
     },
     [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, size_t size) {
+        EXPECT_TRUE(client.is_open());
+
         data_received = true;
         std::string received_message(buf, size);
 
@@ -61,9 +63,11 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     auto client = new io::TcpClient(loop);
     client->connect(m_default_addr,m_default_port, [&](io::TcpClient& client, const io::Status& status) {
         EXPECT_TRUE(status.ok());
+        EXPECT_TRUE(client.is_open());
 
         client.send_data(message, [&](io::TcpClient& client, const io::Status& status) {
             EXPECT_TRUE(status.ok());
+            EXPECT_TRUE(client.is_open());
             data_sent = true;
             client.schedule_removal();
         });
@@ -313,10 +317,10 @@ TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server) {
     auto client = new io::TcpClient(loop);
     client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Status& status) {
         EXPECT_TRUE(status.fail());
+        EXPECT_FALSE(client.is_open());
         EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, status.code());
         callback_called = true;
 
-        // TODO: check client.is_open()
 
         client.schedule_removal();
     },
@@ -408,6 +412,7 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
         [](io::TcpClient& client, const char* buf, size_t size) {
         },
         [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_FALSE(client.is_open());
             disconnect_called = true;
         });
 

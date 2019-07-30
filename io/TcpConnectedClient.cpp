@@ -14,8 +14,6 @@ public:
 
     void close();
 
-    bool is_open() const;
-
     void set_close_callback(CloseCallback callback);
 
     void shutdown();
@@ -34,17 +32,15 @@ private:
 
     DataReceiveCallback m_receive_callback = nullptr;
 
-    bool m_is_open = false;
-
     CloseCallback m_close_callback = nullptr;
 };
 
 
 TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent) :
     TcpClientImplBase(loop, parent),
-    m_server(&server),
-    m_is_open(true) {
+    m_server(&server) {
     init_stream();
+    m_is_open = true;
 }
 
 TcpConnectedClient::Impl::~Impl() {
@@ -96,10 +92,6 @@ void TcpConnectedClient::Impl::close() {
         //m_tcp_stream->data = nullptr;
         //m_tcp_stream = nullptr;
     //}
-}
-
-bool TcpConnectedClient::Impl::is_open() const {
-    return m_is_open;
 }
 
 void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callback) {

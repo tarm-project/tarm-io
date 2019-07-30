@@ -26,6 +26,8 @@ public:
 
     void init_stream();
 
+    bool is_open() const;
+
 protected:
     // statics
     static void after_write(uv_write_t* req, int status);
@@ -45,6 +47,8 @@ protected:
     // TODO: need to ensure that one buffer is enough
     char* m_read_buf = nullptr;
     std::size_t m_read_buf_size = 0;
+
+    bool m_is_open = false;
 
 private:
     struct WriteRequest : public uv_write_t {
@@ -135,6 +139,11 @@ void TcpClientImplBase<ParentType, ImplType>::set_ipv4_addr(std::uint32_t value)
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::set_port(std::uint16_t value) {
     m_port = value;
+}
+
+template<typename ParentType, typename ImplType>
+bool TcpClientImplBase<ParentType, ImplType>::is_open() const {
+    return m_is_open;
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
