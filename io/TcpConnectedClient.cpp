@@ -102,21 +102,6 @@ bool TcpConnectedClient::Impl::is_open() const {
     return m_is_open;
 }
 
-////////////////////////////////////////////// static //////////////////////////////////////////////
-
-void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
-    auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(req->data);
-
-    IO_LOG(this_.m_loop, TRACE, "address:", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
-
-    // TODO: close callback call on_shutdown???
-
-    this_.m_server->remove_client_connection(this_.m_parent);
-
-    uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
-    delete req;
-}
-
 void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callback) {
     m_receive_callback = data_receive_callback;
 
@@ -129,6 +114,21 @@ void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callb
     //TODO: set ip and port
     set_ipv4_addr(0);
     set_port(0);
+}
+
+////////////////////////////////////////////// static //////////////////////////////////////////////
+
+void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
+    auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(req->data);
+
+    IO_LOG(this_.m_loop, TRACE, this_.m_parent, "address:", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
+
+    // TODO: close callback call on_shutdown???
+
+    this_.m_server->remove_client_connection(this_.m_parent);
+
+    uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
+    delete req;
 }
 
 void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
