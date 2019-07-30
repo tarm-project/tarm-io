@@ -22,6 +22,8 @@ public:
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
 
+    std::size_t pending_write_requesets() const;
+
     void init_stream();
 
 protected:
@@ -108,6 +110,11 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(const std::string& messa
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
     send_data(ptr, message.size(), callback);
+}
+
+template<typename ParentType, typename ImplType>
+std::size_t TcpClientImplBase<ParentType, ImplType>::pending_write_requesets() const {
+    return m_pending_write_requesets;
 }
 
 template<typename ParentType, typename ImplType>

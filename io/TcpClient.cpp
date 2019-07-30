@@ -25,8 +25,6 @@ public:
 
     void set_close_callback(CloseCallback callback);
 
-    std::size_t pending_write_requesets() const;
-
     void shutdown();
 
 protected:
@@ -105,10 +103,6 @@ void TcpClient::Impl::shutdown() {
 
 void TcpClient::Impl::set_close_callback(CloseCallback callback) {
     m_close_callback = callback;
-}
-
-std::size_t TcpClient::Impl::pending_write_requesets() const {
-    return m_pending_write_requesets;
 }
 
 bool TcpClient::Impl::schedule_removal() {

@@ -18,8 +18,6 @@ public:
 
     void set_close_callback(CloseCallback callback);
 
-    std::size_t pending_write_requesets() const;
-
     void shutdown();
 
     void start_read(DataReceiveCallback data_receive_callback);
@@ -69,10 +67,6 @@ void TcpConnectedClient::Impl::shutdown() {
 
 void TcpConnectedClient::Impl::set_close_callback(CloseCallback callback) {
     m_close_callback = callback;
-}
-
-std::size_t TcpConnectedClient::Impl::pending_write_requesets() const {
-    return m_pending_write_requesets;
 }
 
 uv_tcp_t* TcpConnectedClient::Impl::tcp_client_stream() {
