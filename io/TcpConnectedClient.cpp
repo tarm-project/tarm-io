@@ -60,6 +60,8 @@ void TcpConnectedClient::Impl::shutdown() {
         return;
     }
 
+    m_is_open = false;
+
     auto shutdown_req = new uv_shutdown_t;
     shutdown_req->data = this;
     uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), on_shutdown);
@@ -82,6 +84,7 @@ void TcpConnectedClient::Impl::close() {
 
     m_is_open = false;
 
+    // TODO: move into on_close???
     if (m_close_callback) {
         m_close_callback(*m_parent, Status(0));
     }
@@ -106,8 +109,11 @@ void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 
     IO_LOG(this_.m_loop, TRACE, "address:", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
 
-    // TODO: need close????
-    //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpConnectedClient::on_close);
+    // TODO: close callback call on_shutdown???
+
+    this_.m_server->remove_client_connection(this_.m_parent);
+
+    uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
     delete req;
 }
 

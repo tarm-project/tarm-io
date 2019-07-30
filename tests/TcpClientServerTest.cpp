@@ -550,7 +550,52 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
     EXPECT_TRUE(client_close_called);
 }
 
-TEST_F(TcpClientServerTest, DISABLED_pending_write_requesets) {
+TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
+    // Note: in this test we send data in both direction and shout down server
+    // from the on_send callback. Client is removed from clase callback which is
+    // executed on server shoutdown.
+
+    io::EventLoop loop;
+
+    io::TcpServer server(loop);
+    server.bind(m_default_addr, m_default_port);
+    server.listen(
+        [](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
+            return true;
+        },
+        [](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+            client.send_data("world", [](io::TcpConnectedClient& client, const io::Status& status) {
+                EXPECT_TRUE(status.ok());
+            });
+
+            client.send_data("!", [&server](io::TcpConnectedClient& client, const io::Status& status) {
+                EXPECT_TRUE(status.ok());
+                server.shutdown();
+            });
+        }
+    );
+
+    auto client = new io::TcpClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TcpClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
+            client.send_data("Hello ",
+                [&](io::TcpClient& client, const io::Status& status) {
+                    EXPECT_TRUE(status.ok());
+                }
+            );
+        },
+        nullptr,
+        [](io::TcpClient& client, const io::Status& status) {
+            std::cout << "close" << std::endl;
+            client.schedule_removal(); // TODO: FIXME
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(TcpClientServerTest, pending_write_requests) {
     io::EventLoop loop;
 
     io::TcpServer server(loop);
@@ -569,7 +614,8 @@ TEST_F(TcpClientServerTest, DISABLED_pending_write_requesets) {
             client.send_data("!", [&server](io::TcpConnectedClient& client, const io::Status& status) {
                 EXPECT_TRUE(status.ok());
                 EXPECT_EQ(0, client.pending_write_requesets());
-                //server.shutdown();
+
+                server.shutdown();
             });
             EXPECT_EQ(2, client.pending_write_requesets());
         }
@@ -592,12 +638,10 @@ TEST_F(TcpClientServerTest, DISABLED_pending_write_requesets) {
                 }
             );
             EXPECT_EQ(6, client.pending_write_requesets());
-
-            //client.schedule_removal(); // TODO: FIXME, remove from here, because server was shutting down connection
         },
         nullptr,
-        [](io::TcpClient& client, const io::Status& status) {
-            //client.schedule_removal(); // TODO: FIXME
+        [](io::TcpClient& client, const io::Status& status) { // on close
+            client.schedule_removal();
             std::cout << "close" << std::endl;
         }
     );
