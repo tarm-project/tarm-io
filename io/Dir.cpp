@@ -24,7 +24,6 @@ protected:
     // statics
     static void on_open_dir(uv_fs_t* req);
     static void on_read_dir(uv_fs_t* req);
-    static void on_close_dir(uv_fs_t* req);
 
 private:
     static constexpr std::size_t DIRENTS_NUMBER = 1;
@@ -171,10 +170,6 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
         uv_fs_req_cleanup(&this_.m_read_dir_req); // cleaning up previous request
         uv_fs_readdir(req->loop, &this_.m_read_dir_req, dir, on_read_dir);
     }
-}
-
-void Dir::Impl::on_close_dir(uv_fs_t* req) {
-
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
