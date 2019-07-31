@@ -267,6 +267,31 @@ TEST_F(DirTest, list_domain_sockets) {
 
     EXPECT_GT(domain_sockets_count, 0);
 }
+
+TEST_F(DirTest, list_fifo) {
+    std::size_t fifo_count = 0;
+
+    auto fifo_status = mkfifo((m_tmp_test_dir / "fifo").string().c_str(), S_IRWXU);
+    ASSERT_EQ(0, fifo_status);
+
+    io::EventLoop loop;
+    auto dir = new io::Dir(loop);
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status& status) {
+        ASSERT_TRUE(status.ok());
+
+        dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
+            if (entry_type == io::DirectoryEntryType::FIFO) {
+                ++fifo_count;
+            }
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    dir->schedule_removal();
+
+    EXPECT_EQ(1, fifo_count);
+}
+
 #endif
 
 // dir iterate not existing
