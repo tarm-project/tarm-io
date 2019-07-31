@@ -246,6 +246,27 @@ TEST_F(DirTest, list_block_and_char_devices) {
     EXPECT_GT(block_devices_count, 0);
     EXPECT_GT(char_devices_count, 0);
 }
+
+TEST_F(DirTest, list_domain_sockets) {
+    std::size_t domain_sockets_count = 0;
+
+    io::EventLoop loop;
+    auto dir = new io::Dir(loop);
+    dir->open("/var/run", [&](io::Dir& dir, const io::Status& status) {
+        ASSERT_TRUE(status.ok());
+
+        dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
+            if (entry_type == io::DirectoryEntryType::SOCKET) {
+                ++domain_sockets_count;
+            }
+        });
+    });
+
+    ASSERT_EQ(0, loop.run());
+    dir->schedule_removal();
+
+    EXPECT_GT(domain_sockets_count, 0);
+}
 #endif
 
 // dir iterate not existing
