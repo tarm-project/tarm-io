@@ -170,12 +170,12 @@ int main(int argc, char* argv[]) {
 
     auto status = server.bind("0.0.0.0", 1234);
     if (status != 0) {
-        std::cerr << "[Server] Failed to bind. Reason: " << uv_strerror(status) << std::endl;
+        std::cerr << "[Server] Failed to bind. Reason: " << status.as_string() << std::endl;
         return 1;
     }
 
     if ((status = server.listen(on_new_connection, on_data_read)) != 0) {
-        std::cerr << "[Server] Failed to listen. Reason: " << uv_strerror(status) << std::endl;
+        std::cerr << "[Server] Failed to listen. Reason: " << status.as_string() << std::endl;
         return 1;
     }
 

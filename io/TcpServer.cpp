@@ -18,7 +18,7 @@ public:
     Impl(EventLoop& loop, TcpServer& parent);
     ~Impl();
 
-    int bind(const std::string& ip_addr_str, std::uint16_t port);
+    Status bind(const std::string& ip_addr_str, std::uint16_t port);
 
     int listen(NewConnectionCallback new_connection_callback,
                DataReceivedCallback data_receive_callback,
@@ -74,7 +74,7 @@ TcpServer::Impl::~Impl() {
     //shutdown();
 }
 
-int TcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
+Status TcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
     m_server_handle = new uv_tcp_t;
     auto init_status = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
     m_server_handle->data = this;
@@ -90,7 +90,11 @@ int TcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
     setsockopt(handle, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
     */
 
-    uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
+    int uv_status = uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
+    if (uv_status < 0) {
+        return uv_status;
+    }
+
     return uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
 }
 
@@ -218,7 +222,7 @@ TcpServer::TcpServer(EventLoop& loop) :
 TcpServer::~TcpServer() {
 }
 
-int TcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
+Status TcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
     return m_impl->bind(ip_addr_str, port);
 }
 

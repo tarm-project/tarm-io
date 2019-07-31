@@ -33,6 +33,20 @@ TEST_F(TcpClientServerTest, client_default_constructor) {
     client->schedule_removal();
 }
 
+TEST_F(TcpClientServerTest, invalid_ip4_address) {
+    io::EventLoop loop;
+
+    io::TcpServer server(loop);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, server.bind("1234567890", m_default_port));
+}
+
+TEST_F(TcpClientServerTest, no_permission_port) {
+    io::EventLoop loop;
+
+    io::TcpServer server(loop);
+    EXPECT_EQ(io::StatusCode::PERMISSION_DENIED, server.bind(m_default_addr, 100));
+}
+
 TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     io::EventLoop loop;
 
@@ -664,7 +678,5 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
 // TODO: simultaneous send/receive for both client and server
 
 // send data of size 0
-
-// TODO: test with invalid ipv4 address and port
 
 // investigate from libuv: test-tcp-write-to-half-open-connection.c

@@ -40,8 +40,7 @@ public:
     TcpServer(TcpServer&& other) = default;
     TcpServer& operator=(TcpServer&& other) = delete; // default
 
-    // TODO: need to return some enum (or StatusCode) instead of int
-    int bind(const std::string& ip_addr_str, std::uint16_t port);
+    Status bind(const std::string& ip_addr_str, std::uint16_t port);
 
     // On success, zero is returned
     int listen(NewConnectionCallback new_connection_callback,
