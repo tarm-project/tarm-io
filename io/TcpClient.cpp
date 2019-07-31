@@ -23,13 +23,13 @@ public:
 
     void set_close_callback(CloseCallback callback);
 
-    void shutdown();
+    void shutdown(CloseCallback callback);
 
 protected:
     // statics
-    static void on_shutdown(uv_shutdown_t* req, int status);
+    static void on_shutdown(uv_shutdown_t* req, int uv_status);
     static void on_close(uv_handle_t* handle);
-    static void on_connect(uv_connect_t* req, int status);
+    static void on_connect(uv_connect_t* req, int uv_status);
     static void on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
 
 private:
@@ -87,10 +87,12 @@ void TcpClient::Impl::connect(const std::string& address,
 
 }
 
-void TcpClient::Impl::shutdown() {
+void TcpClient::Impl::shutdown(CloseCallback callback) {
     if (!is_open()) {
         return;
     }
+
+    m_close_callback = callback;
 
     auto shutdown_req = new uv_shutdown_t;
     shutdown_req->data = this;
@@ -118,10 +120,6 @@ void TcpClient::Impl::close() {
 
     m_is_open = false;
 
-    if (m_close_callback) {
-        m_close_callback(*m_parent, Status(0));
-    }
-
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
         m_tcp_stream->data = nullptr;
@@ -130,13 +128,19 @@ void TcpClient::Impl::close() {
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
-void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
+void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(req->data);
 
     IO_LOG(this_.m_loop, TRACE, "address:", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
 
-    // TODO: need close????
-    //uv_close(reinterpret_cast<uv_handle_t*>(req->handle), TcpClient::on_close);
+    Status status(uv_status);
+    if (this_.m_close_callback && status.fail()) {
+        this_.m_close_callback(*this_.m_parent, status);
+    }
+
+    this_.m_is_open = false;
+    uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
+
     delete req;
 }
 
@@ -166,6 +170,11 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
 void TcpClient::Impl::on_close(uv_handle_t* handle) {
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpClient::Impl*>(handle->data);
+
+        if (this_.m_close_callback) {
+            this_.m_close_callback(*this_.m_parent, Status(0));
+        }
+
         //this_.m_is_open = false;
         this_.m_port = 0;
         this_.m_ipv4_addr = 0;
@@ -252,8 +261,8 @@ std::size_t TcpClient::pending_write_requesets() const {
     return m_impl->pending_write_requesets();
 }
 
-void TcpClient::shutdown() {
-    return m_impl->shutdown();
+void TcpClient::shutdown(CloseCallback callback) {
+    return m_impl->shutdown(callback);
 }
 
 } // namespace io

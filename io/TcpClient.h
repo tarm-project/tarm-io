@@ -41,7 +41,7 @@ public:
 
     std::size_t pending_write_requesets() const;
 
-    void shutdown();
+    void shutdown(CloseCallback callback = nullptr);
 
 protected:
     ~TcpClient();

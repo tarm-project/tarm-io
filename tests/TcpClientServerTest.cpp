@@ -668,6 +668,56 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(TcpClientServerTest, shutdown_from_client) {
+    io::EventLoop loop;
+
+    const std::string message = "Hello world!";
+
+    bool server_any_data_received = false;
+    bool server_closed_from_client_side = false;
+    bool client_shutdown_complete = false;
+
+    io::TcpServer server(loop);
+    ASSERT_EQ(0, server.bind("0.0.0.0", m_default_port));
+    auto listen_result = server.listen([&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
+        client.set_close_callback([&](io::TcpConnectedClient& client, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
+            server_closed_from_client_side = true;
+            server.shutdown();
+        });
+        return true;
+    },
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, size_t size) {
+        server_any_data_received = true;
+    });
+
+    ASSERT_EQ(0, listen_result);
+
+    auto client = new io::TcpClient(loop);
+    client->connect(m_default_addr,m_default_port, [&](io::TcpClient& client, const io::Status& status) {
+        EXPECT_TRUE(status.ok());
+        EXPECT_TRUE(client.is_open());
+
+        client.shutdown([&](io::TcpClient& client, const io::Status& status) {
+            client_shutdown_complete = true;
+            EXPECT_FALSE(client.is_open());
+            client.schedule_removal();
+
+            // TOOD: implement test for sending data after closing (currently result is INVALID_HANDLE
+            /*
+            client.send_data("ololo", [](io::TcpClient& client, const io::Status& status) {
+                EXPECT_FALSE(status.ok());
+            });
+            */
+        });
+    },
+    nullptr);
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_FALSE(server_any_data_received);
+    EXPECT_TRUE(server_closed_from_client_side);
+}
+
 // TODO: server sends lot of data to many connected clients
 
 // TODO: client's write after close in server receive callback
