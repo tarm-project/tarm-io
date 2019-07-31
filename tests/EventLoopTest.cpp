@@ -87,6 +87,12 @@ TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
     EXPECT_EQ(500, counter);
 }
 
+TEST_F(EventLoopTest, stop_call_on_each_loop_cycle_with_invalid_data) {
+    io::EventLoop loop;
+    loop.stop_call_on_each_loop_cycle(100500);
+    ASSERT_EQ(0, loop.run());
+}
+
 TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
     io::EventLoop loop;
 
