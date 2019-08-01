@@ -210,21 +210,36 @@ void Dir::schedule_removal() {
 
 /////////////////////////////////////////// functions //////////////////////////////////////////////
 
-void make_temp_dir(EventLoop& loop, const std::string& name_template, TempDirCallback callback) {
-    // TODO: implement
-    assert(false);
-}
-
-std::string make_temp_dir(const std::string& name_template) {
-    uv_fs_t request;
-    const int status = uv_fs_mkdtemp(nullptr, &request, name_template.c_str(), nullptr);
-    if (status < 0) {
-        return "";
+struct MakeTempDirRequest : public uv_fs_t {
+    MakeTempDirRequest(TempDirCallback c) :
+        callback(c) {
     }
 
-    std::string result = request.path;
-    uv_fs_req_cleanup(&request);
-    return result;
+    TempDirCallback callback = nullptr;
+};
+
+void on_make_temp_dir(uv_fs_t* uv_request) {
+    auto& request = *reinterpret_cast<MakeTempDirRequest*>(uv_request);
+
+    if (request.callback) {
+        request.callback(request.path, Status(request.result));
+    }
+
+    uv_fs_req_cleanup(uv_request);
+    delete &request;
+}
+
+
+void make_temp_dir(EventLoop& loop, const std::string& name_template, TempDirCallback callback) {
+    auto request = new MakeTempDirRequest(callback);
+    const Status status = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, name_template.c_str(), on_make_temp_dir);
+    if (status.fail()) {
+        if (callback) {
+            callback("", status);
+        }
+
+        delete request;
+    }
 }
 
 } // namespace io

@@ -294,4 +294,36 @@ TEST_F(DirTest, list_fifo) {
 
 #endif
 
+TEST_F(DirTest, make_tep_dir) {
+    io::EventLoop loop;
+
+    const std::string template_path = (m_tmp_test_dir / "temp-XXXXXX").string();
+
+    io::make_temp_dir(loop, template_path,
+        [&](const std::string& dir, const io::Status& status) {
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(template_path.size(), dir.size());
+            EXPECT_EQ(0, dir.find((m_tmp_test_dir / "temp-").string()));
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(DirTest, make_tep_dir_invalid_template) {
+    io::EventLoop loop;
+
+    // There should be 6 'X' chars
+    const std::string template_path = (m_tmp_test_dir / "temp-XXXXX").string();
+
+    io::make_temp_dir(loop, template_path,
+        [&](const std::string& dir, const io::Status& status) {
+            EXPECT_TRUE(status.fail());
+            EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, status.code());
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
+}
+
 // dir iterate not existing
