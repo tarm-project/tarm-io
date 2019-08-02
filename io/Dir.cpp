@@ -210,16 +210,17 @@ void Dir::schedule_removal() {
 
 /////////////////////////////////////////// functions //////////////////////////////////////////////
 
-struct MakeTempDirRequest : public uv_fs_t {
-    MakeTempDirRequest(TempDirCallback c) :
+template<typename CallbackType>
+struct RequestWithCallback : public uv_fs_t {
+    RequestWithCallback(CallbackType c) :
         callback(c) {
     }
 
-    TempDirCallback callback = nullptr;
+    CallbackType callback = nullptr;
 };
 
 void on_make_temp_dir(uv_fs_t* uv_request) {
-    auto& request = *reinterpret_cast<MakeTempDirRequest*>(uv_request);
+    auto& request = *reinterpret_cast<RequestWithCallback<MakeTempDirCallback>*>(uv_request);
 
     if (request.callback) {
         request.callback(request.path, Status(request.result));
@@ -229,13 +230,35 @@ void on_make_temp_dir(uv_fs_t* uv_request) {
     delete &request;
 }
 
-
-void make_temp_dir(EventLoop& loop, const std::string& name_template, TempDirCallback callback) {
-    auto request = new MakeTempDirRequest(callback);
+void make_temp_dir(EventLoop& loop, const std::string& name_template, MakeTempDirCallback callback) {
+    auto request = new RequestWithCallback<MakeTempDirCallback>(callback);
     const Status status = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, name_template.c_str(), on_make_temp_dir);
     if (status.fail()) {
         if (callback) {
             callback("", status);
+        }
+
+        delete request;
+    }
+}
+
+void on_make_dir(uv_fs_t* uv_request) {
+    auto& request = *reinterpret_cast<RequestWithCallback<MakeDirCallback>*>(uv_request);
+
+    if (request.callback) {
+        request.callback(Status(request.result));
+    }
+
+    uv_fs_req_cleanup(uv_request);
+    delete &request;
+}
+
+void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback) {
+    auto request = new RequestWithCallback<MakeDirCallback>(callback);
+    const Status status = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.c_str(), on_make_dir);
+    if (status.fail()) {
+        if (callback) {
+            callback(status);
         }
 
         delete request;

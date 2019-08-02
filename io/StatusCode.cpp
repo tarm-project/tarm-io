@@ -67,7 +67,7 @@ StatusCode convert_from_uv(int libuv_code) {
         case UV_EDESTADDRREQ:
             return StatusCode::DESTINATION_ADDRESS_REQUIRED;
         case UV_EEXIST:
-            return StatusCode::FILE_ALREADY_EXISTS;
+            return StatusCode::FILE_OR_DIR_ALREADY_EXISTS;
         case UV_EFAULT:
             return StatusCode::BAD_ADDRESS_IN_SYSTEM_CALL_ARGUMENT;
         case UV_EFBIG:

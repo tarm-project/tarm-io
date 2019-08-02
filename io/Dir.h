@@ -41,7 +41,10 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
-using TempDirCallback = std::function<void(const std::string&, const Status&)>;
-void make_temp_dir(EventLoop& loop, const std::string& name_template, TempDirCallback callback);
+using MakeTempDirCallback = std::function<void(const std::string&, const Status&)>;
+void make_temp_dir(EventLoop& loop, const std::string& name_template, MakeTempDirCallback callback);
+
+using MakeDirCallback = std::function<void(const Status&)>;
+void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback);
 
 } // namespace io
