@@ -419,4 +419,44 @@ TEST_F(DirTest, make_dir_root_dir_error) {
 }
 #endif
 
+TEST_F(DirTest, remove_dir) {
+    boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c" / "d");
+    boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c" / "e");
+    boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "f");
+    boost::filesystem::create_directories(m_tmp_test_dir / "a" / "g");
+    boost::filesystem::create_directories(m_tmp_test_dir / "h");
+    boost::filesystem::create_directories(m_tmp_test_dir / "i" / "j");
+    boost::filesystem::create_directories(m_tmp_test_dir / "i" / "k");
+    boost::filesystem::create_directories(m_tmp_test_dir / "i" / "l");
+    boost::filesystem::create_directories(m_tmp_test_dir / "i" / "m" / "n");
+    boost::filesystem::create_directories(m_tmp_test_dir / "o" / "p");
+
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "root_1").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "root_2").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "a" / "a_1").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "a" / "a_2").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "a" / "b" / "b_1").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "a" / "b" / "c" / "c_1").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "a" / "b" / "c" / "c_2").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "a" / "b" / "c" / "e" / "e_1").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "i" / "i_1").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "i" / "m" / "n" / "n_1").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "i" / "l" / "l_1").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "i" / "l" / "l_2").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "i" / "l" / "l_3").string()).fail());
+
+    bool callback_called = false;
+
+    io::EventLoop loop;
+
+    io::remove_dir(loop, m_tmp_test_dir.string(), [&](const io::Status& status) {
+        callback_called = true;
+        EXPECT_TRUE(status.ok());
+        EXPECT_FALSE(boost::filesystem::exists(m_tmp_test_dir));
+    });
+
+    ASSERT_EQ(0, loop.run());
+    EXPECT_TRUE(callback_called);
+}
+
 // dir iterate not existing

@@ -1,6 +1,7 @@
 #include "Dir.h"
 
 #include <cstring>
+#include <vector>
 #include <assert.h>
 
 namespace io {
@@ -263,6 +264,85 @@ void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback
 
         delete request;
     }
+}
+
+namespace {
+
+struct RemoveDirWorkEntry {
+    RemoveDirWorkEntry(const std::string& p) :
+        path(p),
+        processed(false) {
+    }
+
+    std::string path;
+    bool processed;
+};
+
+} // namespace
+
+using RemoveDirWorkData = std::vector<RemoveDirWorkEntry>;
+
+void remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, const std::string& subpath, RemoveDirWorkData& work_data) {
+    work_data.back().processed = true;
+
+    uv_fs_t open_dir_req;
+    Status open_status = uv_fs_opendir(uv_loop, &open_dir_req, (path + "/" + subpath).c_str(), nullptr);
+    if (open_status.fail()) {
+        return;
+        // TODO: error handling
+    }
+
+    uv_dirent_t uv_dir_entry[1];
+    auto uv_dir = reinterpret_cast<uv_dir_t*>(open_dir_req.ptr);
+    uv_dir->dirents = &uv_dir_entry[0];
+    uv_dir->nentries = 1;
+
+    uv_fs_t read_dir_req;
+    int entries_count = 0;
+
+    do {
+        entries_count = uv_fs_readdir(uv_loop, &read_dir_req, uv_dir, nullptr);
+        if (entries_count > 0) {
+            auto& entry = uv_dir_entry[0];
+
+            if (entry.type != UV_DIRENT_DIR) {
+                uv_fs_t unlink_request;
+                Status unlink_status = uv_fs_unlink(uv_loop, &unlink_request, (path + "/" + subpath + "/" + entry.name).c_str(), nullptr);
+                if (unlink_status.fail()) {
+                    return;
+                    // TODO: error handling
+                }
+            } else {
+                work_data.emplace_back(subpath + "/" + entry.name);
+            }
+        }
+    } while (entries_count > 0);
+}
+
+void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback callback) {
+    auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
+
+    RemoveDirWorkData work_data;
+    work_data.emplace_back(""); // Current directory
+
+    do {
+        remove_dir_impl(uv_loop, path, work_data.back().path, work_data);
+
+        auto& last_entry = work_data.back();
+
+        if (last_entry.processed) {
+            uv_fs_t rm_dir_req;
+            Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, (path + "/" + last_entry.path).c_str(), nullptr);
+            if (rmdir_status.fail()) {
+                return;
+                // TODO: error handling
+            }
+
+            work_data.pop_back();
+        }
+    } while(!work_data.empty());
+
+    callback(Status(0));
 }
 
 } // namespace io

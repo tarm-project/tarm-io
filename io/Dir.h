@@ -47,4 +47,7 @@ void make_temp_dir(EventLoop& loop, const std::string& name_template, MakeTempDi
 using MakeDirCallback = std::function<void(const Status&)>;
 void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback);
 
+using RemoveDirCallback = std::function<void(const Status&)>;
+void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback callback);
+
 } // namespace io
