@@ -282,7 +282,7 @@ struct RemoveDirWorkEntry {
 
 using RemoveDirWorkData = std::vector<RemoveDirWorkEntry>;
 
-void remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, const std::string& subpath, RemoveDirWorkData& work_data) {
+void remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, std::string subpath, RemoveDirWorkData& work_data) {
     work_data.back().processed = true;
 
     uv_fs_t open_dir_req;
@@ -316,7 +316,19 @@ void remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, const std::str
                 work_data.emplace_back(subpath + "/" + entry.name);
             }
         }
+
+        uv_fs_req_cleanup(&read_dir_req);
     } while (entries_count > 0);
+
+    uv_fs_t close_dir_req;
+    Status close_status = uv_fs_closedir(uv_loop, &close_dir_req, uv_dir, nullptr);
+    if (close_status.fail()) {
+        return;
+        // TODO: error handling
+    }
+
+    uv_fs_req_cleanup(&open_dir_req);
+    uv_fs_req_cleanup(&close_dir_req);
 }
 
 void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback callback) {
