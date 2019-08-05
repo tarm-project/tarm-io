@@ -499,8 +499,7 @@ TEST_F(DirTest, remove_dir) {
         EXPECT_FALSE(boost::filesystem::exists(m_tmp_test_dir));
     });
 
-    // TODO: fixme
-    //EXPECT_FALSE(callback_called);
+    EXPECT_FALSE(callback_called);
     ASSERT_EQ(0, loop.run());
     EXPECT_TRUE(callback_called);
 }

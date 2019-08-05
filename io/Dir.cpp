@@ -332,29 +332,33 @@ void remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, std::string su
 }
 
 void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback callback) {
-    auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
+    loop.add_work([&loop, path](){
+        auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
 
-    RemoveDirWorkData work_data;
-    work_data.emplace_back(""); // Current directory
+        RemoveDirWorkData work_data;
+        work_data.emplace_back(""); // Current directory
 
-    do {
-        remove_dir_impl(uv_loop, path, work_data.back().path, work_data);
+        do {
+            remove_dir_impl(uv_loop, path, work_data.back().path, work_data);
 
-        auto& last_entry = work_data.back();
+            auto& last_entry = work_data.back();
 
-        if (last_entry.processed) {
-            uv_fs_t rm_dir_req;
-            Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, (path + "/" + last_entry.path).c_str(), nullptr);
-            if (rmdir_status.fail()) {
-                return;
-                // TODO: error handling
+            if (last_entry.processed) {
+                uv_fs_t rm_dir_req;
+                Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, (path + "/" + last_entry.path).c_str(), nullptr);
+                if (rmdir_status.fail()) {
+                    return;
+                    // TODO: error handling
+                }
+
+                work_data.pop_back();
             }
+        } while(!work_data.empty());
+    },
+    [callback]() {
+        callback(Status(0));
+    });
 
-            work_data.pop_back();
-        }
-    } while(!work_data.empty());
-
-    callback(Status(0));
 }
 
 } // namespace io
