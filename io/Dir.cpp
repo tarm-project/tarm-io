@@ -256,7 +256,7 @@ void on_make_dir(uv_fs_t* uv_request) {
 
 void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback) {
     auto request = new RequestWithCallback<MakeDirCallback>(callback);
-    const Status status = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.c_str(), on_make_dir);
+    const Status status = uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.c_str(), 0, on_make_dir);
     if (status.fail()) {
         if (callback) {
             callback(status);

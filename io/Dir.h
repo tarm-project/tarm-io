@@ -41,9 +41,11 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
+// TODO: transfer mode ???
 using MakeTempDirCallback = std::function<void(const std::string&, const Status&)>;
 void make_temp_dir(EventLoop& loop, const std::string& name_template, MakeTempDirCallback callback);
 
+// TODO: transfer mode
 using MakeDirCallback = std::function<void(const Status&)>;
 void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback);
 

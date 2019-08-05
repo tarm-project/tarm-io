@@ -97,6 +97,15 @@ typename std::underlying_type<T>::type as_integral(T t) {
     return static_cast<typename std::underlying_type<T>::type>(t);
 }
 
+// TODO: print as strings???????
+/* because
+    Expected equality of these values:
+  io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY
+    Which is: 39
+  status.code()
+    Which is: 31
+*/
+
 inline
 std::ostream& operator<<(std::ostream& out, io::StatusCode code) {
     return out << as_integral(code);
