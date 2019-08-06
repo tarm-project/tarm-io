@@ -21,19 +21,13 @@ endif()
 set(IO_LIBUV_VERSION "1.30.1")
 
 #export TSAN_OPTIONS="halt_on_error=1"
-set(IO_SANITIZER "address")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${IO_SANITIZER}")
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${IO_SANITIZER}")
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
-#set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
-
-#if (UNIX AND NOT MACOSX)
-#    find_package(PkgConfig REQUIRED)
-#    pkg_check_modules(LIBUV REQUIRED libuv)
-#elseif(MACOSX)
-#    find_library(LIBUV_LIBRARIES uv PATHS /usr/local/lib)
-#    find_path(LIBUV_INCLUDE_DIR uv.h PATHS /usr/local/include/)
-#endif()
+if(DEFINED IO_SANITIZER)
+    message(STATUS "Using sanitizer: ${IO_SANITIZER}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${IO_SANITIZER}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${IO_SANITIZER}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
+endif()
 
 # TODO: need to put these ifs elsewhere
 if(WIN32)
@@ -73,8 +67,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
     list(APPEND UV_LIB_DEPS kstat nsl sendfile socket)
 endif()
 
+set(IO_LIBUV_ADDITIONAL_FLAGS "")
+if (DEFINED IO_SANITIZER)
+    set(IO_LIBUV_ADDITIONAL_FLAGS "${IO_LIBUV_ADDITIONAL_FLAGS} -fsanitize=${IO_SANITIZER}")
+endif()
+
 set(LIBUV_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/libuv")
 set(LIBUV_STATIC_LIB_PATH "${LIBUV_PREFIX}/install/lib/libuv_a.a")
+set(LIBUV_DYNAMIC_LIB_PATH "${LIBUV_PREFIX}/install/lib/libuv.so")
 set(LIBUV_INCLUDE_PATH "${LIBUV_PREFIX}/install/include")
 ExternalProject_Add(libuv
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/libuv-${IO_LIBUV_VERSION}"
@@ -84,11 +84,12 @@ ExternalProject_Add(libuv
     CMAKE_ARGS -Dlibuv_buildtests=OFF
                -DCMAKE_INSTALL_PREFIX=${LIBUV_PREFIX}/install
                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-               -DCMAKE_C_FLAGS=-fPIC
+               -DCMAKE_C_FLAGS=-fPIC\ ${IO_LIBUV_ADDITIONAL_FLAGS}
+               -DCMAKE_SHARED_LINKER_FLAGS=${IO_LIBUV_ADDITIONAL_FLAGS}
 )
 include_directories(${LIBUV_INCLUDE_PATH})
 
-# TODO: system and filesystem should be required if we are building tests
+# TODO: system and filesystem should be required if we are building tests only
 set(Boost_NO_BOOST_CMAKE ON)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
@@ -126,13 +127,12 @@ else()
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${IO_SOURCE_LIST})
 endif()
 
-#set(IO_LIB_LIST)
-#list(APPEND IO_LIB_LIST ${LIBUV_LIBRARIES} ${LIBUV_LDFLAGS})
-
 add_library(io SHARED ${IO_SOURCE_LIST})
-target_link_libraries(io ${LIBUV_STATIC_LIB_PATH})
-#target_link_libraries(io ${IO_LIB_LIST} ${LIBUV_STATIC_LIB_PATH})
-
+if (DEFINED IO_SANITIZER)
+    target_link_libraries(io ${LIBUV_DYNAMIC_LIB_PATH})
+else()
+    target_link_libraries(io ${LIBUV_STATIC_LIB_PATH})
+endif()
 add_dependencies(io libuv)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
