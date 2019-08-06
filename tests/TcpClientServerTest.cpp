@@ -604,7 +604,7 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
                 }
             );
         },
-        nullptr,
+        nullptr, // TODO: FIXME
         [](io::TcpClient& client, const io::Status& status) {
             std::cout << "close" << std::endl;
             client.schedule_removal(); // TODO: FIXME
@@ -640,9 +640,13 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
         }
     );
 
+    int client_connect_call_count = 0;
+    int client_close_call_count = 0;
+
     auto client = new io::TcpClient(loop);
     client->connect(m_default_addr, m_default_port,
         [&](io::TcpClient& client, const io::Status& status) {
+            ++client_connect_call_count;
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(0, client.pending_write_requesets());
             client.send_data("H");
@@ -658,14 +662,20 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
             );
             EXPECT_EQ(6, client.pending_write_requesets());
         },
-        nullptr,
-        [](io::TcpClient& client, const io::Status& status) { // on close
+        // TODO: this test does not work if receive callback is nullptr because read is not started and EOF from server is not received
+        // Need to enforce this callback or start reading without it.
+        // Need to implement separate test to cover the case
+        [](io::TcpClient& client, const char* buf, size_t size) {
+        },
+        [&](io::TcpClient& client, const io::Status& status) { // on close
+            ++client_close_call_count;
             client.schedule_removal();
-            std::cout << "close" << std::endl;
         }
     );
 
     ASSERT_EQ(0, loop.run());
+    EXPECT_EQ(1, client_connect_call_count);
+    EXPECT_EQ(1, client_close_call_count);
 }
 
 TEST_F(TcpClientServerTest, shutdown_from_client) {
