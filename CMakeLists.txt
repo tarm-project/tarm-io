@@ -73,8 +73,8 @@ if (DEFINED IO_SANITIZER)
 endif()
 
 set(LIBUV_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/libuv")
-set(LIBUV_STATIC_LIB_PATH "${LIBUV_PREFIX}/install/lib/libuv_a.a")
-set(LIBUV_DYNAMIC_LIB_PATH "${LIBUV_PREFIX}/install/lib/libuv.so")
+set(LIBUV_STATIC_LIB_PATH "${LIBUV_PREFIX}/install/lib/libuv_a${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(LIBUV_DYNAMIC_LIB_PATH "${LIBUV_PREFIX}/install/lib/libuv${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(LIBUV_INCLUDE_PATH "${LIBUV_PREFIX}/install/include")
 ExternalProject_Add(libuv
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/libuv-${IO_LIBUV_VERSION}"
