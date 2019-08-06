@@ -594,9 +594,13 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
         }
     );
 
+    int client_connect_call_count = 0;
+    int client_close_call_count = 0;
+
     auto client = new io::TcpClient(loop);
     client->connect(m_default_addr, m_default_port,
         [&](io::TcpClient& client, const io::Status& status) {
+            ++client_connect_call_count;
             EXPECT_TRUE(status.ok());
             client.send_data("Hello ",
                 [&](io::TcpClient& client, const io::Status& status) {
@@ -604,14 +608,17 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
                 }
             );
         },
-        nullptr, // TODO: FIXME
-        [](io::TcpClient& client, const io::Status& status) {
-            std::cout << "close" << std::endl;
-            client.schedule_removal(); // TODO: FIXME
+        [](io::TcpClient& client, const char* buf, size_t size) {
+        },
+        [&](io::TcpClient& client, const io::Status& status) {
+            ++client_close_call_count;
+            client.schedule_removal();
         }
     );
 
     ASSERT_EQ(0, loop.run());
+    EXPECT_EQ(1, client_connect_call_count);
+    EXPECT_EQ(1, client_close_call_count);
 }
 
 TEST_F(TcpClientServerTest, pending_write_requests) {
