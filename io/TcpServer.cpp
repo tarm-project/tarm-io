@@ -72,6 +72,11 @@ TcpServer::Impl::Impl(EventLoop& loop, TcpServer& parent) :
 
 TcpServer::Impl::~Impl() {
     //shutdown();
+    if (m_server_handle) {
+        m_server_handle->data = nullptr;
+        uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
+        m_server_handle = nullptr;
+    }
 }
 
 Status TcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
@@ -201,8 +206,11 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 }
 
 void TcpServer::Impl::on_close(uv_handle_t* handle) {
-    auto& this_ = *reinterpret_cast<TcpServer::Impl*>(handle->data);
-    this_.m_server_handle = nullptr;
+    if (handle->data) {
+        auto& this_ = *reinterpret_cast<TcpServer::Impl*>(handle->data);
+        this_.m_server_handle = nullptr;
+    }
+
     delete reinterpret_cast<uv_tcp_t*>(handle);
 }
 
