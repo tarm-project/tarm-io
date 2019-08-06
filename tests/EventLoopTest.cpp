@@ -84,6 +84,7 @@ TEST_F(EventLoopTest, work_with_user_data) {
             done_executed = true;
             auto& value = *reinterpret_cast<int*>(user_data);
             EXPECT_EQ(42, value);
+            delete &value;
         }
     );
 
