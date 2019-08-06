@@ -16,12 +16,13 @@ TEST_F(EventLoopTest, default_constructor) {
     ASSERT_EQ(0, event_loop.run());
 }
 
-TEST_F(EventLoopTest, work_null) {
-    io::EventLoop event_loop;
-    event_loop.add_work(nullptr);
-
-    ASSERT_EQ(0, event_loop.run());
-}
+// TODO: remove this test????
+//TEST_F(EventLoopTest, work_null) {
+//    io::EventLoop event_loop;
+//    event_loop.add_work(nullptr);
+//
+//    ASSERT_EQ(0, event_loop.run());
+//}
 
 TEST_F(EventLoopTest, work_no_work_done_callback) {
     bool callback_executed = false;
@@ -67,6 +68,28 @@ TEST_F(EventLoopTest, only_work_done_callback) {
 
     ASSERT_EQ(0, event_loop.run());
     ASSERT_FALSE(done_executed);
+}
+
+TEST_F(EventLoopTest, work_with_user_data) {
+    bool callback_executed = false;
+    bool done_executed = false;
+
+    io::EventLoop event_loop;
+    event_loop.add_work(
+        [&]() -> void* {
+            callback_executed = true;
+            return new int(42);
+        },
+        [&](void* user_data) {
+            done_executed = true;
+            auto& value = *reinterpret_cast<int*>(user_data);
+            EXPECT_EQ(42, value);
+        }
+    );
+
+    ASSERT_EQ(0, event_loop.run());
+    ASSERT_TRUE(callback_executed);
+    ASSERT_TRUE(done_executed);
 }
 
 TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {

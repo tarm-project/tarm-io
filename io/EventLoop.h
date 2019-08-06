@@ -13,9 +13,12 @@ class EventLoop : public Logger,
                   public UserDataHolder {
 public:
     using AsyncCallback = std::function<void()>;
+    using EachLoopCycleCallback = std::function<void()>;
+
     using WorkCallback = std::function<void()>;
     using WorkDoneCallback = std::function<void()>;
-    using EachLoopCycleCallback = std::function<void()>;
+    using WorkCallbackWithUserData = std::function<void*()>;
+    using WorkDoneCallbackWithUserData = std::function<void(void*)>;
 
     EventLoop();
     ~EventLoop();
@@ -28,6 +31,7 @@ public:
 
     // Executed on thread pool
     void add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback = nullptr);
+    void add_work(WorkCallbackWithUserData work_callback, WorkDoneCallbackWithUserData work_done_callback = nullptr);
 
     // Call callback on the EventLoop's thread. Could be executed from any thread
     // Note: this method is thread safe

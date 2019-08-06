@@ -332,7 +332,7 @@ void remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, std::string su
 }
 
 void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback callback) {
-    loop.add_work([&loop, path](){
+    loop.add_work([&loop, path]() {
         auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
 
         RemoveDirWorkData work_data;

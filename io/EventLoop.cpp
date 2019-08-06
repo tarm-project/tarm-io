@@ -11,6 +11,7 @@
 #include <mutex>
 #include <deque>
 #include <functional>
+#include <type_traits>
 
 
 // TODO: remove
@@ -40,7 +41,8 @@ public:
     Impl(Impl&& other) = default;
     Impl& operator=(Impl&& other) = default;
 
-    void add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback = nullptr);
+    template<typename WorkCallbackType, typename WorkDoneCallbackType>
+    void add_work(WorkCallbackType work_callback, WorkDoneCallbackType work_done_callback);
 
     void execute_on_loop_thread(AsyncCallback callback);
 
@@ -57,8 +59,11 @@ public:
 
     bool is_running() const;
 
+protected:
     // statics
+    template<typename WorkCallbackType, typename WorkDoneCallbackType>
     static void on_work(uv_work_t* req);
+    template<typename WorkCallbackType, typename WorkDoneCallbackType>
     static void on_after_work(uv_work_t* req, int status);
     static void on_idle(uv_idle_t* handle);
     static void on_each_loop_cycle_handler_close(uv_handle_t* handle);
@@ -124,22 +129,59 @@ EventLoop::Impl::~Impl() {
 
 namespace {
 
+template <typename WorkCallbackType, typename WorkDoneCallbackType>
 struct Work : public uv_work_t {
-    EventLoop::WorkCallback work_callback;
-    EventLoop::WorkDoneCallback work_done_callback;
+    WorkCallbackType work_callback;
+    WorkDoneCallbackType work_done_callback;
+
+    void call_work_callback() {
+        if (work_callback) {
+            work_callback();
+        }
+    }
+
+    void call_work_done_callback() {
+        if (work_done_callback) {
+            work_done_callback();
+        }
+    }
+};
+
+template <>
+struct Work<EventLoop::WorkCallbackWithUserData, EventLoop::WorkDoneCallbackWithUserData> : public uv_work_t {
+    EventLoop::WorkCallbackWithUserData work_callback;
+    EventLoop::WorkDoneCallbackWithUserData work_done_callback;
+
+    void* user_data = nullptr;
+
+    void call_work_callback() {
+        if (work_callback) {
+            user_data = work_callback();
+        }
+    }
+
+    void call_work_done_callback() {
+        if (work_done_callback) {
+            work_done_callback(user_data);
+        }
+    }
 };
 
 } // namespace
 
-void EventLoop::Impl::add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback) {
+template<typename WorkCallbackType, typename WorkDoneCallbackType>
+void EventLoop::Impl::add_work(WorkCallbackType work_callback, WorkDoneCallbackType work_done_callback) {
     if (work_callback == nullptr) {
         return;
     }
 
-    auto work = new Work;
+    auto work = new Work<WorkCallbackType, WorkDoneCallbackType>;
     work->work_callback = work_callback;
     work->work_done_callback = work_done_callback;
-    int status = uv_queue_work(this, work, EventLoop::Impl::on_work, EventLoop::Impl::on_after_work);
+    int status = uv_queue_work(this,
+                               work,
+                               on_work<WorkCallbackType, WorkDoneCallbackType>,
+                               on_after_work<WorkCallbackType, WorkDoneCallbackType>);
 }
 
 int EventLoop::Impl::run() {
@@ -230,19 +272,17 @@ bool EventLoop::Impl::is_running() const {
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
+template<typename WorkCallbackType, typename WorkDoneCallbackType>
 void EventLoop::Impl::on_work(uv_work_t* req) {
-    auto& work = *reinterpret_cast<Work*>(req);
-    if (work.work_callback) {
-        work.work_callback();
-    }
+    auto& work = *reinterpret_cast<Work<WorkCallbackType, WorkDoneCallbackType>*>(req);
+    work.call_work_callback();
 }
 
+template<typename WorkCallbackType, typename WorkDoneCallbackType>
 void EventLoop::Impl::on_after_work(uv_work_t* req, int status) {
-    auto& work = *reinterpret_cast<Work*>(req);
     // TODO: check cancel status????
-    if (work.work_done_callback) {
-        work.work_done_callback();
-    }
+    auto& work = *reinterpret_cast<Work<WorkCallbackType, WorkDoneCallbackType>*>(req);
+    work.call_work_done_callback();
 
     // TODO: memory pool for Work????
     delete &work;
@@ -332,6 +372,10 @@ void EventLoop::execute_on_loop_thread(AsyncCallback callback) {
 }
 
 void EventLoop::add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback) {
+    return m_impl->add_work(work_callback, work_done_callback);
+}
+
+void EventLoop::add_work(WorkCallbackWithUserData work_callback, WorkDoneCallbackWithUserData work_done_callback) {
     return m_impl->add_work(work_callback, work_done_callback);
 }
 
