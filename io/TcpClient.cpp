@@ -83,6 +83,9 @@ void TcpClient::Impl::connect(const std::string& address,
         if (m_connect_callback) {
             m_connect_callback(*m_parent, status);
         }
+
+        // TODO: if not close TcpClient handle, memory leak will occur
+        //uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
     }
 
 }
@@ -155,6 +158,7 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
     }
 
     if (status.fail()) {
+        uv_close(reinterpret_cast<uv_handle_t*>(this_.m_tcp_stream), on_close);
         return;
     }
 
