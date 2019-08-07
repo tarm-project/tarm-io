@@ -181,8 +181,6 @@ if (BUILD_WITH_TESTS)
     endif()
 endif()
 
-#message(FATAL_ERROR Boost::system)
-
 #############################################################
 # get_cmake_property(_variableNames VARIABLES)
 # list (SORT _variableNames)
