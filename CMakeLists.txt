@@ -90,9 +90,16 @@ ExternalProject_Add(libuv
 include_directories(${LIBUV_INCLUDE_PATH})
 
 # TODO: system and filesystem should be required if we are building tests only
-set(Boost_NO_BOOST_CMAKE ON)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
+
+# TODO: investigate this for old versions of boost
+#if(NOT TARGET Boost::filesystem)
+#    add_library(Boost::filesystem IMPORTED INTERFACE)
+#    set_property(TARGET Boost::filesystem PROPERTY
+#        INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
+#    set_property(TARGET Boost::filesystem PROPERTY
+#        INTERFACE_LINK_LIBRARIES ${Boost_LIBRARIES})
+#endif()
 
 # TODO: need to find better name than io
 # TODO: looks like need to move io-related CMake code into io folder
@@ -133,6 +140,7 @@ if (DEFINED IO_SANITIZER)
 else()
     target_link_libraries(io ${LIBUV_STATIC_LIB_PATH})
 endif()
+target_include_directories(io PRIVATE $<TARGET_PROPERTY:Boost::boost,INTERFACE_INCLUDE_DIRECTORIES>)
 add_dependencies(io libuv)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -172,6 +180,8 @@ if (BUILD_WITH_TESTS)
         )
     endif()
 endif()
+
+#message(FATAL_ERROR Boost::system)
 
 #############################################################
 # get_cmake_property(_variableNames VARIABLES)

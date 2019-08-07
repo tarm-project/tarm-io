@@ -31,8 +31,8 @@ add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
 target_link_libraries(${TESTS_EXE_NAME}
     ${COMMON_LIB_LIST}
     GTest::GTest
-    ${Boost_SYSTEM_LIBRARIES}
-    ${Boost_FILESYSTEM_LIBRARIES}
+    Boost::system
+    Boost::filesystem
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tmp)
