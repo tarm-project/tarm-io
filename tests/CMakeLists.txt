@@ -24,6 +24,13 @@ include_directories(
   ${GTEST_INCLUDE_DIRS}
 )
 
+# Added to prevent warning
+# ld: warning: direct access in XXX to global weak symbol YYY means the weak symbol cannot be overridden at runtime. This was likely caused by different translation units being compiled with different visibility settings.
+# TODO: this needed only if linking with static libs
+#if(APPLE)
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
+#endif()
+
 set(RUN_TEST_ENV) # TODO: currently this is unused but may be utilized with sanitizers
 set(TESTS_EXE_NAME tests)
 
