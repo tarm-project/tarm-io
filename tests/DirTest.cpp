@@ -489,19 +489,24 @@ TEST_F(DirTest, remove_dir) {
     ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "i" / "l" / "l_2").string()).fail());
     ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "i" / "l" / "l_3").string()).fail());
 
-    bool callback_called = false;
+    int callback_call_count = 0;
 
     io::EventLoop loop;
 
     io::remove_dir(loop, m_tmp_test_dir.string(), [&](const io::Status& status) {
-        callback_called = true;
+        ++callback_call_count;
         EXPECT_TRUE(status.ok());
         EXPECT_FALSE(boost::filesystem::exists(m_tmp_test_dir));
     });
 
-    EXPECT_FALSE(callback_called);
+    EXPECT_EQ(0, callback_call_count);
     ASSERT_EQ(0, loop.run());
-    EXPECT_TRUE(callback_called);
+    EXPECT_EQ(1, callback_call_count);
 }
+
+/*
+TEST_F(DirTest, remove_dir_not_exist) {
+}
+ */
 
 // dir iterate not existing
