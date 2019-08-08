@@ -311,11 +311,8 @@ RemoveDirStatusContext remove_dir_impl(uv_loop_t* uv_loop, const std::string& pa
 
     ScopeExitGuard open_req_guard([&open_dir_req, uv_loop, uv_dir](){
         uv_fs_t close_dir_req;
-        Status close_status = uv_fs_closedir(uv_loop, &close_dir_req, uv_dir, nullptr);
-        if (close_status.fail()) {
-            //return {close_status, open_path};
-            // TODO: what to return????
-        }
+        // Status code of uv_fs_closedir here could be ignored because we guarantee that uv_dir is not nullptr
+        uv_fs_closedir(uv_loop, &close_dir_req, uv_dir, nullptr);
 
         uv_fs_req_cleanup(&close_dir_req);
         uv_fs_req_cleanup(&open_dir_req);
@@ -342,7 +339,7 @@ RemoveDirStatusContext remove_dir_impl(uv_loop_t* uv_loop, const std::string& pa
                 work_data.emplace_back(subpath + "/" + entry.name);
             }
         } else if (entries_count < 0) {
-            // ERROR!!!!
+            return {entries_count, path};
         }
     } while (entries_count > 0);
 
