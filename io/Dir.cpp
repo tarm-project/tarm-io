@@ -1,4 +1,5 @@
 #include "Dir.h"
+#include "ScopeExitGuard.h"
 
 #include <cstring>
 #include <vector>
@@ -278,18 +279,29 @@ struct RemoveDirWorkEntry {
     bool processed;
 };
 
+struct RemoveDirStatusContext {
+    RemoveDirStatusContext(const Status& s, const std::string& p) :
+        status(s),
+        path(p) {
+    }
+
+    Status status = 0;
+    std::string path;
+};
+
 } // namespace
 
 using RemoveDirWorkData = std::vector<RemoveDirWorkEntry>;
 
-void remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, std::string subpath, RemoveDirWorkData& work_data) {
+RemoveDirStatusContext remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, std::string subpath, RemoveDirWorkData& work_data) {
     work_data.back().processed = true;
 
+    const std::string open_path = path + "/" + subpath;
     uv_fs_t open_dir_req;
-    Status open_status = uv_fs_opendir(uv_loop, &open_dir_req, (path + "/" + subpath).c_str(), nullptr);
+    Status open_status = uv_fs_opendir(uv_loop, &open_dir_req, open_path.c_str(), nullptr);
     if (open_status.fail()) {
-        return;
-        // TODO: error handling
+        uv_fs_req_cleanup(&open_dir_req);
+        return {open_status, open_path};
     }
 
     uv_dirent_t uv_dir_entry[1];
@@ -297,66 +309,78 @@ void remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, std::string su
     uv_dir->dirents = &uv_dir_entry[0];
     uv_dir->nentries = 1;
 
+    ScopeExitGuard open_req_guard([&open_dir_req, uv_loop, uv_dir](){
+        uv_fs_t close_dir_req;
+        Status close_status = uv_fs_closedir(uv_loop, &close_dir_req, uv_dir, nullptr);
+        if (close_status.fail()) {
+            //return {close_status, open_path};
+            // TODO: what to return????
+        }
+
+        uv_fs_req_cleanup(&close_dir_req);
+        uv_fs_req_cleanup(&open_dir_req);
+    });
+
     uv_fs_t read_dir_req;
     int entries_count = 0;
 
     do {
+        ScopeExitGuard read_req_guard([&read_dir_req]() { uv_fs_req_cleanup(&read_dir_req); });
+
         entries_count = uv_fs_readdir(uv_loop, &read_dir_req, uv_dir, nullptr);
         if (entries_count > 0) {
             auto& entry = uv_dir_entry[0];
 
             if (entry.type != UV_DIRENT_DIR) {
                 uv_fs_t unlink_request;
-                Status unlink_status = uv_fs_unlink(uv_loop, &unlink_request, (path + "/" + subpath + "/" + entry.name).c_str(), nullptr);
+                const std::string unlink_path = path + "/" + subpath + "/" + entry.name;
+                Status unlink_status = uv_fs_unlink(uv_loop, &unlink_request, unlink_path.c_str(), nullptr);
                 if (unlink_status.fail()) {
-                    return;
-                    // TODO: error handling
+                    return {unlink_status, unlink_path};
                 }
             } else {
                 work_data.emplace_back(subpath + "/" + entry.name);
             }
+        } else if (entries_count < 0) {
+            // ERROR!!!!
         }
-
-        uv_fs_req_cleanup(&read_dir_req);
     } while (entries_count > 0);
 
-    uv_fs_t close_dir_req;
-    Status close_status = uv_fs_closedir(uv_loop, &close_dir_req, uv_dir, nullptr);
-    if (close_status.fail()) {
-        return;
-        // TODO: error handling
-    }
-
-    uv_fs_req_cleanup(&open_dir_req);
-    uv_fs_req_cleanup(&close_dir_req);
+    return {Status(0), ""};
 }
 
 void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback callback) {
-    loop.add_work([&loop, path]() {
+    loop.add_work([&loop, path]() -> void* {
         auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
 
         RemoveDirWorkData work_data;
         work_data.emplace_back(""); // Current directory
 
         do {
-            remove_dir_impl(uv_loop, path, work_data.back().path, work_data);
+            const auto& status_context = remove_dir_impl(uv_loop, path, work_data.back().path, work_data);
+            if (status_context.status.fail()) {
+                return new RemoveDirStatusContext(status_context);
+            }
 
             auto& last_entry = work_data.back();
-
             if (last_entry.processed) {
+                const std::string rmdir_path = path + "/" + last_entry.path;
                 uv_fs_t rm_dir_req;
-                Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, (path + "/" + last_entry.path).c_str(), nullptr);
+                Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, rmdir_path.c_str(), nullptr);
                 if (rmdir_status.fail()) {
-                    return;
-                    // TODO: error handling
+                    return new RemoveDirStatusContext(rmdir_status, rmdir_path);
                 }
 
                 work_data.pop_back();
             }
         } while(!work_data.empty());
+
+        return new RemoveDirStatusContext(Status(0), "");
     },
-    [callback]() {
-        callback(Status(0));
+    [callback](void* user_data) {
+        auto& status_context = *reinterpret_cast<RemoveDirStatusContext*>(user_data);
+        callback(status_context.status);
+        delete &status_context;
     });
 
 }
