@@ -544,8 +544,6 @@ TEST_F(DirTest, remove_dir_with_progress) {
         boost::filesystem::path p(path);
         p.normalize();
         actual_paths.insert(p);
-
-        std::cout << p.string() << std::endl;
     });
 
     EXPECT_EQ(0, remove_callback_call_count);
