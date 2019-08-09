@@ -50,6 +50,7 @@ using MakeDirCallback = std::function<void(const Status&)>;
 void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback);
 
 using RemoveDirCallback = std::function<void(const Status&)>;
-void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback callback);
+using ProgressCallback = std::function<void(const std::string&)>;
+void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback = nullptr);
 
 } // namespace io

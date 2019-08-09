@@ -5,6 +5,8 @@
 
 #include <boost/filesystem.hpp>
 
+#include <vector>
+
 #include <sys/stat.h>
 //#include <sys/sysmacros.h>
 
@@ -464,6 +466,7 @@ TEST_F(DirTest, make_dir_root_dir_error) {
 #endif
 
 TEST_F(DirTest, remove_dir) {
+    // TODO: need to check if directories creation succeeded
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c" / "d");
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c" / "e");
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "f");
@@ -504,6 +507,58 @@ TEST_F(DirTest, remove_dir) {
     EXPECT_EQ(1, callback_call_count);
 }
 
+TEST_F(DirTest, remove_dir_with_progress) {
+    // TODO: need to check if directories creation succeeded
+    boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c");
+    boost::filesystem::create_directories(m_tmp_test_dir / "a" / "e" / "f");
+    boost::filesystem::create_directories(m_tmp_test_dir / "h");
+
+    // Files are not tracked by progress
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "root_1").string()).fail());
+    ASSERT_FALSE(std::ofstream((m_tmp_test_dir / "a" / "a_1").string()).fail());
+
+    int remove_callback_call_count = 0;
+    int progress_callback_call_count = 0;
+
+    std::vector<boost::filesystem::path> expected_paths = {
+        m_tmp_test_dir / "a" / "b" / "c",
+        m_tmp_test_dir / "a" / "b",
+        m_tmp_test_dir / "a" / "e" / "f",
+        m_tmp_test_dir / "a" / "e",
+        m_tmp_test_dir / "a",
+        m_tmp_test_dir / "h",
+        m_tmp_test_dir / "."
+    };
+
+    std::set<boost::filesystem::path> actual_paths;
+
+    io::EventLoop loop;
+    io::remove_dir(loop, m_tmp_test_dir.string(), [&](const io::Status& status) {
+        ++remove_callback_call_count;
+        EXPECT_TRUE(status.ok());
+        EXPECT_FALSE(boost::filesystem::exists(m_tmp_test_dir));
+    },
+    [&](const std::string& path) {
+        ++progress_callback_call_count;
+
+        boost::filesystem::path p(path);
+        p.normalize();
+        actual_paths.insert(p);
+
+        std::cout << p.string() << std::endl;
+    });
+
+    EXPECT_EQ(0, remove_callback_call_count);
+    EXPECT_EQ(0, progress_callback_call_count);
+    ASSERT_EQ(0, loop.run());
+    EXPECT_EQ(1, remove_callback_call_count);
+    EXPECT_EQ(7, progress_callback_call_count);
+
+    for (size_t i = 0; i < expected_paths.size(); ++i) {
+        ASSERT_NE(actual_paths.end(), actual_paths.find(expected_paths[i])) << "i= " << i;
+    }
+}
+
 TEST_F(DirTest, remove_dir_not_exist) {
     int callback_call_count = 0;
     io::EventLoop loop;
@@ -519,6 +574,9 @@ TEST_F(DirTest, remove_dir_not_exist) {
     EXPECT_EQ(0, callback_call_count);
     ASSERT_EQ(0, loop.run());
     EXPECT_EQ(1, callback_call_count);
+}
+
+TEST_F(DirTest, remove_dir_not_exist_and_progress_callback) {
 }
 
 // dir iterate not existing

@@ -346,8 +346,8 @@ RemoveDirStatusContext remove_dir_impl(uv_loop_t* uv_loop, const std::string& pa
     return {Status(0), ""};
 }
 
-void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback callback) {
-    loop.add_work([&loop, path]() -> void* {
+void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
+    loop.add_work([&loop, path, progress_callback]() -> void* {
         auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
 
         RemoveDirWorkData work_data;
@@ -366,6 +366,10 @@ void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback call
                 Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, rmdir_path.c_str(), nullptr);
                 if (rmdir_status.fail()) {
                     return new RemoveDirStatusContext(rmdir_status, rmdir_path);
+                } else {
+                    if (progress_callback) {
+                        progress_callback(rmdir_path);
+                    }
                 }
 
                 work_data.pop_back();
@@ -374,12 +378,11 @@ void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback call
 
         return new RemoveDirStatusContext(Status(0), "");
     },
-    [callback](void* user_data) {
+    [remove_callback](void* user_data) {
         auto& status_context = *reinterpret_cast<RemoveDirStatusContext*>(user_data);
-        callback(status_context.status);
+        remove_callback(status_context.status);
         delete &status_context;
     });
-
 }
 
 } // namespace io
