@@ -89,12 +89,16 @@ ExternalProject_Add(libuv
 )
 include_directories(${LIBUV_INCLUDE_PATH})
 
+
+#cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DBOOST_ROOT="E:\projects\thirdparty\boost\install\include\boost-1_70" -DBOOST_LIBRARYDIR="E:\projects\thirdparty\boost\install\lib" -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT=E:\projects\thirdparty\gtest\install ..
+
 # TODO: system and filesystem should be required if we are building tests only
 if (APPLE)
    set(BUILD_SHARED_LIBS ON)
    set(Boost_USE_STATIC_LIBS OFF)
+elseif (WIN32)
+   set(Boost_USE_STATIC_LIBS ON) # TODO: need to make this optional
 endif()
-set(Boost_DEBUG ON)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 # TODO: investigate this for old versions of boost
