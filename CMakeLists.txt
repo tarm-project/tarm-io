@@ -112,11 +112,13 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 # TODO: need to find better name than io
 # TODO: looks like need to move io-related CMake code into io folder
-FILE(GLOB IO_SOURCE_LIST
+FILE(GLOB IO_HEADERS_LIST
         io/*.h
         io/global/*.h
         io/detail/*.h)
+
 list(APPEND IO_SOURCE_LIST
+        ${IO_HEADERS_LIST}
         io/global/Configuration.cpp
         io/Common.cpp
         io/EventLoop.cpp
@@ -144,6 +146,7 @@ else()
 endif()
 
 add_library(io SHARED ${IO_SOURCE_LIST})
+set_target_properties(io PROPERTIES PUBLIC_HEADER "${IO_HEADERS_LIST}")
 if (DEFINED IO_SANITIZER)
     target_link_libraries(io ${LIBUV_DYNAMIC_LIB_PATH})
 else()
@@ -189,6 +192,15 @@ if (BUILD_WITH_TESTS)
         )
     endif()
 endif()
+
+install(TARGETS io
+    LIBRARY
+        DESTINATION lib
+        COMPONENT Libraries
+        NAMELINK_COMPONENT Development
+    PUBLIC_HEADER
+        DESTINATION include
+        COMPONENT Development)
 
 #############################################################
 # get_cmake_property(_variableNames VARIABLES)
