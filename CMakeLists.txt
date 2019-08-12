@@ -113,31 +113,32 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 # TODO: need to find better name than io
 # TODO: looks like need to move io-related CMake code into io folder
 FILE(GLOB IO_HEADERS_LIST
-        io/*.h
-        io/global/*.h
-        io/detail/*.h)
+        source/io/*.h
+        source/io/global/*.h
+        source/io/detail/*.h)
 
 list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
-        io/global/Configuration.cpp
-        io/Common.cpp
-        io/EventLoop.cpp
-        io/Disposable.cpp
-        io/Dir.cpp
-        io/File.cpp
-        io/Logger.cpp
-        io/Status.cpp
-        io/StatusCode.cpp
-        io/Timer.cpp
-        io/TcpClient.cpp
-        io/TcpConnectedClient.cpp
-        io/TcpServer.cpp
-        io/UdpClient.cpp
-        io/UdpClient.h
-        io/UdpServer.h
-        io/UdpServer.cpp
-        io/UserDataHolder.cpp
+        source/io/global/Configuration.cpp
+        source/io/Common.cpp
+        source/io/EventLoop.cpp
+        source/io/Disposable.cpp
+        source/io/Dir.cpp
+        source/io/File.cpp
+        source/io/Logger.cpp
+        source/io/Status.cpp
+        source/io/StatusCode.cpp
+        source/io/Timer.cpp
+        source/io/TcpClient.cpp
+        source/io/TcpConnectedClient.cpp
+        source/io/TcpServer.cpp
+        source/io/UdpClient.cpp
+        source/io/UdpClient.h
+        source/io/UdpServer.h
+        source/io/UdpServer.cpp
+        source/io/UserDataHolder.cpp
 )
+include_directories("source")
 
 if (${CMAKE_VERSION} VERSION_LESS "3.8.2")
     source_group(io FILES ${IO_SOURCE_LIST})
@@ -197,7 +198,7 @@ install(TARGETS io
     LIBRARY
         DESTINATION lib
         COMPONENT Libraries
-        NAMELINK_COMPONENT Development
+#        NAMELINK_COMPONENT Development TODO: fixme???
     PUBLIC_HEADER
         DESTINATION include
         COMPONENT Development)
