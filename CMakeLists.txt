@@ -48,17 +48,7 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 add_subdirectory("thirdparty")
 add_subdirectory("source")
-
-#list(APPEND COMMON_LIB_LIST io)
-#list(APPEND COMMON_LIB_LIST ${LIBUV_STATIC_LIB_PATH})
-#list(APPEND COMMON_LIB_LIST ${UV_LIB_DEPS})
-
-# TODO: put client and server into examples folder
-#add_executable(client Client.cpp)
-#target_link_libraries(client ${COMMON_LIB_LIST})
-#
-#add_executable(server Server.cpp)
-#target_link_libraries(server ${COMMON_LIB_LIST})
+add_subdirectory("samples")
 
 set(BUILD_WITH_TESTS ON)
 if (BUILD_WITH_TESTS)
