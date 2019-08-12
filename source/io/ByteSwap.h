@@ -24,7 +24,12 @@
 namespace io {
 
 template <typename T>
-T network_to_host(T v) { static_assert(false); } // This function has body because of MSVC compiler
+T network_to_host(T v)
+#ifdef _WIN32
+    { static_assert(false, "network_to_host with unknown type"); }
+#else
+    ;
+#endif
 
 template <>
 inline uint16_t network_to_host(uint16_t v) { return ntohs(v); }
@@ -50,7 +55,12 @@ inline int64_t network_to_host(int64_t v) { return ntohll(v); }
 */
 
 template <typename T>
-T host_to_network(T v) { static_assert(false); } // This function has body because of MSVC compiler
+T host_to_network(T v)
+#ifdef _WIN32
+    { static_assert(false, "host_to_network with unknown type"); }
+#else
+    ;
+#endif
 
 template <>
 inline uint16_t host_to_network(uint16_t v) { return htons(v); }
