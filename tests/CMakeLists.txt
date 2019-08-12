@@ -35,14 +35,15 @@ set(RUN_TEST_ENV) # TODO: currently this is unused but may be utilized with sani
 set(TESTS_EXE_NAME tests)
 
 add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
+target_include_directories(${TESTS_EXE_NAME} PUBLIC "${CMAKE_SOURCE_DIR}/source")
 target_link_libraries(${TESTS_EXE_NAME}
-    ${COMMON_LIB_LIST}
+    io
     GTest::GTest
     Boost::system
     Boost::filesystem
 )
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tmp)
+#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tmp)
 
 add_custom_target(RunTests
     DEPENDS ${TESTS_LIST}
