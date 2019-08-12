@@ -1,5 +1,3 @@
-# TODO: need to find better name than io
-# TODO: looks like need to move io-related CMake code into io folder
 FILE(GLOB IO_HEADERS_LIST
         io/*.h
         io/global/*.h
@@ -35,7 +33,7 @@ else()
 endif()
 
 add_library(io SHARED ${IO_SOURCE_LIST})
-set_target_properties(io PROPERTIES PUBLIC_HEADER "${IO_HEADERS_LIST}")
+#set_target_properties(io PROPERTIES PUBLIC_HEADER "${IO_HEADERS_LIST}")
 if (DEFINED IO_SANITIZER)
     target_link_libraries(io ${LIBUV_DYNAMIC_LIB_PATH})
 else()
@@ -47,11 +45,19 @@ add_dependencies(io libuv)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 #include_directories(${LIBUV_INCLUDE_DIR})
 
+# headers installation
+# Unfortunately can not use target property PUBLIC_HEADER here
+# because of https://gitlab.kitware.com/cmake/cmake/issues/16739
+install(DIRECTORY io DESTINATION include
+   FILES_MATCHING PATTERN *.h
+   PATTERN detail EXCLUDE)
+
 install(TARGETS io
     LIBRARY
         DESTINATION lib
         COMPONENT Libraries
-#        NAMELINK_COMPONENT Development TODO: fixme???
-    PUBLIC_HEADER
-        DESTINATION include
-        COMPONENT Development)
+#        NAMELINK_COMPONENT Development #TODO: fixme??? Or remove???
+#    PUBLIC_HEADER
+#        DESTINATION include
+#        COMPONENT Development
+)
