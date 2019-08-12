@@ -1,7 +1,13 @@
 #pragma once
 
-#include <netinet/in.h>
+#ifdef _WIN32
+    #include <Winsock.h>
+#else
+    #include <netinet/in.h>
+#endif
+
 #include <stdint.h>
+#include <assert.h>
 /*
 #include <endian.h>
 
@@ -18,7 +24,7 @@
 namespace io {
 
 template <typename T>
-T network_to_host(T v);
+T network_to_host(T v) { static_assert(false); } // This function has body because of MSVC compiler
 
 template <>
 inline uint16_t network_to_host(uint16_t v) { return ntohs(v); }
@@ -29,8 +35,12 @@ inline int16_t network_to_host(int16_t v) { return ntohs(v); }
 template <>
 inline uint32_t network_to_host(uint32_t v) { return ntohl(v); }
 
+template <> // unsigned long is used to make MSVC happy
+inline unsigned long network_to_host(unsigned long v) { return ntohl(v); }
+
 template <>
 inline int32_t network_to_host(int32_t v) { return ntohl(v); }
+
 /*
 template <>
 inline uint64_t network_to_host(uint64_t v) { return ntohll(v); }
@@ -40,7 +50,7 @@ inline int64_t network_to_host(int64_t v) { return ntohll(v); }
 */
 
 template <typename T>
-T host_to_network(T v);
+T host_to_network(T v) { static_assert(false); } // This function has body because of MSVC compiler
 
 template <>
 inline uint16_t host_to_network(uint16_t v) { return htons(v); }
@@ -50,6 +60,9 @@ inline int16_t host_to_network(int16_t v) { return htons(v); }
 
 template <>
 inline uint32_t host_to_network(uint32_t v) { return htonl(v); }
+
+template <> // unsigned long is used to make MSVC happy
+inline unsigned long host_to_network(unsigned long v) { return htonl(v); }
 
 template <>
 inline int32_t host_to_network(int32_t v) { return htonl(v); }

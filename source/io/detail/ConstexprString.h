@@ -1,10 +1,12 @@
 #include <limits>
 
+#define IO_MSVC_MAX_MACRO_WORKAROUND
+
 namespace io {
 namespace detail {
 
 using size_type = std::size_t;
-const auto NPOS = std::numeric_limits<size_type>::max();
+const auto NPOS = std::numeric_limits<size_type>::max IO_MSVC_MAX_MACRO_WORKAROUND ();
 
 constexpr std::size_t length_impl(char const* str, std::size_t i) {
     return str ? (str[i] ? 1 + length_impl(str, i + 1) : 0) : 0;

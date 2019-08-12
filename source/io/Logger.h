@@ -13,6 +13,11 @@
 
 #define IO_LOG(LOGGER_PTR, SEVERITY, ...) (LOGGER_PTR)->log_with_compile_context(io::Logger::Severity::SEVERITY, ::io::detail::extract_file_name_from_path(__FILE__), __LINE__, __func__, __VA_ARGS__);
 
+#ifdef ERROR
+    #undef ERROR
+#endif // ERROR
+
+
 namespace io {
 
 class Logger {

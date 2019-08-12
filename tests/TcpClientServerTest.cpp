@@ -458,7 +458,7 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
         ++connections_counter;
         return true;
     },
-    [&clinets_data_log, &server_reads_counter](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+    [&clinets_data_log, &server_reads_counter, NUMBER_OF_CLIENTS](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
         ++server_reads_counter;
         ASSERT_EQ(sizeof(std::size_t), size);
         const auto value = *reinterpret_cast<const std::size_t*>(buf);
