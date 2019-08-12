@@ -110,54 +110,7 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 #        INTERFACE_LINK_LIBRARIES ${Boost_LIBRARIES})
 #endif()
 
-# TODO: need to find better name than io
-# TODO: looks like need to move io-related CMake code into io folder
-FILE(GLOB IO_HEADERS_LIST
-        source/io/*.h
-        source/io/global/*.h
-        source/io/detail/*.h)
-
-list(APPEND IO_SOURCE_LIST
-        ${IO_HEADERS_LIST}
-        source/io/global/Configuration.cpp
-        source/io/Common.cpp
-        source/io/EventLoop.cpp
-        source/io/Disposable.cpp
-        source/io/Dir.cpp
-        source/io/File.cpp
-        source/io/Logger.cpp
-        source/io/Status.cpp
-        source/io/StatusCode.cpp
-        source/io/Timer.cpp
-        source/io/TcpClient.cpp
-        source/io/TcpConnectedClient.cpp
-        source/io/TcpServer.cpp
-        source/io/UdpClient.cpp
-        source/io/UdpClient.h
-        source/io/UdpServer.h
-        source/io/UdpServer.cpp
-        source/io/UserDataHolder.cpp
-)
-include_directories("source")
-
-if (${CMAKE_VERSION} VERSION_LESS "3.8.2")
-    source_group(io FILES ${IO_SOURCE_LIST})
-else()
-    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${IO_SOURCE_LIST})
-endif()
-
-add_library(io SHARED ${IO_SOURCE_LIST})
-set_target_properties(io PROPERTIES PUBLIC_HEADER "${IO_HEADERS_LIST}")
-if (DEFINED IO_SANITIZER)
-    target_link_libraries(io ${LIBUV_DYNAMIC_LIB_PATH})
-else()
-    target_link_libraries(io ${LIBUV_STATIC_LIB_PATH})
-endif()
-target_include_directories(io PUBLIC $<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>)
-add_dependencies(io libuv)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${LIBUV_INCLUDE_DIR})
+add_subdirectory("source")
 
 list(APPEND COMMON_LIB_LIST io)
 list(APPEND COMMON_LIB_LIST ${LIBUV_STATIC_LIB_PATH})
@@ -169,6 +122,9 @@ target_link_libraries(client ${COMMON_LIB_LIST})
 
 add_executable(server Server.cpp)
 target_link_libraries(server ${COMMON_LIB_LIST})
+
+# TODO: move
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 set(BUILD_WITH_TESTS ON)
 if (BUILD_WITH_TESTS)
@@ -193,15 +149,6 @@ if (BUILD_WITH_TESTS)
         )
     endif()
 endif()
-
-install(TARGETS io
-    LIBRARY
-        DESTINATION lib
-        COMPONENT Libraries
-#        NAMELINK_COMPONENT Development TODO: fixme???
-    PUBLIC_HEADER
-        DESTINATION include
-        COMPONENT Development)
 
 #############################################################
 # get_cmake_property(_variableNames VARIABLES)
