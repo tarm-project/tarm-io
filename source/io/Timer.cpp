@@ -4,7 +4,7 @@
 
 namespace io {
 
-class Timer::Impl  {
+class IO_DLL_PRIVATE Timer::Impl  {
 public:
     Impl(EventLoop& loop, Timer& parent);
     ~Impl();

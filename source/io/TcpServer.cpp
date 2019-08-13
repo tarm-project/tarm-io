@@ -13,7 +13,7 @@ namespace io {
 
 const size_t TcpServer::READ_BUFFER_SIZE;
 
-class TcpServer::Impl {
+class IO_DLL_PRIVATE TcpServer::Impl {
 public:
     Impl(EventLoop& loop, TcpServer& parent);
     ~Impl();

@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "EventLoop.h"
+#include "Export.h"
 #include "Disposable.h"
 #include "UserDataHolder.h"
 #include "Status.h"
@@ -18,33 +19,34 @@ public:
     using EndSendCallback = std::function<void(TcpClient&, const Status&)>;
     using DataReceiveCallback = std::function<void(TcpClient&, const char*, size_t)>;
 
-    TcpClient(EventLoop& loop);
+    IO_DLL_PUBLIC TcpClient(EventLoop& loop);
 
-    void schedule_removal() override;
+    IO_DLL_PUBLIC void schedule_removal() override;
 
-    std::uint32_t ipv4_addr() const;
-    std::uint16_t port() const;
+    IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
+    IO_DLL_PUBLIC std::uint16_t port() const;
 
+    IO_DLL_PUBLIC
     void connect(const std::string& address,
                  std::uint16_t port,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback = nullptr,
                  CloseCallback close_callback = nullptr);
-    void close();
+    IO_DLL_PUBLIC void close();
 
-    bool is_open() const;
+    IO_DLL_PUBLIC bool is_open() const;
 
-    void send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback = nullptr);
-    void send_data(const std::string& message, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
 
-    void set_close_callback(CloseCallback callback);
+    IO_DLL_PUBLIC void set_close_callback(CloseCallback callback);
 
-    std::size_t pending_write_requesets() const;
+    IO_DLL_PUBLIC std::size_t pending_write_requesets() const;
 
-    void shutdown(CloseCallback callback = nullptr);
+    IO_DLL_PUBLIC void shutdown(CloseCallback callback = nullptr);
 
 protected:
-    ~TcpClient();
+    IO_DLL_PUBLIC ~TcpClient();
 
 private:
     class Impl;

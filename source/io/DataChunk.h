@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Export.h"
+
 #include <memory>
 
 namespace io {
 
-struct DataChunk {
+struct IO_DLL_PUBLIC DataChunk {
     DataChunk() = default;
     DataChunk(std::shared_ptr<const char> b, std::size_t s, std::size_t o) :
         buf(b),

@@ -4,6 +4,7 @@
 #include "DataChunk.h"
 #include "Disposable.h"
 #include "EventLoop.h"
+#include "Export.h"
 #include "Status.h"
 #include "UserDataHolder.h"
 
@@ -30,25 +31,25 @@ public:
     using EndReadCallback = std::function<void(File&)>;
     using StatCallback = std::function<void(File&, const StatData&)>;
 
-    File(EventLoop& loop);
+    IO_DLL_PUBLIC File(EventLoop& loop);
 
-    void open(const std::string& path, OpenCallback callback); // TODO: pass open flags
-    void close();
-    bool is_open() const;
+    IO_DLL_PUBLIC void open(const std::string& path, OpenCallback callback); // TODO: pass open flags
+    IO_DLL_PUBLIC void close();
+    IO_DLL_PUBLIC bool is_open() const;
 
-    void read(ReadCallback callback);
-    void read(ReadCallback read_callback, EndReadCallback end_read_callback);
+    IO_DLL_PUBLIC void read(ReadCallback callback);
+    IO_DLL_PUBLIC void read(ReadCallback read_callback, EndReadCallback end_read_callback);
 
-    void read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback);
+    IO_DLL_PUBLIC void read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback);
 
-    const std::string& path() const;
+    IO_DLL_PUBLIC const std::string& path() const;
 
-    void stat(StatCallback callback);
+    IO_DLL_PUBLIC void stat(StatCallback callback);
 
-    void schedule_removal() override;
+    IO_DLL_PUBLIC void schedule_removal() override;
 
 protected:
-    ~File();
+    IO_DLL_PUBLIC ~File();
 
 private:
     class Impl;

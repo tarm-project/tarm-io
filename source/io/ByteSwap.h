@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Export.h"
+
 #ifdef _WIN32
     #include <Winsock.h>
 #else

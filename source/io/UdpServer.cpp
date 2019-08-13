@@ -5,7 +5,7 @@
 
 namespace io {
 
-class UdpServer::Impl : public uv_udp_t {
+class IO_DLL_PRIVATE UdpServer::Impl : public uv_udp_t {
 public:
     Impl(EventLoop& loop, UdpServer& parent);
 

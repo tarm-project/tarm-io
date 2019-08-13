@@ -30,7 +30,7 @@ struct Idle : public uv_idle_t {
 
 } // namespace
 
-class EventLoop::Impl : public uv_loop_t {
+class IO_DLL_PRIVATE EventLoop::Impl : public uv_loop_t {
 public:
     Impl(EventLoop& loop);
     ~Impl();

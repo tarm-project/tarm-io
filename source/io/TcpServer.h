@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-
+#include "Export.h"
 #include "TcpConnectedClient.h"
 #include "UserDataHolder.h"
 
@@ -30,8 +30,8 @@ public:
     using NewConnectionCallback = std::function<bool(TcpServer&, TcpConnectedClient&)>;
     using DataReceivedCallback = std::function<void(TcpServer&, TcpConnectedClient&, const char*, std::size_t)>;
 
-    TcpServer(EventLoop& loop);
-    ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server
+    IO_DLL_PUBLIC TcpServer(EventLoop& loop);
+    IO_DLL_PUBLIC ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server
 
     // TODO: some sort of macro here???
     TcpServer(const TcpServer& other) = delete;
@@ -40,17 +40,18 @@ public:
     TcpServer(TcpServer&& other) = default;
     TcpServer& operator=(TcpServer&& other) = delete; // default
 
-    Status bind(const std::string& ip_addr_str, std::uint16_t port);
+    IO_DLL_PUBLIC Status bind(const std::string& ip_addr_str, std::uint16_t port);
 
     // On success, zero is returned
+    IO_DLL_PUBLIC
     int listen(NewConnectionCallback new_connection_callback,
                DataReceivedCallback data_receive_callback,
                int backlog_size = 128);
 
-    void shutdown();
-    void close();
+    IO_DLL_PUBLIC void shutdown();
+    IO_DLL_PUBLIC void close();
 
-    std::size_t connected_clients_count() const;
+    IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 
 private:
     void remove_client_connection(TcpConnectedClient* client);

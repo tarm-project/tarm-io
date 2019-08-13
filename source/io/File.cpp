@@ -22,7 +22,7 @@ struct ReadRequest : public uv_fs_t {
     char* raw_buf = nullptr;
 };
 
-class File::Impl {
+class IO_DLL_PRIVATE File::Impl {
 public:
     Impl(EventLoop& loop, File& parent);
     ~Impl();

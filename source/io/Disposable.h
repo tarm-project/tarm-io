@@ -1,13 +1,14 @@
 #pragma once
 
 #include "EventLoop.h"
+#include "Export.h"
 
 // TODO: remove
 #include <uv.h>
 
 namespace io {
 
-class Disposable {
+class IO_DLL_PUBLIC Disposable {
 public:
     Disposable(EventLoop& loop);
     virtual ~Disposable();

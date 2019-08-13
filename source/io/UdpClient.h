@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EventLoop.h"
+#include "Export.h"
 //#include "DataChunk.h"
 #include "Disposable.h"
 #include "Status.h"
@@ -15,17 +16,17 @@ class UdpClient : public Disposable,
 public:
     using EndSendCallback = std::function<void(UdpClient&, const Status&)>;
 
-    UdpClient(EventLoop& loop);
+    IO_DLL_PUBLIC UdpClient(EventLoop& loop);
 
     // TODO: implement???
     //void send_data(const DataChunk& data_chunk, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
-    void send_data(std::shared_ptr<const char> buffer, std::size_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
-    void send_data(const std::string& message, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::size_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const std::string& message, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
 
-    void schedule_removal() override;
+    IO_DLL_PUBLIC void schedule_removal() override;
 
 protected:
-    ~UdpClient();
+    IO_DLL_PUBLIC ~UdpClient();
 
 private:
     class Impl;

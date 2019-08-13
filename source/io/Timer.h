@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "EventLoop.h"
+#include "Export.h"
 #include "UserDataHolder.h"
 
 #include <functional>
@@ -14,8 +15,8 @@ class Timer : public UserDataHolder {
 public:
     using Callback = std::function<void(Timer&)>;
 
-    Timer(EventLoop& loop);
-    ~Timer();
+    IO_DLL_PUBLIC Timer(EventLoop& loop);
+    IO_DLL_PUBLIC ~Timer();
 
     // TODO: this could be done with macros
     Timer(const Timer&) = delete;
@@ -27,11 +28,11 @@ public:
     // If timeout is zero, the callback fires on the next event loop iteration.
     // If repeat is non-zero, the callback fires first after timeout milliseconds
     // and then repeatedly after repeat milliseconds.
-    void start(uint64_t timeout_ms, uint64_t repeat_ms, Callback callback);
+    IO_DLL_PUBLIC void start(uint64_t timeout_ms, uint64_t repeat_ms, Callback callback);
 
-    void start(uint64_t timeout_ms, Callback callback); // TODO: unit test this
+    IO_DLL_PUBLIC void start(uint64_t timeout_ms, Callback callback); // TODO: unit test this
 
-    void stop();
+    IO_DLL_PUBLIC void stop();
 
 private:
     class Impl;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EventLoop.h"
+#include "Export.h"
 #include "DataChunk.h"
 #include "Disposable.h"
 #include "Status.h"
@@ -18,24 +19,24 @@ class UdpServer : public Disposable,
 public:
     using DataReceivedCallback = std::function<void(UdpServer&, std::uint32_t, std::uint16_t, const DataChunk&, const Status&)>;
 
-    UdpServer(EventLoop& loop);
-
-    void schedule_removal() override;
-
-    UdpServer(const UdpServer& other) = delete;
+UdpServer(const UdpServer& other) = delete;
     UdpServer& operator=(const UdpServer& other) = delete;
 
     UdpServer(UdpServer&& other) = default;
     UdpServer& operator=(UdpServer&& other) = default;
 
-    Status bind(const std::string& ip_addr_str, std::uint16_t port);
+    IO_DLL_PUBLIC UdpServer(EventLoop& loop);
 
-    void start_receive(DataReceivedCallback receive_callback);
+    IO_DLL_PUBLIC void schedule_removal() override;
 
-    void close();
+    IO_DLL_PUBLIC Status bind(const std::string& ip_addr_str, std::uint16_t port);
+
+    IO_DLL_PUBLIC void start_receive(DataReceivedCallback receive_callback);
+
+    IO_DLL_PUBLIC void close();
 
 protected:
-    ~UdpServer();
+    IO_DLL_PUBLIC ~UdpServer();
 
 private:
     class Impl;
