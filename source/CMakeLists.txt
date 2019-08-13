@@ -41,6 +41,7 @@ else()
 endif()
 target_include_directories(io PUBLIC $<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>)
 target_include_directories(io PUBLIC ${LIBUV_INCLUDE_PATH})
+target_compile_definitions(io PUBLIC IO_BUILDING_DLL)
 add_dependencies(io libuv)
 
 target_include_directories(io PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

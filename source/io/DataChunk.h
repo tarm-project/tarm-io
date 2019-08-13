@@ -6,15 +6,15 @@
 
 namespace io {
 
-struct IO_DLL_PUBLIC DataChunk {
+struct DataChunk {
     DataChunk() = default;
-    DataChunk(std::shared_ptr<const char> b, std::size_t s, std::size_t o) :
+    IO_DLL_PUBLIC DataChunk(std::shared_ptr<const char> b, std::size_t s, std::size_t o) :
         buf(b),
         size(s),
         offset(o){
     }
 
-    DataChunk(std::shared_ptr<const char> b, std::size_t s) :
+    IO_DLL_PUBLIC DataChunk(std::shared_ptr<const char> b, std::size_t s) :
         buf(b),
         size(s),
         offset(0) {
