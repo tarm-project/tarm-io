@@ -368,7 +368,9 @@ void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback remo
                     return new RemoveDirStatusContext(rmdir_status, rmdir_path);
                 } else {
                     if (progress_callback) {
-                        progress_callback(rmdir_path);
+                        loop.execute_on_loop_thread([progress_callback, rmdir_path](){
+                            progress_callback(rmdir_path);
+                        });
                     }
                 }
 
