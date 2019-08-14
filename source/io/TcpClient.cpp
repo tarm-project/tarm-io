@@ -158,6 +158,7 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
     }
 
     if (status.fail()) {
+        this_.m_tcp_stream->data = nullptr;
         uv_close(reinterpret_cast<uv_handle_t*>(this_.m_tcp_stream), on_close);
         return;
     }
