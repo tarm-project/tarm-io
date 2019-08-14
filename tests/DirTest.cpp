@@ -6,7 +6,9 @@
 #include <boost/filesystem.hpp>
 
 #include <vector>
+#include <thread>
 
+// TOOD: what about Windows here????
 #include <sys/stat.h>
 //#include <sys/sysmacros.h>
 
@@ -545,6 +547,12 @@ TEST_F(DirTest, remove_dir_with_progress) {
         p.normalize();
         actual_paths.insert(p);
     });
+
+    EXPECT_TRUE(boost::filesystem::exists(m_tmp_test_dir));
+
+    // TODO: this will fail because task is executed before loop run
+    //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // EXPECT_TRUE(boost::filesystem::exists(m_tmp_test_dir));
 
     EXPECT_EQ(0, remove_callback_call_count);
     EXPECT_EQ(0, progress_callback_call_count);
