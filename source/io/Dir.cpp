@@ -7,7 +7,7 @@
 
 namespace io {
 
-class IO_DLL_PRIVATE Dir::Impl {
+class Dir::Impl {
 public:
     Impl(EventLoop& loop, Dir& parent);
     ~Impl();

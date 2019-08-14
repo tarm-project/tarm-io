@@ -7,7 +7,7 @@
 
 namespace io {
 
-class IO_DLL_PRIVATE TcpClient::Impl : public detail::TcpClientImplBase<TcpClient, TcpClient::Impl> {
+class TcpClient::Impl : public detail::TcpClientImplBase<TcpClient, TcpClient::Impl> {
 public:
     Impl(EventLoop& loop, TcpClient& parent);
     ~Impl();

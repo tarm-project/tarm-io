@@ -7,7 +7,7 @@
 #include <assert.h>
 
 namespace io {
-class IO_DLL_PRIVATE TcpConnectedClient::Impl : public detail::TcpClientImplBase<TcpConnectedClient, TcpConnectedClient::Impl> {
+class TcpConnectedClient::Impl : public detail::TcpClientImplBase<TcpConnectedClient, TcpConnectedClient::Impl> {
 public:
     Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent);
     ~Impl();

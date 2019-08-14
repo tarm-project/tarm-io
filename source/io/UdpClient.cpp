@@ -5,7 +5,7 @@
 
 namespace io {
 
-class IO_DLL_PRIVATE UdpClient::Impl : public uv_udp_t {
+class UdpClient::Impl : public uv_udp_t {
 public:
     Impl(EventLoop& loop, UdpClient& parent);
 
