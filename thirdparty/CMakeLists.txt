@@ -1,5 +1,12 @@
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
+# Solution from here https://gitlab.kitware.com/cmake/cmake/issues/17645
+if (CMAKE_CONFIGURATION_TYPES)
+	set(LIBUV_PROPAGATE_BUILD_TYPE --config $<CONFIG>)
+else()
+	set(LIBUV_PROPAGATE_BUILD_TYPE -DCMAKE_BUILD_TYPE=$<CONFIG>)
+endif()
+
 if(WIN32)
   list(APPEND LIBUV_LIB_DEPS
        advapi32
@@ -56,7 +63,7 @@ ExternalProject_Add(libuv
     INSTALL_DIR "${LIBUV_PREFIX}/install"
     CMAKE_ARGS -Dlibuv_buildtests=OFF
                -DCMAKE_INSTALL_PREFIX=${LIBUV_PREFIX}/install
-               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                -DCMAKE_C_FLAGS=-fPIC\ ${LIBUV_ADDITIONAL_FLAGS}
                -DCMAKE_SHARED_LINKER_FLAGS=${LIBUV_ADDITIONAL_FLAGS}
+               ${LIBUV_PROPAGATE_BUILD_TYPE}
 )
