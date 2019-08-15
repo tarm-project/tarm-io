@@ -65,5 +65,6 @@ ExternalProject_Add(libuv
                -DCMAKE_INSTALL_PREFIX=${LIBUV_PREFIX}/install
                -DCMAKE_C_FLAGS=-fPIC\ ${LIBUV_ADDITIONAL_FLAGS}
                -DCMAKE_SHARED_LINKER_FLAGS=${LIBUV_ADDITIONAL_FLAGS}
+               -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 # TODO: 32 bit support
                ${LIBUV_PROPAGATE_BUILD_TYPE}
 )

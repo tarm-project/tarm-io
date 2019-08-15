@@ -43,6 +43,22 @@ target_link_libraries(${TESTS_EXE_NAME}
     Boost::filesystem
 )
 
+if(WIN32) # AND BUILD_SHARED_LIBS
+    get_property(OLOLOLOLO TARGET GTest::GTest PROPERTY IMPORTED_IMPLIB)
+
+    get_filename_component(BLABLABLA ${OLOLOLOLO} DIRECTORY )
+    #message(FATAL_ERROR "!!!${BLABLABLA}/../bin/gtest.dll")
+
+    add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD # Adds a post-build event to MyTest
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different      # which executes "cmake - E copy_if_different..."
+          "${CMAKE_BINARY_DIR}/source/$<CONFIG>/io.dll"  # <--this is in-file
+          $<TARGET_FILE_DIR:tests>                       # <--this is out-file path
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${BLABLABLA}/../bin/gtest.dll
+          $<TARGET_FILE_DIR:tests>
+          )
+endif()
+
 #file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tmp)
 
 add_custom_target(RunTests
@@ -51,3 +67,37 @@ add_custom_target(RunTests
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 add_dependencies(RunTests ${TESTS_EXE_NAME})
+
+# Get all propreties that cmake supports
+execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
+
+# Convert command output into a CMake list
+STRING(REGEX REPLACE ";" "\\\\;" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+STRING(REGEX REPLACE "\n" ";" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+
+function(print_properties)
+    message ("CMAKE_PROPERTY_LIST = ${CMAKE_PROPERTY_LIST}")
+endfunction(print_properties)
+
+function(print_target_properties tgt)
+    if(NOT TARGET ${tgt})
+      message("There is no target named '${tgt}'")
+      return()
+    endif()
+
+    foreach (prop ${CMAKE_PROPERTY_LIST})
+        string(REPLACE "<CONFIG>" "${CMAKE_BUILD_TYPE}" prop ${prop})
+    # Fix https://stackoverflow.com/questions/32197663/how-can-i-remove-the-the-location-property-may-not-be-read-from-target-error-i
+    if(prop STREQUAL "LOCATION" OR prop MATCHES "^LOCATION_" OR prop MATCHES "_LOCATION$")
+        continue()
+    endif()
+        # message ("Checking ${prop}")
+        get_property(propval TARGET ${tgt} PROPERTY ${prop} SET)
+        if (propval)
+            get_target_property(propval ${tgt} ${prop})
+            message ("${tgt} ${prop} = ${propval}")
+        endif()
+    endforeach(prop)
+endfunction(print_target_properties)
+
+print_target_properties(GTest::GTest)
