@@ -583,6 +583,26 @@ TEST_F(DirTest, remove_dir_not_exist) {
 }
 
 TEST_F(DirTest, remove_dir_not_exist_and_progress_callback) {
+    int callback_call_count = 0;
+    int progress_call_count = 0;
+    io::EventLoop loop;
+
+    auto remove_path = m_tmp_test_dir / "not_exist";
+    io::remove_dir(loop, remove_path.string(), [&](const io::Status& status) {
+        ++callback_call_count;
+        EXPECT_TRUE(status.fail());
+        EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status.code());
+        EXPECT_TRUE(boost::filesystem::exists(m_tmp_test_dir));
+    },
+    [&](const std::string& path) {
+        ++progress_call_count;
+    });
+
+    EXPECT_EQ(0, callback_call_count);
+    EXPECT_EQ(0, progress_call_count);
+    ASSERT_EQ(0, loop.run());
+    EXPECT_EQ(1, callback_call_count);
+    EXPECT_EQ(0, progress_call_count);
 }
 
 // dir iterate not existing
