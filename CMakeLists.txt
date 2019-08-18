@@ -7,6 +7,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 
 if(WIN32)
+    if (MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP") # Multicore building
+    endif()
 # TODO: 32 bit build support
 #    set(CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE x64)
 endif()
