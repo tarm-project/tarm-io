@@ -1,4 +1,4 @@
-find_package(GTest REQUIRED)
+find_package(GTest REQUIRED CONFIG HINTS ${GTEST_ROOT})
 
 # Note: tests are ordered from basic ones to advanced ones to allow check them from
 # top to bottom if multiple tests fail.
@@ -38,28 +38,29 @@ add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
 target_include_directories(${TESTS_EXE_NAME} PUBLIC "${CMAKE_SOURCE_DIR}/source")
 target_link_libraries(${TESTS_EXE_NAME}
     io
-    GTest::GTest
+    GTest::gtest
     Boost::system
     Boost::filesystem
 )
 
+add_custom_target(printFooKeys
+  COMMAND ${CMAKE_COMMAND} -E
+    echo $<GENEX_EVAL:$<TARGET_PROPERTY:GTest::gtest,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>>
+  COMMAND ${CMAKE_COMMAND} -E
+    echo $<GENEX_EVAL:$<UPPER_CASE:$<CONFIG>>>
+)
+add_dependencies(io printFooKeys)
+
 if(WIN32) # AND BUILD_SHARED_LIBS
-    get_property(OLOLOLOLO TARGET GTest::GTest PROPERTY IMPORTED_IMPLIB)
-
-    get_filename_component(BLABLABLA ${OLOLOLOLO} DIRECTORY )
-    #message(FATAL_ERROR "!!!${BLABLABLA}/../bin/gtest.dll")
-
     add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD # Adds a post-build event to MyTest
       COMMAND ${CMAKE_COMMAND} -E copy_if_different      # which executes "cmake - E copy_if_different..."
           "${CMAKE_BINARY_DIR}/source/$<CONFIG>/io.dll"  # <--this is in-file
           $<TARGET_FILE_DIR:tests>                       # <--this is out-file path
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${BLABLABLA}/../bin/gtest.dll
+          $<TARGET_PROPERTY:GTest::gtest,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>
           $<TARGET_FILE_DIR:tests>
           )
 endif()
-
-#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tmp)
 
 add_custom_target(RunTests
     DEPENDS ${TESTS_LIST}
@@ -100,4 +101,4 @@ function(print_target_properties tgt)
     endforeach(prop)
 endfunction(print_target_properties)
 
-print_target_properties(GTest::GTest)
+print_target_properties(GTest::gtest)
