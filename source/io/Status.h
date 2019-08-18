@@ -9,7 +9,7 @@ namespace io {
 
 class IO_DLL_PUBLIC Status {
 public:
-    Status(int libuv_code);
+    Status(ssize_t libuv_code);
     Status(StatusCode status_code);
 
     StatusCode code() const;
@@ -19,7 +19,7 @@ public:
     bool fail() const;
 
 private:
-    int m_libuv_code = 0;
+    ssize_t m_libuv_code = 0;
     StatusCode m_status_code = StatusCode::OK;
 };
 

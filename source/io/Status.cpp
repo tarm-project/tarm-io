@@ -4,7 +4,7 @@
 
 namespace io {
 
-Status::Status(int libuv_code) {
+Status::Status(ssize_t libuv_code) {
     if (libuv_code < 0) {
         m_libuv_code = libuv_code;
         m_status_code = convert_from_uv(libuv_code);
