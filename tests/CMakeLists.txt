@@ -1,4 +1,6 @@
+message("-- Searching for GTest")
 find_package(GTest REQUIRED CONFIG HINTS ${GTEST_ROOT})
+message("-- Found GTest target config in ${GTest_DIR}.")
 
 # Note: tests are ordered from basic ones to advanced ones to allow check them from
 # top to bottom if multiple tests fail.
