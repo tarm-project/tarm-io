@@ -3,15 +3,12 @@
 #include "Export.h"
 
 #include <uv.h>
-#include <memory>
 #include <cstdint>
 #include <string>
 
-// TODO: remove this file
+// TODO: Need to remove this file and extract conversion functions
 
 namespace io {
-
-using TcpPtr = std::unique_ptr<uv_tcp_t>;
 
 IO_DLL_PUBLIC
 void default_alloc_buffer(uv_handle_t* /*handle*/, size_t suggested_size, uv_buf_t* buf);
