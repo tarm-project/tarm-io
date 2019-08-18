@@ -8,7 +8,6 @@
 
 struct EventLoopTest : public testing::Test,
                        public LogRedirector {
-
 };
 
 TEST_F(EventLoopTest, default_constructor) {

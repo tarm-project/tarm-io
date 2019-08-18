@@ -1,4 +1,6 @@
 #include "Dir.h"
+
+#include "Common.h"
 #include "ScopeExitGuard.h"
 
 #include <cstring>

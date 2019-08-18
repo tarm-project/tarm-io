@@ -1,5 +1,7 @@
 #include "Timer.h"
 
+#include "Common.h"
+
 #include <assert.h>
 
 namespace io {

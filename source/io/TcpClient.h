@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Common.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Disposable.h"

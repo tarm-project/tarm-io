@@ -3,6 +3,7 @@
 #include "io/Timer.h"
 #include "io/File.h"
 #include "io/Dir.h"
+#include "io/Common.h"
 
 #include <iostream>
 #include <cstring>
