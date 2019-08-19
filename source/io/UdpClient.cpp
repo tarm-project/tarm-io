@@ -1,5 +1,7 @@
 #include "UdpClient.h"
 
+#include "Common.h"
+
 #include <cstring>
 #include <cstddef>
 

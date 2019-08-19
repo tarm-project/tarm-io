@@ -3,8 +3,7 @@
 #include "EventLoop.h"
 #include "Export.h"
 
-// TODO: remove
-#include <uv.h>
+#include <memory>
 
 namespace io {
 
@@ -13,14 +12,12 @@ public:
     Disposable(EventLoop& loop);
     virtual ~Disposable();
 
-    // TODO: experimental, need explanation of approach!
+    // TODO: need explanation of approach!
     virtual void schedule_removal();
 
-    // statics
-    static void on_removal(uv_idle_t* handle);
-
-protected:
-    EventLoop* m_loop;
+private:
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 } // namespace io

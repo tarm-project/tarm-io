@@ -13,10 +13,33 @@
 #include <memory>
 #include <cstring>
 
+//#include <uv.h>
+
 namespace io {
 
-// TODO: move
-struct StatData : public uv_stat_t {
+// TODO: move and cover by static asserts
+typedef struct {
+  long tv_sec;
+  long tv_nsec;
+} timespec_t;
+
+struct StatData /* : public uv_stat_t */ {
+  std::uint64_t st_dev;
+  std::uint64_t st_mode;
+  std::uint64_t st_nlink;
+  std::uint64_t st_uid;
+  std::uint64_t st_gid;
+  std::uint64_t st_rdev;
+  std::uint64_t st_ino;
+  std::uint64_t st_size;
+  std::uint64_t st_blksize;
+  std::uint64_t st_blocks;
+  std::uint64_t st_flags;
+  std::uint64_t st_gen;
+  timespec_t st_atim;
+  timespec_t st_mtim;
+  timespec_t st_ctim;
+  timespec_t st_birthtim;
 };
 
 class File : public Disposable,
