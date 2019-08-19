@@ -45,13 +45,13 @@ target_link_libraries(${TESTS_EXE_NAME}
     Boost::filesystem
 )
 
-add_custom_target(printFooKeys
-  COMMAND ${CMAKE_COMMAND} -E
-    echo $<GENEX_EVAL:$<TARGET_PROPERTY:GTest::gtest,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>>
-  COMMAND ${CMAKE_COMMAND} -E
-    echo $<GENEX_EVAL:$<UPPER_CASE:$<CONFIG>>>
-)
-add_dependencies(io printFooKeys)
+#add_custom_target(printFooKeys
+#  COMMAND ${CMAKE_COMMAND} -E
+#    echo $<GENEX_EVAL:$<TARGET_PROPERTY:GTest::gtest,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>>
+#  COMMAND ${CMAKE_COMMAND} -E
+#    echo $<GENEX_EVAL:$<UPPER_CASE:$<CONFIG>>>
+#)
+#add_dependencies(io printFooKeys)
 
 if(WIN32) # AND BUILD_SHARED_LIBS
     add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD # Adds a post-build event to MyTest
