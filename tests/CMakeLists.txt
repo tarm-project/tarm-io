@@ -53,6 +53,7 @@ target_link_libraries(${TESTS_EXE_NAME}
 #)
 #add_dependencies(io printFooKeys)
 
+# TODO: replace hardcoded 'tests' with ${TESTS_EXE_NAME}
 if(WIN32) # AND BUILD_SHARED_LIBS
     add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD # Adds a post-build event to MyTest
       COMMAND ${CMAKE_COMMAND} -E copy_if_different      # which executes "cmake - E copy_if_different..."
