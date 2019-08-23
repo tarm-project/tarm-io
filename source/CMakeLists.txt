@@ -39,12 +39,14 @@ if (DEFINED IO_SANITIZER)
 else()
     target_link_libraries(io ${LIBUV_STATIC_LIB_PATH} ${LIBUV_LIB_DEPS})
 endif()
-target_include_directories(io PUBLIC $<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>)
-target_include_directories(io PUBLIC ${LIBUV_INCLUDE_PATH})
+#target_include_directories(io PUBLIC $<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>)
+#target_include_directories(io PUBLIC ${LIBUV_INCLUDE_PATH})
+target_include_directories(io PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>>)
+target_include_directories(io PUBLIC $<BUILD_INTERFACE:${LIBUV_INCLUDE_PATH}>)
 target_compile_definitions(io PUBLIC IO_BUILDING_DLL)
 add_dependencies(io libuv)
 
-target_include_directories(io PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 #include_directories(${LIBUV_INCLUDE_DIR})
 
 # headers installation
@@ -54,7 +56,7 @@ install(DIRECTORY io DESTINATION include
    FILES_MATCHING PATTERN *.h
    PATTERN detail EXCLUDE)
 
-install(TARGETS io
+install(TARGETS io EXPORT ioTargets
     LIBRARY
         DESTINATION lib
         COMPONENT Libraries
@@ -63,3 +65,43 @@ install(TARGETS io
 #        DESTINATION include
 #        COMPONENT Development
 )
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+set(cmake_package_name io)
+set(targets_export_name ${cmake_package_name}Targets CACHE INTERNAL "")
+set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated" CACHE INTERNAL "")
+set(cmake_files_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${cmake_package_name}")
+set(version_file "${generated_dir}/${cmake_package_name}ConfigVersion.cmake")
+write_basic_package_version_file(${version_file} COMPATIBILITY AnyNewerVersion)
+install(EXPORT ${targets_export_name}
+  NAMESPACE ${cmake_package_name}::
+  DESTINATION ${cmake_files_install_dir})
+set(config_file "${generated_dir}/${cmake_package_name}Config.cmake")
+configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/ioConfig.cmake.in"
+  "${config_file}" INSTALL_DESTINATION ${cmake_files_install_dir})
+install(FILES ${version_file} ${config_file}
+  DESTINATION ${cmake_files_install_dir})
+
+#export(EXPORT ClimbingStatsTargets
+#  FILE "${CMAKE_CURRENT_BINARY_DIR}/ClimbingStats/ClimbingStatsTargets.cmake"
+#  NAMESPACE Upstream::
+#)
+
+#set(INCLUDE_INSTALL_DIR include/)
+#set(LIB_INSTALL_DIR lib/)
+#set(SYSCONFIG_INSTALL_DIR etc/io/)
+#
+#include(CMakePackageConfigHelpers)
+#configure_package_config_file(ioConfig.cmake.in
+#  ${CMAKE_CURRENT_BINARY_DIR}/ioConfig.cmake
+#  INSTALL_DESTINATION ${LIB_INSTALL_DIR}/cmake/io
+#  PATH_VARS INCLUDE_INSTALL_DIR SYSCONFIG_INSTALL_DIR)
+#write_basic_package_version_file(
+#  ${CMAKE_CURRENT_BINARY_DIR}/ioConfigVersion.cmake
+#  VERSION ${PROJECT_VERSION}
+#  COMPATIBILITY SameMajorVersion)
+#
+#install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ioConfig.cmake
+#              ${CMAKE_CURRENT_BINARY_DIR}/ioConfigVersion.cmake
+#        DESTINATION ${LIB_INSTALL_DIR}/cmake/io )
