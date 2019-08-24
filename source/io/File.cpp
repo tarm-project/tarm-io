@@ -35,7 +35,7 @@ public:
     void read(ReadCallback callback);
     void read(ReadCallback read_callback, EndReadCallback end_read_callback);
 
-    void read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback);
+    void read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback);
 
     const std::string& path() const;
 
@@ -76,7 +76,7 @@ private:
     // TODO: it may be not reasonable to store by pointers here because they take to much space (>400b)
     //       also memory pool will help a lot
     uv_fs_t* m_open_request = nullptr;
-    decltype(uv_fs_t::result) m_file_handle = -1;
+    uv_file m_file_handle = -1;
     uv_fs_t m_stat_req;
     uv_fs_t m_write_req;
 
@@ -199,7 +199,7 @@ struct ReadBlockReq : public uv_fs_t {
 
 } // namespace
 
-void File::Impl::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback) {
+void File::Impl::read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback) {
     if (!is_open()) {
         if (read_callback) {
             read_callback(*m_parent, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
@@ -280,7 +280,7 @@ void File::Impl::schedule_read(ReadRequest& req) {
     }
 
     // TODO: comments on this shared pointer
-    req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* p) {
+    req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* /*p*/) {
         IO_LOG(this->m_loop, TRACE, this->m_path, "buffer freed");
 
         req.is_free = true;
@@ -336,7 +336,7 @@ void File::Impl::on_open(uv_fs_t* req) {
 
     Status status(req->result > 0 ? 0 : req->result);
     if (status.ok()) {
-        this_.m_file_handle = req->result;
+        this_.m_file_handle = static_cast<uv_file>(req->result);
     }
 
     if (this_.m_open_callback) {
@@ -367,7 +367,7 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
     if (req.result < 0) {
         // TODO: error handling!
 
-        IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(req.result));
+        IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(static_cast<int>(req.result)));
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             io::Status status(0);
@@ -397,7 +397,7 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         this_.m_done_read = true;
         req.buf.reset();
 
-        IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(req.result));
+        IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(static_cast<int>(req.result)));
 
         if (this_.m_read_callback) {
             io::Status status(req.result);
@@ -465,7 +465,7 @@ void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     return m_impl->read(read_callback, end_read_callback);
 }
 
-void File::read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback) {
+void File::read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback) {
     return m_impl->read_block(offset, bytes_count, read_callback);
 }
 

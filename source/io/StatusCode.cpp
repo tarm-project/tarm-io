@@ -4,7 +4,7 @@
 
 namespace io {
 
-StatusCode convert_from_uv(int libuv_code) {
+StatusCode convert_from_uv(std::int64_t libuv_code) {
     switch (libuv_code) {
         case 0:
             return StatusCode::OK;

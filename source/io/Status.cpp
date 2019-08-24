@@ -4,7 +4,7 @@
 
 namespace io {
 
-Status::Status(ssize_t libuv_code) {
+Status::Status(std::int64_t libuv_code) {
     if (libuv_code < 0) {
         m_libuv_code = libuv_code;
         m_status_code = convert_from_uv(libuv_code);
@@ -28,7 +28,7 @@ std::string Status::as_string() const {
         return "Unknow status code from libuv: " + std::to_string(m_libuv_code);
     }
 
-    return uv_strerror(m_libuv_code);
+    return uv_strerror(static_cast<int>(m_libuv_code));
 }
 
 bool Status::ok() const {

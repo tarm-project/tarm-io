@@ -3,6 +3,11 @@
 #include "Export.h"
 
 #include <uv.h>
+
+#ifdef ERROR
+    #undef ERROR
+#endif // ERROR
+
 #include <cstdint>
 #include <string>
 

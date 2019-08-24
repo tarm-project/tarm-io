@@ -71,7 +71,7 @@ DirectoryEntryType convert_direntry_type(uv_dirent_type_t type) {
             return DirectoryEntryType::UNKNOWN;
     }
 
-    return DirectoryEntryType::UNKNOWN;
+    //return DirectoryEntryType::UNKNOWN;
 }
 
 }

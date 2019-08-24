@@ -7,13 +7,13 @@
 
 namespace io {
 
-class IO_DLL_PUBLIC Disposable {
+class Disposable {
 public:
-    Disposable(EventLoop& loop);
-    virtual ~Disposable();
+    IO_DLL_PUBLIC Disposable(EventLoop& loop);
+    IO_DLL_PUBLIC virtual ~Disposable();
 
     // TODO: need explanation of approach!
-    virtual void schedule_removal();
+    IO_DLL_PUBLIC virtual void schedule_removal();
 
 private:
     class Impl;

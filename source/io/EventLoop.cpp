@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Logger.h"
 #include "ScopeExitGuard.h"
+#include "Status.h"
 #include "global/Configuration.h"
 
 #include <unordered_map>
@@ -179,10 +180,14 @@ void EventLoop::Impl::add_work(WorkCallbackType work_callback, WorkDoneCallbackT
     auto work = new Work<WorkCallbackType, WorkDoneCallbackType>;
     work->work_callback = work_callback;
     work->work_done_callback = work_done_callback;
-    int status = uv_queue_work(this,
-                               work,
-                               on_work<WorkCallbackType, WorkDoneCallbackType>,
-                               on_after_work<WorkCallbackType, WorkDoneCallbackType>);
+    Status status = uv_queue_work(this,
+                                  work,
+                                  on_work<WorkCallbackType, WorkDoneCallbackType>,
+                                  on_after_work<WorkCallbackType, WorkDoneCallbackType>);
+    if (status.fail()) {
+        // TODO: error handling
+    }
+
 }
 
 int EventLoop::Impl::run() {

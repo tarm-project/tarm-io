@@ -3,7 +3,8 @@
 #include "Export.h"
 
 #ifdef _WIN32
-    #include <Winsock.h>
+    //#include <Winsock.h>
+#include <Winsock2.h>
 #else
     #include <netinet/in.h>
 #endif

@@ -8,6 +8,10 @@
 
 namespace io {
 
+//#ifdef _MSC_VER
+//    using ssize_t = intptr_t;
+//#endif
+
 enum class StatusCode : uint32_t {
     OK = 0,
     UNDEFINED,
@@ -89,7 +93,7 @@ enum class StatusCode : uint32_t {
     TOO_MANY_LINKS,
 };
 
-StatusCode convert_from_uv(int libuv_code);
+StatusCode convert_from_uv(std::int64_t libuv_code);
 
 // TODO: move
 template<typename T>

@@ -62,7 +62,7 @@ public:
     IO_DLL_PUBLIC void read(ReadCallback callback);
     IO_DLL_PUBLIC void read(ReadCallback read_callback, EndReadCallback end_read_callback);
 
-    IO_DLL_PUBLIC void read_block(off_t offset, std::size_t bytes_count, ReadCallback read_callback);
+    IO_DLL_PUBLIC void read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback);
 
     IO_DLL_PUBLIC const std::string& path() const;
 
