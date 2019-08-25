@@ -250,7 +250,18 @@ void on_make_dir(uv_fs_t* uv_request) {
     auto& request = *reinterpret_cast<RequestWithCallback<MakeDirCallback>*>(uv_request);
 
     if (request.callback) {
-        request.callback(Status(request.result));
+        Status status = request.result;
+
+#ifdef _MSC_VER
+        // CreateDirectory function on Windows returns only 2 values on error
+        // ERROR_ALREADY_EXISTS and ERROR_PATH_NOT_FOUND
+        // to make bahavior consistent between platforms we handle case of long name errors manually
+        if (status.fail() && strlen(request.path) + 1 > MAX_PATH) { // +1 is for 0 terminating char
+            status = Status(StatusCode::NAME_TOO_LONG);
+        }
+#endif // _MSC_VER
+
+        request.callback(status);
     }
 
     uv_fs_req_cleanup(uv_request);
