@@ -35,15 +35,20 @@ endif()
 add_library(io SHARED ${IO_SOURCE_LIST})
 #set_target_properties(io PROPERTIES PUBLIC_HEADER "${IO_HEADERS_LIST}")
 if (DEFINED IO_SANITIZER)
-    target_link_libraries(io ${LIBUV_DYNAMIC_LIB_PATH} ${LIBUV_LIB_DEPS})
+    target_link_libraries(io
+                          PRIVATE ${LIBUV_DYNAMIC_LIB_PATH}
+                          PUBLIC ${LIBUV_LIB_DEPS})
 else()
-    target_link_libraries(io ${LIBUV_STATIC_LIB_PATH} ${LIBUV_LIB_DEPS})
+    target_link_libraries(io
+                          PRIVATE ${LIBUV_STATIC_LIB_PATH}
+                          PUBLIC ${LIBUV_LIB_DEPS})
 endif()
 #target_include_directories(io PUBLIC $<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>)
 #target_include_directories(io PUBLIC ${LIBUV_INCLUDE_PATH})
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>>)
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:${LIBUV_INCLUDE_PATH}>)
-target_compile_definitions(io PUBLIC IO_BUILDING_DLL)
+target_include_directories(io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
+target_compile_definitions(io PRIVATE IO_BUILDING_DLL)
 add_dependencies(io libuv)
 
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
