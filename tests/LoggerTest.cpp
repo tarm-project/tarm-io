@@ -1,5 +1,7 @@
 #include "UTCommon.h"
 
+#include "io/detail/ConstexprString.h"
+
 #include "io/Logger.h"
 
 struct LoggerTest : public testing::Test,

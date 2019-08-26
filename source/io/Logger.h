@@ -1,7 +1,5 @@
 #pragma once
 
-#include "detail/ConstexprString.h"
-
 #include "Export.h"
 
 #include <functional>

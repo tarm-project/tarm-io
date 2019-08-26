@@ -2,6 +2,8 @@
 
 #include "Export.h"
 
+#include "detail/ConstexprString.h"
+
 #include <uv.h>
 
 #ifdef ERROR
