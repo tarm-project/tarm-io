@@ -238,7 +238,7 @@ TEST_F(EventLoopTest, execute_on_loop_thread_from_main_thread) {
     EXPECT_EQ(1, execute_on_loop_thread_call_counter);
 }
 
-TEST_F(EventLoopTest, DISABLED_execute_on_loop_thread_nested) {
+TEST_F(EventLoopTest, execute_on_loop_thread_nested) {
     io::EventLoop loop;
 
     auto main_thread_id = std::this_thread::get_id();

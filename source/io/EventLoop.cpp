@@ -107,6 +107,7 @@ EventLoop::Impl::Impl(EventLoop& loop) :
     uv_loop_init(this);
     m_async->data = this;
     uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
+
     uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
 }
 
@@ -263,6 +264,7 @@ void EventLoop::Impl::execute_on_loop_thread(AsyncCallback callback) {
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
         m_callbacks_queue.push_back(callback);
+        uv_ref(reinterpret_cast<uv_handle_t*>(m_async.get()));
     }
 
     uv_async_send(m_async.get());
@@ -278,6 +280,7 @@ void EventLoop::Impl::execute_pending_callbacks() {
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
         m_callbacks_queue.swap(callbacks_queue_copy);
+        uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
     }
 
     for(auto& callback : callbacks_queue_copy) {
