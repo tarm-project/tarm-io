@@ -6,8 +6,8 @@
 #include <memory>
 
 namespace io {
-// TODO: fix on Linux
-class /*IO_DLL_PUBLIC*/ Disposable {
+
+class IO_DLL_PUBLIC_CLASS_UNIX_ONLY Disposable {
 public:
     IO_DLL_PUBLIC Disposable(EventLoop& loop);
     IO_DLL_PUBLIC virtual ~Disposable();

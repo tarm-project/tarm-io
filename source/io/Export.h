@@ -18,12 +18,15 @@
     #endif
 
     #define IO_DLL_PRIVATE
+    #define IO_DLL_PUBLIC_CLASS_UNIX_ONLY
 #else
-    #if __GNUC__ >= 4
-        #define IO_DLL_PUBLIC __attribute__ ((visibility ("default")))
-        #define IO_DLL_PRIVATE  __attribute__ ((visibility ("hidden")))
-    #else
-        #define IO_DLL_PUBLIC
-        #define IO_DLL_PRIVATE
-    #endif
+    #define IO_DLL_PUBLIC __attribute__ ((visibility ("default")))
+    #define IO_DLL_PRIVATE  __attribute__ ((visibility ("hidden")))
+
+    // This is a workaround to problem of export typeinfo for classes on Unix.
+    // Unfortunately if some member of class is exported, typeinfo is not.
+    // And there is no easy way to do this explicitly.
+    // But on Windows if we export entire class it is exported with all data members
+    // which is not desirable and produce warnings. So this intermediate solution was introduced.
+    #define IO_DLL_PUBLIC_CLASS_UNIX_ONLY IO_DLL_PUBLIC
 #endif
