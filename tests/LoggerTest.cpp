@@ -85,7 +85,7 @@ TEST_F(LoggerTest, log_with_file_and_line) {
 TEST_F(LoggerTest, log_via_macro) {
     io::Logger logger;
     logger.enable_log([](const std::string& message) {
-        EXPECT_EQ("[WARNING] [LoggerTest.cpp:88] (TestBody) Message 12345", message);
+        EXPECT_EQ("[WARNING] [LoggerTest.cpp:90] (TestBody) Message 12345", message);
     });
     IO_LOG((&logger), WARNING, "Message", 12345);
 }
@@ -95,7 +95,7 @@ TEST_F(LoggerTest, log_pointer) {
 
     io::Logger logger;
     logger.enable_log([](const std::string& message) {
-        EXPECT_NE(std::string::npos, message.find("[ERROR] [LoggerTest.cpp:98] (TestBody) Message 0x"));
+        EXPECT_NE(std::string::npos, message.find("[ERROR] [LoggerTest.cpp:100] (TestBody) Message 0x"));
     });
     IO_LOG((&logger), ERROR, "Message", ptr.get());
 }
