@@ -6,17 +6,14 @@
 #include <memory>
 
 namespace io {
-
-// https://stackoverflow.com/questions/767579/exporting-classes-containing-std-objects-vector-map-etc-from-a-dll
-// template class DLL_EXPORT std::allocator<tCharGlyphProviderRef>;
-
-class IO_DLL_PUBLIC Disposable {
+// TODO: fix on Linux
+class /*IO_DLL_PUBLIC*/ Disposable {
 public:
-    Disposable(EventLoop& loop);
-    virtual ~Disposable();
+    IO_DLL_PUBLIC Disposable(EventLoop& loop);
+    IO_DLL_PUBLIC virtual ~Disposable();
 
     // TODO: need explanation of approach!
-    virtual void schedule_removal();
+    IO_DLL_PUBLIC virtual void schedule_removal();
 
 private:
     class Impl;
