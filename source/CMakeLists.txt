@@ -88,11 +88,13 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/ioConfig.cmake.in"
 install(FILES ${version_file} ${config_file}
   DESTINATION ${cmake_files_install_dir})
 
-add_custom_command(TARGET io POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          "${CMAKE_BINARY_DIR}/source/$<CONFIG>/io.dll"
-          "${CMAKE_BINARY_DIR}/tests/$<CONFIG>/"
-          )
+if(WIN32) # AND BUILD_SHARED_LIBS
+    add_custom_command(TARGET io POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              "${CMAKE_BINARY_DIR}/source/$<CONFIG>/io.dll"
+              "${CMAKE_BINARY_DIR}/tests/$<CONFIG>/"
+              )
+endif()
 
 #export(EXPORT ClimbingStatsTargets
 #  FILE "${CMAKE_CURRENT_BINARY_DIR}/ClimbingStats/ClimbingStatsTargets.cmake"
