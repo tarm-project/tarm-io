@@ -12,7 +12,7 @@ namespace io {
 class EventLoop : public Logger,
                   public UserDataHolder {
 public:
-    using AsyncCallback = std::function<void()>;
+    using AsyncCallback = std::function<void()>; // TODO find better name than AsyncCallback
     using EachLoopCycleCallback = std::function<void()>;
 
     using WorkCallback = std::function<void()>;

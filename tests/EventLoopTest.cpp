@@ -222,15 +222,49 @@ TEST_F(EventLoopTest, execute_on_loop_thread_from_main_thread) {
     io::EventLoop loop;
 
     auto main_thread_id = std::this_thread::get_id();
-    bool execute_on_loop_thread_called = false;
+    int execute_on_loop_thread_call_counter = 0;
 
-    loop.execute_on_loop_thread([&main_thread_id, &execute_on_loop_thread_called](){
+    loop.execute_on_loop_thread([&main_thread_id, &execute_on_loop_thread_call_counter](){
         ASSERT_EQ(main_thread_id, std::this_thread::get_id());
-        execute_on_loop_thread_called = true;
+        ++execute_on_loop_thread_call_counter;
     });
 
+    EXPECT_EQ(0, execute_on_loop_thread_call_counter);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    EXPECT_EQ(0, execute_on_loop_thread_call_counter);
     ASSERT_EQ(0, loop.run());
-    EXPECT_TRUE(execute_on_loop_thread_called);
+    EXPECT_EQ(1, execute_on_loop_thread_call_counter);
+}
+
+TEST_F(EventLoopTest, DISABLED_execute_on_loop_thread_nested) {
+    io::EventLoop loop;
+
+    auto main_thread_id = std::this_thread::get_id();
+    int execute_on_loop_thread_call_counter_1 = 0;
+    int execute_on_loop_thread_call_counter_2 = 0;
+
+    loop.execute_on_loop_thread([&]() {
+        ASSERT_EQ(main_thread_id, std::this_thread::get_id());
+        ++execute_on_loop_thread_call_counter_1;
+
+        loop.execute_on_loop_thread([&]() {
+            ASSERT_EQ(main_thread_id, std::this_thread::get_id());
+            ++execute_on_loop_thread_call_counter_2;
+        });
+    });
+
+    EXPECT_EQ(0, execute_on_loop_thread_call_counter_1);
+    EXPECT_EQ(0, execute_on_loop_thread_call_counter_2);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    EXPECT_EQ(0, execute_on_loop_thread_call_counter_1);
+    EXPECT_EQ(0, execute_on_loop_thread_call_counter_2);
+    ASSERT_EQ(0, loop.run());
+    EXPECT_EQ(1, execute_on_loop_thread_call_counter_1);
+    EXPECT_EQ(1, execute_on_loop_thread_call_counter_2);
 }
 
 TEST_F(EventLoopTest, execute_on_loop_thread_from_other_thread) {

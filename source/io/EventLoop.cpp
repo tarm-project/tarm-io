@@ -62,6 +62,8 @@ public:
     bool is_running() const;
 
 protected:
+    void execute_pending_callbacks();
+
     // statics
     template<typename WorkCallbackType, typename WorkDoneCallbackType>
     static void on_work(uv_work_t* req);
@@ -195,15 +197,8 @@ int EventLoop::Impl::run() {
     int run_status = uv_run(this, UV_RUN_DEFAULT);
     m_is_running = false;
 
-    {
-        std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
-
-        IO_LOG(m_loop, DEBUG, "pending async events count:", m_callbacks_queue.size());
-
-        for(auto& callback : m_callbacks_queue) {
-            callback();
-        }
-    }
+    IO_LOG(m_loop, DEBUG, "Pending async events count after loop run:", m_callbacks_queue.size());
+    execute_pending_callbacks();
 
     return run_status;
 }
@@ -277,6 +272,19 @@ bool EventLoop::Impl::is_running() const {
     return m_is_running;
 }
 
+void EventLoop::Impl::execute_pending_callbacks() {
+    std::deque<std::function<void()>> callbacks_queue_copy;
+
+    {
+        std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
+        m_callbacks_queue.swap(callbacks_queue_copy);
+    }
+
+    for(auto& callback : callbacks_queue_copy) {
+        callback();
+    }
+}
+
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 template<typename WorkCallbackType, typename WorkDoneCallbackType>
 void EventLoop::Impl::on_work(uv_work_t* req) {
@@ -320,26 +328,7 @@ void EventLoop::Impl::on_each_loop_cycle_handler_close(uv_handle_t* handle) {
 
 void EventLoop::Impl::on_async(uv_async_t* handle) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
-
-    {
-        std::lock_guard<std::mutex> guard(this_.m_callbacks_queue_mutex);
-        for(auto& callback : this_.m_callbacks_queue) {
-            callback();
-        }
-
-        this_.m_callbacks_queue.clear();
-    }
-
-    /*
-    auto& async = *reinterpret_cast<Async*>(handle);
-    ScopeExitGuard scope_guard([&async](){
-        delete &async;
-    });
-
-    async.callback();
-
-    uv_close(reinterpret_cast<uv_handle_t*>(handle), nullptr);
-    */
+    this_.execute_pending_callbacks();
 }
 
 void EventLoop::Impl::on_dummy_idle_tick(uv_timer_t* handle) {
