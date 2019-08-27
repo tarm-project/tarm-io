@@ -33,26 +33,26 @@ public:
     IO_DLL_PUBLIC void enable_log(Callback callback);
 
     template<typename... T>
-    IO_DLL_PUBLIC void log(Severity severity, T... t);
+    void log(Severity severity, T... t);
 
     template<typename... T>
-    IO_DLL_PUBLIC void log_with_compile_context(Severity severity, const char* const file, std::size_t line, const char* const func, T... t);
+    void log_with_compile_context(Severity severity, const char* const file, std::size_t line, const char* const func, T... t);
 
 private:
     template<typename M, typename... T>
-    IO_DLL_PUBLIC void log_impl(std::ostream& os, const M& message_chunk, T... t) {
+    void log_impl(std::ostream& os, const M& message_chunk, T... t) {
         os << " " << message_chunk;
         log_impl(os, t...);
     }
 
     template<typename M>
-    IO_DLL_PUBLIC void log_impl(std::ostream& os, const M& message_chunk) {
+    void log_impl(std::ostream& os, const M& message_chunk) {
         os << " " << message_chunk;
     }
 
     // Specialisations with pointer work perfectly fine with char* so additional one for char* case is not needed here
     template<typename M, typename... T>
-    IO_DLL_PUBLIC void log_impl(std::ostream& os, const M* message_chunk, T... t) {
+    void log_impl(std::ostream& os, const M* message_chunk, T... t) {
         std::ios_base::fmtflags format_flags(os.flags());
         os << " " << std::hex << message_chunk;
         os.flags(format_flags);
@@ -60,7 +60,7 @@ private:
     }
 
     template<typename M>
-    IO_DLL_PUBLIC void log_impl(std::ostream& os, const M* message_chunk) {
+    void log_impl(std::ostream& os, const M* message_chunk) {
         std::ios_base::fmtflags format_flags(os.flags());
         os << " " << std::hex << message_chunk;
         os.flags(format_flags);
