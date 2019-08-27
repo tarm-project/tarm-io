@@ -6,9 +6,10 @@
 #include <iomanip>
 #include <ostream>
 #include <sstream>
+#include <type_traits>
 
 #ifdef _MSC_VER
-#define __func__ __FUNCTION__
+//#define __func__ __FUNCTION__
 #endif
 
 #define IO_LOG(LOGGER_PTR, SEVERITY, ...) (LOGGER_PTR)->log_with_compile_context(io::Logger::Severity::SEVERITY, ::io::detail::extract_file_name_from_path(__FILE__), __LINE__, __func__, __VA_ARGS__);
@@ -39,31 +40,47 @@ public:
     void log_with_compile_context(Severity severity, const char* const file, std::size_t line, const char* const func, T... t);
 
 private:
+    // TODO: get rid of copypaster
     template<typename M, typename... T>
-    void log_impl(std::ostream& os, const M& message_chunk, T... t) {
+    typename std::enable_if<!std::is_pointer<M>::value>::type
+    /*void*/ log_impl(std::ostream& os, const M& message_chunk, T... t) {
         os << " " << message_chunk;
         log_impl(os, t...);
     }
 
     template<typename M>
-    void log_impl(std::ostream& os, const M& message_chunk) {
+    typename std::enable_if<!std::is_pointer<M>::value>::type
+    /*void*/ log_impl(std::ostream& os, const M& message_chunk) {
         os << " " << message_chunk;
     }
 
-    // Specialisations with pointer work perfectly fine with char* so additional one for char* case is not needed here
     template<typename M, typename... T>
     void log_impl(std::ostream& os, const M* message_chunk, T... t) {
-        std::ios_base::fmtflags format_flags(os.flags());
-        os << " " << std::hex << message_chunk;
-        os.flags(format_flags);
+        os << " ";
+#ifdef _MSC_VER // Visual Studio  does not add 0x prefix for pointers
+        os << "0x";
+#endif // _MSC_VER 
+        os << message_chunk;
         log_impl(os, t...);
     }
 
     template<typename M>
-    void log_impl(std::ostream& os, const M* message_chunk) {
-        std::ios_base::fmtflags format_flags(os.flags());
-        os << " " << std::hex << message_chunk;
-        os.flags(format_flags);
+    void log_impl(std::ostream& os, const M* const message_chunk) {
+        os << " ";
+#ifdef _MSC_VER // Visual Studio  does not add 0x prefix for pointers
+        os << "0x";
+#endif // _MSC_VER 
+        os << message_chunk;
+    }
+
+    template<typename... T>
+    void log_impl(std::ostream& os, const char* message_chunk, T... t) {
+        os << " " << message_chunk;
+        log_impl(os, t...);
+    }
+
+    void log_impl(std::ostream& os, const char* message_chunk) {
+        os << " " << message_chunk;
     }
 
     IO_DLL_PUBLIC void out_common_prefix(std::ostream& ss, Logger::Severity severity);

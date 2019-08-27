@@ -94,7 +94,7 @@ TEST_F(LoggerTest, log_pointer) {
     std::unique_ptr<S> ptr(new S(42));
 
     io::Logger logger;
-    logger.enable_log([](const std::string& message) {
+    logger.enable_log([](const std::string& message) { std::cout << message << std::endl;
         EXPECT_NE(std::string::npos, message.find("[ERROR] [LoggerTest.cpp:100] (TestBody) Message 0x"));
     });
     IO_LOG((&logger), ERROR, "Message", ptr.get());
