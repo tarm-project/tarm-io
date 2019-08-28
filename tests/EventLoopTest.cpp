@@ -293,4 +293,52 @@ TEST_F(EventLoopTest, execute_on_loop_thread_from_other_thread) {
     EXPECT_TRUE(execute_on_loop_thread_called);
 }
 
-// TODO: same loop run several times with different callbacks each time
+TEST_F(EventLoopTest, run_loop_several_times) {
+    io::EventLoop loop;
+
+    int counter_1 = 0;
+    int counter_2 = 0;
+    int counter_3 = 0;
+
+    loop.execute_on_loop_thread([&]() {
+        ++counter_1;
+    });
+
+    EXPECT_EQ(0, counter_1);
+    EXPECT_EQ(0, counter_2);
+    EXPECT_EQ(0, counter_3);
+
+    ASSERT_EQ(0, loop.run()); // run 1
+
+    EXPECT_EQ(1, counter_1);
+    EXPECT_EQ(0, counter_2);
+    EXPECT_EQ(0, counter_3);
+
+    loop.execute_on_loop_thread([&]() {
+        ++counter_2;
+    });
+
+    EXPECT_EQ(1, counter_1);
+    EXPECT_EQ(0, counter_2);
+    EXPECT_EQ(0, counter_3);
+
+    ASSERT_EQ(0, loop.run()); // run 2
+
+    EXPECT_EQ(1, counter_1);
+    EXPECT_EQ(1, counter_2);
+    EXPECT_EQ(0, counter_3);
+
+    loop.execute_on_loop_thread([&]() {
+        ++counter_3;
+    });
+
+    EXPECT_EQ(1, counter_1);
+    EXPECT_EQ(1, counter_2);
+    EXPECT_EQ(0, counter_3);
+
+    ASSERT_EQ(0, loop.run()); // run 3
+
+    EXPECT_EQ(1, counter_1);
+    EXPECT_EQ(1, counter_2);
+    EXPECT_EQ(1, counter_3);
+}
