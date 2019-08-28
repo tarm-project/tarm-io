@@ -306,7 +306,7 @@ struct RemoveDirStatusContext {
 
 using RemoveDirWorkData = std::vector<RemoveDirWorkEntry>;
 
-RemoveDirStatusContext remove_dir_impl(uv_loop_t* uv_loop, const std::string& path, std::string subpath, RemoveDirWorkData& work_data) {
+RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const std::string& path, std::string subpath, RemoveDirWorkData& work_data) {
     work_data.back().processed = true;
 
     const std::string open_path = path + "/" + subpath;
@@ -359,7 +359,7 @@ RemoveDirStatusContext remove_dir_impl(uv_loop_t* uv_loop, const std::string& pa
     return {Status(0), ""};
 }
 
-void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
+void remove_dir_impl(EventLoop& loop, const std::string& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
     loop.add_work([&loop, path, progress_callback]() -> void* {
         auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
 
@@ -367,7 +367,7 @@ void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback remo
         work_data.emplace_back(""); // Current directory
 
         do {
-            const auto& status_context = remove_dir_impl(uv_loop, path, work_data.back().path, work_data);
+            const auto& status_context = remove_dir_entry(uv_loop, path, work_data.back().path, work_data);
             if (status_context.status.fail()) {
                 return new RemoveDirStatusContext(status_context);
             }
@@ -398,6 +398,16 @@ void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback remo
         remove_callback(status_context.status);
         delete &status_context;
     });
+}
+
+void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
+    if (loop.is_running()) {
+        remove_dir_impl(loop, path, remove_callback, progress_callback);
+    } else {
+        loop.execute_on_loop_thread([=, &loop](){
+            remove_dir_impl(loop, path, remove_callback, progress_callback);
+        });
+    }
 }
 
 } // namespace io
