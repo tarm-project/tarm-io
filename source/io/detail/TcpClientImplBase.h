@@ -13,7 +13,7 @@ public:
     TcpClientImplBase(EventLoop& loop, ParentType& parent);
     ~TcpClientImplBase();
 
-    void send_data(std::shared_ptr<const char> buffer, std::size_t size, typename ParentType::EndSendCallback callback);
+    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
 
     void set_ipv4_addr(std::uint32_t value);
@@ -86,7 +86,7 @@ void TcpClientImplBase<ParentType, ImplType>::init_stream() {
 }
 
 template<typename ParentType, typename ImplType>
-void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::size_t size, typename ParentType::EndSendCallback callback) {
+void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
     auto req = new WriteRequest;
     req->end_send_callback = callback;
     req->data = this;
@@ -113,7 +113,7 @@ template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::send_data(const std::string& message, typename ParentType::EndSendCallback callback) {
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
-    send_data(ptr, message.size(), callback);
+    send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
 }
 
 template<typename ParentType, typename ImplType>
@@ -177,7 +177,7 @@ void TcpClientImplBase<ParentType, ImplType>::alloc_read_buffer(uv_handle_t* han
         this_.m_read_buf_size = buf->len;
     } else {
         buf->base = this_.m_read_buf;
-        buf->len = this_.m_read_buf_size;
+        buf->len = static_cast<decltype(uv_buf_t::len)>(this_.m_read_buf_size);
     }
 }
 

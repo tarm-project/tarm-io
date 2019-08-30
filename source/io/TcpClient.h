@@ -35,7 +35,7 @@ public:
 
     IO_DLL_PUBLIC bool is_open() const;
 
-    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
 
     IO_DLL_PUBLIC void set_close_callback(CloseCallback callback);

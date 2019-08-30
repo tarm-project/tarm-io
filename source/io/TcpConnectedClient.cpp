@@ -193,7 +193,7 @@ bool TcpConnectedClient::is_open() const {
     return m_impl->is_open();
 }
 
-void TcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, EndSendCallback callback) {
+void TcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
     return m_impl->send_data(buffer, size, callback);
 }
 

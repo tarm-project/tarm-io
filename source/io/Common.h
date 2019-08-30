@@ -18,10 +18,8 @@
 
 namespace io {
 
-using AllocSizeType = decltype(uv_buf_t::len);
-
 IO_DLL_PUBLIC
-void default_alloc_buffer(uv_handle_t* /*handle*/, AllocSizeType suggested_size, uv_buf_t* buf);
+void default_alloc_buffer(uv_handle_t* /*handle*/, size_t suggested_size, uv_buf_t* buf);
 
 IO_DLL_PUBLIC
 std::string ip4_addr_to_string(std::uint32_t addr);

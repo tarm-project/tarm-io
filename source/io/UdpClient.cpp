@@ -12,7 +12,7 @@ public:
     Impl(EventLoop& loop, UdpClient& parent);
 
     void send_data(const std::string& message, std::uint32_t host, std::uint16_t port, EndSendCallback callback);
-    void send_data(std::shared_ptr<const char> buffer, std::size_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback);
+    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback);
 
     bool close_with_removal();
 
@@ -47,7 +47,7 @@ struct SendRequest : public uv_udp_send_t {
 
 } // namespace
 
-void UdpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::size_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback) {
+void UdpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback) {
     auto req = new SendRequest;
     req->end_send_callback = callback;
     req->data = this;
@@ -73,7 +73,7 @@ void UdpClient::Impl::send_data(const std::string& message, std::uint32_t host, 
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     //std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
     std::memcpy(ptr.get(), message.c_str(), message.size());
-    send_data(ptr, message.size(), host, port, callback);
+    send_data(ptr, static_cast<std::uint32_t>(message.size()), host, port, callback);
 }
 
 bool UdpClient::Impl::close_with_removal() {
@@ -121,7 +121,7 @@ void UdpClient::send_data(const std::string& message, std::uint32_t host, std::u
     return m_impl->send_data(message, host, port, callback);
 }
 
-void UdpClient::send_data(std::shared_ptr<const char> buffer, std::size_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback) {
+void UdpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback) {
     return m_impl->send_data(buffer, size, host, port, callback);
 }
 
