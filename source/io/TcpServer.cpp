@@ -193,7 +193,13 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
                 tcp_client->start_read(this_.m_data_receive_callback);
             } else {
-                tcp_client->close();
+                // TODO: need to investigate this. On Windows close() is immediate operation and any pending operations are discarded
+                //       On Unix at least for localhost close() does not discard immediately pending send operations.
+                //       See test server_disconnect_client_from_new_connection_callback for details
+                //       execute_on_loop_thread call was added here to make behavior on Windows consistent with Unix
+                this_.m_loop->execute_on_loop_thread([tcp_client]() {
+                    tcp_client->close();
+                });
             }
 
         } else {
