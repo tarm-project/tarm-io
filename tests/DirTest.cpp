@@ -8,9 +8,9 @@
 #include <vector>
 #include <thread>
 
-// TOOD: what about Windows here????
-#include <sys/stat.h>
-//#include <sys/sysmacros.h>
+#if defined(__APPLE__) || defined(__linux__)
+    #include <sys/stat.h>
+#endif
 
 struct DirTest : public testing::Test,
                  public LogRedirector {
@@ -191,6 +191,7 @@ TEST_F(DirTest, no_read_callback) {
     EXPECT_TRUE(end_read_called);
 }
 
+#if defined(__APPLE__) || defined(__linux__)
 TEST_F(DirTest, list_symlink) {
     auto file_path = m_tmp_test_dir / "some_file";
     {
@@ -198,7 +199,7 @@ TEST_F(DirTest, list_symlink) {
         ASSERT_FALSE(ofile.fail());
     }
 
-    boost::filesystem::create_symlink(file_path, m_tmp_test_dir / "link");
+    ASSERT_NO_THROW(boost::filesystem::create_symlink(file_path, m_tmp_test_dir / "link"));
 
     std::size_t entries_count = 0;
     bool link_found = false;
@@ -225,7 +226,6 @@ TEST_F(DirTest, list_symlink) {
     EXPECT_EQ(2, entries_count);
 }
 
-#if defined(__APPLE__) || defined(__linux__)
 TEST_F(DirTest, list_block_and_char_devices) {
     std::size_t block_devices_count = 0;
     std::size_t char_devices_count = 0;
