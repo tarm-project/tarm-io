@@ -49,6 +49,12 @@ target_include_directories(io PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:Boost::
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:${LIBUV_INCLUDE_PATH}>)
 target_include_directories(io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 target_compile_definitions(io PRIVATE IO_BUILDING_DLL)
+
+# TODO: no exceptions even in regular builds????
+if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
+    target_compile_options(io PRIVATE -fno-exceptions)
+endif()
+
 add_dependencies(io libuv)
 
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)

@@ -67,6 +67,7 @@ if (UNIX) # TODO: FIXME
     add_subdirectory("samples")
 endif()
 
+# TODO: move to test folder
 set(BUILD_WITH_TESTS ON)
 if (BUILD_WITH_TESTS)
     add_subdirectory(tests)
@@ -82,6 +83,7 @@ if (BUILD_WITH_TESTS)
             '*/include/node/*'
             '*/include/gtest/*'
             'tests/*'
+            'samples/*'
         )
 
         SETUP_TARGET_FOR_COVERAGE(
