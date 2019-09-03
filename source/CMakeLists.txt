@@ -12,6 +12,7 @@ list(APPEND IO_SOURCE_LIST
         io/Dir.cpp
         io/File.cpp
         io/Logger.cpp
+        io/StatData.cpp
         io/Status.cpp
         io/StatusCode.cpp
         io/Timer.cpp
@@ -24,7 +25,6 @@ list(APPEND IO_SOURCE_LIST
         io/UdpServer.cpp
         io/UserDataHolder.cpp
 )
-#include_directories("source")
 
 if (${CMAKE_VERSION} VERSION_LESS "3.8.2")
     source_group(io FILES ${IO_SOURCE_LIST})
@@ -33,7 +33,7 @@ else()
 endif()
 
 add_library(io SHARED ${IO_SOURCE_LIST})
-#set_target_properties(io PROPERTIES PUBLIC_HEADER "${IO_HEADERS_LIST}")
+
 if (DEFINED IO_SANITIZER)
     target_link_libraries(io
                           PRIVATE ${LIBUV_DYNAMIC_LIB_PATH}
@@ -43,10 +43,10 @@ else()
                           PRIVATE ${LIBUV_STATIC_LIB_PATH}
                           PUBLIC ${LIBUV_LIB_DEPS})
 endif()
-#target_include_directories(io PUBLIC $<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>)
-#target_include_directories(io PUBLIC ${LIBUV_INCLUDE_PATH})
+
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>>)
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:${LIBUV_INCLUDE_PATH}>)
+target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 target_include_directories(io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 target_compile_definitions(io PRIVATE IO_BUILDING_DLL)
 
@@ -57,10 +57,7 @@ endif()
 
 add_dependencies(io libuv)
 
-target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-#include_directories(${LIBUV_INCLUDE_DIR})
-
-# headers installation
+# installation
 # Unfortunately can not use target property PUBLIC_HEADER here
 # because of https://gitlab.kitware.com/cmake/cmake/issues/16739
 install(DIRECTORY io DESTINATION include
@@ -94,33 +91,10 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/ioConfig.cmake.in"
 install(FILES ${version_file} ${config_file}
   DESTINATION ${cmake_files_install_dir})
 
-if(WIN32) # AND BUILD_SHARED_LIBS
+if(WIN32) # TODO: AND BUILD_SHARED_LIBS
     add_custom_command(TARGET io POST_BUILD
           COMMAND ${CMAKE_COMMAND} -E copy_if_different
               "${CMAKE_BINARY_DIR}/source/$<CONFIG>/io.dll"
               "${CMAKE_BINARY_DIR}/tests/$<CONFIG>/"
               )
 endif()
-
-#export(EXPORT ClimbingStatsTargets
-#  FILE "${CMAKE_CURRENT_BINARY_DIR}/ClimbingStats/ClimbingStatsTargets.cmake"
-#  NAMESPACE Upstream::
-#)
-
-#set(INCLUDE_INSTALL_DIR include/)
-#set(LIB_INSTALL_DIR lib/)
-#set(SYSCONFIG_INSTALL_DIR etc/io/)
-#
-#include(CMakePackageConfigHelpers)
-#configure_package_config_file(ioConfig.cmake.in
-#  ${CMAKE_CURRENT_BINARY_DIR}/ioConfig.cmake
-#  INSTALL_DESTINATION ${LIB_INSTALL_DIR}/cmake/io
-#  PATH_VARS INCLUDE_INSTALL_DIR SYSCONFIG_INSTALL_DIR)
-#write_basic_package_version_file(
-#  ${CMAKE_CURRENT_BINARY_DIR}/ioConfigVersion.cmake
-#  VERSION ${PROJECT_VERSION}
-#  COMPATIBILITY SameMajorVersion)
-#
-#install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ioConfig.cmake
-#              ${CMAKE_CURRENT_BINARY_DIR}/ioConfigVersion.cmake
-#        DESTINATION ${LIB_INSTALL_DIR}/cmake/io )

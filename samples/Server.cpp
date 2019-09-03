@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
                 std::cout << "Opened file: " << file.path() << std::endl;
 
                 file.stat([](io::File& file, const io::StatData& stat) {
-                    std::cout << "File size is: " << stat.st_size << std::endl;
+                    std::cout << "File size is: " << stat.size << std::endl;
                 });
 
                 client.set_close_callback([&file](io::TcpConnectedClient& client, const io::Status& status){

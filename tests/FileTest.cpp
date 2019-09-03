@@ -798,13 +798,15 @@ TEST_F(FileTest, simple_stat) {
         ASSERT_TRUE(status.ok());
 
         file.stat([&SIZE](io::File& file, const io::StatData& stat){
-            EXPECT_EQ(SIZE, stat.st_size);
+            EXPECT_EQ(SIZE, stat.size);
         });
     });
 
     ASSERT_EQ(0, loop.run());
     file->schedule_removal();
 }
+
+// TODO: more tests for various fields of StatData
 
 TEST_F(FileTest, stat_not_existing) {
 }
