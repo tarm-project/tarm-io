@@ -148,6 +148,40 @@ TEST_F(PathTest, constructors) {
     EXPECT_EQ(xll.native().size(), 7U);
 }
 
+TEST_F(PathTest, assignments) {
+    m_x = path("yet another path");                      // another path
+    EXPECT_EQ(m_x, L"yet another path");
+    EXPECT_EQ(m_x.native().size(), 16U);
+
+    m_x = m_x;                                             // self-assignment
+    EXPECT_EQ(m_x, L"yet another path");
+    EXPECT_EQ(m_x.native().size(), 16U);
+
+    m_x.assign(m_l.begin(), m_l.end());                      // iterator range char
+    EXPECT_EQ(m_x, L"string");
+
+    m_x.assign(m_wl.begin(), m_wl.end());                    // iterator range wchar_t
+    EXPECT_EQ(m_x, L"wstring");
+
+    m_x = std::string("std::string");                         // container char
+    EXPECT_EQ(m_x, L"std::string");
+
+    m_x = std::wstring(L"std::wstring");                      // container wchar_t
+    EXPECT_EQ(m_x, L"std::wstring");
+
+    m_x = "array char";                                  // array char
+    EXPECT_EQ(m_x, L"array char");
+
+    m_x = L"array wchar";                                // array wchar_t
+    EXPECT_EQ(m_x, L"array wchar");
+
+    m_x = m_s.c_str();                                     // const char* null terminated
+    EXPECT_EQ(m_x, L"string");
+
+    m_x = m_ws.c_str();                                    // const wchar_t* null terminated
+    EXPECT_EQ(m_x, L"wstring");
+}
+
 TEST_F(PathTest, move_construction_and_assignment) {
     path from("long enough to avoid small object optimization");
     path to(std::move(from));
