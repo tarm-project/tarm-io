@@ -1577,6 +1577,67 @@ TEST_F(PathTest, lexically_normal_tests) {
 #endif
 }
 
+TEST_F(PathTest, lexically_relative_test) {
+    EXPECT_TRUE(path("").lexically_relative("") == "");
+    EXPECT_TRUE(path("").lexically_relative("/foo") == "");
+    EXPECT_TRUE(path("/foo").lexically_relative("") == "");
+    EXPECT_TRUE(path("/foo").lexically_relative("/foo") == ".");
+    EXPECT_TRUE(path("").lexically_relative("foo") == "");
+    EXPECT_TRUE(path("foo").lexically_relative("") == "");
+    EXPECT_TRUE(path("foo").lexically_relative("foo") == ".");
+
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a") == "b/c");
+    EXPECT_TRUE(path("a//b//c").lexically_relative("a") == "b/c");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b") == "c");
+    EXPECT_TRUE(path("a///b//c").lexically_relative("a//b") == "c");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/c") == ".");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/c/x") == "..");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/c/x/y") == "../..");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a/x") == "../b/c");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/x") == "../c");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a/x/y") == "../../b/c");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/x/y") == "../../c");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/c/x/y/z") == "../../..");
+
+    // paths unrelated except first element, and first element is root directory
+    EXPECT_TRUE(path("/a/b/c").lexically_relative("/x") == "../a/b/c");
+    EXPECT_TRUE(path("/a/b/c").lexically_relative("/x/y") == "../../a/b/c");
+    EXPECT_TRUE(path("/a/b/c").lexically_relative("/x/y/z") == "../../../a/b/c");
+
+    // paths unrelated
+    EXPECT_TRUE(path("a/b/c").lexically_relative("x") == "");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("x/y") == "");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("x/y/z") == "");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("/x") == "");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("/x/y") == "");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("/x/y/z") == "");
+    EXPECT_TRUE(path("a/b/c").lexically_relative("/a/b/c") == "");
+
+    // TODO: add some Windows-only test cases that probe presence or absence of
+    // drive specifier-and root-directory
+
+    //  Some tests from Jamie Allsop's paper
+    EXPECT_TRUE(path("/a/d").lexically_relative("/a/b/c") == "../../d");
+    EXPECT_TRUE(path("/a/b/c").lexically_relative("/a/d") == "../b/c");
+
+// TODO: fixme
+  #ifdef BOOST_WINDOWS_API
+    EXPECT_TRUE(path("c:\\y").lexically_relative("c:\\x") == "../y");
+  #else
+    EXPECT_TRUE(path("c:\\y").lexically_relative("c:\\x") == "");
+  #endif
+
+    EXPECT_TRUE(path("d:\\y").lexically_relative("c:\\x") == "");
+
+    //  From issue #1976
+    EXPECT_TRUE(path("/foo/new").lexically_relative("/foo/bar") == "../new");
+  }
+
+TEST_F(PathTest, lexically_proximate_test) {
+    // paths unrelated
+    EXPECT_TRUE(path("a/b/c").lexically_proximate("x") == "a/b/c");
+}
+
 namespace {
 
 inline void odr_use(const path::value_type& c) {
