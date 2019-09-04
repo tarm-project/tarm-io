@@ -145,6 +145,20 @@ TEST_F(PathTest, test_constructors) {
     EXPECT_EQ(xll.native().size(), 7U);
 }
 
+TEST_F(PathTest, move_construction_and_assignment) {
+    path from("long enough to avoid small object optimization");
+    path to(std::move(from));
+    EXPECT_TRUE(to == "long enough to avoid small object optimization");
+    EXPECT_TRUE(from.empty());
+
+    path from2("long enough to avoid small object optimization");
+    path to2;
+    to2 = std::move(from2);
+    EXPECT_TRUE(to2 == "long enough to avoid small object optimization");
+    EXPECT_TRUE(from2.empty());
+
+  }
+
 TEST_F(PathTest, iterator_tests) {
     path itr_ck = "";
     path::const_iterator itr = itr_ck.begin();
