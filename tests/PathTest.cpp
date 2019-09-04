@@ -319,6 +319,54 @@ TEST_F(PathTest, concats) {
     EXPECT_EQ(m_x, L"foo-x");
 }
 
+TEST_F(PathTest, observers) {
+    path p0("abc");
+
+    EXPECT_TRUE(p0.native().size() == 3);
+    EXPECT_TRUE(p0.size() == 3);
+    EXPECT_TRUE(p0.string() == "abc");
+    EXPECT_TRUE(p0.string().size() == 3);
+    EXPECT_TRUE(p0.wstring() == L"abc");
+    EXPECT_TRUE(p0.wstring().size() == 3);
+
+    p0 = "";
+    EXPECT_TRUE(p0.native().size() == 0);
+    EXPECT_TRUE(p0.size() == 0);
+
+// TODO: fixme
+# ifdef BOOST_WINDOWS_API
+    path p("abc\\def/ghi");
+
+    EXPECT_TRUE(std::wstring(p.c_str()) == L"abc\\def/ghi");
+
+    EXPECT_TRUE(p.string() == "abc\\def/ghi");
+    EXPECT_TRUE(p.wstring() == L"abc\\def/ghi");
+
+    EXPECT_TRUE(p.generic_path().string() == "abc/def/ghi");
+    EXPECT_TRUE(p.generic_string() == "abc/def/ghi");
+    EXPECT_TRUE(p.generic_wstring() == L"abc/def/ghi");
+
+    EXPECT_TRUE(p.generic_string<std::string>() == "abc/def/ghi");
+    EXPECT_TRUE(p.generic_string<std::wstring>() == L"abc/def/ghi");
+    EXPECT_TRUE(p.generic_string<path::string_type>() == L"abc/def/ghi");
+# else  // BOOST_POSIX_API
+    path p("abc\\def/ghi");
+
+    EXPECT_TRUE(std::string(p.c_str()) == "abc\\def/ghi");
+
+    EXPECT_TRUE(p.string() == "abc\\def/ghi");
+    EXPECT_TRUE(p.wstring() == L"abc\\def/ghi");
+
+    EXPECT_TRUE(p.generic_path().string() == "abc\\def/ghi");
+    EXPECT_TRUE(p.generic_string() == "abc\\def/ghi");
+    EXPECT_TRUE(p.generic_wstring() == L"abc\\def/ghi");
+
+    EXPECT_TRUE(p.generic_string<std::string>() == "abc\\def/ghi");
+    EXPECT_TRUE(p.generic_string<std::wstring>() == L"abc\\def/ghi");
+    EXPECT_TRUE(p.generic_string<path::string_type>() == "abc\\def/ghi");
+# endif
+}
+
 TEST_F(PathTest, iterator_tests) {
     path itr_ck = "";
     path::const_iterator itr = itr_ck.begin();
