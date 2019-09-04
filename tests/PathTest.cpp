@@ -4,6 +4,8 @@
 
 #include "io/Path.h"
 
+#include <boost/functional/hash.hpp>
+
 #include <iterator>
 #include <string>
 
@@ -367,7 +369,63 @@ TEST_F(PathTest, observers) {
 # endif
 }
 
-TEST_F(PathTest, iterator_tests) {
+TEST_F(PathTest, relationals) {
+    boost::hash<path> hash;
+
+# ifdef BOOST_WINDOWS_API
+    // this is a critical use case to meet user expectations
+    EXPECT_TRUE(path("c:\\abc") == path("c:/abc"));
+    EXPECT_TRUE(hash(path("c:\\abc")) == hash(path("c:/abc")));
+# endif
+
+    const path p("bar");
+    const path p2("baz");
+
+    EXPECT_TRUE(!(p < p));
+    EXPECT_TRUE(p < p2);
+    EXPECT_TRUE(!(p2 < p));
+    EXPECT_TRUE(p < "baz");
+    EXPECT_TRUE(p < std::string("baz"));
+    EXPECT_TRUE(p < L"baz");
+    EXPECT_TRUE(p < std::wstring(L"baz"));
+    EXPECT_TRUE(!("baz" < p));
+    EXPECT_TRUE(!(std::string("baz") < p));
+    EXPECT_TRUE(!(L"baz" < p));
+    EXPECT_TRUE(!(std::wstring(L"baz") < p));
+
+    EXPECT_TRUE(p == p);
+    EXPECT_TRUE(!(p == p2));
+    EXPECT_TRUE(!(p2 == p));
+    EXPECT_TRUE(p2 == "baz");
+    EXPECT_TRUE(p2 == std::string("baz"));
+    EXPECT_TRUE(p2 == L"baz");
+    EXPECT_TRUE(p2 == std::wstring(L"baz"));
+    EXPECT_TRUE("baz" == p2);
+    EXPECT_TRUE(std::string("baz") == p2);
+    EXPECT_TRUE(L"baz" == p2);
+    EXPECT_TRUE(std::wstring(L"baz") == p2);
+
+    EXPECT_TRUE(hash(p) == hash(p));
+    EXPECT_TRUE(hash(p) != hash(p2)); // Not strictly required, but desirable
+
+    EXPECT_TRUE(!(p != p));
+    EXPECT_TRUE(p != p2);
+    EXPECT_TRUE(p2 != p);
+
+    EXPECT_TRUE(p <= p);
+    EXPECT_TRUE(p <= p2);
+    EXPECT_TRUE(!(p2 <= p));
+
+    EXPECT_TRUE(!(p > p));
+    EXPECT_TRUE(!(p > p2));
+    EXPECT_TRUE(p2 > p);
+
+    EXPECT_TRUE(p >= p);
+    EXPECT_TRUE(!(p >= p2));
+    EXPECT_TRUE(p2 >= p);
+}
+
+TEST_F(PathTest, iterator) {
     path itr_ck = "";
     path::const_iterator itr = itr_ck.begin();
     EXPECT_TRUE(itr == itr_ck.end());
@@ -637,7 +695,7 @@ TEST_F(PathTest, iterator_tests) {
 #endif
 }
 
-TEST_F(PathTest, non_member_tests) {
+TEST_F(PathTest, non_member) {
     // test non-member functions, particularly operator overloads
 
     path e, e2;
@@ -933,7 +991,7 @@ TEST_F(PathTest, non_member_tests) {
 #endif
 }
 
-TEST_F(PathTest, query_and_decomposition_tests) {
+TEST_F(PathTest, query_and_decomposition) {
     // these are the examples given in reference docs, so check they work
     EXPECT_TRUE(path("/foo/bar.txt").parent_path() == "/foo");
     EXPECT_TRUE(path("/foo/bar").parent_path() == "/foo");
@@ -1515,7 +1573,7 @@ TEST_F(PathTest, query_and_decomposition_tests) {
 #endif
 }
 
-TEST_F(PathTest, construction_tests) {
+TEST_F(PathTest, construction) {
     EXPECT_EQ(path(""), "");
 
     EXPECT_EQ(path("foo"), "foo");
@@ -1652,7 +1710,7 @@ void append_test_aux(const path& p, const std::string& s, const std::string& exp
 
 } // namespace
 
-TEST_F(PathTest, append_tests) {
+TEST_F(PathTest, append) {
     EXPECT_EQ(path("") / "", "");
     append_test_aux("", "", "");
 
@@ -1728,7 +1786,7 @@ TEST_F(PathTest, append_tests) {
     EXPECT_EQ(p6819, path("ab"));
 }
 
-TEST_F(PathTest, self_assign_and_append_tests) {
+TEST_F(PathTest, self_assign_and_append) {
     path p;
 
     p = "snafubar";
@@ -1767,7 +1825,7 @@ TEST_F(PathTest, self_assign_and_append_tests) {
 // TODO: skipped void name_function_tests() from original source code
 // need to return it???
 
-TEST_F(PathTest, replace_extension_tests) {
+TEST_F(PathTest, replace_extension) {
     EXPECT_TRUE(path().replace_extension().empty());
     EXPECT_TRUE(path().replace_extension("a") == ".a");
     EXPECT_TRUE(path().replace_extension("a.") == ".a.");
@@ -1794,7 +1852,7 @@ TEST_F(PathTest, replace_extension_tests) {
                                                     == "foo.tar.bz2");  // ticket 5118
   }
 
-TEST_F(PathTest, make_preferred_tests) {
+TEST_F(PathTest, make_preferred) {
 // TODO: fixme
 #ifdef BUILD_FOR_WINDOWS
     EXPECT_TRUE(path("//abc\\def/ghi").make_preferred().native() == path("\\\\abc\\def\\ghi").native());
@@ -1803,7 +1861,7 @@ TEST_F(PathTest, make_preferred_tests) {
 #endif
 }
 
-TEST_F(PathTest, lexically_normal_tests) {
+TEST_F(PathTest, lexically_normal) {
     //  Note: lexically_lexically_normal() uses /= to build up some results, so these results will
     //  have the platform's preferred separator. Since that is immaterial to the correct
     //  functioning of lexically_lexically_normal(), the test results are converted to generic form,
@@ -1914,7 +1972,7 @@ TEST_F(PathTest, lexically_normal_tests) {
 #endif
 }
 
-TEST_F(PathTest, lexically_relative_test) {
+TEST_F(PathTest, lexically_relative) {
     EXPECT_TRUE(path("").lexically_relative("") == "");
     EXPECT_TRUE(path("").lexically_relative("/foo") == "");
     EXPECT_TRUE(path("/foo").lexically_relative("") == "");
@@ -1970,7 +2028,7 @@ TEST_F(PathTest, lexically_relative_test) {
     EXPECT_TRUE(path("/foo/new").lexically_relative("/foo/bar") == "../new");
   }
 
-TEST_F(PathTest, lexically_proximate_test) {
+TEST_F(PathTest, lexically_proximate) {
     // paths unrelated
     EXPECT_TRUE(path("a/b/c").lexically_proximate("x") == "a/b/c");
 }
@@ -2000,7 +2058,7 @@ path p5;
 
 } // namespace
 
-TEST_F(PathTest, misc_test) {
+TEST_F(PathTest, misc) {
   EXPECT_TRUE(p1.string() != p3.string());
   p3 = p2;
   EXPECT_TRUE(p1.string() == p3.string());
