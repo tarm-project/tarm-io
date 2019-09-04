@@ -63,9 +63,12 @@ protected:
     std::list<wchar_t> m_wl;  // see main() for initialization to w, s, t, r, i, n, g
     std::vector<char> m_v;      // see main() for initialization to f, u, z
     std::vector<wchar_t> m_wv;  // see main() for initialization to w, f, u, z
+
+    path m_x;
+    path m_y;
 };
 
-TEST_F(PathTest, test_constructors) {
+TEST_F(PathTest, constructors) {
     path x0;                                           // default constructor
     EXPECT_EQ(x0, L"");
     EXPECT_EQ(x0.native().size(), 0U);
@@ -157,7 +160,68 @@ TEST_F(PathTest, move_construction_and_assignment) {
     EXPECT_TRUE(to2 == "long enough to avoid small object optimization");
     EXPECT_TRUE(from2.empty());
 
-  }
+}
+
+TEST_F(PathTest, appends) {
+// TODO: fixme
+# ifdef BOOST_WINDOWS_API
+#   define BOOST_FS_FOO L"/foo\\"
+# else   // POSIX paths
+#   define BOOST_FS_FOO L"/foo/"
+# endif
+
+    m_x = "/foo";
+    m_x /= path("");                                      // empty path
+    EXPECT_EQ(m_x, L"/foo");
+
+    m_x = "/foo";
+    m_x /= path("/");                                     // slash path
+    EXPECT_EQ(m_x, L"/foo/");
+
+    m_x = "/foo";
+    m_x /= path("/boo");                                  // slash path
+    EXPECT_EQ(m_x, L"/foo/boo");
+
+    m_x = "/foo";
+    m_x /= m_x;                                             // self-append
+    EXPECT_EQ(m_x, L"/foo/foo");
+
+    m_x = "/foo";
+    m_x /= path("yet another path");                      // another path
+    EXPECT_EQ(m_x, BOOST_FS_FOO L"yet another path");
+
+    m_x = "/foo";
+    m_x.append(m_l.begin(), m_l.end());                      // iterator range char
+    EXPECT_EQ(m_x, BOOST_FS_FOO L"string");
+
+    m_x = "/foo";
+    m_x.append(m_wl.begin(), m_wl.end());                    // iterator range wchar_t
+    EXPECT_EQ(m_x, BOOST_FS_FOO L"wstring");
+
+    m_x = "/foo";
+    m_x /= std::string("std::string");                         // container char
+    EXPECT_EQ(m_x, BOOST_FS_FOO L"std::string");
+
+    m_x = "/foo";
+    m_x /= std::wstring(L"std::wstring");                      // container wchar_t
+    EXPECT_EQ(m_x, BOOST_FS_FOO L"std::wstring");
+
+    m_x = "/foo";
+    m_x /= "array char";                                  // array char
+    EXPECT_EQ(m_x, BOOST_FS_FOO L"array char");
+
+    m_x = "/foo";
+    m_x /= L"array wchar";                                // array wchar_t
+    EXPECT_EQ(m_x, BOOST_FS_FOO L"array wchar");
+
+    m_x = "/foo";
+    m_x /= m_s.c_str();                                     // const char* null terminated
+    EXPECT_EQ(m_x, BOOST_FS_FOO L"string");
+
+    m_x = "/foo";
+    m_x /= m_ws.c_str();                                    // const wchar_t* null terminated
+    EXPECT_EQ(m_x, BOOST_FS_FOO L"wstring");
+}
 
 TEST_F(PathTest, iterator_tests) {
     path itr_ck = "";
