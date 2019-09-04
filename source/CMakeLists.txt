@@ -6,12 +6,15 @@ FILE(GLOB IO_HEADERS_LIST
 list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
         io/global/Configuration.cpp
+        io/CodecvtErrorCategory.cpp
         io/Common.cpp
         io/EventLoop.cpp
         io/Disposable.cpp
         io/Dir.cpp
         io/File.cpp
         io/Logger.cpp
+        io/Path.cpp
+        io/PathTraits.cpp
         io/StatData.cpp
         io/Status.cpp
         io/StatusCode.cpp
@@ -24,6 +27,7 @@ list(APPEND IO_SOURCE_LIST
         io/UdpServer.h
         io/UdpServer.cpp
         io/UserDataHolder.cpp
+        io/Utf8CodecvtFacet.cpp
 )
 
 if (${CMAKE_VERSION} VERSION_LESS "3.8.2")

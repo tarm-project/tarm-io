@@ -13,6 +13,7 @@ list(APPEND TESTS_LIST
     LoggerTest.cpp
     DisposableTest.cpp
     ScopeExitGuardTest.cpp
+    PathTest.cpp
     EventLoopTest.cpp
     TimerTest.cpp
     FileTest.cpp
