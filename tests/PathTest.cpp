@@ -257,6 +257,68 @@ TEST_F(PathTest, appends) {
     EXPECT_EQ(m_x, BOOST_FS_FOO L"wstring");
 }
 
+TEST_F(PathTest, concats) {
+    m_x = "/foo";
+    m_x += path("");                                      // empty path
+    EXPECT_EQ(m_x, L"/foo");
+
+    m_x = "/foo";
+    m_x += path("/");                                     // slash path
+    EXPECT_EQ(m_x, L"/foo/");
+
+    m_x = "/foo";
+    m_x += path("boo");                                  // slash path
+    EXPECT_EQ(m_x, L"/fooboo");
+
+    m_x = "foo";
+    m_x += m_x;                                             // self-append
+    EXPECT_EQ(m_x, L"foofoo");
+
+    m_x = "foo-";
+    m_x += path("yet another path");                      // another path
+    EXPECT_EQ(m_x, L"foo-yet another path");
+
+    m_x = "foo-";
+    m_x.concat(m_l.begin(), m_l.end());                      // iterator range char
+    EXPECT_EQ(m_x, L"foo-string");
+
+    m_x = "foo-";
+    m_x.concat(m_wl.begin(), m_wl.end());                    // iterator range wchar_t
+    EXPECT_EQ(m_x, L"foo-wstring");
+
+    m_x = "foo-";
+    m_x += std::string("std::string");                         // container char
+    EXPECT_EQ(m_x, L"foo-std::string");
+
+    m_x = "foo-";
+    m_x += std::wstring(L"std::wstring");                      // container wchar_t
+    EXPECT_EQ(m_x, L"foo-std::wstring");
+
+    m_x = "foo-";
+    m_x += "array char";                                  // array char
+    EXPECT_EQ(m_x, L"foo-array char");
+
+    m_x = "foo-";
+    m_x += L"array wchar";                                // array wchar_t
+    EXPECT_EQ(m_x, L"foo-array wchar");
+
+    m_x = "foo-";
+    m_x += m_s.c_str();                                     // const char* null terminated
+    EXPECT_EQ(m_x, L"foo-string");
+
+    m_x = "foo-";
+    m_x += m_ws.c_str();                                    // const wchar_t* null terminated
+    EXPECT_EQ(m_x, L"foo-wstring");
+
+    m_x = "foo-";
+    m_x += 'x';                                           // char
+    EXPECT_EQ(m_x, L"foo-x");
+
+    m_x = "foo-";
+    m_x += L'x';                                          // wchar
+    EXPECT_EQ(m_x, L"foo-x");
+}
+
 TEST_F(PathTest, iterator_tests) {
     path itr_ck = "";
     path::const_iterator itr = itr_ck.begin();
