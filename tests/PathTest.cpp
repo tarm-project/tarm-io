@@ -5,6 +5,7 @@
 #include "io/Path.h"
 
 #include <iterator>
+#include <string>
 
 // Workaround for GTest printers bug and path
 // https://github.com/google/googlemock/issues/170
@@ -27,8 +28,122 @@ using boost::filesystem::path;
 
 struct PathTest : public testing::Test,
                   public LogRedirector {
+protected:
+    PathTest() :
+        m_s("string"),
+        m_ws(L"wstring") {
+        m_l.push_back('s');
+        m_l.push_back('t');
+        m_l.push_back('r');
+        m_l.push_back('i');
+        m_l.push_back('n');
+        m_l.push_back('g');
 
+        m_wl.push_back(L'w');
+        m_wl.push_back(L's');
+        m_wl.push_back(L't');
+        m_wl.push_back(L'r');
+        m_wl.push_back(L'i');
+        m_wl.push_back(L'n');
+        m_wl.push_back(L'g');
+
+        m_v.push_back('f');
+        m_v.push_back('u');
+        m_v.push_back('z');
+
+        m_wv.push_back(L'w');
+        m_wv.push_back(L'f');
+        m_wv.push_back(L'u');
+        m_wv.push_back(L'z');
+    }
+
+    std::string m_s;
+    std::wstring m_ws;
+    std::list<char> m_l;      // see main() for initialization to s, t, r, i, n, g
+    std::list<wchar_t> m_wl;  // see main() for initialization to w, s, t, r, i, n, g
+    std::vector<char> m_v;      // see main() for initialization to f, u, z
+    std::vector<wchar_t> m_wv;  // see main() for initialization to w, f, u, z
 };
+
+TEST_F(PathTest, test_constructors) {
+    path x0;                                           // default constructor
+    EXPECT_EQ(x0, L"");
+    EXPECT_EQ(x0.native().size(), 0U);
+
+    path x1(m_l.begin(), m_l.end());                       // iterator range char
+    EXPECT_EQ(x1, L"string");
+    EXPECT_EQ(x1.native().size(), 6U);
+
+    path x2(x1);                                       // copy constructor
+    EXPECT_EQ(x2, L"string");
+    EXPECT_EQ(x2.native().size(), 6U);
+
+    path x3(m_wl.begin(), m_wl.end());                     // iterator range wchar_t
+    EXPECT_EQ(x3, L"wstring");
+    EXPECT_EQ(x3.native().size(), 7U);
+
+    // contiguous containers
+    path x4(std::string("std::string"));                    // std::string
+    EXPECT_EQ(x4, L"std::string");
+    EXPECT_EQ(x4.native().size(), 11U);
+
+    path x5(std::wstring(L"std::wstring"));                 // std::wstring
+    EXPECT_EQ(x5, L"std::wstring");
+    EXPECT_EQ(x5.native().size(), 12U);
+
+    path x4v(m_v);                                       // std::vector<char>
+    EXPECT_EQ(x4v, L"fuz");
+    EXPECT_EQ(x4v.native().size(), 3U);
+
+    path x5v(m_wv);                                      // std::vector<wchar_t>
+    EXPECT_EQ(x5v, L"wfuz");
+    EXPECT_EQ(x5v.native().size(), 4U);
+
+    path x6("array char");                             // array char
+    EXPECT_EQ(x6, L"array char");
+    EXPECT_EQ(x6.native().size(), 10U);
+
+    path x7(L"array wchar_t");                         // array wchar_t
+    EXPECT_EQ(x7, L"array wchar_t");
+    EXPECT_EQ(x7.native().size(), 13U);
+
+    char char_array[100];
+    std::strcpy(char_array, "big array char");
+    path x6o(char_array);                              // array char, only partially full
+    EXPECT_EQ(x6o, L"big array char");
+    EXPECT_EQ(x6o.native().size(), 14U);
+
+    wchar_t wchar_array[100];
+    std::wcscpy(wchar_array, L"big array wchar_t");
+    path x7o(wchar_array);                             // array char, only partially full
+    EXPECT_EQ(x7o, L"big array wchar_t");
+    EXPECT_EQ(x7o.native().size(), 17U);
+
+    path x8(m_s.c_str());                                // const char* null terminated
+    EXPECT_EQ(x8, L"string");
+    EXPECT_EQ(x8.native().size(), 6U);
+
+    path x9(m_ws.c_str());                               // const wchar_t* null terminated
+    EXPECT_EQ(x9, L"wstring");
+    EXPECT_EQ(x9.native().size(), 7U);
+
+    path x8nc(const_cast<char*>(m_s.c_str()));           // char* null terminated
+    EXPECT_EQ(x8nc, L"string");
+    EXPECT_EQ(x8nc.native().size(), 6U);
+
+    path x9nc(const_cast<wchar_t*>(m_ws.c_str()));       // wchar_t* null terminated
+    EXPECT_EQ(x9nc, L"wstring");
+    EXPECT_EQ(x9nc.native().size(), 7U);
+
+    // non-contiguous containers
+    path x10(m_l);                                       // std::list<char>
+    EXPECT_EQ(x10, L"string");
+    EXPECT_EQ(x10.native().size(), 6U);
+
+    path xll(m_wl);                                      // std::list<wchar_t>
+    EXPECT_EQ(xll, L"wstring");
+    EXPECT_EQ(xll.native().size(), 7U);
+}
 
 TEST_F(PathTest, iterator_tests) {
     path itr_ck = "";
