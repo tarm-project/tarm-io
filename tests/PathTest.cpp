@@ -2475,3 +2475,99 @@ TEST_F(PathTest, misc) {
   EXPECT_TRUE(path("").empty() == true);
   EXPECT_TRUE(path("foo").empty() == false);
 }
+
+namespace {
+
+class error_codecvt : public std::codecvt<wchar_t, char, std::mbstate_t> {
+public:
+explicit error_codecvt()
+    : std::codecvt<wchar_t, char, std::mbstate_t>() {}
+
+protected:
+    virtual bool do_always_noconv() const throw() { return false; }
+    virtual int do_encoding() const throw() { return 0; }
+
+    virtual std::codecvt_base::result do_in(std::mbstate_t&,
+            const char*, const char*, const char*&,
+            wchar_t*, wchar_t*, wchar_t*&) const {
+        static std::codecvt_base::result r = std::codecvt_base::noconv;
+        if (r == std::codecvt_base::partial) r = std::codecvt_base::error;
+        else if (r == std::codecvt_base::error) r = std::codecvt_base::noconv;
+        else r = std::codecvt_base::partial;
+        return r;
+    }
+
+    virtual std::codecvt_base::result do_out(std::mbstate_t &,
+            const wchar_t*, const wchar_t*, const wchar_t*&,
+            char*, char*, char*&) const {
+        static std::codecvt_base::result r = std::codecvt_base::noconv;
+        if (r == std::codecvt_base::partial) r = std::codecvt_base::error;
+        else if (r == std::codecvt_base::error) r = std::codecvt_base::noconv;
+        else r = std::codecvt_base::partial;
+        return r;
+    }
+
+    virtual std::codecvt_base::result do_unshift(std::mbstate_t&, char*, char*, char* &) const  { return ok; }
+    virtual int do_length(std::mbstate_t &, const char*, const char*, std::size_t) const  { return 0; }
+    virtual int do_max_length() const throw () { return 0; }
+};
+
+} // namespace
+
+TEST_F(PathTest, error_handling) {
+    std::locale global_loc = std::locale();
+    std::locale loc(global_loc, new error_codecvt);
+    std::locale old_loc = path::imbue(loc);
+
+    //  These tests rely on a path constructor that fails in the locale conversion.
+    //  Thus construction has to call codecvt. Force that by using a narrow string
+    //  for Windows, and a wide string for POSIX.
+// TODO: FIXME
+#   ifdef BOOST_WINDOWS_API
+#     define STRING_FOO_ "foo"
+#   else
+#     define STRING_FOO_ L"foo"
+#   endif
+
+    {
+      bool exception_thrown (false);
+      try { path(STRING_FOO_); }
+      catch (const boost::system::system_error & ex)
+      {
+        exception_thrown = true;
+        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::partial,
+          boost::filesystem::codecvt_error_category()));
+      }
+      catch (...) { ASSERT_TRUE(false); }
+      ASSERT_TRUE(exception_thrown);
+    }
+
+    {
+      bool exception_thrown (false);
+      try { path(STRING_FOO_); }
+      catch (const boost::system::system_error & ex)
+      {
+        exception_thrown = true;
+        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::error,
+          boost::filesystem::codecvt_error_category()));
+      }
+      catch (...) { ASSERT_TRUE(false); }
+      ASSERT_TRUE(exception_thrown);
+    }
+
+    {
+      bool exception_thrown (false);
+      try { path(STRING_FOO_); }
+      catch (const boost::system::system_error & ex)
+      {
+        exception_thrown = true;
+        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::noconv,
+          boost::filesystem::codecvt_error_category()));
+      }
+      catch (...) { ASSERT_TRUE(false); }
+      ASSERT_TRUE(exception_thrown);
+    }
+
+    // restoring original locale
+    path::imbue(old_loc);
+}
