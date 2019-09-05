@@ -52,19 +52,19 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
   {
     typedef path_constants< Char, Separator, PreferredSeparator, Dot > path_constants_base;
     typedef Char                                    value_type;
-    static BOOST_CONSTEXPR_OR_CONST value_type      separator = Separator;
-    static BOOST_CONSTEXPR_OR_CONST value_type      preferred_separator = PreferredSeparator;
-    static BOOST_CONSTEXPR_OR_CONST value_type      dot = Dot;
+    static constexpr value_type      separator = Separator;
+    static constexpr value_type      preferred_separator = PreferredSeparator;
+    static constexpr value_type      dot = Dot;
   };
 
   template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-  BOOST_CONSTEXPR_OR_CONST typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
+  constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
   path_constants< Char, Separator, PreferredSeparator, Dot >::separator;
   template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-  BOOST_CONSTEXPR_OR_CONST typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
+  constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
   path_constants< Char, Separator, PreferredSeparator, Dot >::preferred_separator;
   template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-  BOOST_CONSTEXPR_OR_CONST typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
+  constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
   path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
 
 } // namespace path_detail
