@@ -810,6 +810,51 @@ TEST_F(PathTest, modifiers) {
     EXPECT_EQ(path("/..").remove_filename(), path("/"));
 }
 
+TEST_F(PathTest, decompositions) {
+    EXPECT_TRUE(path("").root_name().string() == "");
+    EXPECT_TRUE(path("foo").root_name().string() == "");
+    EXPECT_TRUE(path("/").root_name().string() == "");
+    EXPECT_TRUE(path("/foo").root_name().string() == "");
+    EXPECT_TRUE(path("//netname").root_name().string() == "//netname");
+    EXPECT_TRUE(path("//netname/foo").root_name().string() == "//netname");
+
+    EXPECT_TRUE(path("").root_directory().string() == "");
+    EXPECT_TRUE(path("foo").root_directory().string() == "");
+    EXPECT_TRUE(path("/").root_directory().string() == "/");
+    EXPECT_TRUE(path("/foo").root_directory().string() == "/");
+    EXPECT_TRUE(path("//netname").root_directory().string() == "");
+    EXPECT_TRUE(path("//netname/foo").root_directory().string() == "/");
+
+    EXPECT_TRUE(path("").root_path().string() == "");
+    EXPECT_TRUE(path("/").root_path().string() == "/");
+    EXPECT_TRUE(path("/foo").root_path().string() == "/");
+    EXPECT_TRUE(path("//netname").root_path().string() == "//netname");
+    EXPECT_TRUE(path("//netname/foo").root_path().string() == "//netname/");
+
+    // TODO: fixme
+#   ifdef BOOST_WINDOWS_API
+    EXPECT_TRUE(path("c:/foo").root_path().string() == "c:/");
+#   endif
+
+    EXPECT_TRUE(path("").relative_path().string() == "");
+    EXPECT_TRUE(path("/").relative_path().string() == "");
+    EXPECT_TRUE(path("/foo").relative_path().string() == "foo");
+
+    EXPECT_TRUE(path("").parent_path().string() == "");
+    EXPECT_TRUE(path("/").parent_path().string() == "");
+    EXPECT_TRUE(path("/foo").parent_path().string() == "/");
+    EXPECT_TRUE(path("/foo/bar").parent_path().string() == "/foo");
+
+    EXPECT_TRUE(path("/foo/bar/baz.zoo").filename().string() == "baz.zoo");
+
+    EXPECT_TRUE(path("/foo/bar/baz.zoo").stem().string() == "baz");
+    EXPECT_TRUE(path("/foo/bar.woo/baz").stem().string() == "baz");
+
+    EXPECT_TRUE(path("foo.bar.baz.tar.bz2").extension().string() == ".bz2");
+    EXPECT_TRUE(path("/foo/bar/baz.zoo").extension().string() == ".zoo");
+    EXPECT_TRUE(path("/foo/bar.woo/baz").extension().string() == "");
+}
+
 TEST_F(PathTest, non_member) {
     // test non-member functions, particularly operator overloads
 
