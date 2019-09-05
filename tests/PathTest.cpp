@@ -1048,6 +1048,32 @@ TEST_F(PathTest, codecvt_argument) {
     EXPECT_TRUE(p.generic_wstring(cvt) == ws1);
 }
 
+TEST_F(PathTest, overloads) {
+    std::string sto("hello");
+    const char a[] = "goodbye";
+    path p1(sto);
+    path p2(sto.c_str());
+    path p3(a);
+    path p4("foo");
+
+    EXPECT_FALSE(p1.empty());
+    EXPECT_FALSE(p2.empty());
+    EXPECT_FALSE(p3.empty());
+    EXPECT_FALSE(p4.empty());
+
+    std::wstring wsto(L"hello");
+    const wchar_t wa[] = L"goodbye";
+    path wp1(wsto);
+    path wp2(wsto.c_str());
+    path wp3(wa);
+    path wp4(L"foo");
+
+    EXPECT_FALSE(wp1.empty());
+    EXPECT_FALSE(wp2.empty());
+    EXPECT_FALSE(wp3.empty());
+    EXPECT_FALSE(wp4.empty());
+}
+
 TEST_F(PathTest, non_member) {
     // test non-member functions, particularly operator overloads
 
