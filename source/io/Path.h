@@ -148,15 +148,8 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     path(const string_type& s) : m_pathname(s) {}
     path(string_type& s) : m_pathname(s) {}
 
-  //  As of October 2015 the interaction between noexcept and =default is so troublesome
-  //  for VC++, GCC, and probably other compilers, that =default is not used with noexcept
-  //  functions. GCC is not even consistent for the same release on different platforms.
-
-# if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
     path(path&& p) noexcept : m_pathname(std::move(p.m_pathname)) {}
-    path& operator=(path&& p) noexcept
-      { m_pathname = std::move(p.m_pathname); return *this; }
-# endif
+    path& operator=(path&& p) noexcept { m_pathname = std::move(p.m_pathname); return *this; }
 
     template <class Source>
     path(Source const& source, const codecvt_type& cvt)
@@ -865,13 +858,11 @@ private:
     p /= rhs;
     return p;
   }
-# if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
-  inline path operator/(path&& lhs, const path& rhs)
-  {
+
+  inline path operator/(path&& lhs, const path& rhs) {
     lhs /= rhs;
     return std::move(lhs);
   }
-# endif
 
   //  inserters and extractors
   //    use boost::io::quoted() to handle spaces in paths

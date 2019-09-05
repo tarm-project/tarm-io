@@ -3,18 +3,8 @@
 //  See http://www.boost.org/LICENSE_1_0.txt
 //  Library home page: http://www.boost.org/libs/filesystem
 
-
-#ifndef BOOST_SYSTEM_NO_DEPRECATED
-# define BOOST_SYSTEM_NO_DEPRECATED
-#endif
-
-//#include <boost/filesystem/config.hpp>
-//#include <boost/filesystem/path.hpp>
 #include "Path.h"
-//#include <boost/filesystem/operations.hpp>  // for filesystem_error
-//#include <boost/scoped_array.hpp>
-#include <boost/system/error_code.hpp>
-//#include <boost/assert.hpp>
+
 #include <algorithm>
 #include <iterator>
 #include <cstddef>
@@ -22,19 +12,17 @@
 #include <cassert>
 
 #ifdef BOOST_WINDOWS_API
-# include "windows_file_codecvt.hpp"
-# include <windows.h>
+    #include "windows_file_codecvt.hpp"
+    #include <windows.h>
 #elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__) \
  || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__HAIKU__)
-# include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
+    # include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 #endif
 
 using io::path;
 
 using std::string;
 using std::wstring;
-
-using boost::system::error_code;
 
 //--------------------------------------------------------------------------------------//
 //                                                                                      //
