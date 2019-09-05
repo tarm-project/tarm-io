@@ -11,19 +11,9 @@
 
 #include "Export.h"
 
-#include <boost/config/warning_disable.hpp>
-
-// define BOOST_FILESYSTEM_SOURCE so that <boost/filesystem/config.hpp> knows
-// the library is being built (possibly exporting rather than importing code)
-#define BOOST_FILESYSTEM_SOURCE
-
-#ifndef BOOST_SYSTEM_NO_DEPRECATED
-#  define BOOST_SYSTEM_NO_DEPRECATED
-#endif
-
-#include <boost/filesystem/config.hpp>
-#include <boost/filesystem/path_traits.hpp>
-#include <boost/system/error_code.hpp>
+//#include <boost/filesystem/config.hpp>
+//#include <boost/filesystem/path_traits.hpp>
+//#include <boost/system/error_code.hpp>
 #include <locale>
 #include <vector>
 #include <cstdlib>
@@ -33,15 +23,15 @@
 
 namespace
 {
-  class codecvt_error_cat : public boost::system::error_category
+  class codecvt_error_cat : public std::error_category
   {
   public:
     codecvt_error_cat(){}
-    const char*   name() const BOOST_SYSTEM_NOEXCEPT;
+    const char*   name() const noexcept;
     std::string    message(int ev) const;
   };
 
-  const char* codecvt_error_cat::name() const BOOST_SYSTEM_NOEXCEPT
+  const char* codecvt_error_cat::name() const noexcept
   {
     return "codecvt";
   }
@@ -74,9 +64,9 @@ namespace
 namespace io
 {
 
-IO_DLL_PUBLIC const boost::system::error_category& codecvt_error_category()
+IO_DLL_PUBLIC const std::error_category& codecvt_error_category()
 {
-    static const codecvt_error_cat  codecvt_error_cat_const;
+    static const codecvt_error_cat codecvt_error_cat_const;
     return codecvt_error_cat_const;
 }
 

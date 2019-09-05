@@ -2533,10 +2533,10 @@ TEST_F(PathTest, error_handling) {
     {
       bool exception_thrown (false);
       try { path(STRING_FOO_); }
-      catch (const boost::system::system_error & ex)
+      catch (const std::system_error& ex)
       {
         exception_thrown = true;
-        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::partial, io::codecvt_error_category()));
+        ASSERT_EQ(ex.code(), std::error_code(std::codecvt_base::partial, io::codecvt_error_category()));
       }
       catch (...) { ASSERT_TRUE(false); }
       ASSERT_TRUE(exception_thrown);
@@ -2545,10 +2545,10 @@ TEST_F(PathTest, error_handling) {
     {
       bool exception_thrown (false);
       try { path(STRING_FOO_); }
-      catch (const boost::system::system_error & ex)
+      catch (const std::system_error& ex)
       {
         exception_thrown = true;
-        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::error, io::codecvt_error_category()));
+        ASSERT_EQ(ex.code(), std::error_code(std::codecvt_base::error, io::codecvt_error_category()));
       }
       catch (...) { ASSERT_TRUE(false); }
       ASSERT_TRUE(exception_thrown);
@@ -2557,10 +2557,10 @@ TEST_F(PathTest, error_handling) {
     {
       bool exception_thrown (false);
       try { path(STRING_FOO_); }
-      catch (const boost::system::system_error & ex)
+      catch (const std::system_error & ex)
       {
         exception_thrown = true;
-        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::noconv, io::codecvt_error_category()));
+        ASSERT_EQ(ex.code(), std::error_code(std::codecvt_base::noconv, io::codecvt_error_category()));
       }
       catch (...) { ASSERT_TRUE(false); }
       ASSERT_TRUE(exception_thrown);

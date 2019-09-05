@@ -1,18 +1,12 @@
-//  filesystem path_traits.hpp  --------------------------------------------------------//
-
 //  Copyright Beman Dawes 2009
-
 //  Distributed under the Boost Software License, Version 1.0.
 //  See http://www.boost.org/LICENSE_1_0.txt
-
 //  Library home page: http://www.boost.org/libs/filesystem
 
 #pragma once
 
-//#include <boost/type_traits/is_array.hpp>
-//#include <boost/type_traits/decay.hpp>
-#include <boost/system/error_code.hpp>
-//#include <boost/core/enable_if.hpp>
+#include "Export.h"
+
 #include <cwchar>  // for mbstate_t
 #include <string>
 #include <vector>
@@ -20,14 +14,12 @@
 #include <iterator>
 #include <locale>
 #include <type_traits>
+#include <system_error>
 #include <assert.h>
-//#include <boost/assert.hpp>
-
-#include "Export.h"
 
 namespace io {
 
-  IO_DLL_PUBLIC const boost::system::error_category& codecvt_error_category();
+  IO_DLL_PUBLIC const std::error_category& codecvt_error_category();
   //  uses std::codecvt_base::result used for error codes:
   //
   //    ok:       Conversion successful.

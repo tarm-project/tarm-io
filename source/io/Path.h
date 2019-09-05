@@ -8,8 +8,8 @@
 
 #include "Export.h"
 #include "PathTraits.h"
-#include <boost/system/error_code.hpp>
-#include <boost/system/system_error.hpp>
+//#include <boost/system/error_code.hpp>
+//#include <boost/system/system_error.hpp>
 #include <boost/io/detail/quoted_manip.hpp>
 #include <boost/functional/hash_fwd.hpp>
 

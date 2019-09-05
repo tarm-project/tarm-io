@@ -1,34 +1,17 @@
-//  filesystem path_traits.cpp  --------------------------------------------------------//
-
 //  Copyright Beman Dawes 2008, 2009
-
 //  Distributed under the Boost Software License, Version 1.0.
 //  See http://www.boost.org/LICENSE_1_0.txt
-
 //  Library home page: http://www.boost.org/libs/filesystem
 
-//--------------------------------------------------------------------------------------//
-
-// define BOOST_FILESYSTEM_SOURCE so that <boost/system/config.hpp> knows
-// the library is being built (possibly exporting rather than importing code)
-#define BOOST_FILESYSTEM_SOURCE
-
-#ifndef BOOST_SYSTEM_NO_DEPRECATED
-# define BOOST_SYSTEM_NO_DEPRECATED
-#endif
-
-#include <boost/filesystem/config.hpp>
-//#include <boost/filesystem/path_traits.hpp>
 #include "PathTraits.h"
-#include <boost/system/system_error.hpp>
+
 #include <boost/scoped_array.hpp>
+
 #include <locale>   // for codecvt_base::result
 #include <cstring>  // for strlen
 #include <cwchar>   // for wcslen
 
 namespace pt = io::path_traits;
-//namespace fs = boost::filesystem;
-namespace bs = boost::system;
 
 //--------------------------------------------------------------------------------------//
 //                                  configuration                                       //
@@ -59,27 +42,17 @@ namespace {
                    const char* from_end,
                    wchar_t* to, wchar_t* to_end,
                    std::wstring & target,
-                   const pt::codecvt_type & cvt)
-  {
-    //std::cout << std::hex
-    //          << " from=" << std::size_t(from)
-    //          << " from_end=" << std::size_t(from_end)
-    //          << " to=" << std::size_t(to)
-    //          << " to_end=" << std::size_t(to_end)
-    //          << std::endl;
-
+                   const pt::codecvt_type & cvt) {
     std::mbstate_t state  = std::mbstate_t();  // perhaps unneeded, but cuts bug reports
     const char* from_next;
     wchar_t* to_next;
 
     std::codecvt_base::result res;
 
-    if ((res=cvt.in(state, from, from_end, from_next,
-           to, to_end, to_next)) != std::codecvt_base::ok)
-    {
-      //std::cout << " result is " << static_cast<int>(res) << std::endl;
-      BOOST_FILESYSTEM_THROW(bs::system_error(res, io::codecvt_error_category(),
-        "boost::filesystem::path codecvt to wstring"));
+    if ((res=cvt.in(state, from, from_end, from_next, to, to_end, to_next)) != std::codecvt_base::ok) {
+      // TODO: we do not want to throw exceptions
+      throw std::system_error(res, io::codecvt_error_category(),
+        "boost::filesystem::path codecvt to wstring");
     }
     target.append(to, to_next);
   }
@@ -95,25 +68,16 @@ namespace {
                    std::string & target,
                    const pt::codecvt_type & cvt)
   {
-    //std::cout << std::hex
-    //          << " from=" << std::size_t(from)
-    //          << " from_end=" << std::size_t(from_end)
-    //          << " to=" << std::size_t(to)
-    //          << " to_end=" << std::size_t(to_end)
-    //          << std::endl;
-
     std::mbstate_t state  = std::mbstate_t();  // perhaps unneeded, but cuts bug reports
     const wchar_t* from_next;
     char* to_next;
 
     std::codecvt_base::result res;
 
-    if ((res=cvt.out(state, from, from_end, from_next,
-           to, to_end, to_next)) != std::codecvt_base::ok)
-    {
-      //std::cout << " result is " << static_cast<int>(res) << std::endl;
-      BOOST_FILESYSTEM_THROW(bs::system_error(res, io::codecvt_error_category(),
-        "boost::filesystem::path codecvt to string"));
+    if ((res=cvt.out(state, from, from_end, from_next, to, to_end, to_next)) != std::codecvt_base::ok) {
+      // TODO: we do not want to throw exceptions
+      throw std::system_error(res, io::codecvt_error_category(),
+        "boost::filesystem::path codecvt to string");
     }
     target.append(to, to_next);
   }
@@ -136,7 +100,7 @@ namespace io { namespace path_traits {
                 std::wstring & to,
                 const codecvt_type & cvt)
   {
-    BOOST_ASSERT(from);
+    assert(from);
 
     if (!from_end)  // null terminated
     {
@@ -170,7 +134,7 @@ namespace io { namespace path_traits {
                 std::string & to,
                 const codecvt_type & cvt)
   {
-    BOOST_ASSERT(from);
+    assert(from);
 
     if (!from_end)  // null terminated
     {
