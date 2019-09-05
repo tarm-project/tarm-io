@@ -1,22 +1,8 @@
-//  filesystem path.cpp  -------------------------------------------------------------  //
-
 //  Copyright Beman Dawes 2008
-
 //  Distributed under the Boost Software License, Version 1.0.
 //  See http://www.boost.org/LICENSE_1_0.txt
-
 //  Library home page: http://www.boost.org/libs/filesystem
 
-//  Old standard library configurations, particularly MingGW, don't support wide strings.
-//  Report this with an explicit error message.
-#include <boost/config.hpp>
-# if defined( BOOST_NO_STD_WSTRING )
-#   error Configuration not supported: Boost.Filesystem V3 and later requires std::wstring support
-# endif
-
-// define BOOST_FILESYSTEM_SOURCE so that <boost/system/config.hpp> knows
-// the library is being built (possibly exporting rather than importing code)
-#define BOOST_FILESYSTEM_SOURCE
 
 #ifndef BOOST_SYSTEM_NO_DEPRECATED
 # define BOOST_SYSTEM_NO_DEPRECATED
@@ -171,7 +157,7 @@ namespace io
 
 # endif  // BOOST_WINDOWS_API
 
-  IO_DLL_PUBLIC int path::compare(const path& p) const BOOST_NOEXCEPT
+  IO_DLL_PUBLIC int path::compare(const path& p) const noexcept
   {
     return detail::lex_compare(begin(), end(), p.begin(), p.end());
   }

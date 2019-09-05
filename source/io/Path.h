@@ -1,16 +1,8 @@
-//  filesystem path.hpp  ---------------------------------------------------------------//
-
 //  Copyright Beman Dawes 2002-2005, 2009
 //  Copyright Vladimir Prus 2002
-
 //  Distributed under the Boost Software License, Version 1.0.
 //  See http://www.boost.org/LICENSE_1_0.txt
-
 //  Library home page: http://www.boost.org/libs/filesystem
-
-//  path::stem(), extension(), and replace_extension() are based on
-//  basename(), extension(), and change_extension() from the original
-//  filesystem/convenience.hpp header by Vladimir Prus.
 
 #pragma once
 
@@ -140,7 +132,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     //  -----  constructors  -----
 
-    path() BOOST_NOEXCEPT {}
+    path() noexcept {}
     path(const path& p) : m_pathname(p.m_pathname) {}
 
     template <class Source>
@@ -161,8 +153,8 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
   //  functions. GCC is not even consistent for the same release on different platforms.
 
 # if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
-    path(path&& p) BOOST_NOEXCEPT : m_pathname(std::move(p.m_pathname)) {}
-    path& operator=(path&& p) BOOST_NOEXCEPT
+    path(path&& p) noexcept : m_pathname(std::move(p.m_pathname)) {}
+    path& operator=(path&& p) noexcept
       { m_pathname = std::move(p.m_pathname); return *this; }
 # endif
 
@@ -372,7 +364,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     //  -----  modifiers  -----
 
-    void clear() BOOST_NOEXCEPT { m_pathname.clear(); }
+    void clear() noexcept { m_pathname.clear(); }
 #   ifdef BOOST_POSIX_API
     path& make_preferred() { return *this; }  // POSIX no effect
 #   else // BOOST_WINDOWS_API
@@ -381,7 +373,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     IO_DLL_PUBLIC path& remove_filename();
     IO_DLL_PUBLIC path& remove_trailing_separator();
     IO_DLL_PUBLIC path& replace_extension(const path& new_extension = path());
-    void swap(path& rhs) BOOST_NOEXCEPT { m_pathname.swap(rhs.m_pathname); }
+    void swap(path& rhs) noexcept { m_pathname.swap(rhs.m_pathname); }
 
     //  -----  observers  -----
 
@@ -404,9 +396,9 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     //  -----  native format observers  -----
 
-    const string_type&  native() const BOOST_NOEXCEPT  { return m_pathname; }
-    const value_type*   c_str() const BOOST_NOEXCEPT   { return m_pathname.c_str(); }
-    string_type::size_type size() const BOOST_NOEXCEPT { return m_pathname.size(); }
+    const string_type&  native() const noexcept  { return m_pathname; }
+    const value_type*   c_str() const noexcept   { return m_pathname.c_str(); }
+    string_type::size_type size() const noexcept { return m_pathname.size(); }
 
     template <class String>
     String string() const;
@@ -490,7 +482,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     //  -----  compare  -----
 
-    IO_DLL_PUBLIC int compare(const path& p) const BOOST_NOEXCEPT;  // generic, lexicographical
+    IO_DLL_PUBLIC int compare(const path& p) const noexcept;  // generic, lexicographical
     int compare(const std::string& s) const { return compare(path(s)); }
     int compare(const value_type* s) const  { return compare(path(s)); }
 
@@ -508,7 +500,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     //  -----  query  -----
 
-    bool empty() const BOOST_NOEXCEPT { return m_pathname.empty(); }
+    bool empty() const noexcept { return m_pathname.empty(); }
     bool filename_is_dot() const;
     bool filename_is_dot_dot() const;
     bool has_root_path() const       { return has_root_directory() || has_root_name(); }
@@ -853,7 +845,7 @@ private:
   inline bool operator> (const path& lhs, const path& rhs) {return rhs < lhs;}
   inline bool operator>=(const path& lhs, const path& rhs) {return !(lhs < rhs);}
 
-  inline std::size_t hash_value(const path& x) BOOST_NOEXCEPT
+  inline std::size_t hash_value(const path& x) noexcept
   {
 # ifdef BOOST_WINDOWS_API
     std::size_t seed = 0;
@@ -865,7 +857,7 @@ private:
 # endif
   }
 
-  inline void swap(path& lhs, path& rhs) BOOST_NOEXCEPT { lhs.swap(rhs); }
+  inline void swap(path& lhs, path& rhs) noexcept { lhs.swap(rhs); }
 
   inline path operator/(const path& lhs, const path& rhs)
   {
@@ -922,7 +914,7 @@ private:
     //  element separator. For Windows, forward slash and back slash are the possible
     //  directory separators, but colon (example: "c:foo") is also an element separator.
 
-    inline bool is_directory_separator(path::value_type c) BOOST_NOEXCEPT
+    inline bool is_directory_separator(path::value_type c) noexcept
     {
       return c == path::separator
 #     ifdef BOOST_WINDOWS_API
@@ -930,7 +922,7 @@ private:
 #     endif
       ;
     }
-    inline bool is_element_separator(path::value_type c) BOOST_NOEXCEPT
+    inline bool is_element_separator(path::value_type c) noexcept
     {
       return c == path::separator
 #     ifdef BOOST_WINDOWS_API
