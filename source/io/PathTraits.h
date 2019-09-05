@@ -9,24 +9,19 @@
 
 #pragma once
 
-#include <boost/config.hpp>
-
-# if defined( BOOST_NO_STD_WSTRING )
-#   error Configuration not supported: Boost.Filesystem V3 and later requires std::wstring support
-# endif
-
-#include <boost/filesystem/config.hpp>
-#include <boost/type_traits/is_array.hpp>
-#include <boost/type_traits/decay.hpp>
+//#include <boost/type_traits/is_array.hpp>
+//#include <boost/type_traits/decay.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/core/enable_if.hpp>
+//#include <boost/core/enable_if.hpp>
 #include <cwchar>  // for mbstate_t
 #include <string>
 #include <vector>
 #include <list>
 #include <iterator>
 #include <locale>
-#include <boost/assert.hpp>
+#include <type_traits>
+#include <assert.h>
+//#include <boost/assert.hpp>
 
 #include "Export.h"
 
@@ -69,16 +64,14 @@ namespace path_traits {
   //  Pathable empty
 
   template <class Container> inline
-    // disable_if aids broken compilers (IBM, old GCC, etc.) and is harmless for
-    // conforming compilers. Replace by plain "bool" at some future date (2012?)
-    typename boost::disable_if<boost::is_array<Container>, bool>::type
+    typename std::enable_if<!std::is_array<Container>::value, bool>::type
       empty(const Container & c)
         { return c.begin() == c.end(); }
 
   template <class T> inline
     bool empty(T * const & c_str)
   {
-    BOOST_ASSERT(c_str);
+    assert(c_str);
     return !*c_str;
   }
 
@@ -109,7 +102,7 @@ namespace path_traits {
     std::wstring & to,
     const codecvt_type& cvt)
   {
-    BOOST_ASSERT(from);
+    assert(from);
     convert(from, 0, to, cvt);
   }
 
@@ -118,7 +111,7 @@ namespace path_traits {
     std::string & to,
     const codecvt_type& cvt)
   {
-    BOOST_ASSERT(from);
+    assert(from);
     convert(from, 0, to, cvt);
   }
 
@@ -150,8 +143,8 @@ namespace path_traits {
     void convert(const char* from, const char* from_end, std::string & to,
     const codecvt_type&)
   {
-    BOOST_ASSERT(from);
-    BOOST_ASSERT(from_end);
+    assert(from);
+    assert(from_end);
     to.append(from, from_end);
   }
 
@@ -160,7 +153,7 @@ namespace path_traits {
     std::string & to,
     const codecvt_type&)
   {
-    BOOST_ASSERT(from);
+    assert(from);
     to += from;
   }
 
@@ -170,8 +163,8 @@ namespace path_traits {
     void convert(const wchar_t* from, const wchar_t* from_end, std::wstring & to,
     const codecvt_type&)
   {
-    BOOST_ASSERT(from);
-    BOOST_ASSERT(from_end);
+    assert(from);
+    assert(from_end);
     to.append(from, from_end);
   }
 
@@ -180,7 +173,7 @@ namespace path_traits {
     std::wstring & to,
     const codecvt_type&)
   {
-    BOOST_ASSERT(from);
+    assert(from);
     to += from;
   }
 
@@ -189,15 +182,15 @@ namespace path_traits {
   inline
     void convert(const char* from, const char* from_end, std::string & to)
   {
-    BOOST_ASSERT(from);
-    BOOST_ASSERT(from_end);
+    assert(from);
+    assert(from_end);
     to.append(from, from_end);
   }
 
   inline
     void convert(const char* from, std::string & to)
   {
-    BOOST_ASSERT(from);
+    assert(from);
     to += from;
   }
 
@@ -206,15 +199,15 @@ namespace path_traits {
   inline
     void convert(const wchar_t* from, const wchar_t* from_end, std::wstring & to)
   {
-    BOOST_ASSERT(from);
-    BOOST_ASSERT(from_end);
+    assert(from);
+    assert(from_end);
     to.append(from, from_end);
   }
 
   inline
     void convert(const wchar_t* from, std::wstring & to)
   {
-    BOOST_ASSERT(from);
+    assert(from);
     to += from;
   }
 
@@ -274,9 +267,7 @@ namespace path_traits {
 
   //  non-contiguous containers with codecvt
   template <class Container, class U> inline
-    // disable_if aids broken compilers (IBM, old GCC, etc.) and is harmless for
-    // conforming compilers. Replace by plain "void" at some future date (2012?)
-    typename boost::disable_if<boost::is_array<Container>, void>::type
+    typename std::enable_if<!std::is_array<Container>::value, void>::type
     dispatch(const Container & c, U& to, const codecvt_type& cvt)
   {
     if (c.size())
@@ -291,7 +282,7 @@ namespace path_traits {
     void dispatch(T * const & c_str, U& to, const codecvt_type& cvt)
   {
     //    std::cout << "dispatch() const T *\n";
-    BOOST_ASSERT(c_str);
+    assert(c_str);
     convert(c_str, to, cvt);
   }
 
@@ -309,9 +300,7 @@ namespace path_traits {
 
   //  non-contiguous containers without codecvt
   template <class Container, class U> inline
-    // disable_if aids broken compilers (IBM, old GCC, etc.) and is harmless for
-    // conforming compilers. Replace by plain "void" at some future date (2012?)
-    typename boost::disable_if<boost::is_array<Container>, void>::type
+    typename std::enable_if<!std::is_array<Container>::value, void>::type
     dispatch(const Container & c, U& to)
   {
     if (c.size())
@@ -326,7 +315,7 @@ namespace path_traits {
     void dispatch(T * const & c_str, U& to)
   {
     //    std::cout << "dispatch() const T *\n";
-    BOOST_ASSERT(c_str);
+    assert(c_str);
     convert(c_str, to);
   }
 

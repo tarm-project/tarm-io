@@ -14,24 +14,13 @@
 
 #pragma once
 
-#include <boost/config.hpp>
-
-# if defined( BOOST_NO_STD_WSTRING )
-#   error Configuration not supported: Boost.Filesystem V3 and later requires std::wstring support
-# endif
-
-#include <boost/assert.hpp>
-#include <boost/filesystem/config.hpp>
 #include "Export.h"
 #include "PathTraits.h"
-//#include <boost/filesystem/path_traits.hpp>  // includes <cwchar>
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
-//#include <boost/iterator/iterator_facade.hpp>
-//#include <boost/core/enable_if.hpp>
 #include <boost/io/detail/quoted_manip.hpp>
 #include <boost/functional/hash_fwd.hpp>
-//#include <boost/type_traits/is_integral.hpp>
+
 #include <string>
 #include <iterator>
 #include <cstring>
@@ -1094,7 +1083,7 @@ namespace path_traits
     void convert(const char* from,
     std::wstring & to)
   {
-    BOOST_ASSERT(!!from);
+    assert(!!from);
     convert(from, 0, to, path::codecvt());
   }
 
@@ -1102,7 +1091,7 @@ namespace path_traits
     void convert(const wchar_t* from,
     std::string & to)
   {
-    BOOST_ASSERT(!!from);
+    assert(!!from);
     convert(from, 0, to, path::codecvt());
   }
 }  // namespace path_traits
