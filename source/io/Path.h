@@ -8,10 +8,8 @@
 
 #include "Export.h"
 #include "PathTraits.h"
-//#include <boost/system/error_code.hpp>
-//#include <boost/system/system_error.hpp>
+
 #include <boost/io/detail/quoted_manip.hpp>
-#include <boost/functional/hash_fwd.hpp>
 
 #include <string>
 #include <iterator>
@@ -76,7 +74,7 @@ inline void hash_range(std::size_t& seed, It first, It last)
     }
 }
 
-namespace path_detail // intentionally don't use filesystem::detail to not bring internal Boost.Filesystem functions into ADL via path_constants
+namespace path_detail // intentionally don't use io::detail to not bring internal filesystem functions into ADL via path_constants
 {
 
   template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
@@ -409,10 +407,10 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     //  -----  modifiers  -----
 
     void clear() noexcept { m_pathname.clear(); }
-#   ifdef BOOST_POSIX_API
-    path& make_preferred() { return *this; }  // POSIX no effect
-#   else // BOOST_WINDOWS_API
+#   ifdef BOOST_WINDOWS_API
     IO_DLL_PUBLIC path& make_preferred();  // change slashes to backslashes
+#   else // BOOST_POSIX_API
+    path& make_preferred() { return *this; }  // POSIX no effect
 #   endif
     IO_DLL_PUBLIC path& remove_filename();
     IO_DLL_PUBLIC path& remove_trailing_separator();
@@ -534,7 +532,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     IO_DLL_PUBLIC path  root_path() const;
     IO_DLL_PUBLIC path  root_name() const;         // returns 0 or 1 element path
-                                                           // even on POSIX, root_name() is non-empty() for network paths
+                                                   // even on POSIX, root_name() is non-empty() for network paths
     IO_DLL_PUBLIC path  root_directory() const;    // returns 0 or 1 element path
     IO_DLL_PUBLIC path  relative_path() const;
     IO_DLL_PUBLIC path  parent_path() const;
@@ -593,55 +591,13 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     static IO_DLL_PUBLIC std::locale imbue(const std::locale& loc);
     static IO_DLL_PUBLIC const codecvt_type&  codecvt();
 
-    //  -----  deprecated functions  -----
-
-# if defined(BOOST_FILESYSTEM_DEPRECATED) && defined(BOOST_FILESYSTEM_NO_DEPRECATED)
-#   error both BOOST_FILESYSTEM_DEPRECATED and BOOST_FILESYSTEM_NO_DEPRECATED are defined
-# endif
-
-# if !defined(BOOST_FILESYSTEM_NO_DEPRECATED)
-    //  recently deprecated functions supplied by default
-    path&  normalize()              {
-                                      path tmp(lexically_normal());
-                                      m_pathname.swap(tmp.m_pathname);
-                                      return *this;
-                                    }
-    path&  remove_leaf()            { return remove_filename(); }
-    path   leaf() const             { return filename(); }
-    path   branch_path() const      { return parent_path(); }
-    path   generic() const          { return generic_path(); }
-    bool   has_leaf() const         { return !m_pathname.empty(); }
-    bool   has_branch_path() const  { return !parent_path().empty(); }
-    bool   is_complete() const      { return is_absolute(); }
-# endif
-
-# if defined(BOOST_FILESYSTEM_DEPRECATED)
-    //  deprecated functions with enough signature or semantic changes that they are
-    //  not supplied by default
-    const std::string file_string() const               { return string(); }
-    const std::string directory_string() const          { return string(); }
-    const std::string native_file_string() const        { return string(); }
-    const std::string native_directory_string() const   { return string(); }
-    const string_type external_file_string() const      { return native(); }
-    const string_type external_directory_string() const { return native(); }
-
-    //  older functions no longer supported
-    //typedef bool (*name_check)(const std::string & name);
-    //basic_path(const string_type& str, name_check) { operator/=(str); }
-    //basic_path(const typename string_type::value_type* s, name_check)
-    //  { operator/=(s);}
-    //static bool default_name_check_writable() { return false; }
-    //static void default_name_check(name_check) {}
-    //static name_check default_name_check() { return 0; }
-    //basic_path& canonize();
-# endif
-
 //--------------------------------------------------------------------------------------//
 //                            class path private members                                //
 //--------------------------------------------------------------------------------------//
 
   private:
 
+// TODO: revise these pragmas
 #   if defined(_MSC_VER)
 #     pragma warning(push) // Save warning settings
 #     pragma warning(disable : 4251) // disable warning: class 'std::basic_string<_Elem,_Traits,_Ax>'
@@ -688,10 +644,6 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     IO_DLL_PUBLIC
       const path&  dot_dot_path();
   } // namespace detail
-
-# ifndef BOOST_FILESYSTEM_NO_DEPRECATED
-  typedef path wpath;
-# endif
 
   //------------------------------------------------------------------------------------//
   //                             class path::iterator                                   //
