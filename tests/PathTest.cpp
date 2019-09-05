@@ -855,6 +855,36 @@ TEST_F(PathTest, decompositions) {
     EXPECT_TRUE(path("/foo/bar.woo/baz").extension().string() == "");
 }
 
+
+TEST_F(PathTest, queries) {
+    path p1("");
+    path p2("//netname/foo.doo");
+
+    EXPECT_TRUE(p1.empty());
+    EXPECT_TRUE(!p1.has_root_path());
+    EXPECT_TRUE(!p1.has_root_name());
+    EXPECT_TRUE(!p1.has_root_directory());
+    EXPECT_TRUE(!p1.has_relative_path());
+    EXPECT_TRUE(!p1.has_parent_path());
+    EXPECT_TRUE(!p1.has_filename());
+    EXPECT_TRUE(!p1.has_stem());
+    EXPECT_TRUE(!p1.has_extension());
+    EXPECT_TRUE(!p1.is_absolute());
+    EXPECT_TRUE(p1.is_relative());
+
+    EXPECT_TRUE(!p2.empty());
+    EXPECT_TRUE(p2.has_root_path());
+    EXPECT_TRUE(p2.has_root_name());
+    EXPECT_TRUE(p2.has_root_directory());
+    EXPECT_TRUE(p2.has_relative_path());
+    EXPECT_TRUE(p2.has_parent_path());
+    EXPECT_TRUE(p2.has_filename());
+    EXPECT_TRUE(p2.has_stem());
+    EXPECT_TRUE(p2.has_extension());
+    EXPECT_TRUE(p2.is_absolute());
+    EXPECT_TRUE(!p2.is_relative());
+}
+
 TEST_F(PathTest, non_member) {
     // test non-member functions, particularly operator overloads
 
