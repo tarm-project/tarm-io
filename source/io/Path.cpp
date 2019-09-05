@@ -8,13 +8,13 @@
 # define BOOST_SYSTEM_NO_DEPRECATED
 #endif
 
-#include <boost/filesystem/config.hpp>
+//#include <boost/filesystem/config.hpp>
 //#include <boost/filesystem/path.hpp>
 #include "Path.h"
-#include <boost/filesystem/operations.hpp>  // for filesystem_error
-#include <boost/scoped_array.hpp>
+//#include <boost/filesystem/operations.hpp>  // for filesystem_error
+//#include <boost/scoped_array.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/assert.hpp>
+//#include <boost/assert.hpp>
 #include <algorithm>
 #include <iterator>
 #include <cstddef>
@@ -465,8 +465,7 @@ namespace
   bool is_root_separator(const string_type & str, size_type pos)
     // pos is position of the separator
   {
-    BOOST_ASSERT_MSG(!str.empty() && io::detail::is_directory_separator(str[pos]),
-      "precondition violation");
+    assert(!str.empty() && io::detail::is_directory_separator(str[pos]) && "precondition violation");
 
     // subsequent logic expects pos to be for leftmost slash of a set
     while (pos > 0 && io::detail::is_directory_separator(str[pos-1]))
@@ -647,7 +646,7 @@ namespace io
       {
         if (first1->native() < first2->native()) return -1;
         if (first2->native() < first1->native()) return 1;
-        BOOST_ASSERT(first2->native() == first1->native());
+        assert(first2->native() == first1->native());
         ++first1;
         ++first2;
       }
@@ -707,8 +706,7 @@ namespace io
 
   IO_DLL_PUBLIC void path::m_path_iterator_increment(path::iterator & it)
   {
-    BOOST_ASSERT_MSG(it.m_pos < it.m_path_ptr->m_pathname.size(),
-      "path::basic_iterator increment past end()");
+    noexcept(it.m_pos < it.m_path_ptr->m_pathname.size() && "path::basic_iterator increment past end()");
 
     // increment to position past current element; if current element is implicit dot,
     // this will cause it.m_pos to represent the end iterator
@@ -766,7 +764,7 @@ namespace io
 
   IO_DLL_PUBLIC void path::m_path_iterator_decrement(path::iterator & it)
   {
-    BOOST_ASSERT_MSG(it.m_pos, "path::iterator decrement past begin()");
+    assert(it.m_pos && "path::iterator decrement past begin()");
 
     size_type end_pos(it.m_pos);
 
@@ -888,7 +886,7 @@ namespace io
 
   IO_DLL_PUBLIC const path::codecvt_type& path::codecvt()
   {
-    BOOST_ASSERT_MSG(&path_locale(), "boost::filesystem::path locale initialization error");
+    assert(&path_locale() && "boost::filesystem::path locale initialization error");
 
     return std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >(path_locale());
   }
