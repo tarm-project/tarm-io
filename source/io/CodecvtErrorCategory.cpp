@@ -9,6 +9,8 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include "Export.h"
+
 #include <boost/config/warning_disable.hpp>
 
 // define BOOST_FILESYSTEM_SOURCE so that <boost/filesystem/config.hpp> knows
@@ -69,16 +71,13 @@ namespace
 
 } // unnamed namespace
 
-namespace boost
+namespace io
 {
-  namespace filesystem
-  {
 
-    BOOST_FILESYSTEM_DECL const boost::system::error_category& codecvt_error_category()
-    {
-      static const codecvt_error_cat  codecvt_error_cat_const;
-      return codecvt_error_cat_const;
-    }
+IO_DLL_PUBLIC const boost::system::error_category& codecvt_error_category()
+{
+    static const codecvt_error_cat  codecvt_error_cat_const;
+    return codecvt_error_cat_const;
+}
 
-  } // namespace filesystem
-} // namespace boost
+} // namespace io

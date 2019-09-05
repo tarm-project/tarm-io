@@ -15,13 +15,13 @@
 
 // Workaround for GTest printers bug and path
 // https://github.com/google/googlemock/issues/170
-namespace boost {
-    namespace filesystem {
-        void PrintTo(const boost::filesystem::path& path, std::ostream* os) {
-            *os << path;
-        }
-    }
+namespace io {
+
+void PrintTo(const io::path& path, std::ostream* os) {
+    *os << path;
 }
+
+} // namespace io
 
 // TODO: fixme
 #ifdef BOOST_WINDOWS_API
@@ -30,7 +30,8 @@ namespace boost {
 # define BOOST_DIR_SEP "/"
 #endif
 
-using boost::filesystem::path;
+//using boost::filesystem::path;
+using io::path;
 
 struct PathTest : public testing::Test,
                   public LogRedirector {
@@ -2535,8 +2536,7 @@ TEST_F(PathTest, error_handling) {
       catch (const boost::system::system_error & ex)
       {
         exception_thrown = true;
-        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::partial,
-          boost::filesystem::codecvt_error_category()));
+        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::partial, io::codecvt_error_category()));
       }
       catch (...) { ASSERT_TRUE(false); }
       ASSERT_TRUE(exception_thrown);
@@ -2548,8 +2548,7 @@ TEST_F(PathTest, error_handling) {
       catch (const boost::system::system_error & ex)
       {
         exception_thrown = true;
-        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::error,
-          boost::filesystem::codecvt_error_category()));
+        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::error, io::codecvt_error_category()));
       }
       catch (...) { ASSERT_TRUE(false); }
       ASSERT_TRUE(exception_thrown);
@@ -2561,8 +2560,7 @@ TEST_F(PathTest, error_handling) {
       catch (const boost::system::system_error & ex)
       {
         exception_thrown = true;
-        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::noconv,
-          boost::filesystem::codecvt_error_category()));
+        ASSERT_EQ(ex.code(), boost::system::error_code(std::codecvt_base::noconv, io::codecvt_error_category()));
       }
       catch (...) { ASSERT_TRUE(false); }
       ASSERT_TRUE(exception_thrown);

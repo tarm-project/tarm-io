@@ -7,8 +7,7 @@
 
 //  Library home page: http://www.boost.org/libs/filesystem
 
-#ifndef BOOST_FILESYSTEM_PATH_TRAITS_HPP
-#define BOOST_FILESYSTEM_PATH_TRAITS_HPP
+#pragma once
 
 #include <boost/config.hpp>
 
@@ -28,13 +27,12 @@
 #include <iterator>
 #include <locale>
 #include <boost/assert.hpp>
-// #include <iostream>   //**** comment me out ****
 
-#include <boost/config/abi_prefix.hpp> // must be the last #include
+#include "Export.h"
 
-namespace boost { namespace filesystem {
+namespace io {
 
-  BOOST_FILESYSTEM_DECL const system::error_category& codecvt_error_category();
+  IO_DLL_PUBLIC const boost::system::error_category& codecvt_error_category();
   //  uses std::codecvt_base::result used for error codes:
   //
   //    ok:       Conversion successful.
@@ -94,13 +92,13 @@ namespace path_traits {
 
   //  with codecvt
 
-  BOOST_FILESYSTEM_DECL
+  IO_DLL_PUBLIC
     void convert(const char* from,
     const char* from_end,    // 0 for null terminated MBCS
     std::wstring & to,
     const codecvt_type& cvt);
 
-  BOOST_FILESYSTEM_DECL
+  IO_DLL_PUBLIC
     void convert(const wchar_t* from,
     const wchar_t* from_end,  // 0 for null terminated MBCS
     std::string & to,
@@ -300,7 +298,7 @@ namespace path_traits {
   //  Note: there is no dispatch on C-style arrays because the array may
   //  contain a string smaller than the array size.
 
-  BOOST_FILESYSTEM_DECL
+  IO_DLL_PUBLIC
     void dispatch(const directory_entry & de,
 #                ifdef BOOST_WINDOWS_API
     std::wstring & to,
@@ -335,7 +333,7 @@ namespace path_traits {
   //  Note: there is no dispatch on C-style arrays because the array may
   //  contain a string smaller than the array size.
 
-  BOOST_FILESYSTEM_DECL
+  IO_DLL_PUBLIC
     void dispatch(const directory_entry & de,
 #                ifdef BOOST_WINDOWS_API
     std::wstring & to
@@ -345,8 +343,4 @@ namespace path_traits {
     );
 
 
-}}} // namespace boost::filesystem::path_traits
-
-#include <boost/config/abi_suffix.hpp> // pops abi_prefix.hpp pragmas
-
-#endif  // BOOST_FILESYSTEM_PATH_TRAITS_HPP
+}} // namespace io::path_traits

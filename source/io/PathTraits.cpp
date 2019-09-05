@@ -18,15 +18,16 @@
 #endif
 
 #include <boost/filesystem/config.hpp>
-#include <boost/filesystem/path_traits.hpp>
+//#include <boost/filesystem/path_traits.hpp>
+#include "PathTraits.h"
 #include <boost/system/system_error.hpp>
 #include <boost/scoped_array.hpp>
 #include <locale>   // for codecvt_base::result
 #include <cstring>  // for strlen
 #include <cwchar>   // for wcslen
 
-namespace pt = boost::filesystem::path_traits;
-namespace fs = boost::filesystem;
+namespace pt = io::path_traits;
+//namespace fs = boost::filesystem;
 namespace bs = boost::system;
 
 //--------------------------------------------------------------------------------------//
@@ -77,7 +78,7 @@ namespace {
            to, to_end, to_next)) != std::codecvt_base::ok)
     {
       //std::cout << " result is " << static_cast<int>(res) << std::endl;
-      BOOST_FILESYSTEM_THROW(bs::system_error(res, fs::codecvt_error_category(),
+      BOOST_FILESYSTEM_THROW(bs::system_error(res, io::codecvt_error_category(),
         "boost::filesystem::path codecvt to wstring"));
     }
     target.append(to, to_next);
@@ -111,7 +112,7 @@ namespace {
            to, to_end, to_next)) != std::codecvt_base::ok)
     {
       //std::cout << " result is " << static_cast<int>(res) << std::endl;
-      BOOST_FILESYSTEM_THROW(bs::system_error(res, fs::codecvt_error_category(),
+      BOOST_FILESYSTEM_THROW(bs::system_error(res, io::codecvt_error_category(),
         "boost::filesystem::path codecvt to string"));
     }
     target.append(to, to_next);
@@ -123,13 +124,13 @@ namespace {
 //                                   path_traits                                        //
 //--------------------------------------------------------------------------------------//
 
-namespace boost { namespace filesystem { namespace path_traits {
+namespace io { namespace path_traits {
 
 //--------------------------------------------------------------------------------------//
 //                          convert const char* to wstring                              //
 //--------------------------------------------------------------------------------------//
 
-  BOOST_FILESYSTEM_DECL
+  IO_DLL_PUBLIC
   void convert(const char* from,
                 const char* from_end,    // 0 for null terminated MBCS
                 std::wstring & to,
@@ -163,7 +164,7 @@ namespace boost { namespace filesystem { namespace path_traits {
 //                         convert const wchar_t* to string                            //
 //--------------------------------------------------------------------------------------//
 
-  BOOST_FILESYSTEM_DECL
+  IO_DLL_PUBLIC
   void convert(const wchar_t* from,
                 const wchar_t* from_end,  // 0 for null terminated MBCS
                 std::string & to,
@@ -197,4 +198,4 @@ namespace boost { namespace filesystem { namespace path_traits {
       convert_aux(from, from_end, buf, buf+default_codecvt_buf_size, to, cvt);
     }
   }
-}}} // namespace boost::filesystem::path_traits
+}} // namespace io::path_traits

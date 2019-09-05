@@ -12,8 +12,7 @@
 //  basename(), extension(), and change_extension() from the original
 //  filesystem/convenience.hpp header by Vladimir Prus.
 
-#ifndef BOOST_FILESYSTEM_PATH_HPP
-#define BOOST_FILESYSTEM_PATH_HPP
+#pragma once
 
 #include <boost/config.hpp>
 
@@ -23,7 +22,9 @@
 
 #include <boost/assert.hpp>
 #include <boost/filesystem/config.hpp>
-#include <boost/filesystem/path_traits.hpp>  // includes <cwchar>
+#include "Export.h"
+#include "PathTraits.h"
+//#include <boost/filesystem/path_traits.hpp>  // includes <cwchar>
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
 #include <boost/iterator/iterator_facade.hpp>
@@ -40,11 +41,7 @@
 #include <locale>
 #include <algorithm>
 
-#include <boost/config/abi_prefix.hpp> // must be the last #include
-
-namespace boost
-{
-namespace filesystem
+namespace io
 {
 namespace path_detail // intentionally don't use filesystem::detail to not bring internal Boost.Filesystem functions into ADL via path_constants
 {
@@ -77,8 +74,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
   //                                                                                    //
   //------------------------------------------------------------------------------------//
 
-  class path :
-    public filesystem::path_detail::path_constants<
+  class path : public path_detail::path_constants<
 #ifdef BOOST_WINDOWS_API
       wchar_t, L'/', L'\\', L'.'
 #else
@@ -342,7 +338,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     //  if a separator is added, it is the preferred separator for the platform;
     //  slash for POSIX, backslash for Windows
 
-    BOOST_FILESYSTEM_DECL path& operator/=(const path& p);
+    IO_DLL_PUBLIC path& operator/=(const path& p);
 
     template <class Source>
       typename boost::enable_if<path_traits::is_pathable<
@@ -352,7 +348,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
       return append(source);
     }
 
-    BOOST_FILESYSTEM_DECL path& operator/=(const value_type* ptr);
+    IO_DLL_PUBLIC path& operator/=(const value_type* ptr);
     path& operator/=(value_type* ptr)
     {
       return this->operator/=(const_cast<const value_type*>(ptr));
@@ -390,11 +386,11 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 #   ifdef BOOST_POSIX_API
     path& make_preferred() { return *this; }  // POSIX no effect
 #   else // BOOST_WINDOWS_API
-    BOOST_FILESYSTEM_DECL path& make_preferred();  // change slashes to backslashes
+    IO_DLL_PUBLIC path& make_preferred();  // change slashes to backslashes
 #   endif
-    BOOST_FILESYSTEM_DECL path& remove_filename();
-    BOOST_FILESYSTEM_DECL path& remove_trailing_separator();
-    BOOST_FILESYSTEM_DECL path& replace_extension(const path& new_extension = path());
+    IO_DLL_PUBLIC path& remove_filename();
+    IO_DLL_PUBLIC path& remove_trailing_separator();
+    IO_DLL_PUBLIC path& replace_extension(const path& new_extension = path());
     void swap(path& rhs) BOOST_NOEXCEPT { m_pathname.swap(rhs.m_pathname); }
 
     //  -----  observers  -----
@@ -478,7 +474,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     //  are forward slashes). Motivation: simpler than a family of generic_*string
     //  functions.
 #   ifdef BOOST_WINDOWS_API
-    BOOST_FILESYSTEM_DECL path generic_path() const;
+    IO_DLL_PUBLIC path generic_path() const;
 #   else
     path generic_path() const { return path(*this); }
 #   endif
@@ -504,21 +500,21 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     //  -----  compare  -----
 
-    BOOST_FILESYSTEM_DECL int compare(const path& p) const BOOST_NOEXCEPT;  // generic, lexicographical
+    IO_DLL_PUBLIC int compare(const path& p) const BOOST_NOEXCEPT;  // generic, lexicographical
     int compare(const std::string& s) const { return compare(path(s)); }
     int compare(const value_type* s) const  { return compare(path(s)); }
 
     //  -----  decomposition  -----
 
-    BOOST_FILESYSTEM_DECL path  root_path() const;
-    BOOST_FILESYSTEM_DECL path  root_name() const;         // returns 0 or 1 element path
+    IO_DLL_PUBLIC path  root_path() const;
+    IO_DLL_PUBLIC path  root_name() const;         // returns 0 or 1 element path
                                                            // even on POSIX, root_name() is non-empty() for network paths
-    BOOST_FILESYSTEM_DECL path  root_directory() const;    // returns 0 or 1 element path
-    BOOST_FILESYSTEM_DECL path  relative_path() const;
-    BOOST_FILESYSTEM_DECL path  parent_path() const;
-    BOOST_FILESYSTEM_DECL path  filename() const;          // returns 0 or 1 element path
-    BOOST_FILESYSTEM_DECL path  stem() const;              // returns 0 or 1 element path
-    BOOST_FILESYSTEM_DECL path  extension() const;         // returns 0 or 1 element path
+    IO_DLL_PUBLIC path  root_directory() const;    // returns 0 or 1 element path
+    IO_DLL_PUBLIC path  relative_path() const;
+    IO_DLL_PUBLIC path  parent_path() const;
+    IO_DLL_PUBLIC path  filename() const;          // returns 0 or 1 element path
+    IO_DLL_PUBLIC path  stem() const;              // returns 0 or 1 element path
+    IO_DLL_PUBLIC path  extension() const;         // returns 0 or 1 element path
 
     //  -----  query  -----
 
@@ -546,8 +542,8 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     //  -----  lexical operations  -----
 
-    BOOST_FILESYSTEM_DECL path lexically_normal() const;
-    BOOST_FILESYSTEM_DECL path lexically_relative(const path& base) const;
+    IO_DLL_PUBLIC path lexically_normal() const;
+    IO_DLL_PUBLIC path lexically_relative(const path& base) const;
     path lexically_proximate(const path& base) const
     {
       path tmp(lexically_relative(base));
@@ -561,15 +557,15 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     class reverse_iterator;
     typedef reverse_iterator const_reverse_iterator;
 
-    BOOST_FILESYSTEM_DECL iterator begin() const;
-    BOOST_FILESYSTEM_DECL iterator end() const;
+    IO_DLL_PUBLIC iterator begin() const;
+    IO_DLL_PUBLIC iterator end() const;
     reverse_iterator rbegin() const;
     reverse_iterator rend() const;
 
     //  -----  static member functions  -----
 
-    static BOOST_FILESYSTEM_DECL std::locale imbue(const std::locale& loc);
-    static BOOST_FILESYSTEM_DECL const codecvt_type&  codecvt();
+    static IO_DLL_PUBLIC std::locale imbue(const std::locale& loc);
+    static IO_DLL_PUBLIC const codecvt_type&  codecvt();
 
     //  -----  deprecated functions  -----
 
@@ -640,10 +636,10 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     //  Returns: If separator is to be appended, m_pathname.size() before append. Otherwise 0.
     //  Note: An append is never performed if size()==0, so a returned 0 is unambiguous.
-    BOOST_FILESYSTEM_DECL string_type::size_type m_append_separator_if_needed();
+    IO_DLL_PUBLIC string_type::size_type m_append_separator_if_needed();
 
-    BOOST_FILESYSTEM_DECL void m_erase_redundant_separator(string_type::size_type sep_pos);
-    BOOST_FILESYSTEM_DECL string_type::size_type m_parent_path_end() const;
+    IO_DLL_PUBLIC void m_erase_redundant_separator(string_type::size_type sep_pos);
+    IO_DLL_PUBLIC string_type::size_type m_parent_path_end() const;
 
     // Was qualified; como433beta8 reports:
     //    warning #427-D: qualified name is not allowed in member declaration
@@ -651,21 +647,21 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     friend bool operator<(const path& lhs, const path& rhs);
 
     // see path::iterator::increment/decrement comment below
-    static BOOST_FILESYSTEM_DECL void m_path_iterator_increment(path::iterator& it);
-    static BOOST_FILESYSTEM_DECL void m_path_iterator_decrement(path::iterator& it);
+    static IO_DLL_PUBLIC void m_path_iterator_increment(path::iterator& it);
+    static IO_DLL_PUBLIC void m_path_iterator_decrement(path::iterator& it);
 
   };  // class path
 
   namespace detail
   {
-    BOOST_FILESYSTEM_DECL
+    IO_DLL_PUBLIC
       int lex_compare(path::iterator first1, path::iterator last1,
         path::iterator first2, path::iterator last2);
-    BOOST_FILESYSTEM_DECL
+    IO_DLL_PUBLIC
       const path&  dot_path();
-    BOOST_FILESYSTEM_DECL
+    IO_DLL_PUBLIC
       const path&  dot_dot_path();
-  }
+  } // namespace detail
 
 # ifndef BOOST_FILESYSTEM_NO_DEPRECATED
   typedef path wpath;
@@ -683,8 +679,8 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
   {
   private:
     friend class boost::iterator_core_access;
-    friend class boost::filesystem::path;
-    friend class boost::filesystem::path::reverse_iterator;
+    friend class io::path;
+    friend class io::path::reverse_iterator;
     friend void m_path_iterator_increment(path::iterator & it);
     friend void m_path_iterator_decrement(path::iterator & it);
 
@@ -729,7 +725,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
   private:
     friend class boost::iterator_core_access;
-    friend class boost::filesystem::path;
+    friend class io::path;
 
     const path& dereference() const { return m_element; }
     bool equal(const reverse_iterator& rhs) const { return m_itr == rhs.m_itr; }
@@ -792,7 +788,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
       hash_combine(seed, *it == L'/' ? L'\\' : *it);
     return seed;
 # else   // BOOST_POSIX_API
-    return hash_range(x.native().begin(), x.native().end());
+    return boost::hash_range(x.native().begin(), x.native().end());
 # endif
   }
 
@@ -839,12 +835,12 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
   //  These functions are holdovers from version 1. It isn't clear they have much
   //  usefulness, or how to generalize them for later versions.
 
-  BOOST_FILESYSTEM_DECL bool portable_posix_name(const std::string & name);
-  BOOST_FILESYSTEM_DECL bool windows_name(const std::string & name);
-  BOOST_FILESYSTEM_DECL bool portable_name(const std::string & name);
-  BOOST_FILESYSTEM_DECL bool portable_directory_name(const std::string & name);
-  BOOST_FILESYSTEM_DECL bool portable_file_name(const std::string & name);
-  BOOST_FILESYSTEM_DECL bool native(const std::string & name);
+  IO_DLL_PUBLIC bool portable_posix_name(const std::string & name);
+  IO_DLL_PUBLIC bool windows_name(const std::string & name);
+  IO_DLL_PUBLIC bool portable_name(const std::string & name);
+  IO_DLL_PUBLIC bool portable_directory_name(const std::string & name);
+  IO_DLL_PUBLIC bool portable_file_name(const std::string & name);
+  IO_DLL_PUBLIC bool native(const std::string & name);
 
   namespace detail
   {
@@ -1026,11 +1022,5 @@ namespace path_traits
     convert(from, 0, to, path::codecvt());
   }
 }  // namespace path_traits
-}  // namespace filesystem
-}  // namespace boost
+}  // namespace io
 
-//----------------------------------------------------------------------------//
-
-#include <boost/config/abi_suffix.hpp> // pops abi_prefix.hpp pragmas
-
-#endif  // BOOST_FILESYSTEM_PATH_HPP
