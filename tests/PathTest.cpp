@@ -773,6 +773,30 @@ TEST_F(PathTest, iterator) {
 #endif
 }
 
+TEST_F(PathTest, test_reverse_iterators) {
+    path p1;
+    EXPECT_TRUE(p1.rbegin() == p1.rend());
+
+    path p2("/");
+    EXPECT_TRUE(p2.rbegin() != p2.rend());
+    EXPECT_TRUE(*p2.rbegin() == "/");
+    EXPECT_TRUE(++p2.rbegin() == p2.rend());
+
+    path p3("foo/bar/baz");
+
+    path::reverse_iterator it(p3.rbegin());
+    EXPECT_TRUE(p3.rbegin() != p3.rend());
+    EXPECT_TRUE(*it == "baz");
+    EXPECT_TRUE(*++it == "bar");
+    EXPECT_TRUE(*++it == "foo");
+    EXPECT_TRUE(*--it == "bar");
+    EXPECT_TRUE(*--it == "baz");
+    EXPECT_TRUE(*++it == "bar");
+    EXPECT_TRUE(*++it == "foo");
+    EXPECT_TRUE(++it == p3.rend());
+}
+
+
 TEST_F(PathTest, non_member) {
     // test non-member functions, particularly operator overloads
 
