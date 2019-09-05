@@ -27,7 +27,7 @@
 //#include <boost/filesystem/path_traits.hpp>  // includes <cwchar>
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+//#include <boost/iterator/iterator_facade.hpp>
 #include <boost/core/enable_if.hpp>
 #include <boost/io/detail/quoted_manip.hpp>
 #include <boost/functional/hash_fwd.hpp>
@@ -768,41 +768,66 @@ private:
   //                         class path::reverse_iterator                               //
   //------------------------------------------------------------------------------------//
 
-  class path::reverse_iterator
-    : public boost::iterator_facade<
-      path::reverse_iterator,
-      path const,
-      boost::bidirectional_traversal_tag >
-  {
-  public:
-    explicit reverse_iterator(iterator itr) : m_itr(itr)
-    {
-      if (itr != itr.m_path_ptr->begin())
-        m_element = *--itr;
+  class path::reverse_iterator : public std::iterator<
+                          std::bidirectional_iterator_tag, // iterator_category
+                          path,                            // value_type
+                          long,                            // difference_type
+                          const path*,                     // pointer
+                          path&                            // reference
+                        > {
+public:
+    explicit reverse_iterator(path::iterator itr) :
+        m_itr(itr) {
+        if (itr != itr.m_path_ptr->begin())
+            m_element = *--itr;
     }
 
-  private:
-    friend class boost::iterator_core_access;
+    const path& operator*() const { return dereference(); }
+    const path* operator->() const { return &dereference(); }
+
+    reverse_iterator& operator++() {
+        increment();
+        return *this;
+    }
+    reverse_iterator operator++(int) {
+        auto tmp = *this;
+        increment();
+        return tmp;
+    }
+
+    reverse_iterator& operator--() {
+        decrement();
+        return *this;
+    }
+    reverse_iterator operator--(int) {
+        auto tmp = *this;
+        decrement();
+        return tmp;
+    }
+
+    bool operator==(const reverse_iterator& rhs) const { return equal(rhs);}
+    bool operator!=(const reverse_iterator& rhs) const { return !equal(rhs);}
+
+private:
     friend class io::path;
 
     const path& dereference() const { return m_element; }
     bool equal(const reverse_iterator& rhs) const { return m_itr == rhs.m_itr; }
-    void increment()
-    {
+    void increment() {
       --m_itr;
       if (m_itr != m_itr.m_path_ptr->begin())
       {
-        iterator tmp = m_itr;
+        path::iterator tmp = m_itr;
         m_element = *--tmp;
       }
     }
-    void decrement()
-    {
+
+    void decrement() {
       m_element = *m_itr;
       ++m_itr;
     }
 
-    iterator m_itr;
+    path::iterator m_itr;
     path     m_element;
 
   }; // path::reverse_iterator
