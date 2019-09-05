@@ -4,7 +4,7 @@
 
 #include "io/Path.h"
 
-#include <boost/functional/hash.hpp>
+#include <functional>
 // TODO: fixme????
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
@@ -375,7 +375,7 @@ TEST_F(PathTest, observers) {
 }
 
 TEST_F(PathTest, relationals) {
-    boost::hash<path> hash;
+    std::hash<path> hash;
 
 # ifdef BOOST_WINDOWS_API
     // this is a critical use case to meet user expectations

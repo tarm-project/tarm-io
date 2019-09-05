@@ -15,6 +15,7 @@
 
 #include <string>
 #include <iterator>
+#include <functional>
 #include <cstring>
 #include <iosfwd>
 #include <stdexcept>
@@ -22,9 +23,59 @@
 #include <locale>
 #include <algorithm>
 #include <type_traits>
+#include <cstdint>
 
 namespace io
 {
+
+// TODO: move
+
+inline void hash_combine_impl(std::uint64_t& h, std::uint64_t k)
+{
+    const std::uint64_t m = 0xc6a4a7935bd1e995ul;
+    const int r = 47;
+
+    k *= m;
+    k ^= k >> r;
+    k *= m;
+
+    h ^= k;
+    h *= m;
+
+    // Completely arbitrary number, to prevent 0's
+    // from hashing to 0.
+    h += 0xe6546b64;
+}
+
+template <class T>
+inline void hash_combine(std::size_t& seed, T const& v)
+{
+    std::hash<T> hasher;
+    return hash_combine_impl(seed, hasher(v));
+}
+
+template <class It>
+inline std::size_t hash_range(It first, It last)
+{
+    std::size_t seed = 0;
+
+    for(; first != last; ++first)
+    {
+        hash_combine(seed, *first);
+    }
+
+    return seed;
+}
+
+template <class It>
+inline void hash_range(std::size_t& seed, It first, It last)
+{
+    for(; first != last; ++first)
+    {
+        hash_combine(seed, *first);
+    }
+}
+
 namespace path_detail // intentionally don't use filesystem::detail to not bring internal Boost.Filesystem functions into ADL via path_constants
 {
 
@@ -846,7 +897,7 @@ private:
       hash_combine(seed, *it == L'/' ? L'\\' : *it);
     return seed;
 # else   // BOOST_POSIX_API
-    return boost::hash_range(x.native().begin(), x.native().end());
+    return hash_range(x.native().begin(), x.native().end());
 # endif
   }
 
@@ -1080,3 +1131,12 @@ namespace path_traits
 }  // namespace path_traits
 }  // namespace io
 
+namespace std {
+
+template <> struct hash<io::path> {
+    size_t operator()(const io::path& x) const {
+        return io::hash_value(x);
+    }
+};
+
+} // namespace std
