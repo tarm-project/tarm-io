@@ -773,7 +773,7 @@ TEST_F(PathTest, iterator) {
 #endif
 }
 
-TEST_F(PathTest, test_reverse_iterators) {
+TEST_F(PathTest, reverse_iterators) {
     path p1;
     EXPECT_TRUE(p1.rbegin() == p1.rend());
 
@@ -796,6 +796,19 @@ TEST_F(PathTest, test_reverse_iterators) {
     EXPECT_TRUE(++it == p3.rend());
 }
 
+TEST_F(PathTest, modifiers) {
+    EXPECT_TRUE(path("").remove_filename() == "");
+    EXPECT_TRUE(path("foo").remove_filename() == "");
+    EXPECT_TRUE(path("/foo").remove_filename() == "/");
+    EXPECT_TRUE(path("foo/bar").remove_filename() == "foo");
+    EXPECT_EQ(path("foo/bar/").remove_filename(), path("foo/bar"));
+    EXPECT_EQ(path(".").remove_filename(), path(""));
+    EXPECT_EQ(path("./.").remove_filename(), path("."));
+    EXPECT_EQ(path("/.").remove_filename(), path("/"));
+    EXPECT_EQ(path("..").remove_filename(), path(""));
+    EXPECT_EQ(path("../..").remove_filename(), path(".."));
+    EXPECT_EQ(path("/..").remove_filename(), path("/"));
+}
 
 TEST_F(PathTest, non_member) {
     // test non-member functions, particularly operator overloads
