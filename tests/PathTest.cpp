@@ -447,6 +447,62 @@ TEST_F(PathTest, inserter_and_extractor) {
     EXPECT_TRUE(wp1 == wp2);
 }
 
+TEST_F(PathTest, other_non_members) {
+    path p1("foo");
+    path p2("bar");
+
+    //  operator /
+    EXPECT_TRUE(p1 / p2 == path("foo/bar").make_preferred());
+    EXPECT_TRUE("foo" / p2 == path("foo/bar").make_preferred());
+    EXPECT_TRUE(L"foo" / p2 == path("foo/bar").make_preferred());
+    EXPECT_TRUE(std::string("foo") / p2 == path("foo/bar").make_preferred());
+    EXPECT_TRUE(std::wstring(L"foo") / p2 == path("foo/bar").make_preferred());
+    EXPECT_TRUE(p1 / "bar" == path("foo/bar").make_preferred());
+    EXPECT_TRUE(p1 / L"bar" == path("foo/bar").make_preferred());
+    EXPECT_TRUE(p1 / std::string("bar") == path("foo/bar").make_preferred());
+    EXPECT_TRUE(p1 / std::wstring(L"bar") == path("foo/bar").make_preferred());
+
+    swap(p1, p2);
+
+    EXPECT_TRUE(p1 == "bar");
+    EXPECT_TRUE(p2 == "foo");
+
+    EXPECT_TRUE(!path("").filename_is_dot());
+    EXPECT_TRUE(!path("").filename_is_dot_dot());
+    EXPECT_TRUE(!path("..").filename_is_dot());
+    EXPECT_TRUE(!path(".").filename_is_dot_dot());
+    EXPECT_TRUE(!path("...").filename_is_dot_dot());
+    EXPECT_TRUE(path(".").filename_is_dot());
+    EXPECT_TRUE(path("..").filename_is_dot_dot());
+    EXPECT_TRUE(path("/.").filename_is_dot());
+    EXPECT_TRUE(path("/..").filename_is_dot_dot());
+    EXPECT_TRUE(!path("a.").filename_is_dot());
+    EXPECT_TRUE(!path("a..").filename_is_dot_dot());
+
+    // edge cases
+    EXPECT_TRUE(path("foo/").filename() == path("."));
+    EXPECT_TRUE(path("foo/").filename_is_dot());
+    EXPECT_TRUE(path("/").filename() == path("/"));
+    EXPECT_TRUE(!path("/").filename_is_dot());
+// TODO: fixme
+# ifdef BOOST_WINDOWS_API
+    EXPECT_TRUE(path("c:.").filename() == path("."));
+    EXPECT_TRUE(path("c:.").filename_is_dot());
+    EXPECT_TRUE(path("c:/").filename() == path("/"));
+    EXPECT_TRUE(!path("c:\\").filename_is_dot());
+# else
+    EXPECT_TRUE(path("c:.").filename() == path("c:."));
+    EXPECT_TRUE(!path("c:.").filename_is_dot());
+    EXPECT_TRUE(path("c:/").filename() == path("."));
+    EXPECT_TRUE(path("c:/").filename_is_dot());
+# endif
+
+    // check that the implementation code to make the edge cases above work right
+    // doesn't cause some non-edge cases to fail
+    EXPECT_TRUE(path("c:").filename() != path("."));
+    EXPECT_TRUE(!path("c:").filename_is_dot());
+}
+
 TEST_F(PathTest, iterator) {
     path itr_ck = "";
     path::const_iterator itr = itr_ck.begin();
