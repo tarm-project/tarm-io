@@ -28,10 +28,10 @@
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
 //#include <boost/iterator/iterator_facade.hpp>
-#include <boost/core/enable_if.hpp>
+//#include <boost/core/enable_if.hpp>
 #include <boost/io/detail/quoted_manip.hpp>
 #include <boost/functional/hash_fwd.hpp>
-#include <boost/type_traits/is_integral.hpp>
+//#include <boost/type_traits/is_integral.hpp>
 #include <string>
 #include <iterator>
 #include <cstring>
@@ -40,6 +40,7 @@
 #include <cassert>
 #include <locale>
 #include <algorithm>
+#include <type_traits>
 
 namespace io
 {
@@ -155,8 +156,8 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
 
     template <class Source>
     path(Source const& source,
-      typename boost::enable_if<path_traits::is_pathable<
-        typename boost::decay<Source>::type> >::type* =0)
+      typename std::enable_if<path_traits::is_pathable<
+        typename std::decay<Source>::type>::value >::type* =0)
     {
       path_traits::dispatch(source, m_pathname);
     }
@@ -215,8 +216,8 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     }
 
     template <class Source>
-      typename boost::enable_if<path_traits::is_pathable<
-        typename boost::decay<Source>::type>, path&>::type
+      typename std::enable_if<path_traits::is_pathable<
+        typename std::decay<Source>::type>::value, path&>::type
     operator=(Source const& source)
     {
       m_pathname.clear();
@@ -272,8 +273,8 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     //  -----  concatenation  -----
 
     template <class Source>
-      typename boost::enable_if<path_traits::is_pathable<
-        typename boost::decay<Source>::type>, path&>::type
+      typename std::enable_if<path_traits::is_pathable<
+        typename std::decay<Source>::type>::value, path&>::type
     operator+=(Source const& source)
     {
       return concat(source);
@@ -288,7 +289,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     path& operator+=(value_type c)          { m_pathname += c; return *this; }
 
     template <class CharT>
-      typename boost::enable_if<boost::is_integral<CharT>, path&>::type
+      typename std::enable_if<std::is_integral<CharT>::value, path&>::type
     operator+=(CharT c)
     {
       CharT tmp[2];
@@ -341,8 +342,8 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
     IO_DLL_PUBLIC path& operator/=(const path& p);
 
     template <class Source>
-      typename boost::enable_if<path_traits::is_pathable<
-        typename boost::decay<Source>::type>, path&>::type
+      typename std::enable_if<path_traits::is_pathable<
+        typename std::decay<Source>::type>::value, path&>::type
     operator/=(Source const& source)
     {
       return append(source);
