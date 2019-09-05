@@ -671,6 +671,63 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
   //                             class path::iterator                                   //
   //------------------------------------------------------------------------------------//
 
+class path::iterator : public std::iterator<
+                          std::bidirectional_iterator_tag, // iterator_category
+                          path,                            // value_type
+                          long,                            // difference_type
+                          const path*,                     // pointer
+                          path&                            // reference
+                        > {
+    friend class io::path;
+    friend class io::path::reverse_iterator;
+    friend void m_path_iterator_increment(path::iterator & it);
+    friend void m_path_iterator_decrement(path::iterator & it);
+
+public:
+    const path& operator*() const { return dereference(); }
+    const path* operator->() const { return &dereference(); }
+
+    iterator& operator++() {
+        increment();
+        return *this;
+    }
+    iterator operator++(int) {
+        auto tmp = *this;
+        increment();
+        return tmp;
+    }
+
+    iterator& operator--() {
+        decrement();
+        return *this;
+    }
+    iterator operator--(int) {
+        auto tmp = *this;
+        decrement();
+        return tmp;
+    }
+
+    bool operator==(const iterator& rhs) const { return equal(rhs);}
+    bool operator!=(const iterator& rhs) const { return !equal(rhs);}
+
+private:
+    const path& dereference() const { return m_element; }
+    bool equal(const iterator& rhs) const { return m_path_ptr == rhs.m_path_ptr && m_pos == rhs.m_pos; }
+    void increment() { m_path_iterator_increment(*this); }
+    void decrement() { m_path_iterator_decrement(*this); }
+
+    path                    m_element;   // current element
+    const path*             m_path_ptr;  // path being iterated over
+    string_type::size_type  m_pos;       // position of m_element in
+                                         // m_path_ptr->m_pathname.
+                                         // if m_element is implicit dot, m_pos is the
+                                         // position of the last separator in the path.
+                                         // end() iterator is indicated by
+                                         // m_pos == m_path_ptr->m_pathname.size()
+  }; // path::iterator
+
+// TODO: remove this
+/*
   class path::iterator
     : public boost::iterator_facade<
       path::iterator,
@@ -705,6 +762,7 @@ namespace path_detail // intentionally don't use filesystem::detail to not bring
                                          // end() iterator is indicated by
                                          // m_pos == m_path_ptr->m_pathname.size()
   }; // path::iterator
+*/
 
   //------------------------------------------------------------------------------------//
   //                         class path::reverse_iterator                               //
