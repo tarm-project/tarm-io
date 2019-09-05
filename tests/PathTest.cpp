@@ -5,6 +5,8 @@
 #include "io/Path.h"
 
 #include <boost/functional/hash.hpp>
+// TODO: fixme????
+#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
 #include <iterator>
 #include <string>
@@ -883,6 +885,29 @@ TEST_F(PathTest, queries) {
     EXPECT_TRUE(p2.has_extension());
     EXPECT_TRUE(p2.is_absolute());
     EXPECT_TRUE(!p2.is_relative());
+}
+
+TEST_F(PathTest, imbue_locale) {
+    //  weak test case for before/after states since we don't know what characters the
+    //  default locale accepts.
+    path before("abc");
+
+    //  So that tests are run with known encoding, use Boost UTF-8 codecvt
+    //  \u2722 and \xE2\x9C\xA2 are UTF-16 and UTF-8 FOUR TEARDROP-SPOKED ASTERISK
+
+    std::locale global_loc = std::locale();
+    // TODO: fixme boost::filesystem::detail::utf8_codecvt_facet
+    std::locale loc(global_loc, new boost::filesystem::detail::utf8_codecvt_facet);
+    std::locale old_loc = path::imbue(loc);
+
+    path p2("\xE2\x9C\xA2");
+    EXPECT_TRUE(p2.wstring().size() == 1);
+    EXPECT_TRUE(p2.wstring()[0] == 0x2722);
+
+    path::imbue(old_loc);
+
+    path after("abc");
+    EXPECT_TRUE(before == after);
 }
 
 TEST_F(PathTest, non_member) {
