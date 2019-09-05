@@ -30,7 +30,7 @@ namespace io
 
 // TODO: move
 
-inline void hash_combine_impl(std::uint64_t& h, std::uint64_t k)
+inline void hash_combine_impl(std::size_t& h, std::uint64_t k)
 {
     const std::uint64_t m = 0xc6a4a7935bd1e995ul;
     const int r = 47;
