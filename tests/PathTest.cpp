@@ -425,6 +425,28 @@ TEST_F(PathTest, relationals) {
     EXPECT_TRUE(p2 >= p);
 }
 
+TEST_F(PathTest, inserter_and_extractor) {
+    path p1("foo bar");  // verify space in path roundtrips per ticket #3863
+    path p2;
+
+    std::stringstream ss;
+
+    EXPECT_TRUE(p1 != p2);
+    ss << p1;
+    ss >> p2;
+    EXPECT_TRUE(p1 == p2);
+
+    path wp1(L"foo bar");
+    path wp2;
+
+    std::wstringstream wss;
+
+    EXPECT_TRUE(wp1 != wp2);
+    wss << wp1;
+    wss >> wp2;
+    EXPECT_TRUE(wp1 == wp2);
+}
+
 TEST_F(PathTest, iterator) {
     path itr_ck = "";
     path::const_iterator itr = itr_ck.begin();
