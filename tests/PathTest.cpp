@@ -4,14 +4,13 @@
 
 #include "io/Path.h"
 
-#include <functional>
-// TODO: fixme????
-#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
+#include "io/Utf8CodecvtFacet.h"
 
 #include <iterator>
 #include <string>
 #include <locale>
 #include <cwchar>  // for mbstate_t
+#include <functional>
 
 // Workaround for GTest printers bug and path
 // https://github.com/google/googlemock/issues/170
@@ -900,7 +899,7 @@ TEST_F(PathTest, imbue_locale) {
 
     std::locale global_loc = std::locale();
     // TODO: fixme boost::filesystem::detail::utf8_codecvt_facet
-    std::locale loc(global_loc, new boost::filesystem::detail::utf8_codecvt_facet);
+    std::locale loc(global_loc, new io::detail::utf8_codecvt_facet);
     std::locale old_loc = path::imbue(loc);
 
     path p2("\xE2\x9C\xA2");
