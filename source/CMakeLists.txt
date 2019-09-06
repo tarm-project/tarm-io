@@ -56,7 +56,7 @@ target_compile_definitions(io PRIVATE IO_BUILDING_DLL)
 
 # TODO: no exceptions even in regular builds????
 if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
-    target_compile_options(io PRIVATE -fno-exceptions)
+#    target_compile_options(io PRIVATE -fno-exceptions)
 endif()
 
 add_dependencies(io libuv)

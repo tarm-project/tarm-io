@@ -195,7 +195,7 @@ namespace io
     m_pathname.erase(m_parent_path_end());
     return *this;
   }
-
+// TODO: not tested by Boost, need write own test
   IO_DLL_PUBLIC path& path::remove_trailing_separator()
   {
     if (!m_pathname.empty()
