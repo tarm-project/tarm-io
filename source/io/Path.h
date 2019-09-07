@@ -1041,45 +1041,6 @@ private:
   std::wstring path::generic_string<std::wstring>(const codecvt_type& cvt) const
     { return generic_wstring(cvt); }
 
-  //--------------------------------------------------------------------------------------//
-  //                     path_traits convert function implementations                     //
-  //                        requiring path::codecvt() be visable                          //
-  //--------------------------------------------------------------------------------------//
-
-namespace path_traits
-{  //  without codecvt
-  inline
-    void convert(const char* from,
-    const char* from_end,    // 0 for null terminated MBCS
-    std::wstring & to)
-  {
-    convert(from, from_end, to, path::codecvt());
-  }
-
-  inline
-    void convert(const wchar_t* from,
-    const wchar_t* from_end,  // 0 for null terminated MBCS
-    std::string & to)
-  {
-    convert(from, from_end, to, path::codecvt());
-  }
-
-  inline
-    void convert(const char* from,
-    std::wstring & to)
-  {
-    assert(!!from);
-    convert(from, 0, to, path::codecvt());
-  }
-
-  inline
-    void convert(const wchar_t* from,
-    std::string & to)
-  {
-    assert(!!from);
-    convert(from, 0, to, path::codecvt());
-  }
-}  // namespace path_traits
 }  // namespace io
 
 namespace std {

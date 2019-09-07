@@ -82,96 +82,60 @@ void convert(const char* from, const char* from_end, std::wstring& to, const cod
 IO_DLL_PUBLIC
 void convert(const wchar_t* from, const wchar_t* from_end, std::string& to, const codecvt_type& cvt);
 
-// TODO: move to cpp
-inline
-void convert(const char* from, std::wstring& to, const codecvt_type& cvt) {
-    assert(from);
-    convert(from, 0, to, cvt);
-}
+IO_DLL_PUBLIC
+void convert(const char* from, std::wstring& to, const codecvt_type& cvt);
 
-// TODO: move to cpp
-inline void convert(const wchar_t* from, std::string& to, const codecvt_type& cvt) {
-    assert(from);
-    convert(from, 0, to, cvt);
-}
+IO_DLL_PUBLIC
+void convert(const wchar_t* from, std::string& to, const codecvt_type& cvt);
 
 //  without codecvt
 
 // from_end is 0 for null terminated MBCS
-inline
+IO_DLL_PUBLIC
 void convert(const char* from, const char* from_end, std::wstring& to);
 
 // from_end is 0 for null terminated MBCS
-inline
+IO_DLL_PUBLIC
 void convert(const wchar_t* from, const wchar_t* from_end, std::string& to);
 
-inline
+IO_DLL_PUBLIC
 void convert(const char* from, std::wstring& to);
 
-inline
+IO_DLL_PUBLIC
 void convert(const wchar_t* from, std::string& to);
 
 // value types same  -----------------------------------------------------------------//
 
 // char with codecvt
+IO_DLL_PUBLIC
+void convert(const char* from, const char* from_end, std::string& to, const codecvt_type&);
 
-inline
-void convert(const char* from, const char* from_end, std::string& to, const codecvt_type&) {
-    assert(from);
-    assert(from_end);
-    to.append(from, from_end);
-}
-
-inline
-void convert(const char* from, std::string& to, const codecvt_type&) {
-    assert(from);
-    to += from;
-}
+IO_DLL_PUBLIC
+void convert(const char* from, std::string& to, const codecvt_type&);
 
 // wchar_t with codecvt
 
-inline
-void convert(const wchar_t* from, const wchar_t* from_end, std::wstring& to, const codecvt_type&) {
-    assert(from);
-    assert(from_end);
-    to.append(from, from_end);
-}
+IO_DLL_PUBLIC
+void convert(const wchar_t* from, const wchar_t* from_end, std::wstring& to, const codecvt_type&);
 
-inline
-void convert(const wchar_t* from, std::wstring& to, const codecvt_type&) {
-    assert(from);
-    to += from;
-}
+IO_DLL_PUBLIC
+void convert(const wchar_t* from, std::wstring& to, const codecvt_type&);
 
 // char without codecvt
 
-inline
-void convert(const char* from, const char* from_end, std::string& to) {
-    assert(from);
-    assert(from_end);
-    to.append(from, from_end);
-}
+IO_DLL_PUBLIC
+void convert(const char* from, const char* from_end, std::string& to);
 
-inline
-void convert(const char* from, std::string& to) {
-    assert(from);
-    to += from;
-}
+IO_DLL_PUBLIC
+void convert(const char* from, std::string& to);
 
 // wchar_t without codecvt
 
-inline
-void convert(const wchar_t* from, const wchar_t* from_end, std::wstring& to) {
-    assert(from);
-    assert(from_end);
-    to.append(from, from_end);
-}
+IO_DLL_PUBLIC
+void convert(const wchar_t* from, const wchar_t* from_end, std::wstring& to);
 
-inline
-void convert(const wchar_t* from, std::wstring& to) {
-    assert(from);
-    to += from;
-}
+IO_DLL_PUBLIC
+void convert(const wchar_t* from, std::wstring& to);
 
 //  Source dispatch  -----------------------------------------------------------------//
 

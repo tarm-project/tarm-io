@@ -5,6 +5,8 @@
 
 #include "PathTraits.h"
 
+#include "Path.h"   // for path::codecvt()
+
 // TODO: boost dependency here
 #include <boost/scoped_array.hpp>
 
@@ -30,19 +32,19 @@ const std::size_t default_codecvt_buf_size = IO_FILESYSTEM_CODECVT_BUF_SIZE;
 //--------------------------------------------------------------------------------------//
 //                                                                                      //
 //  The public convert() functions do buffer management, and then forward to the        //
-//  convert_aux() functions for the actual call to the codecvt facet.                   //
+//  convert_impl() functions for the actual call to the codecvt facet.                   //
 //                                                                                      //
 //--------------------------------------------------------------------------------------//
 
 //--------------------------------------------------------------------------------------//
-//                      convert_aux const char* to wstring                             //
+//                      convert_impl const char* to wstring                             //
 //--------------------------------------------------------------------------------------//
 
-  void convert_aux(const char* from,
-                   const char* from_end,
-                   wchar_t* to, wchar_t* to_end,
-                   std::wstring & target,
-                   const pt::codecvt_type & cvt) {
+  void convert_impl(const char* from,
+                    const char* from_end,
+                    wchar_t* to, wchar_t* to_end,
+                    std::wstring & target,
+                    const pt::codecvt_type & cvt) {
     std::mbstate_t state  = std::mbstate_t();  // perhaps unneeded, but cuts bug reports
     const char* from_next;
     wchar_t* to_next;
@@ -57,15 +59,14 @@ const std::size_t default_codecvt_buf_size = IO_FILESYSTEM_CODECVT_BUF_SIZE;
 }
 
 //--------------------------------------------------------------------------------------//
-//                      convert_aux const wchar_t* to string                           //
+//                      convert_impl const wchar_t* to string                           //
 //--------------------------------------------------------------------------------------//
 
-  void convert_aux(const wchar_t* from,
-                   const wchar_t* from_end,
-                   char* to, char* to_end,
-                   std::string & target,
-                   const pt::codecvt_type & cvt)
-  {
+  void convert_impl(const wchar_t* from,
+                    const wchar_t* from_end,
+                    char* to, char* to_end,
+                    std::string & target,
+                    const pt::codecvt_type & cvt) {
     std::mbstate_t state  = std::mbstate_t();  // perhaps unneeded, but cuts bug reports
     const wchar_t* from_next;
     char* to_next;
@@ -112,10 +113,10 @@ namespace path_traits {
     //  dynamically allocate a buffer only if source is unusually large
     if (buf_size > default_codecvt_buf_size) {
         boost::scoped_array< wchar_t > buf(new wchar_t [buf_size]);
-        convert_aux(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
+        convert_impl(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
     } else {
         wchar_t buf[default_codecvt_buf_size];
-        convert_aux(from, from_end, buf, buf+default_codecvt_buf_size, to, cvt);
+        convert_impl(from, from_end, buf, buf+default_codecvt_buf_size, to, cvt);
     }
 }
 
@@ -127,8 +128,7 @@ namespace path_traits {
   void convert(const wchar_t* from,
                 const wchar_t* from_end,  // 0 for null terminated MBCS
                 std::string & to,
-                const codecvt_type & cvt)
-  {
+                const codecvt_type & cvt) {
     assert(from);
 
     if (!from_end) { // null terminated
@@ -148,11 +148,84 @@ namespace path_traits {
     //  dynamically allocate a buffer only if source is unusually large
     if (buf_size > default_codecvt_buf_size) {
         boost::scoped_array< char > buf(new char [buf_size]);
-        convert_aux(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
+        convert_impl(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
     } else {
         char buf[default_codecvt_buf_size];
-        convert_aux(from, from_end, buf, buf+default_codecvt_buf_size, to, cvt);
+        convert_impl(from, from_end, buf, buf+default_codecvt_buf_size, to, cvt);
     }
+}
+
+void convert(const char* from, std::wstring& to, const codecvt_type& cvt) {
+    assert(from);
+    convert(from, 0, to, cvt);
+}
+
+
+void convert(const wchar_t* from, std::string& to, const codecvt_type& cvt) {
+    assert(from);
+    convert(from, 0, to, cvt);
+}
+
+void convert(const char* from, const char* from_end, std::string& to, const codecvt_type&) {
+    assert(from);
+    assert(from_end);
+    to.append(from, from_end);
+}
+
+void convert(const char* from, std::string& to, const codecvt_type&) {
+    assert(from);
+    to += from;
+}
+
+void convert(const wchar_t* from, const wchar_t* from_end, std::wstring& to, const codecvt_type&) {
+    assert(from);
+    assert(from_end);
+    to.append(from, from_end);
+}
+
+void convert(const wchar_t* from, std::wstring& to, const codecvt_type&) {
+    assert(from);
+    to += from;
+}
+
+void convert(const char* from, const char* from_end, std::string& to) {
+    assert(from);
+    assert(from_end);
+    to.append(from, from_end);
+}
+
+void convert(const char* from, std::string& to) {
+    assert(from);
+    to += from;
+}
+
+void convert(const wchar_t* from, const wchar_t* from_end, std::wstring& to) {
+    assert(from);
+    assert(from_end);
+    to.append(from, from_end);
+}
+
+void convert(const wchar_t* from, std::wstring& to) {
+    assert(from);
+    to += from;
+}
+
+void convert(const char* from, const char* from_end, std::wstring& to) {
+    convert(from, from_end, to, path::codecvt());
+}
+
+void convert(const wchar_t* from, const wchar_t* from_end, std::string& to) {
+    convert(from, from_end, to, path::codecvt());
+}
+
+void convert(const char* from, std::wstring& to) {
+    assert(!!from);
+    convert(from, 0, to, path::codecvt());
+}
+
+void convert(const wchar_t* from, std::string & to) {
+    assert(!!from);
+    convert(from, 0, to, path::codecvt());
 }
 
 } // namespace path_traits
