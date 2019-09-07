@@ -9,7 +9,8 @@
 #include "Export.h"
 #include "PathTraits.h"
 
-#include <boost/io/detail/quoted_manip.hpp>
+//#include <boost/io/detail/quoted_manip.hpp>
+#include "QuotedManip.h"
 
 #include <string>
 #include <iterator>
@@ -876,7 +877,7 @@ private:
   operator<<(std::basic_ostream<Char, Traits>& os, const path& p)
   {
     return os
-      << boost::io::quoted(p.template string<std::basic_string<Char> >(), static_cast<Char>('&'));
+      << ::io::quoted(p.template string<std::basic_string<Char> >(), static_cast<Char>('&'));
   }
 
   template <class Char, class Traits>
@@ -884,7 +885,7 @@ private:
   operator>>(std::basic_istream<Char, Traits>& is, path& p)
   {
     std::basic_string<Char> str;
-    is >> boost::io::quoted(str, static_cast<Char>('&'));
+    is >> ::io::quoted(str, static_cast<Char>('&'));
     p = str;
     return is;
   }

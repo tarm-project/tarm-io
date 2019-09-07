@@ -75,11 +75,7 @@ namespace
       const string_type& src,
       size_type& element_pos,
       size_type& element_size,
-#     if !BOOST_WORKAROUND(BOOST_MSVC, <= 1310) // VC++ 7.1
       size_type size = string_type::npos
-#     else
-      size_type size = -1
-#     endif
     );
 
 }  // unnamed namespace
