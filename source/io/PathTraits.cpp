@@ -7,12 +7,10 @@
 
 #include "Path.h"   // for path::codecvt()
 
-// TODO: boost dependency here
-#include <boost/scoped_array.hpp>
-
 #include <locale>   // for codecvt_base::result
 #include <cstring>  // for strlen
 #include <cwchar>   // for wcslen
+#include <memory>   // for unique_ptr
 
 namespace pt = io::path_traits;
 
@@ -97,8 +95,7 @@ namespace path_traits {
   void convert(const char* from,
                 const char* from_end,    // 0 for null terminated MBCS
                 std::wstring & to,
-                const codecvt_type & cvt)
-  {
+                const codecvt_type & cvt) {
     assert(from);
 
     if (!from_end) { // null terminated
@@ -112,7 +109,7 @@ namespace path_traits {
 
     //  dynamically allocate a buffer only if source is unusually large
     if (buf_size > default_codecvt_buf_size) {
-        boost::scoped_array< wchar_t > buf(new wchar_t [buf_size]);
+        std::unique_ptr<wchar_t[]> buf(new wchar_t [buf_size]);
         convert_impl(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
     } else {
         wchar_t buf[default_codecvt_buf_size];
@@ -147,7 +144,7 @@ namespace path_traits {
 
     //  dynamically allocate a buffer only if source is unusually large
     if (buf_size > default_codecvt_buf_size) {
-        boost::scoped_array< char > buf(new char [buf_size]);
+        std::unique_ptr<char[]> buf(new char [buf_size]);
         convert_impl(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
     } else {
         char buf[default_codecvt_buf_size];
