@@ -5,6 +5,7 @@
 
 #include "PathTraits.h"
 
+// TODO: boost dependency here
 #include <boost/scoped_array.hpp>
 
 #include <locale>   // for codecvt_base::result
@@ -17,13 +18,13 @@ namespace pt = io::path_traits;
 //                                  configuration                                       //
 //--------------------------------------------------------------------------------------//
 
-#ifndef BOOST_FILESYSTEM_CODECVT_BUF_SIZE
-# define BOOST_FILESYSTEM_CODECVT_BUF_SIZE 256
+#ifndef IO_FILESYSTEM_CODECVT_BUF_SIZE
+# define IO_FILESYSTEM_CODECVT_BUF_SIZE 256
 #endif
 
 namespace {
 
-  const std::size_t default_codecvt_buf_size = BOOST_FILESYSTEM_CODECVT_BUF_SIZE;
+const std::size_t default_codecvt_buf_size = IO_FILESYSTEM_CODECVT_BUF_SIZE;
 
 
 //--------------------------------------------------------------------------------------//
@@ -37,8 +38,7 @@ namespace {
 //                      convert_aux const char* to wstring                             //
 //--------------------------------------------------------------------------------------//
 
-  void convert_aux(
-                   const char* from,
+  void convert_aux(const char* from,
                    const char* from_end,
                    wchar_t* to, wchar_t* to_end,
                    std::wstring & target,
@@ -50,19 +50,17 @@ namespace {
     std::codecvt_base::result res;
 
     if ((res=cvt.in(state, from, from_end, from_next, to, to_end, to_next)) != std::codecvt_base::ok) {
-      // TODO: we do not want to throw exceptions
-      throw std::system_error(res, io::codecvt_error_category(),
-        "boost::filesystem::path codecvt to wstring");
+        // TODO: we do not want to throw exceptions
+        throw std::system_error(res, io::codecvt_error_category(), "io::Path codecvt to wstring");
     }
     target.append(to, to_next);
-  }
+}
 
 //--------------------------------------------------------------------------------------//
 //                      convert_aux const wchar_t* to string                           //
 //--------------------------------------------------------------------------------------//
 
-  void convert_aux(
-                   const wchar_t* from,
+  void convert_aux(const wchar_t* from,
                    const wchar_t* from_end,
                    char* to, char* to_end,
                    std::string & target,
@@ -75,20 +73,20 @@ namespace {
     std::codecvt_base::result res;
 
     if ((res=cvt.out(state, from, from_end, from_next, to, to_end, to_next)) != std::codecvt_base::ok) {
-      // TODO: we do not want to throw exceptions
-      throw std::system_error(res, io::codecvt_error_category(),
-        "boost::filesystem::path codecvt to string");
+        // TODO: we do not want to throw exceptions
+        throw std::system_error(res, io::codecvt_error_category(), "io::Path codecvt to string");
     }
     target.append(to, to_next);
-  }
+}
 
-}  // unnamed namespace
+}  // namespace
 
 //--------------------------------------------------------------------------------------//
 //                                   path_traits                                        //
 //--------------------------------------------------------------------------------------//
 
-namespace io { namespace path_traits {
+namespace io {
+namespace path_traits {
 
 //--------------------------------------------------------------------------------------//
 //                          convert const char* to wstring                              //
@@ -102,27 +100,24 @@ namespace io { namespace path_traits {
   {
     assert(from);
 
-    if (!from_end)  // null terminated
-    {
-      from_end = from + std::strlen(from);
+    if (!from_end) { // null terminated
+        from_end = from + std::strlen(from);
     }
 
-    if (from == from_end) return;
+    if (from == from_end)
+        return;
 
     std::size_t buf_size = (from_end - from) * 3;  // perhaps too large, but that's OK
 
     //  dynamically allocate a buffer only if source is unusually large
-    if (buf_size > default_codecvt_buf_size)
-    {
-      boost::scoped_array< wchar_t > buf(new wchar_t [buf_size]);
-      convert_aux(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
+    if (buf_size > default_codecvt_buf_size) {
+        boost::scoped_array< wchar_t > buf(new wchar_t [buf_size]);
+        convert_aux(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
+    } else {
+        wchar_t buf[default_codecvt_buf_size];
+        convert_aux(from, from_end, buf, buf+default_codecvt_buf_size, to, cvt);
     }
-    else
-    {
-      wchar_t buf[default_codecvt_buf_size];
-      convert_aux(from, from_end, buf, buf+default_codecvt_buf_size, to, cvt);
-    }
-  }
+}
 
 //--------------------------------------------------------------------------------------//
 //                         convert const wchar_t* to string                            //
@@ -136,12 +131,12 @@ namespace io { namespace path_traits {
   {
     assert(from);
 
-    if (!from_end)  // null terminated
-    {
-      from_end = from + std::wcslen(from);
+    if (!from_end) { // null terminated
+        from_end = from + std::wcslen(from);
     }
 
-    if (from == from_end) return;
+    if (from == from_end)
+        return;
 
     //  The codecvt length functions may not be implemented, and I don't really
     //  understand them either. Thus this code is just a guess; if it turns
@@ -151,15 +146,14 @@ namespace io { namespace path_traits {
     buf_size += 4;  // encodings like shift-JIS need some prefix space
 
     //  dynamically allocate a buffer only if source is unusually large
-    if (buf_size > default_codecvt_buf_size)
-    {
-      boost::scoped_array< char > buf(new char [buf_size]);
-      convert_aux(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
+    if (buf_size > default_codecvt_buf_size) {
+        boost::scoped_array< char > buf(new char [buf_size]);
+        convert_aux(from, from_end, buf.get(), buf.get()+buf_size, to, cvt);
+    } else {
+        char buf[default_codecvt_buf_size];
+        convert_aux(from, from_end, buf, buf+default_codecvt_buf_size, to, cvt);
     }
-    else
-    {
-      char buf[default_codecvt_buf_size];
-      convert_aux(from, from_end, buf, buf+default_codecvt_buf_size, to, cvt);
-    }
-  }
-}} // namespace io::path_traits
+}
+
+} // namespace path_traits
+} // namespace io

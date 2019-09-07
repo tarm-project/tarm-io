@@ -479,8 +479,7 @@ namespace path_detail // intentionally don't use io::detail to not bring interna
     {
       std::wstring tmp;
       if (!m_pathname.empty())
-        path_traits::convert(m_pathname.c_str(), m_pathname.c_str()+m_pathname.size(),
-          tmp);
+        path_traits::convert(m_pathname.c_str(), m_pathname.c_str()+m_pathname.size(), tmp);
       return tmp;
     }
     const std::wstring wstring(const codecvt_type& cvt) const
@@ -1049,7 +1048,6 @@ private:
 
 namespace path_traits
 {  //  without codecvt
-
   inline
     void convert(const char* from,
     const char* from_end,    // 0 for null terminated MBCS
