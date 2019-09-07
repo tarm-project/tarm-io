@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Export.h"
+#include "HashRange.h"
 #include "PathTraits.h"
 
 //#include <boost/io/detail/quoted_manip.hpp>
@@ -14,7 +15,6 @@
 
 #include <string>
 #include <iterator>
-#include <functional>
 #include <cstring>
 #include <iosfwd>
 #include <stdexcept>
@@ -24,79 +24,30 @@
 #include <type_traits>
 #include <cstdint>
 
-namespace io
-{
+namespace io {
+namespace path_detail { // intentionally don't use io::detail to not bring internal filesystem functions into ADL via path_constants
 
-// TODO: move
+template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
+struct path_constants {
+    using path_constants_base = path_constants< Char, Separator, PreferredSeparator, Dot > ;
+    using value_type = Char;
 
-inline void hash_combine_impl(std::size_t& h, std::uint64_t k)
-{
-    const std::uint64_t m = 0xc6a4a7935bd1e995ul;
-    const int r = 47;
+    static constexpr value_type separator = Separator;
+    static constexpr value_type preferred_separator = PreferredSeparator;
+    static constexpr value_type dot = Dot;
+};
 
-    k *= m;
-    k ^= k >> r;
-    k *= m;
+template<typename Char, Char Separator, Char PreferredSeparator, Char Dot >
+constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
+path_constants< Char, Separator, PreferredSeparator, Dot >::separator;
 
-    h ^= k;
-    h *= m;
+template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
+constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
+path_constants< Char, Separator, PreferredSeparator, Dot >::preferred_separator;
 
-    // Completely arbitrary number, to prevent 0's
-    // from hashing to 0.
-    h += 0xe6546b64;
-}
-
-template <class T>
-inline void hash_combine(std::size_t& seed, T const& v)
-{
-    std::hash<T> hasher;
-    return hash_combine_impl(seed, hasher(v));
-}
-
-template <class It>
-inline std::size_t hash_range(It first, It last)
-{
-    std::size_t seed = 0;
-
-    for(; first != last; ++first)
-    {
-        hash_combine(seed, *first);
-    }
-
-    return seed;
-}
-
-template <class It>
-inline void hash_range(std::size_t& seed, It first, It last)
-{
-    for(; first != last; ++first)
-    {
-        hash_combine(seed, *first);
-    }
-}
-
-namespace path_detail // intentionally don't use io::detail to not bring internal filesystem functions into ADL via path_constants
-{
-
-  template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-  struct path_constants
-  {
-    typedef path_constants< Char, Separator, PreferredSeparator, Dot > path_constants_base;
-    typedef Char                                    value_type;
-    static constexpr value_type      separator = Separator;
-    static constexpr value_type      preferred_separator = PreferredSeparator;
-    static constexpr value_type      dot = Dot;
-  };
-
-  template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-  constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
-  path_constants< Char, Separator, PreferredSeparator, Dot >::separator;
-  template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-  constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
-  path_constants< Char, Separator, PreferredSeparator, Dot >::preferred_separator;
-  template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-  constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
-  path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
+template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
+constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
+path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
 
 } // namespace path_detail
 
@@ -208,22 +159,17 @@ namespace path_detail // intentionally don't use io::detail to not bring interna
     }
 
     template <class InputIterator>
-    path(InputIterator begin, InputIterator end)
-    {
-      if (begin != end)
-      {
+    path(InputIterator begin, InputIterator end) {
+      if (begin != end) {
         // convert requires contiguous string, so copy
-        std::basic_string<typename std::iterator_traits<InputIterator>::value_type>
-          seq(begin, end);
+        std::basic_string<typename std::iterator_traits<InputIterator>::value_type> seq(begin, end);
         path_traits::convert(seq.c_str(), seq.c_str()+seq.size(), m_pathname);
       }
     }
 
     template <class InputIterator>
-    path(InputIterator begin, InputIterator end, const codecvt_type& cvt)
-    {
-      if (begin != end)
-      {
+    path(InputIterator begin, InputIterator end, const codecvt_type& cvt) {
+      if (begin != end) {
         // convert requires contiguous string, so copy
         std::basic_string<typename std::iterator_traits<InputIterator>::value_type>
           seq(begin, end);
@@ -233,17 +179,14 @@ namespace path_detail // intentionally don't use io::detail to not bring interna
 
     //  -----  assignments  -----
 
-    path& operator=(const path& p)
-    {
+    path& operator=(const path& p) {
       m_pathname = p.m_pathname;
       return *this;
     }
 
     template <class Source>
-      typename std::enable_if<path_traits::is_pathable<
-        typename std::decay<Source>::type>::value, path&>::type
-    operator=(Source const& source)
-    {
+    typename std::enable_if<path_traits::is_pathable<typename std::decay<Source>::type>::value, path&>::type
+    operator=(Source const& source) {
       m_pathname.clear();
       path_traits::dispatch(source, m_pathname);
       return *this;
@@ -251,18 +194,16 @@ namespace path_detail // intentionally don't use io::detail to not bring interna
 
     //  value_type overloads
 
-    path& operator=(const value_type* ptr)  // required in case ptr overlaps *this
-                                          {m_pathname = ptr; return *this;}
-    path& operator=(value_type* ptr)  // required in case ptr overlaps *this
-                                          {m_pathname = ptr; return *this;}
+
+    path& operator=(const value_type* ptr) {m_pathname = ptr; return *this;} // required in case ptr overlaps *this
+    path& operator=(value_type* ptr) {m_pathname = ptr; return *this;} // required in case ptr overlaps *this
     path& operator=(const string_type& s) {m_pathname = s; return *this;}
     path& operator=(string_type& s)       {m_pathname = s; return *this;}
 
-    path& assign(const value_type* ptr, const codecvt_type&)  // required in case ptr overlaps *this
-                                          {m_pathname = ptr; return *this;}
+    path& assign(const value_type* ptr, const codecvt_type&) {m_pathname = ptr; return *this;} // required in case ptr overlaps *this
+
     template <class Source>
-    path& assign(Source const& source, const codecvt_type& cvt)
-    {
+    path& assign(Source const& source, const codecvt_type& cvt) {
       m_pathname.clear();
       path_traits::dispatch(source, m_pathname, cvt);
       return *this;
@@ -313,9 +254,8 @@ namespace path_detail // intentionally don't use io::detail to not bring interna
     path& operator+=(value_type c)          { m_pathname += c; return *this; }
 
     template <class CharT>
-      typename std::enable_if<std::is_integral<CharT>::value, path&>::type
-    operator+=(CharT c)
-    {
+    typename std::enable_if<std::is_integral<CharT>::value, path&>::type
+    operator+=(CharT c) {
       CharT tmp[2];
       tmp[0] = c;
       tmp[1] = 0;
@@ -323,22 +263,19 @@ namespace path_detail // intentionally don't use io::detail to not bring interna
     }
 
     template <class Source>
-    path& concat(Source const& source)
-    {
+    path& concat(Source const& source) {
       path_traits::dispatch(source, m_pathname);
       return *this;
     }
 
     template <class Source>
-    path& concat(Source const& source, const codecvt_type& cvt)
-    {
+    path& concat(Source const& source, const codecvt_type& cvt) {
       path_traits::dispatch(source, m_pathname, cvt);
       return *this;
     }
 
     template <class InputIterator>
-    path& concat(InputIterator begin, InputIterator end)
-    {
+    path& concat(InputIterator begin, InputIterator end) {
       if (begin == end)
         return *this;
       std::basic_string<typename std::iterator_traits<InputIterator>::value_type>
@@ -348,8 +285,7 @@ namespace path_detail // intentionally don't use io::detail to not bring interna
     }
 
     template <class InputIterator>
-    path& concat(InputIterator begin, InputIterator end, const codecvt_type& cvt)
-    {
+    path& concat(InputIterator begin, InputIterator end, const codecvt_type& cvt) {
       if (begin == end)
         return *this;
       std::basic_string<typename std::iterator_traits<InputIterator>::value_type>
@@ -366,10 +302,8 @@ namespace path_detail // intentionally don't use io::detail to not bring interna
     IO_DLL_PUBLIC path& operator/=(const path& p);
 
     template <class Source>
-      typename std::enable_if<path_traits::is_pathable<
-        typename std::decay<Source>::type>::value, path&>::type
-    operator/=(Source const& source)
-    {
+    typename std::enable_if<path_traits::is_pathable<typename std::decay<Source>::type>::value, path&>::type
+    operator/=(Source const& source) {
       return append(source);
     }
 
@@ -855,8 +789,7 @@ private:
 
   inline void swap(path& lhs, path& rhs) noexcept { lhs.swap(rhs); }
 
-  inline path operator/(const path& lhs, const path& rhs)
-  {
+  inline path operator/(const path& lhs, const path& rhs) {
     path p = lhs;
     p /= rhs;
     return p;
@@ -873,16 +806,13 @@ private:
 
   template <class Char, class Traits>
   inline std::basic_ostream<Char, Traits>&
-  operator<<(std::basic_ostream<Char, Traits>& os, const path& p)
-  {
-    return os
-      << ::io::quoted(p.template string<std::basic_string<Char> >(), static_cast<Char>('&'));
+  operator<<(std::basic_ostream<Char, Traits>& os, const path& p) {
+    return os << ::io::quoted(p.template string<std::basic_string<Char> >(), static_cast<Char>('&'));
   }
 
   template <class Char, class Traits>
   inline std::basic_istream<Char, Traits>&
-  operator>>(std::basic_istream<Char, Traits>& is, path& p)
-  {
+  operator>>(std::basic_istream<Char, Traits>& is, path& p) {
     std::basic_string<Char> str;
     is >> ::io::quoted(str, static_cast<Char>('&'));
     p = str;
@@ -954,8 +884,7 @@ private:
 //--------------------------------------------------------------------------------------//
 
   template <class InputIterator>
-  path& path::append(InputIterator begin, InputIterator end)
-  {
+  path& path::append(InputIterator begin, InputIterator end) {
     if (begin == end)
       return *this;
     string_type::size_type sep_pos(m_append_separator_if_needed());
@@ -968,8 +897,7 @@ private:
   }
 
   template <class InputIterator>
-  path& path::append(InputIterator begin, InputIterator end, const codecvt_type& cvt)
-  {
+  path& path::append(InputIterator begin, InputIterator end, const codecvt_type& cvt) {
     if (begin == end)
       return *this;
     string_type::size_type sep_pos(m_append_separator_if_needed());
@@ -982,8 +910,7 @@ private:
   }
 
   template <class Source>
-  path& path::append(Source const& source)
-  {
+  path& path::append(Source const& source) {
     if (path_traits::empty(source))
       return *this;
     string_type::size_type sep_pos(m_append_separator_if_needed());
@@ -994,8 +921,7 @@ private:
   }
 
   template <class Source>
-  path& path::append(Source const& source, const codecvt_type& cvt)
-  {
+  path& path::append(Source const& source, const codecvt_type& cvt) {
     if (path_traits::empty(source))
       return *this;
     string_type::size_type sep_pos(m_append_separator_if_needed());
@@ -1043,6 +969,7 @@ private:
 
 }  // namespace io
 
+// Path hasher for std
 namespace std {
 
 template <> struct hash<io::path> {
