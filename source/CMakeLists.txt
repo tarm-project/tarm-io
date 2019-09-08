@@ -8,10 +8,11 @@ list(APPEND IO_SOURCE_LIST
         io/global/Configuration.cpp
         io/CodecvtErrorCategory.cpp
         io/Common.cpp
-        io/EventLoop.cpp
         io/Disposable.cpp
         io/Dir.cpp
+        io/EventLoop.cpp
         io/File.cpp
+        io/HashRange.cpp
         io/Logger.cpp
         io/Path.cpp
         io/PathTraits.cpp
