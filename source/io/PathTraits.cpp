@@ -208,21 +208,21 @@ void convert(const wchar_t* from, std::wstring& to) {
 }
 
 void convert(const char* from, const char* from_end, std::wstring& to) {
-    convert(from, from_end, to, path::codecvt());
+    convert(from, from_end, to, Path::codecvt());
 }
 
 void convert(const wchar_t* from, const wchar_t* from_end, std::string& to) {
-    convert(from, from_end, to, path::codecvt());
+    convert(from, from_end, to, Path::codecvt());
 }
 
 void convert(const char* from, std::wstring& to) {
     assert(!!from);
-    convert(from, 0, to, path::codecvt());
+    convert(from, 0, to, Path::codecvt());
 }
 
 void convert(const wchar_t* from, std::string & to) {
     assert(!!from);
-    convert(from, 0, to, path::codecvt());
+    convert(from, 0, to, Path::codecvt());
 }
 
 } // namespace path_traits

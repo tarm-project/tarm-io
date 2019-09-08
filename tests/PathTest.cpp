@@ -16,7 +16,7 @@
 // https://github.com/google/googlemock/issues/170
 namespace io {
 
-void PrintTo(const io::path& path, std::ostream* os) {
+void PrintTo(const io::Path& path, std::ostream* os) {
     *os << path;
 }
 
@@ -29,8 +29,7 @@ void PrintTo(const io::path& path, std::ostream* os) {
 # define BOOST_DIR_SEP "/"
 #endif
 
-//using boost::filesystem::path;
-using io::path;
+using io::Path;
 
 struct PathTest : public testing::Test,
                   public LogRedirector {
@@ -70,92 +69,92 @@ protected:
     std::vector<char> m_v;      // see main() for initialization to f, u, z
     std::vector<wchar_t> m_wv;  // see main() for initialization to w, f, u, z
 
-    path m_x;
-    path m_y;
+    Path m_x;
+    Path m_y;
 };
 
 TEST_F(PathTest, constructors) {
-    path x0;                                           // default constructor
+    Path x0;                                           // default constructor
     EXPECT_EQ(x0, L"");
     EXPECT_EQ(x0.native().size(), 0U);
 
-    path x1(m_l.begin(), m_l.end());                       // iterator range char
+    Path x1(m_l.begin(), m_l.end());                       // iterator range char
     EXPECT_EQ(x1, L"string");
     EXPECT_EQ(x1.native().size(), 6U);
 
-    path x2(x1);                                       // copy constructor
+    Path x2(x1);                                       // copy constructor
     EXPECT_EQ(x2, L"string");
     EXPECT_EQ(x2.native().size(), 6U);
 
-    path x3(m_wl.begin(), m_wl.end());                     // iterator range wchar_t
+    Path x3(m_wl.begin(), m_wl.end());                     // iterator range wchar_t
     EXPECT_EQ(x3, L"wstring");
     EXPECT_EQ(x3.native().size(), 7U);
 
     // contiguous containers
-    path x4(std::string("std::string"));                    // std::string
+    Path x4(std::string("std::string"));                    // std::string
     EXPECT_EQ(x4, L"std::string");
     EXPECT_EQ(x4.native().size(), 11U);
 
-    path x5(std::wstring(L"std::wstring"));                 // std::wstring
+    Path x5(std::wstring(L"std::wstring"));                 // std::wstring
     EXPECT_EQ(x5, L"std::wstring");
     EXPECT_EQ(x5.native().size(), 12U);
 
-    path x4v(m_v);                                       // std::vector<char>
+    Path x4v(m_v);                                       // std::vector<char>
     EXPECT_EQ(x4v, L"fuz");
     EXPECT_EQ(x4v.native().size(), 3U);
 
-    path x5v(m_wv);                                      // std::vector<wchar_t>
+    Path x5v(m_wv);                                      // std::vector<wchar_t>
     EXPECT_EQ(x5v, L"wfuz");
     EXPECT_EQ(x5v.native().size(), 4U);
 
-    path x6("array char");                             // array char
+    Path x6("array char");                             // array char
     EXPECT_EQ(x6, L"array char");
     EXPECT_EQ(x6.native().size(), 10U);
 
-    path x7(L"array wchar_t");                         // array wchar_t
+    Path x7(L"array wchar_t");                         // array wchar_t
     EXPECT_EQ(x7, L"array wchar_t");
     EXPECT_EQ(x7.native().size(), 13U);
 
     char char_array[100];
     std::strcpy(char_array, "big array char");
-    path x6o(char_array);                              // array char, only partially full
+    Path x6o(char_array);                              // array char, only partially full
     EXPECT_EQ(x6o, L"big array char");
     EXPECT_EQ(x6o.native().size(), 14U);
 
     wchar_t wchar_array[100];
     std::wcscpy(wchar_array, L"big array wchar_t");
-    path x7o(wchar_array);                             // array char, only partially full
+    Path x7o(wchar_array);                             // array char, only partially full
     EXPECT_EQ(x7o, L"big array wchar_t");
     EXPECT_EQ(x7o.native().size(), 17U);
 
-    path x8(m_s.c_str());                                // const char* null terminated
+    Path x8(m_s.c_str());                                // const char* null terminated
     EXPECT_EQ(x8, L"string");
     EXPECT_EQ(x8.native().size(), 6U);
 
-    path x9(m_ws.c_str());                               // const wchar_t* null terminated
+    Path x9(m_ws.c_str());                               // const wchar_t* null terminated
     EXPECT_EQ(x9, L"wstring");
     EXPECT_EQ(x9.native().size(), 7U);
 
-    path x8nc(const_cast<char*>(m_s.c_str()));           // char* null terminated
+    Path x8nc(const_cast<char*>(m_s.c_str()));           // char* null terminated
     EXPECT_EQ(x8nc, L"string");
     EXPECT_EQ(x8nc.native().size(), 6U);
 
-    path x9nc(const_cast<wchar_t*>(m_ws.c_str()));       // wchar_t* null terminated
+    Path x9nc(const_cast<wchar_t*>(m_ws.c_str()));       // wchar_t* null terminated
     EXPECT_EQ(x9nc, L"wstring");
     EXPECT_EQ(x9nc.native().size(), 7U);
 
     // non-contiguous containers
-    path x10(m_l);                                       // std::list<char>
+    Path x10(m_l);                                       // std::list<char>
     EXPECT_EQ(x10, L"string");
     EXPECT_EQ(x10.native().size(), 6U);
 
-    path xll(m_wl);                                      // std::list<wchar_t>
+    Path xll(m_wl);                                      // std::list<wchar_t>
     EXPECT_EQ(xll, L"wstring");
     EXPECT_EQ(xll.native().size(), 7U);
 }
 
 TEST_F(PathTest, assignments) {
-    m_x = path("yet another path");                      // another path
+    m_x = Path("yet another path");                      // another path
     EXPECT_EQ(m_x, L"yet another path");
     EXPECT_EQ(m_x.native().size(), 16U);
 
@@ -189,13 +188,13 @@ TEST_F(PathTest, assignments) {
 }
 
 TEST_F(PathTest, move_construction_and_assignment) {
-    path from("long enough to avoid small object optimization");
-    path to(std::move(from));
+    Path from("long enough to avoid small object optimization");
+    Path to(std::move(from));
     EXPECT_TRUE(to == "long enough to avoid small object optimization");
     EXPECT_TRUE(from.empty());
 
-    path from2("long enough to avoid small object optimization");
-    path to2;
+    Path from2("long enough to avoid small object optimization");
+    Path to2;
     to2 = std::move(from2);
     EXPECT_TRUE(to2 == "long enough to avoid small object optimization");
     EXPECT_TRUE(from2.empty());
@@ -211,15 +210,15 @@ TEST_F(PathTest, appends) {
 # endif
 
     m_x = "/foo";
-    m_x /= path("");                                      // empty path
+    m_x /= Path("");                                      // empty path
     EXPECT_EQ(m_x, L"/foo");
 
     m_x = "/foo";
-    m_x /= path("/");                                     // slash path
+    m_x /= Path("/");                                     // slash path
     EXPECT_EQ(m_x, L"/foo/");
 
     m_x = "/foo";
-    m_x /= path("/boo");                                  // slash path
+    m_x /= Path("/boo");                                  // slash path
     EXPECT_EQ(m_x, L"/foo/boo");
 
     m_x = "/foo";
@@ -227,7 +226,7 @@ TEST_F(PathTest, appends) {
     EXPECT_EQ(m_x, L"/foo/foo");
 
     m_x = "/foo";
-    m_x /= path("yet another path");                      // another path
+    m_x /= Path("yet another path");                      // another path
     EXPECT_EQ(m_x, BOOST_FS_FOO L"yet another path");
 
     m_x = "/foo";
@@ -265,15 +264,15 @@ TEST_F(PathTest, appends) {
 
 TEST_F(PathTest, concats) {
     m_x = "/foo";
-    m_x += path("");                                      // empty path
+    m_x += Path("");                                      // empty path
     EXPECT_EQ(m_x, L"/foo");
 
     m_x = "/foo";
-    m_x += path("/");                                     // slash path
+    m_x += Path("/");                                     // slash path
     EXPECT_EQ(m_x, L"/foo/");
 
     m_x = "/foo";
-    m_x += path("boo");                                  // slash path
+    m_x += Path("boo");                                  // slash path
     EXPECT_EQ(m_x, L"/fooboo");
 
     m_x = "foo";
@@ -281,7 +280,7 @@ TEST_F(PathTest, concats) {
     EXPECT_EQ(m_x, L"foofoo");
 
     m_x = "foo-";
-    m_x += path("yet another path");                      // another path
+    m_x += Path("yet another path");                      // another path
     EXPECT_EQ(m_x, L"foo-yet another path");
 
     m_x = "foo-";
@@ -326,7 +325,7 @@ TEST_F(PathTest, concats) {
 }
 
 TEST_F(PathTest, observers) {
-    path p0("abc");
+    Path p0("abc");
 
     EXPECT_TRUE(p0.native().size() == 3);
     EXPECT_TRUE(p0.size() == 3);
@@ -341,7 +340,7 @@ TEST_F(PathTest, observers) {
 
 // TODO: fixme
 # ifdef BOOST_WINDOWS_API
-    path p("abc\\def/ghi");
+    Path p("abc\\def/ghi");
 
     EXPECT_TRUE(std::wstring(p.c_str()) == L"abc\\def/ghi");
 
@@ -354,9 +353,9 @@ TEST_F(PathTest, observers) {
 
     EXPECT_TRUE(p.generic_string<std::string>() == "abc/def/ghi");
     EXPECT_TRUE(p.generic_string<std::wstring>() == L"abc/def/ghi");
-    EXPECT_TRUE(p.generic_string<path::string_type>() == L"abc/def/ghi");
+    EXPECT_TRUE(p.generic_string<Path::string_type>() == L"abc/def/ghi");
 # else  // BOOST_POSIX_API
-    path p("abc\\def/ghi");
+    Path p("abc\\def/ghi");
 
     EXPECT_TRUE(std::string(p.c_str()) == "abc\\def/ghi");
 
@@ -369,21 +368,21 @@ TEST_F(PathTest, observers) {
 
     EXPECT_TRUE(p.generic_string<std::string>() == "abc\\def/ghi");
     EXPECT_TRUE(p.generic_string<std::wstring>() == L"abc\\def/ghi");
-    EXPECT_TRUE(p.generic_string<path::string_type>() == "abc\\def/ghi");
+    EXPECT_TRUE(p.generic_string<Path::string_type>() == "abc\\def/ghi");
 # endif
 }
 
 TEST_F(PathTest, relationals) {
-    std::hash<path> hash;
+    std::hash<Path> hash;
 
 # ifdef BOOST_WINDOWS_API
     // this is a critical use case to meet user expectations
-    EXPECT_TRUE(path("c:\\abc") == path("c:/abc"));
-    EXPECT_TRUE(hash(path("c:\\abc")) == hash(path("c:/abc")));
+    EXPECT_TRUE(Path("c:\\abc") == Path("c:/abc"));
+    EXPECT_TRUE(hash(Path("c:\\abc")) == hash(Path("c:/abc")));
 # endif
 
-    const path p("bar");
-    const path p2("baz");
+    const Path p("bar");
+    const Path p2("baz");
 
     EXPECT_TRUE(!(p < p));
     EXPECT_TRUE(p < p2);
@@ -430,8 +429,8 @@ TEST_F(PathTest, relationals) {
 }
 
 TEST_F(PathTest, inserter_and_extractor) {
-    path p1("foo bar");  // verify space in path roundtrips per ticket #3863
-    path p2;
+    Path p1("foo bar");  // verify space in Path roundtrips per ticket #3863
+    Path p2;
 
     std::stringstream ss;
 
@@ -440,8 +439,8 @@ TEST_F(PathTest, inserter_and_extractor) {
     ss >> p2;
     EXPECT_TRUE(p1 == p2);
 
-    path wp1(L"foo bar");
-    path wp2;
+    Path wp1(L"foo bar");
+    Path wp2;
 
     std::wstringstream wss;
 
@@ -452,64 +451,64 @@ TEST_F(PathTest, inserter_and_extractor) {
 }
 
 TEST_F(PathTest, other_non_members) {
-    path p1("foo");
-    path p2("bar");
+    Path p1("foo");
+    Path p2("bar");
 
     //  operator /
-    EXPECT_TRUE(p1 / p2 == path("foo/bar").make_preferred());
-    EXPECT_TRUE("foo" / p2 == path("foo/bar").make_preferred());
-    EXPECT_TRUE(L"foo" / p2 == path("foo/bar").make_preferred());
-    EXPECT_TRUE(std::string("foo") / p2 == path("foo/bar").make_preferred());
-    EXPECT_TRUE(std::wstring(L"foo") / p2 == path("foo/bar").make_preferred());
-    EXPECT_TRUE(p1 / "bar" == path("foo/bar").make_preferred());
-    EXPECT_TRUE(p1 / L"bar" == path("foo/bar").make_preferred());
-    EXPECT_TRUE(p1 / std::string("bar") == path("foo/bar").make_preferred());
-    EXPECT_TRUE(p1 / std::wstring(L"bar") == path("foo/bar").make_preferred());
+    EXPECT_TRUE(p1 / p2 == Path("foo/bar").make_preferred());
+    EXPECT_TRUE("foo" / p2 == Path("foo/bar").make_preferred());
+    EXPECT_TRUE(L"foo" / p2 == Path("foo/bar").make_preferred());
+    EXPECT_TRUE(std::string("foo") / p2 == Path("foo/bar").make_preferred());
+    EXPECT_TRUE(std::wstring(L"foo") / p2 == Path("foo/bar").make_preferred());
+    EXPECT_TRUE(p1 / "bar" == Path("foo/bar").make_preferred());
+    EXPECT_TRUE(p1 / L"bar" == Path("foo/bar").make_preferred());
+    EXPECT_TRUE(p1 / std::string("bar") == Path("foo/bar").make_preferred());
+    EXPECT_TRUE(p1 / std::wstring(L"bar") == Path("foo/bar").make_preferred());
 
     swap(p1, p2);
 
     EXPECT_TRUE(p1 == "bar");
     EXPECT_TRUE(p2 == "foo");
 
-    EXPECT_TRUE(!path("").filename_is_dot());
-    EXPECT_TRUE(!path("").filename_is_dot_dot());
-    EXPECT_TRUE(!path("..").filename_is_dot());
-    EXPECT_TRUE(!path(".").filename_is_dot_dot());
-    EXPECT_TRUE(!path("...").filename_is_dot_dot());
-    EXPECT_TRUE(path(".").filename_is_dot());
-    EXPECT_TRUE(path("..").filename_is_dot_dot());
-    EXPECT_TRUE(path("/.").filename_is_dot());
-    EXPECT_TRUE(path("/..").filename_is_dot_dot());
-    EXPECT_TRUE(!path("a.").filename_is_dot());
-    EXPECT_TRUE(!path("a..").filename_is_dot_dot());
+    EXPECT_TRUE(!Path("").filename_is_dot());
+    EXPECT_TRUE(!Path("").filename_is_dot_dot());
+    EXPECT_TRUE(!Path("..").filename_is_dot());
+    EXPECT_TRUE(!Path(".").filename_is_dot_dot());
+    EXPECT_TRUE(!Path("...").filename_is_dot_dot());
+    EXPECT_TRUE(Path(".").filename_is_dot());
+    EXPECT_TRUE(Path("..").filename_is_dot_dot());
+    EXPECT_TRUE(Path("/.").filename_is_dot());
+    EXPECT_TRUE(Path("/..").filename_is_dot_dot());
+    EXPECT_TRUE(!Path("a.").filename_is_dot());
+    EXPECT_TRUE(!Path("a..").filename_is_dot_dot());
 
     // edge cases
-    EXPECT_TRUE(path("foo/").filename() == path("."));
-    EXPECT_TRUE(path("foo/").filename_is_dot());
-    EXPECT_TRUE(path("/").filename() == path("/"));
-    EXPECT_TRUE(!path("/").filename_is_dot());
+    EXPECT_TRUE(Path("foo/").filename() == Path("."));
+    EXPECT_TRUE(Path("foo/").filename_is_dot());
+    EXPECT_TRUE(Path("/").filename() == Path("/"));
+    EXPECT_TRUE(!Path("/").filename_is_dot());
 // TODO: fixme
 # ifdef BOOST_WINDOWS_API
-    EXPECT_TRUE(path("c:.").filename() == path("."));
-    EXPECT_TRUE(path("c:.").filename_is_dot());
-    EXPECT_TRUE(path("c:/").filename() == path("/"));
-    EXPECT_TRUE(!path("c:\\").filename_is_dot());
+    EXPECT_TRUE(Path("c:.").filename() == Path("."));
+    EXPECT_TRUE(Path("c:.").filename_is_dot());
+    EXPECT_TRUE(Path("c:/").filename() == Path("/"));
+    EXPECT_TRUE(!Path("c:\\").filename_is_dot());
 # else
-    EXPECT_TRUE(path("c:.").filename() == path("c:."));
-    EXPECT_TRUE(!path("c:.").filename_is_dot());
-    EXPECT_TRUE(path("c:/").filename() == path("."));
-    EXPECT_TRUE(path("c:/").filename_is_dot());
+    EXPECT_TRUE(Path("c:.").filename() == Path("c:."));
+    EXPECT_TRUE(!Path("c:.").filename_is_dot());
+    EXPECT_TRUE(Path("c:/").filename() == Path("."));
+    EXPECT_TRUE(Path("c:/").filename_is_dot());
 # endif
 
     // check that the implementation code to make the edge cases above work right
     // doesn't cause some non-edge cases to fail
-    EXPECT_TRUE(path("c:").filename() != path("."));
-    EXPECT_TRUE(!path("c:").filename_is_dot());
+    EXPECT_TRUE(Path("c:").filename() != Path("."));
+    EXPECT_TRUE(!Path("c:").filename_is_dot());
 }
 
 TEST_F(PathTest, iterator) {
-    path itr_ck = "";
-    path::const_iterator itr = itr_ck.begin();
+    Path itr_ck = "";
+    Path::const_iterator itr = itr_ck.begin();
     EXPECT_TRUE(itr == itr_ck.end());
 
     itr_ck = "/";
@@ -524,7 +523,7 @@ TEST_F(PathTest, iterator) {
     EXPECT_TRUE(*std::prev(itr_ck.end()) == std::string("foo"));
     EXPECT_TRUE(std::prev(itr_ck.end()) == itr_ck.begin());
 
-    itr_ck = path("/foo");
+    itr_ck = Path("/foo");
     EXPECT_TRUE((itr_ck.begin())->string() == "/");
     EXPECT_TRUE(*std::next(itr_ck.begin()) == std::string("foo"));
     EXPECT_TRUE(std::next(std::next(itr_ck.begin())) == itr_ck.end());
@@ -705,13 +704,13 @@ TEST_F(PathTest, iterator) {
         EXPECT_TRUE(*--itr == std::string("foo"));
         EXPECT_TRUE(*--itr == std::string("c:"));
 
-        itr_ck = path("c:");
+        itr_ck = Path("c:");
         EXPECT_TRUE(*itr_ck.begin() == std::string("c:"));
         EXPECT_TRUE(next(itr_ck.begin()) == itr_ck.end());
         EXPECT_TRUE(prior(itr_ck.end()) == itr_ck.begin());
         EXPECT_TRUE(*prior(itr_ck.end()) == std::string("c:"));
 
-        itr_ck = path("c:/");
+        itr_ck = Path("c:/");
         EXPECT_TRUE(*itr_ck.begin() == std::string("c:"));
         EXPECT_TRUE(*next(itr_ck.begin()) == std::string("/"));
         EXPECT_TRUE(next(next(itr_ck.begin())) == itr_ck.end());
@@ -719,7 +718,7 @@ TEST_F(PathTest, iterator) {
         EXPECT_TRUE(*prior(itr_ck.end()) == std::string("/"));
         EXPECT_TRUE(*prior(prior(itr_ck.end())) == std::string("c:"));
 
-        itr_ck = path("c:foo");
+        itr_ck = Path("c:foo");
         EXPECT_TRUE(*itr_ck.begin() == std::string("c:"));
         EXPECT_TRUE(*next(itr_ck.begin()) == std::string("foo"));
         EXPECT_TRUE(next(next(itr_ck.begin())) == itr_ck.end());
@@ -727,7 +726,7 @@ TEST_F(PathTest, iterator) {
         EXPECT_TRUE(*prior(itr_ck.end()) == std::string("foo"));
         EXPECT_TRUE(*prior(prior(itr_ck.end())) == std::string("c:"));
 
-        itr_ck = path("c:/foo");
+        itr_ck = Path("c:/foo");
         EXPECT_TRUE(*itr_ck.begin() == std::string("c:"));
         EXPECT_TRUE(*next(itr_ck.begin()) == std::string("/"));
         EXPECT_TRUE(*next(next(itr_ck.begin())) == std::string("foo"));
@@ -737,13 +736,13 @@ TEST_F(PathTest, iterator) {
         EXPECT_TRUE(*prior(prior(itr_ck.end())) == std::string("/"));
         EXPECT_TRUE(*prior(prior(prior(itr_ck.end()))) == std::string("c:"));
 
-        itr_ck = path("//net");
+        itr_ck = Path("//net");
         EXPECT_TRUE(*itr_ck.begin() == std::string("//net"));
         EXPECT_TRUE(next(itr_ck.begin()) == itr_ck.end());
         EXPECT_TRUE(prior(itr_ck.end()) == itr_ck.begin());
         EXPECT_TRUE(*prior(itr_ck.end()) == std::string("//net"));
 
-        itr_ck = path("//net/");
+        itr_ck = Path("//net/");
         EXPECT_EQ(itr_ck.begin()->string(), "//net");
         EXPECT_EQ(next(itr_ck.begin())->string(), "/");
         EXPECT_TRUE(next(next(itr_ck.begin())) == itr_ck.end());
@@ -751,7 +750,7 @@ TEST_F(PathTest, iterator) {
         EXPECT_EQ(prior(itr_ck.end())->string(), "/");
         EXPECT_EQ(prior(prior(itr_ck.end()))->string(), "//net");
 
-        itr_ck = path("//net/foo");
+        itr_ck = Path("//net/foo");
         EXPECT_TRUE(*itr_ck.begin() == std::string("//net"));
         EXPECT_TRUE(*next(itr_ck.begin()) == std::string("/"));
         EXPECT_TRUE(*next(next(itr_ck.begin())) == std::string("foo"));
@@ -761,7 +760,7 @@ TEST_F(PathTest, iterator) {
         EXPECT_TRUE(*prior(prior(itr_ck.end())) == std::string("/"));
         EXPECT_TRUE(*prior(prior(prior(itr_ck.end()))) == std::string("//net"));
 
-        itr_ck = path("prn:");
+        itr_ck = Path("prn:");
         EXPECT_TRUE(*itr_ck.begin() == std::string("prn:"));
         EXPECT_TRUE(next(itr_ck.begin()) == itr_ck.end());
         EXPECT_TRUE(prior(itr_ck.end()) == itr_ck.begin());
@@ -778,17 +777,17 @@ TEST_F(PathTest, iterator) {
 }
 
 TEST_F(PathTest, reverse_iterators) {
-    path p1;
+    Path p1;
     EXPECT_TRUE(p1.rbegin() == p1.rend());
 
-    path p2("/");
+    Path p2("/");
     EXPECT_TRUE(p2.rbegin() != p2.rend());
     EXPECT_TRUE(*p2.rbegin() == "/");
     EXPECT_TRUE(++p2.rbegin() == p2.rend());
 
-    path p3("foo/bar/baz");
+    Path p3("foo/bar/baz");
 
-    path::reverse_iterator it(p3.rbegin());
+    Path::reverse_iterator it(p3.rbegin());
     EXPECT_TRUE(p3.rbegin() != p3.rend());
     EXPECT_TRUE(*it == "baz");
     EXPECT_TRUE(*++it == "bar");
@@ -801,68 +800,68 @@ TEST_F(PathTest, reverse_iterators) {
 }
 
 TEST_F(PathTest, modifiers) {
-    EXPECT_TRUE(path("").remove_filename() == "");
-    EXPECT_TRUE(path("foo").remove_filename() == "");
-    EXPECT_TRUE(path("/foo").remove_filename() == "/");
-    EXPECT_TRUE(path("foo/bar").remove_filename() == "foo");
-    EXPECT_EQ(path("foo/bar/").remove_filename(), path("foo/bar"));
-    EXPECT_EQ(path(".").remove_filename(), path(""));
-    EXPECT_EQ(path("./.").remove_filename(), path("."));
-    EXPECT_EQ(path("/.").remove_filename(), path("/"));
-    EXPECT_EQ(path("..").remove_filename(), path(""));
-    EXPECT_EQ(path("../..").remove_filename(), path(".."));
-    EXPECT_EQ(path("/..").remove_filename(), path("/"));
+    EXPECT_TRUE(Path("").remove_filename() == "");
+    EXPECT_TRUE(Path("foo").remove_filename() == "");
+    EXPECT_TRUE(Path("/foo").remove_filename() == "/");
+    EXPECT_TRUE(Path("foo/bar").remove_filename() == "foo");
+    EXPECT_EQ(Path("foo/bar/").remove_filename(), Path("foo/bar"));
+    EXPECT_EQ(Path(".").remove_filename(), Path(""));
+    EXPECT_EQ(Path("./.").remove_filename(), Path("."));
+    EXPECT_EQ(Path("/.").remove_filename(), Path("/"));
+    EXPECT_EQ(Path("..").remove_filename(), Path(""));
+    EXPECT_EQ(Path("../..").remove_filename(), Path(".."));
+    EXPECT_EQ(Path("/..").remove_filename(), Path("/"));
 }
 
 TEST_F(PathTest, decompositions) {
-    EXPECT_TRUE(path("").root_name().string() == "");
-    EXPECT_TRUE(path("foo").root_name().string() == "");
-    EXPECT_TRUE(path("/").root_name().string() == "");
-    EXPECT_TRUE(path("/foo").root_name().string() == "");
-    EXPECT_TRUE(path("//netname").root_name().string() == "//netname");
-    EXPECT_TRUE(path("//netname/foo").root_name().string() == "//netname");
+    EXPECT_TRUE(Path("").root_name().string() == "");
+    EXPECT_TRUE(Path("foo").root_name().string() == "");
+    EXPECT_TRUE(Path("/").root_name().string() == "");
+    EXPECT_TRUE(Path("/foo").root_name().string() == "");
+    EXPECT_TRUE(Path("//netname").root_name().string() == "//netname");
+    EXPECT_TRUE(Path("//netname/foo").root_name().string() == "//netname");
 
-    EXPECT_TRUE(path("").root_directory().string() == "");
-    EXPECT_TRUE(path("foo").root_directory().string() == "");
-    EXPECT_TRUE(path("/").root_directory().string() == "/");
-    EXPECT_TRUE(path("/foo").root_directory().string() == "/");
-    EXPECT_TRUE(path("//netname").root_directory().string() == "");
-    EXPECT_TRUE(path("//netname/foo").root_directory().string() == "/");
+    EXPECT_TRUE(Path("").root_directory().string() == "");
+    EXPECT_TRUE(Path("foo").root_directory().string() == "");
+    EXPECT_TRUE(Path("/").root_directory().string() == "/");
+    EXPECT_TRUE(Path("/foo").root_directory().string() == "/");
+    EXPECT_TRUE(Path("//netname").root_directory().string() == "");
+    EXPECT_TRUE(Path("//netname/foo").root_directory().string() == "/");
 
-    EXPECT_TRUE(path("").root_path().string() == "");
-    EXPECT_TRUE(path("/").root_path().string() == "/");
-    EXPECT_TRUE(path("/foo").root_path().string() == "/");
-    EXPECT_TRUE(path("//netname").root_path().string() == "//netname");
-    EXPECT_TRUE(path("//netname/foo").root_path().string() == "//netname/");
+    EXPECT_TRUE(Path("").root_path().string() == "");
+    EXPECT_TRUE(Path("/").root_path().string() == "/");
+    EXPECT_TRUE(Path("/foo").root_path().string() == "/");
+    EXPECT_TRUE(Path("//netname").root_path().string() == "//netname");
+    EXPECT_TRUE(Path("//netname/foo").root_path().string() == "//netname/");
 
     // TODO: fixme
 #   ifdef BOOST_WINDOWS_API
-    EXPECT_TRUE(path("c:/foo").root_path().string() == "c:/");
+    EXPECT_TRUE(Path("c:/foo").root_path().string() == "c:/");
 #   endif
 
-    EXPECT_TRUE(path("").relative_path().string() == "");
-    EXPECT_TRUE(path("/").relative_path().string() == "");
-    EXPECT_TRUE(path("/foo").relative_path().string() == "foo");
+    EXPECT_TRUE(Path("").relative_path().string() == "");
+    EXPECT_TRUE(Path("/").relative_path().string() == "");
+    EXPECT_TRUE(Path("/foo").relative_path().string() == "foo");
 
-    EXPECT_TRUE(path("").parent_path().string() == "");
-    EXPECT_TRUE(path("/").parent_path().string() == "");
-    EXPECT_TRUE(path("/foo").parent_path().string() == "/");
-    EXPECT_TRUE(path("/foo/bar").parent_path().string() == "/foo");
+    EXPECT_TRUE(Path("").parent_path().string() == "");
+    EXPECT_TRUE(Path("/").parent_path().string() == "");
+    EXPECT_TRUE(Path("/foo").parent_path().string() == "/");
+    EXPECT_TRUE(Path("/foo/bar").parent_path().string() == "/foo");
 
-    EXPECT_TRUE(path("/foo/bar/baz.zoo").filename().string() == "baz.zoo");
+    EXPECT_TRUE(Path("/foo/bar/baz.zoo").filename().string() == "baz.zoo");
 
-    EXPECT_TRUE(path("/foo/bar/baz.zoo").stem().string() == "baz");
-    EXPECT_TRUE(path("/foo/bar.woo/baz").stem().string() == "baz");
+    EXPECT_TRUE(Path("/foo/bar/baz.zoo").stem().string() == "baz");
+    EXPECT_TRUE(Path("/foo/bar.woo/baz").stem().string() == "baz");
 
-    EXPECT_TRUE(path("foo.bar.baz.tar.bz2").extension().string() == ".bz2");
-    EXPECT_TRUE(path("/foo/bar/baz.zoo").extension().string() == ".zoo");
-    EXPECT_TRUE(path("/foo/bar.woo/baz").extension().string() == "");
+    EXPECT_TRUE(Path("foo.bar.baz.tar.bz2").extension().string() == ".bz2");
+    EXPECT_TRUE(Path("/foo/bar/baz.zoo").extension().string() == ".zoo");
+    EXPECT_TRUE(Path("/foo/bar.woo/baz").extension().string() == "");
 }
 
 
 TEST_F(PathTest, queries) {
-    path p1("");
-    path p2("//netname/foo.doo");
+    Path p1("");
+    Path p2("//netname/foo.doo");
 
     EXPECT_TRUE(p1.empty());
     EXPECT_TRUE(!p1.has_root_path());
@@ -892,7 +891,7 @@ TEST_F(PathTest, queries) {
 TEST_F(PathTest, imbue_locale) {
     //  weak test case for before/after states since we don't know what characters the
     //  default locale accepts.
-    path before("abc");
+    Path before("abc");
 
     //  So that tests are run with known encoding, use Boost UTF-8 codecvt
     //  \u2722 and \xE2\x9C\xA2 are UTF-16 and UTF-8 FOUR TEARDROP-SPOKED ASTERISK
@@ -900,15 +899,15 @@ TEST_F(PathTest, imbue_locale) {
     std::locale global_loc = std::locale();
     // TODO: fixme boost::filesystem::detail::utf8_codecvt_facet
     std::locale loc(global_loc, new io::detail::utf8_codecvt_facet);
-    std::locale old_loc = path::imbue(loc);
+    std::locale old_loc = Path::imbue(loc);
 
-    path p2("\xE2\x9C\xA2");
+    Path p2("\xE2\x9C\xA2");
     EXPECT_TRUE(p2.wstring().size() == 1);
     EXPECT_TRUE(p2.wstring()[0] == 0x2722);
 
-    path::imbue(old_loc);
+    Path::imbue(old_loc);
 
-    path after("abc");
+    Path after("abc");
     EXPECT_TRUE(before == after);
 }
 
@@ -980,10 +979,10 @@ virtual std::codecvt_base::result do_out(std::mbstate_t&,
 
 // TODO: fixme
 # ifdef BOOST_WINDOWS_API
-  void check_native(const path& p,
+  void check_native(const Path& p,
     const std::string&, const std::wstring& expected)
 # else
-  void check_native(const path& p,
+  void check_native(const Path& p,
     const std::string& expected, const std::wstring&)
 # endif
 {
@@ -1003,19 +1002,19 @@ TEST_F(PathTest, codecvt_argument) {
                        // the system's default locale codecvt facet
 
     //  constructors
-    path p(c1, cvt);
+    Path p(c1, cvt);
     check_native(p, s1, ws1);
 
-    path p1(s1.begin(), s1.end(), cvt);
+    Path p1(s1.begin(), s1.end(), cvt);
     check_native(p1, s1, ws1);
 
-    path p2(ws2, cvt);
+    Path p2(ws2, cvt);
     check_native(p2, s2, ws2);
 
-    path p3(ws2.begin(), ws2.end(), cvt);
+    Path p3(ws2.begin(), ws2.end(), cvt);
     check_native(p3, s2, ws2);
 
-    // path p2(p1, cvt);  // fails to compile, and that is OK
+    // Path p2(p1, cvt);  // fails to compile, and that is OK
 
     //  assigns
     p1.clear();
@@ -1051,10 +1050,10 @@ TEST_F(PathTest, codecvt_argument) {
 TEST_F(PathTest, overloads) {
     std::string sto("hello");
     const char a[] = "goodbye";
-    path p1(sto);
-    path p2(sto.c_str());
-    path p3(a);
-    path p4("foo");
+    Path p1(sto);
+    Path p2(sto.c_str());
+    Path p3(a);
+    Path p4("foo");
 
     EXPECT_FALSE(p1.empty());
     EXPECT_FALSE(p2.empty());
@@ -1063,10 +1062,10 @@ TEST_F(PathTest, overloads) {
 
     std::wstring wsto(L"hello");
     const wchar_t wa[] = L"goodbye";
-    path wp1(wsto);
-    path wp2(wsto.c_str());
-    path wp3(wa);
-    path wp4(L"foo");
+    Path wp1(wsto);
+    Path wp2(wsto.c_str());
+    Path wp3(wa);
+    Path wp4(L"foo");
 
     EXPECT_FALSE(wp1.empty());
     EXPECT_FALSE(wp2.empty());
@@ -1077,22 +1076,22 @@ TEST_F(PathTest, overloads) {
 TEST_F(PathTest, non_member) {
     // test non-member functions, particularly operator overloads
 
-    path e, e2;
+    Path e, e2;
     std::string es, es2;
     char ecs[] = "";
     char ecs2[] = "";
 
     char acs[] = "a";
     std::string as(acs);
-    path a(as);
+    Path a(as);
 
     char acs2[] = "a";
     std::string as2(acs2);
-    path a2(as2);
+    Path a2(as2);
 
     char bcs[] = "b";
     std::string bs(bcs);
-    path b(bs);
+    Path b(bs);
 
     // swap
     a.swap(b);
@@ -1104,102 +1103,102 @@ TEST_F(PathTest, non_member) {
     EXPECT_TRUE(b.string() == "b");
 
     // probe operator /
-    EXPECT_EQ(path("") / ".", ".");
-    EXPECT_EQ(path("") / "..", "..");
+    EXPECT_EQ(Path("") / ".", ".");
+    EXPECT_EQ(Path("") / "..", "..");
 
 // TODO: fixme
 #ifdef BUILD_FOR_WINDOWS
-        EXPECT_TRUE(path("foo\\bar") == "foo/bar");
-        EXPECT_TRUE((b / a).native() == path("b\\a").native());
-        EXPECT_TRUE((bs / a).native() == path("b\\a").native());
-        EXPECT_TRUE((bcs / a).native() == path("b\\a").native());
-        EXPECT_TRUE((b / as).native() == path("b\\a").native());
-        EXPECT_TRUE((b / acs).native() == path("b\\a").native());
-        EXPECT_EQ(path("a") / "b", "a\\b");
-        EXPECT_EQ(path("..") / "", "..");
-        EXPECT_EQ(path("foo") / path("bar"), "foo\\bar"); // path arg
-        EXPECT_EQ(path("foo") / "bar", "foo\\bar");       // const char* arg
-        EXPECT_EQ(path("foo") / path("woo/bar").filename(), "foo\\bar"); // const std::string & arg
-        EXPECT_EQ("foo" / path("bar"), "foo\\bar");
-        EXPECT_EQ(path("..") / ".." , "..\\..");
-        EXPECT_EQ(path("/") / ".." , "/..");
-        EXPECT_EQ(path("/..") / ".." , "/..\\..");
-        EXPECT_EQ(path("..") / "foo" , "..\\foo");
-        EXPECT_EQ(path("foo") / ".." , "foo\\..");
-        EXPECT_EQ(path("..") / "f" , "..\\f");
-        EXPECT_EQ(path("/..") / "f" , "/..\\f");
-        EXPECT_EQ(path("f") / ".." , "f\\..");
-        EXPECT_EQ(path("foo") / ".." / ".." , "foo\\..\\..");
-        EXPECT_EQ(path("foo") / ".." / ".." / ".." , "foo\\..\\..\\..");
-        EXPECT_EQ(path("f") / ".." / "b" , "f\\..\\b");
-        EXPECT_EQ(path("foo") / ".." / "bar" , "foo\\..\\bar");
-        EXPECT_EQ(path("foo") / "bar" / ".." , "foo\\bar\\..");
-        EXPECT_EQ(path("foo") / "bar" / ".." / "..", "foo\\bar\\..\\..");
-        EXPECT_EQ(path("foo") / "bar" / ".." / "blah", "foo\\bar\\..\\blah");
-        EXPECT_EQ(path("f") / "b" / ".." , "f\\b\\..");
-        EXPECT_EQ(path("f") / "b" / ".." / "a", "f\\b\\..\\a");
-        EXPECT_EQ(path("foo") / "bar" / "blah" / ".." / "..", "foo\\bar\\blah\\..\\..");
-        EXPECT_EQ(path("foo") / "bar" / "blah" / ".." / ".." / "bletch", "foo\\bar\\blah\\..\\..\\bletch");
+        EXPECT_TRUE(Path("foo\\bar") == "foo/bar");
+        EXPECT_TRUE((b / a).native() == Path("b\\a").native());
+        EXPECT_TRUE((bs / a).native() == Path("b\\a").native());
+        EXPECT_TRUE((bcs / a).native() == Path("b\\a").native());
+        EXPECT_TRUE((b / as).native() == Path("b\\a").native());
+        EXPECT_TRUE((b / acs).native() == Path("b\\a").native());
+        EXPECT_EQ(Path("a") / "b", "a\\b");
+        EXPECT_EQ(Path("..") / "", "..");
+        EXPECT_EQ(Path("foo") / Path("bar"), "foo\\bar"); // Path arg
+        EXPECT_EQ(Path("foo") / "bar", "foo\\bar");       // const char* arg
+        EXPECT_EQ(Path("foo") / Path("woo/bar").filename(), "foo\\bar"); // const std::string & arg
+        EXPECT_EQ("foo" / Path("bar"), "foo\\bar");
+        EXPECT_EQ(Path("..") / ".." , "..\\..");
+        EXPECT_EQ(Path("/") / ".." , "/..");
+        EXPECT_EQ(Path("/..") / ".." , "/..\\..");
+        EXPECT_EQ(Path("..") / "foo" , "..\\foo");
+        EXPECT_EQ(Path("foo") / ".." , "foo\\..");
+        EXPECT_EQ(Path("..") / "f" , "..\\f");
+        EXPECT_EQ(Path("/..") / "f" , "/..\\f");
+        EXPECT_EQ(Path("f") / ".." , "f\\..");
+        EXPECT_EQ(Path("foo") / ".." / ".." , "foo\\..\\..");
+        EXPECT_EQ(Path("foo") / ".." / ".." / ".." , "foo\\..\\..\\..");
+        EXPECT_EQ(Path("f") / ".." / "b" , "f\\..\\b");
+        EXPECT_EQ(Path("foo") / ".." / "bar" , "foo\\..\\bar");
+        EXPECT_EQ(Path("foo") / "bar" / ".." , "foo\\bar\\..");
+        EXPECT_EQ(Path("foo") / "bar" / ".." / "..", "foo\\bar\\..\\..");
+        EXPECT_EQ(Path("foo") / "bar" / ".." / "blah", "foo\\bar\\..\\blah");
+        EXPECT_EQ(Path("f") / "b" / ".." , "f\\b\\..");
+        EXPECT_EQ(Path("f") / "b" / ".." / "a", "f\\b\\..\\a");
+        EXPECT_EQ(Path("foo") / "bar" / "blah" / ".." / "..", "foo\\bar\\blah\\..\\..");
+        EXPECT_EQ(Path("foo") / "bar" / "blah" / ".." / ".." / "bletch", "foo\\bar\\blah\\..\\..\\bletch");
 
-        EXPECT_EQ(path(".") / "foo", ".\\foo");
-        EXPECT_EQ(path(".") / "..", ".\\..");
-        EXPECT_EQ(path("foo") / ".", "foo\\.");
-        EXPECT_EQ(path("..") / ".", "..\\.");
-        EXPECT_EQ(path(".") / ".", ".\\.");
-        EXPECT_EQ(path(".") / "." / ".", ".\\.\\.");
-        EXPECT_EQ(path(".") / "foo" / ".", ".\\foo\\.");
-        EXPECT_EQ(path("foo") / "." / "bar", "foo\\.\\bar");
-        EXPECT_EQ(path("foo") / "." / ".", "foo\\.\\.");
-        EXPECT_EQ(path("foo") / "." / "..", "foo\\.\\..");
-        EXPECT_EQ(path(".") / "." / "..", ".\\.\\..");
-        EXPECT_EQ(path(".") / ".." / ".", ".\\..\\.");
-        EXPECT_EQ(path("..") / "." / ".", "..\\.\\.");
+        EXPECT_EQ(Path(".") / "foo", ".\\foo");
+        EXPECT_EQ(Path(".") / "..", ".\\..");
+        EXPECT_EQ(Path("foo") / ".", "foo\\.");
+        EXPECT_EQ(Path("..") / ".", "..\\.");
+        EXPECT_EQ(Path(".") / ".", ".\\.");
+        EXPECT_EQ(Path(".") / "." / ".", ".\\.\\.");
+        EXPECT_EQ(Path(".") / "foo" / ".", ".\\foo\\.");
+        EXPECT_EQ(Path("foo") / "." / "bar", "foo\\.\\bar");
+        EXPECT_EQ(Path("foo") / "." / ".", "foo\\.\\.");
+        EXPECT_EQ(Path("foo") / "." / "..", "foo\\.\\..");
+        EXPECT_EQ(Path(".") / "." / "..", ".\\.\\..");
+        EXPECT_EQ(Path(".") / ".." / ".", ".\\..\\.");
+        EXPECT_EQ(Path("..") / "." / ".", "..\\.\\.");
 #else
         EXPECT_EQ(b / a, "b/a");
         EXPECT_EQ(bs / a, "b/a");
         EXPECT_EQ(bcs / a, "b/a");
         EXPECT_EQ(b / as, "b/a");
         EXPECT_EQ(b / acs, "b/a");
-        EXPECT_EQ(path("a") / "b", "a/b");
-        EXPECT_EQ(path("..") / "", "..");
-        EXPECT_EQ(path("") / "..", "..");
-        EXPECT_EQ(path("foo") / path("bar"), "foo/bar"); // path arg
-        EXPECT_EQ(path("foo") / "bar", "foo/bar");       // const char* arg
-        EXPECT_EQ(path("foo") / path("woo/bar").filename(), "foo/bar"); // const std::string & arg
-        EXPECT_EQ("foo" / path("bar"), "foo/bar");
-        EXPECT_EQ(path("..") / ".." , "../..");
-        EXPECT_EQ(path("/") / ".." , "/..");
-        EXPECT_EQ(path("/..") / ".." , "/../..");
-        EXPECT_EQ(path("..") / "foo" , "../foo");
-        EXPECT_EQ(path("foo") / ".." , "foo/..");
-        EXPECT_EQ(path("..") / "f" , "../f");
-        EXPECT_EQ(path("/..") / "f" , "/../f");
-        EXPECT_EQ(path("f") / ".." , "f/..");
-        EXPECT_EQ(path("foo") / ".." / ".." , "foo/../..");
-        EXPECT_EQ(path("foo") / ".." / ".." / ".." , "foo/../../..");
-        EXPECT_EQ(path("f") / ".." / "b" , "f/../b");
-        EXPECT_EQ(path("foo") / ".." / "bar" , "foo/../bar");
-        EXPECT_EQ(path("foo") / "bar" / ".." , "foo/bar/..");
-        EXPECT_EQ(path("foo") / "bar" / ".." / "..", "foo/bar/../..");
-        EXPECT_EQ(path("foo") / "bar" / ".." / "blah", "foo/bar/../blah");
-        EXPECT_EQ(path("f") / "b" / ".." , "f/b/..");
-        EXPECT_EQ(path("f") / "b" / ".." / "a", "f/b/../a");
-        EXPECT_EQ(path("foo") / "bar" / "blah" / ".." / "..", "foo/bar/blah/../..");
-        EXPECT_EQ(path("foo") / "bar" / "blah" / ".." / ".." / "bletch", "foo/bar/blah/../../bletch");
+        EXPECT_EQ(Path("a") / "b", "a/b");
+        EXPECT_EQ(Path("..") / "", "..");
+        EXPECT_EQ(Path("") / "..", "..");
+        EXPECT_EQ(Path("foo") / Path("bar"), "foo/bar"); // Path arg
+        EXPECT_EQ(Path("foo") / "bar", "foo/bar");       // const char* arg
+        EXPECT_EQ(Path("foo") / Path("woo/bar").filename(), "foo/bar"); // const std::string & arg
+        EXPECT_EQ("foo" / Path("bar"), "foo/bar");
+        EXPECT_EQ(Path("..") / ".." , "../..");
+        EXPECT_EQ(Path("/") / ".." , "/..");
+        EXPECT_EQ(Path("/..") / ".." , "/../..");
+        EXPECT_EQ(Path("..") / "foo" , "../foo");
+        EXPECT_EQ(Path("foo") / ".." , "foo/..");
+        EXPECT_EQ(Path("..") / "f" , "../f");
+        EXPECT_EQ(Path("/..") / "f" , "/../f");
+        EXPECT_EQ(Path("f") / ".." , "f/..");
+        EXPECT_EQ(Path("foo") / ".." / ".." , "foo/../..");
+        EXPECT_EQ(Path("foo") / ".." / ".." / ".." , "foo/../../..");
+        EXPECT_EQ(Path("f") / ".." / "b" , "f/../b");
+        EXPECT_EQ(Path("foo") / ".." / "bar" , "foo/../bar");
+        EXPECT_EQ(Path("foo") / "bar" / ".." , "foo/bar/..");
+        EXPECT_EQ(Path("foo") / "bar" / ".." / "..", "foo/bar/../..");
+        EXPECT_EQ(Path("foo") / "bar" / ".." / "blah", "foo/bar/../blah");
+        EXPECT_EQ(Path("f") / "b" / ".." , "f/b/..");
+        EXPECT_EQ(Path("f") / "b" / ".." / "a", "f/b/../a");
+        EXPECT_EQ(Path("foo") / "bar" / "blah" / ".." / "..", "foo/bar/blah/../..");
+        EXPECT_EQ(Path("foo") / "bar" / "blah" / ".." / ".." / "bletch", "foo/bar/blah/../../bletch");
 
-        EXPECT_EQ(path(".") / "foo", "./foo");
-        EXPECT_EQ(path(".") / "..", "./..");
-        EXPECT_EQ(path("foo") / ".", "foo/.");
-        EXPECT_EQ(path("..") / ".", "../.");
-        EXPECT_EQ(path(".") / ".", "./.");
-        EXPECT_EQ(path(".") / "." / ".", "././.");
-        EXPECT_EQ(path(".") / "foo" / ".", "./foo/.");
-        EXPECT_EQ(path("foo") / "." / "bar", "foo/./bar");
-        EXPECT_EQ(path("foo") / "." / ".", "foo/./.");
-        EXPECT_EQ(path("foo") / "." / "..", "foo/./..");
-        EXPECT_EQ(path(".") / "." / "..", "././..");
-        EXPECT_EQ(path(".") / ".." / ".", "./../.");
-        EXPECT_EQ(path("..") / "." / ".", ".././.");
+        EXPECT_EQ(Path(".") / "foo", "./foo");
+        EXPECT_EQ(Path(".") / "..", "./..");
+        EXPECT_EQ(Path("foo") / ".", "foo/.");
+        EXPECT_EQ(Path("..") / ".", "../.");
+        EXPECT_EQ(Path(".") / ".", "./.");
+        EXPECT_EQ(Path(".") / "." / ".", "././.");
+        EXPECT_EQ(Path(".") / "foo" / ".", "./foo/.");
+        EXPECT_EQ(Path("foo") / "." / "bar", "foo/./bar");
+        EXPECT_EQ(Path("foo") / "." / ".", "foo/./.");
+        EXPECT_EQ(Path("foo") / "." / "..", "foo/./..");
+        EXPECT_EQ(Path(".") / "." / "..", "././..");
+        EXPECT_EQ(Path(".") / ".." / ".", "./../.");
+        EXPECT_EQ(Path("..") / "." / ".", ".././.");
 #endif
 
     // probe operator <
@@ -1227,7 +1226,7 @@ TEST_F(PathTest, non_member) {
     EXPECT_TRUE(!(a < as2));
     EXPECT_TRUE(!(a < acs2));
 
-    // make sure basic_path overloads don't conflict with std::string overloads
+    // make sure basic_Path overloads don't conflict with std::string overloads
 
     EXPECT_TRUE(!(as < as));
     EXPECT_TRUE(!(as < acs));
@@ -1236,10 +1235,10 @@ TEST_F(PathTest, non_member) {
     // character set reality check before lexicographical tests
     EXPECT_TRUE(std::string("a.b") < std::string("a/b"));
     // verify compare is actually lexicographical
-    EXPECT_TRUE(path("a/b") < path("a.b"));
-    EXPECT_TRUE(path("a/b") == path("a///b"));
-    EXPECT_TRUE(path("a/b/") == path("a/b/."));
-    EXPECT_TRUE(path("a/b") != path("a/b/"));
+    EXPECT_TRUE(Path("a/b") < Path("a.b"));
+    EXPECT_TRUE(Path("a/b") == Path("a///b"));
+    EXPECT_TRUE(Path("a/b/") == Path("a/b/."));
+    EXPECT_TRUE(Path("a/b") != Path("a/b/"));
 
     // make sure the derivative operators also work
 
@@ -1281,9 +1280,9 @@ TEST_F(PathTest, non_member) {
 
     //  operator == and != are implemented separately, so test separately
 
-    path p101("fe/fi/fo/fum");
-    path p102(p101);
-    path p103("fe/fi/fo/fumm");
+    Path p101("fe/fi/fo/fum");
+    Path p102(p101);
+    Path p103("fe/fi/fo/fumm");
     EXPECT_TRUE(p101.string() != p103.string());
 
     // check each overload
@@ -1305,8 +1304,8 @@ TEST_F(PathTest, non_member) {
 
 // TODO: fixme
 #ifdef BUILD_FOR_WINDOWS
-        path p10 ("c:\\file");
-        path p11 ("c:/file");
+        Path p10 ("c:\\file");
+        Path p11 ("c:/file");
         // check each overload
         EXPECT_TRUE(p10.generic_string() == p11.generic_string());
         EXPECT_TRUE(p10 == p11);
@@ -1372,44 +1371,44 @@ TEST_F(PathTest, non_member) {
 
 TEST_F(PathTest, query_and_decomposition) {
     // these are the examples given in reference docs, so check they work
-    EXPECT_TRUE(path("/foo/bar.txt").parent_path() == "/foo");
-    EXPECT_TRUE(path("/foo/bar").parent_path() == "/foo");
-    EXPECT_TRUE(path("/foo/bar/").parent_path() == "/foo/bar");
-    EXPECT_TRUE(path("/").parent_path() == "");
-    EXPECT_TRUE(path(".").parent_path() == "");
-    EXPECT_TRUE(path("..").parent_path() == "");
-    EXPECT_TRUE(path("/foo/bar.txt").filename() == "bar.txt");
-    EXPECT_TRUE(path("/foo/bar").filename() == "bar");
-    EXPECT_TRUE(path("/foo/bar/").filename() == ".");
-    EXPECT_TRUE(path("/").filename() == "/");
-    EXPECT_TRUE(path(".").filename() == ".");
-    EXPECT_TRUE(path("..").filename() == "..");
+    EXPECT_TRUE(Path("/foo/bar.txt").parent_path() == "/foo");
+    EXPECT_TRUE(Path("/foo/bar").parent_path() == "/foo");
+    EXPECT_TRUE(Path("/foo/bar/").parent_path() == "/foo/bar");
+    EXPECT_TRUE(Path("/").parent_path() == "");
+    EXPECT_TRUE(Path(".").parent_path() == "");
+    EXPECT_TRUE(Path("..").parent_path() == "");
+    EXPECT_TRUE(Path("/foo/bar.txt").filename() == "bar.txt");
+    EXPECT_TRUE(Path("/foo/bar").filename() == "bar");
+    EXPECT_TRUE(Path("/foo/bar/").filename() == ".");
+    EXPECT_TRUE(Path("/").filename() == "/");
+    EXPECT_TRUE(Path(".").filename() == ".");
+    EXPECT_TRUE(Path("..").filename() == "..");
 
     // stem() tests not otherwise covered
-    EXPECT_TRUE(path(".").stem() == ".");
-    EXPECT_TRUE(path("..").stem() == "..");
-    EXPECT_TRUE(path(".a").stem() == "");
-    EXPECT_TRUE(path("b").stem() == "b");
-    EXPECT_TRUE(path("a/b.txt").stem() == "b");
-    EXPECT_TRUE(path("a/b.").stem() == "b");
-    EXPECT_TRUE(path("a.b.c").stem() == "a.b");
-    EXPECT_TRUE(path("a.b.c.").stem() == "a.b.c");
+    EXPECT_TRUE(Path(".").stem() == ".");
+    EXPECT_TRUE(Path("..").stem() == "..");
+    EXPECT_TRUE(Path(".a").stem() == "");
+    EXPECT_TRUE(Path("b").stem() == "b");
+    EXPECT_TRUE(Path("a/b.txt").stem() == "b");
+    EXPECT_TRUE(Path("a/b.").stem() == "b");
+    EXPECT_TRUE(Path("a.b.c").stem() == "a.b");
+    EXPECT_TRUE(Path("a.b.c.").stem() == "a.b.c");
 
     // extension() tests not otherwise covered
-    EXPECT_TRUE(path(".").extension() == "");
-    EXPECT_TRUE(path("..").extension() == "");
-    EXPECT_TRUE(path(".a").extension() == ".a");
-    EXPECT_TRUE(path("a/b").extension() == "");
-    EXPECT_TRUE(path("a.b/c").extension() == "");
-    EXPECT_TRUE(path("a/b.txt").extension() == ".txt");
-    EXPECT_TRUE(path("a/b.").extension() == ".");
-    EXPECT_TRUE(path("a.b.c").extension() == ".c");
-    EXPECT_TRUE(path("a.b.c.").extension() == ".");
-    EXPECT_TRUE(path("a/").extension() == "");
+    EXPECT_TRUE(Path(".").extension() == "");
+    EXPECT_TRUE(Path("..").extension() == "");
+    EXPECT_TRUE(Path(".a").extension() == ".a");
+    EXPECT_TRUE(Path("a/b").extension() == "");
+    EXPECT_TRUE(Path("a.b/c").extension() == "");
+    EXPECT_TRUE(Path("a/b.txt").extension() == ".txt");
+    EXPECT_TRUE(Path("a/b.").extension() == ".");
+    EXPECT_TRUE(Path("a.b.c").extension() == ".c");
+    EXPECT_TRUE(Path("a.b.c.").extension() == ".");
+    EXPECT_TRUE(Path("a/").extension() == "");
 
     // main q & d test sequence
-    path p;
-    path q;
+    Path p;
+    Path q;
 
     p = q = "";
     EXPECT_TRUE(p.relative_path().string() == "");
@@ -1707,11 +1706,11 @@ TEST_F(PathTest, query_and_decomposition) {
 
     // Both POSIX and Windows allow two leading slashs
     // (POSIX meaning is implementation defined)
-    EXPECT_EQ(path("//resource"), "//resource");
-    EXPECT_EQ(path("//resource/"), "//resource/");
-    EXPECT_EQ(path("//resource/foo"), "//resource/foo");
+    EXPECT_EQ(Path("//resource"), "//resource");
+    EXPECT_EQ(Path("//resource/"), "//resource/");
+    EXPECT_EQ(Path("//resource/foo"), "//resource/foo");
 
-    p = q = path("//net");
+    p = q = Path("//net");
     EXPECT_EQ(p.string(), "//net");
     EXPECT_EQ(p.relative_path().string(), "");
     EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1728,7 +1727,7 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(!p.has_parent_path());
     EXPECT_TRUE(!p.is_absolute());
 
-    p = q = path("//net/");
+    p = q = Path("//net/");
     EXPECT_TRUE(p.relative_path().string() == "");
     EXPECT_TRUE(p.parent_path().string() == "//net");
     EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1744,7 +1743,7 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(p.has_parent_path());
     EXPECT_TRUE(p.is_absolute());
 
-    p = q = path("//net/foo");
+    p = q = Path("//net/foo");
     EXPECT_TRUE(p.relative_path().string() == "foo");
     EXPECT_TRUE(p.parent_path().string() == "//net/");
     EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1760,7 +1759,7 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(p.has_parent_path());
     EXPECT_TRUE(p.is_absolute());
 
-    p = q = path("//net///foo");
+    p = q = Path("//net///foo");
     EXPECT_EQ(p.relative_path().string(), "foo");
     EXPECT_EQ(p.parent_path().string(), "//net/");
     EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1778,19 +1777,19 @@ TEST_F(PathTest, query_and_decomposition) {
 
     //  ticket 2739, infinite recursion leading to stack overflow, was caused
     //  by failure to handle this case correctly on Windows.
-    p = path(":");
+    p = Path(":");
     EXPECT_EQ(p.parent_path().string(), "");
     EXPECT_EQ(p.filename(), ":");
     EXPECT_TRUE(!p.has_parent_path());
     EXPECT_TRUE(p.has_filename());
 
     //  test some similar cases that both POSIX and Windows should handle identically
-    p = path("c:");
+    p = Path("c:");
     EXPECT_EQ(p.parent_path().string(), "");
     EXPECT_EQ(p.filename(), "c:");
     EXPECT_TRUE(!p.has_parent_path());
     EXPECT_TRUE(p.has_filename());
-    p = path("cc:");
+    p = Path("cc:");
     EXPECT_EQ(p.parent_path().string(), "");
     EXPECT_EQ(p.filename(), "cc:");
     EXPECT_TRUE(!p.has_parent_path());
@@ -1799,7 +1798,7 @@ TEST_F(PathTest, query_and_decomposition) {
     //  Windows specific tests
 // TODO: fixme
 #ifdef BUILD_FOR_WINDOWS
-      p = q = path("c:");
+      p = q = Path("c:");
       EXPECT_TRUE(p.relative_path().string() == "");
       EXPECT_TRUE(p.parent_path().string() == "");
       EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1815,7 +1814,7 @@ TEST_F(PathTest, query_and_decomposition) {
       EXPECT_TRUE(!p.has_parent_path());
       EXPECT_TRUE(!p.is_absolute());
 
-      p = q = path("c:foo");
+      p = q = Path("c:foo");
       EXPECT_TRUE(p.relative_path().string() == "foo");
       EXPECT_TRUE(p.parent_path().string() == "c:");
       EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1831,7 +1830,7 @@ TEST_F(PathTest, query_and_decomposition) {
       EXPECT_TRUE(p.has_parent_path());
       EXPECT_TRUE(!p.is_absolute());
 
-      p = q = path("c:/");
+      p = q = Path("c:/");
       EXPECT_TRUE(p.relative_path().string() == "");
       EXPECT_TRUE(p.parent_path().string() == "c:");
       EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1847,7 +1846,7 @@ TEST_F(PathTest, query_and_decomposition) {
       EXPECT_TRUE(p.has_parent_path());
       EXPECT_TRUE(p.is_absolute());
 
-      p = q = path("c:..");
+      p = q = Path("c:..");
       EXPECT_TRUE(p.relative_path().string() == "..");
       EXPECT_TRUE(p.parent_path().string() == "c:");
       EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1863,7 +1862,7 @@ TEST_F(PathTest, query_and_decomposition) {
       EXPECT_TRUE(p.has_parent_path());
       EXPECT_TRUE(!p.is_absolute());
 
-      p = q = path("c:/foo");
+      p = q = Path("c:/foo");
       EXPECT_EQ(p.relative_path().string(), "foo");
       EXPECT_EQ(p.parent_path().string(), "c:/");
       EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1879,7 +1878,7 @@ TEST_F(PathTest, query_and_decomposition) {
       EXPECT_TRUE(p.has_parent_path());
       EXPECT_TRUE(p.is_absolute());
 
-      p = q = path("c://foo");
+      p = q = Path("c://foo");
       EXPECT_EQ(p.relative_path().string(), "foo");
       EXPECT_EQ(p.parent_path().string(), "c:/");
       EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1895,7 +1894,7 @@ TEST_F(PathTest, query_and_decomposition) {
       EXPECT_TRUE(p.has_parent_path());
       EXPECT_TRUE(p.is_absolute());
 
-      p = q = path("c:\\foo\\bar");
+      p = q = Path("c:\\foo\\bar");
       EXPECT_EQ(p.relative_path().string(), "foo\\bar");
       EXPECT_EQ(p.parent_path().string(), "c:\\foo");
       EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1911,7 +1910,7 @@ TEST_F(PathTest, query_and_decomposition) {
       EXPECT_TRUE(p.has_parent_path());
       EXPECT_TRUE(p.is_absolute());
 
-      p = q = path("prn:");
+      p = q = Path("prn:");
       EXPECT_TRUE(p.relative_path().string() == "");
       EXPECT_TRUE(p.parent_path().string() == "");
       EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1927,7 +1926,7 @@ TEST_F(PathTest, query_and_decomposition) {
       EXPECT_TRUE(!p.has_parent_path());
       EXPECT_TRUE(!p.is_absolute());
 
-      p = q = path("\\\\net\\\\\\foo");
+      p = q = Path("\\\\net\\\\\\foo");
       EXPECT_EQ(p.relative_path().string(), "foo");
       EXPECT_EQ(p.parent_path().string(), "\\\\net\\");
       EXPECT_EQ(q.remove_filename().string(), p.parent_path().string());
@@ -1943,146 +1942,146 @@ TEST_F(PathTest, query_and_decomposition) {
       EXPECT_TRUE(p.has_parent_path());
       EXPECT_TRUE(p.is_absolute());
 #else // POSIX
-      EXPECT_EQ(path("/foo/bar/"), "/foo/bar/");
-      EXPECT_EQ(path("//foo//bar//"), "//foo//bar//");
-      EXPECT_EQ(path("///foo///bar///"), "///foo///bar///");
+      EXPECT_EQ(Path("/foo/bar/"), "/foo/bar/");
+      EXPECT_EQ(Path("//foo//bar//"), "//foo//bar//");
+      EXPECT_EQ(Path("///foo///bar///"), "///foo///bar///");
 
-      p = path("/usr/local/bin:/usr/bin:/bin");
+      p = Path("/usr/local/bin:/usr/bin:/bin");
       EXPECT_TRUE(p.string() == "/usr/local/bin:/usr/bin:/bin");
 #endif
 }
 
 TEST_F(PathTest, construction) {
-    EXPECT_EQ(path(""), "");
+    EXPECT_EQ(Path(""), "");
 
-    EXPECT_EQ(path("foo"), "foo");
-    EXPECT_EQ(path("f"), "f");
+    EXPECT_EQ(Path("foo"), "foo");
+    EXPECT_EQ(Path("f"), "f");
 
-    EXPECT_EQ(path("foo/"), "foo/");
-    EXPECT_EQ(path("f/"), "f/");
-    EXPECT_EQ(path("foo/.."), "foo/..");
-    EXPECT_EQ(path("foo/../"), "foo/../");
-    EXPECT_EQ(path("foo/bar/../.."), "foo/bar/../..");
-    EXPECT_EQ(path("foo/bar/../../"), "foo/bar/../../");
-    EXPECT_EQ(path("/"), "/");
-    EXPECT_EQ(path("/f"), "/f");
+    EXPECT_EQ(Path("foo/"), "foo/");
+    EXPECT_EQ(Path("f/"), "f/");
+    EXPECT_EQ(Path("foo/.."), "foo/..");
+    EXPECT_EQ(Path("foo/../"), "foo/../");
+    EXPECT_EQ(Path("foo/bar/../.."), "foo/bar/../..");
+    EXPECT_EQ(Path("foo/bar/../../"), "foo/bar/../../");
+    EXPECT_EQ(Path("/"), "/");
+    EXPECT_EQ(Path("/f"), "/f");
 
-    EXPECT_EQ(path("/foo"), "/foo");
-    EXPECT_EQ(path("/foo/bar/"), "/foo/bar/");
-    EXPECT_EQ(path("//foo//bar//"), "//foo//bar//");
-    EXPECT_EQ(path("///foo///bar///"), "///foo///bar///");
-    EXPECT_EQ(path("\\/foo\\/bar\\/"), "\\/foo\\/bar\\/");
-    EXPECT_EQ(path("\\//foo\\//bar\\//"), "\\//foo\\//bar\\//");
+    EXPECT_EQ(Path("/foo"), "/foo");
+    EXPECT_EQ(Path("/foo/bar/"), "/foo/bar/");
+    EXPECT_EQ(Path("//foo//bar//"), "//foo//bar//");
+    EXPECT_EQ(Path("///foo///bar///"), "///foo///bar///");
+    EXPECT_EQ(Path("\\/foo\\/bar\\/"), "\\/foo\\/bar\\/");
+    EXPECT_EQ(Path("\\//foo\\//bar\\//"), "\\//foo\\//bar\\//");
 
 // TODO: fixme
 #ifdef BUILD_FOR_WINDOWS
-      EXPECT_EQ(path("c:") / "foo", "c:foo");
-      EXPECT_EQ(path("c:") / "/foo", "c:/foo");
+      EXPECT_EQ(Path("c:") / "foo", "c:foo");
+      EXPECT_EQ(Path("c:") / "/foo", "c:/foo");
 
-      EXPECT_EQ(path("\\foo\\bar\\"), "\\foo\\bar\\");
-      EXPECT_EQ(path("\\\\foo\\\\bar\\\\"), "\\\\foo\\\\bar\\\\");
-      EXPECT_EQ(path("\\\\\\foo\\\\\\bar\\\\\\"), "\\\\\\foo\\\\\\bar\\\\\\");
+      EXPECT_EQ(Path("\\foo\\bar\\"), "\\foo\\bar\\");
+      EXPECT_EQ(Path("\\\\foo\\\\bar\\\\"), "\\\\foo\\\\bar\\\\");
+      EXPECT_EQ(Path("\\\\\\foo\\\\\\bar\\\\\\"), "\\\\\\foo\\\\\\bar\\\\\\");
 
-      EXPECT_EQ(path("\\"), "\\");
-      EXPECT_EQ(path("\\f"), "\\f");
-      EXPECT_EQ(path("\\foo"), "\\foo");
-      EXPECT_EQ(path("foo\\bar"), "foo\\bar");
-      EXPECT_EQ(path("foo bar"), "foo bar");
-      EXPECT_EQ(path("c:"), "c:");
-      EXPECT_EQ(path("c:/"), "c:/");
-      EXPECT_EQ(path("c:."), "c:.");
-      EXPECT_EQ(path("c:./foo"), "c:./foo");
-      EXPECT_EQ(path("c:.\\foo"), "c:.\\foo");
-      EXPECT_EQ(path("c:.."), "c:..");
-      EXPECT_EQ(path("c:/."), "c:/.");
-      EXPECT_EQ(path("c:/.."), "c:/..");
-      EXPECT_EQ(path("c:/../"), "c:/../");
-      EXPECT_EQ(path("c:\\..\\"), "c:\\..\\");
-      EXPECT_EQ(path("c:/../.."), "c:/../..");
-      EXPECT_EQ(path("c:/../foo"), "c:/../foo");
-      EXPECT_EQ(path("c:\\..\\foo"), "c:\\..\\foo");
-      EXPECT_EQ(path("c:../foo"), "c:../foo");
-      EXPECT_EQ(path("c:..\\foo"), "c:..\\foo");
-      EXPECT_EQ(path("c:/../../foo"), "c:/../../foo");
-      EXPECT_EQ(path("c:\\..\\..\\foo"), "c:\\..\\..\\foo");
-      EXPECT_EQ(path("c:foo/.."), "c:foo/..");
-      EXPECT_EQ(path("c:/foo/.."), "c:/foo/..");
-      EXPECT_EQ(path("c:/..foo"), "c:/..foo");
-      EXPECT_EQ(path("c:foo"), "c:foo");
-      EXPECT_EQ(path("c:/foo"), "c:/foo");
-      EXPECT_EQ(path("\\\\netname"), "\\\\netname");
-      EXPECT_EQ(path("\\\\netname\\"), "\\\\netname\\");
-      EXPECT_EQ(path("\\\\netname\\foo"), "\\\\netname\\foo");
-      EXPECT_EQ(path("c:/foo"), "c:/foo");
-      EXPECT_EQ(path("prn:"), "prn:");
+      EXPECT_EQ(Path("\\"), "\\");
+      EXPECT_EQ(Path("\\f"), "\\f");
+      EXPECT_EQ(Path("\\foo"), "\\foo");
+      EXPECT_EQ(Path("foo\\bar"), "foo\\bar");
+      EXPECT_EQ(Path("foo bar"), "foo bar");
+      EXPECT_EQ(Path("c:"), "c:");
+      EXPECT_EQ(Path("c:/"), "c:/");
+      EXPECT_EQ(Path("c:."), "c:.");
+      EXPECT_EQ(Path("c:./foo"), "c:./foo");
+      EXPECT_EQ(Path("c:.\\foo"), "c:.\\foo");
+      EXPECT_EQ(Path("c:.."), "c:..");
+      EXPECT_EQ(Path("c:/."), "c:/.");
+      EXPECT_EQ(Path("c:/.."), "c:/..");
+      EXPECT_EQ(Path("c:/../"), "c:/../");
+      EXPECT_EQ(Path("c:\\..\\"), "c:\\..\\");
+      EXPECT_EQ(Path("c:/../.."), "c:/../..");
+      EXPECT_EQ(Path("c:/../foo"), "c:/../foo");
+      EXPECT_EQ(Path("c:\\..\\foo"), "c:\\..\\foo");
+      EXPECT_EQ(Path("c:../foo"), "c:../foo");
+      EXPECT_EQ(Path("c:..\\foo"), "c:..\\foo");
+      EXPECT_EQ(Path("c:/../../foo"), "c:/../../foo");
+      EXPECT_EQ(Path("c:\\..\\..\\foo"), "c:\\..\\..\\foo");
+      EXPECT_EQ(Path("c:foo/.."), "c:foo/..");
+      EXPECT_EQ(Path("c:/foo/.."), "c:/foo/..");
+      EXPECT_EQ(Path("c:/..foo"), "c:/..foo");
+      EXPECT_EQ(Path("c:foo"), "c:foo");
+      EXPECT_EQ(Path("c:/foo"), "c:/foo");
+      EXPECT_EQ(Path("\\\\netname"), "\\\\netname");
+      EXPECT_EQ(Path("\\\\netname\\"), "\\\\netname\\");
+      EXPECT_EQ(Path("\\\\netname\\foo"), "\\\\netname\\foo");
+      EXPECT_EQ(Path("c:/foo"), "c:/foo");
+      EXPECT_EQ(Path("prn:"), "prn:");
 #endif
 
-    EXPECT_EQ(path("foo/bar"), "foo/bar");
-    EXPECT_EQ(path("a/b"), "a/b");  // probe for length effects
-    EXPECT_EQ(path(".."), "..");
-    EXPECT_EQ(path("../.."), "../..");
-    EXPECT_EQ(path("/.."), "/..");
-    EXPECT_EQ(path("/../.."), "/../..");
-    EXPECT_EQ(path("../foo"), "../foo");
-    EXPECT_EQ(path("foo/.."), "foo/..");
-    EXPECT_EQ(path("foo/..bar"), "foo/..bar");
-    EXPECT_EQ(path("../f"), "../f");
-    EXPECT_EQ(path("/../f"), "/../f");
-    EXPECT_EQ(path("f/.."), "f/..");
-    EXPECT_EQ(path("foo/../.."), "foo/../..");
-    EXPECT_EQ(path("foo/../../.."), "foo/../../..");
-    EXPECT_EQ(path("foo/../bar"), "foo/../bar");
-    EXPECT_EQ(path("foo/bar/.."), "foo/bar/..");
-    EXPECT_EQ(path("foo/bar/../.."), "foo/bar/../..");
-    EXPECT_EQ(path("foo/bar/../blah"), "foo/bar/../blah");
-    EXPECT_EQ(path("f/../b"), "f/../b");
-    EXPECT_EQ(path("f/b/.."), "f/b/..");
-    EXPECT_EQ(path("f/b/../a"), "f/b/../a");
-    EXPECT_EQ(path("foo/bar/blah/../.."), "foo/bar/blah/../..");
-    EXPECT_EQ(path("foo/bar/blah/../../bletch"), "foo/bar/blah/../../bletch");
-    EXPECT_EQ(path("..."), "...");
-    EXPECT_EQ(path("...."), "....");
-    EXPECT_EQ(path("foo/..."), "foo/...");
-    EXPECT_EQ(path("abc."), "abc.");
-    EXPECT_EQ(path("abc.."), "abc..");
-    EXPECT_EQ(path("foo/abc."), "foo/abc.");
-    EXPECT_EQ(path("foo/abc.."), "foo/abc..");
+    EXPECT_EQ(Path("foo/bar"), "foo/bar");
+    EXPECT_EQ(Path("a/b"), "a/b");  // probe for length effects
+    EXPECT_EQ(Path(".."), "..");
+    EXPECT_EQ(Path("../.."), "../..");
+    EXPECT_EQ(Path("/.."), "/..");
+    EXPECT_EQ(Path("/../.."), "/../..");
+    EXPECT_EQ(Path("../foo"), "../foo");
+    EXPECT_EQ(Path("foo/.."), "foo/..");
+    EXPECT_EQ(Path("foo/..bar"), "foo/..bar");
+    EXPECT_EQ(Path("../f"), "../f");
+    EXPECT_EQ(Path("/../f"), "/../f");
+    EXPECT_EQ(Path("f/.."), "f/..");
+    EXPECT_EQ(Path("foo/../.."), "foo/../..");
+    EXPECT_EQ(Path("foo/../../.."), "foo/../../..");
+    EXPECT_EQ(Path("foo/../bar"), "foo/../bar");
+    EXPECT_EQ(Path("foo/bar/.."), "foo/bar/..");
+    EXPECT_EQ(Path("foo/bar/../.."), "foo/bar/../..");
+    EXPECT_EQ(Path("foo/bar/../blah"), "foo/bar/../blah");
+    EXPECT_EQ(Path("f/../b"), "f/../b");
+    EXPECT_EQ(Path("f/b/.."), "f/b/..");
+    EXPECT_EQ(Path("f/b/../a"), "f/b/../a");
+    EXPECT_EQ(Path("foo/bar/blah/../.."), "foo/bar/blah/../..");
+    EXPECT_EQ(Path("foo/bar/blah/../../bletch"), "foo/bar/blah/../../bletch");
+    EXPECT_EQ(Path("..."), "...");
+    EXPECT_EQ(Path("...."), "....");
+    EXPECT_EQ(Path("foo/..."), "foo/...");
+    EXPECT_EQ(Path("abc."), "abc.");
+    EXPECT_EQ(Path("abc.."), "abc..");
+    EXPECT_EQ(Path("foo/abc."), "foo/abc.");
+    EXPECT_EQ(Path("foo/abc.."), "foo/abc..");
 
-    EXPECT_EQ(path(".abc"), ".abc");
-    EXPECT_EQ(path("a.c"), "a.c");
-    EXPECT_EQ(path("..abc"), "..abc");
-    EXPECT_EQ(path("a..c"), "a..c");
-    EXPECT_EQ(path("foo/.abc"), "foo/.abc");
-    EXPECT_EQ(path("foo/a.c"), "foo/a.c");
-    EXPECT_EQ(path("foo/..abc"), "foo/..abc");
-    EXPECT_EQ(path("foo/a..c"), "foo/a..c");
+    EXPECT_EQ(Path(".abc"), ".abc");
+    EXPECT_EQ(Path("a.c"), "a.c");
+    EXPECT_EQ(Path("..abc"), "..abc");
+    EXPECT_EQ(Path("a..c"), "a..c");
+    EXPECT_EQ(Path("foo/.abc"), "foo/.abc");
+    EXPECT_EQ(Path("foo/a.c"), "foo/a.c");
+    EXPECT_EQ(Path("foo/..abc"), "foo/..abc");
+    EXPECT_EQ(Path("foo/a..c"), "foo/a..c");
 
-    EXPECT_EQ(path("."), ".");
-    EXPECT_EQ(path("./foo"), "./foo");
-    EXPECT_EQ(path("./.."), "./..");
-    EXPECT_EQ(path("./../foo"), "./../foo");
-    EXPECT_EQ(path("foo/."), "foo/.");
-    EXPECT_EQ(path("../."), "../.");
-    EXPECT_EQ(path("./."), "./.");
-    EXPECT_EQ(path("././."), "././.");
-    EXPECT_EQ(path("./foo/."), "./foo/.");
-    EXPECT_EQ(path("foo/./bar"), "foo/./bar");
-    EXPECT_EQ(path("foo/./."), "foo/./.");
-    EXPECT_EQ(path("foo/./.."), "foo/./..");
-    EXPECT_EQ(path("foo/./../bar"), "foo/./../bar");
-    EXPECT_EQ(path("foo/../."), "foo/../.");
-    EXPECT_EQ(path("././.."), "././..");
-    EXPECT_EQ(path("./../."), "./../.");
-    EXPECT_EQ(path(".././."), ".././.");
+    EXPECT_EQ(Path("."), ".");
+    EXPECT_EQ(Path("./foo"), "./foo");
+    EXPECT_EQ(Path("./.."), "./..");
+    EXPECT_EQ(Path("./../foo"), "./../foo");
+    EXPECT_EQ(Path("foo/."), "foo/.");
+    EXPECT_EQ(Path("../."), "../.");
+    EXPECT_EQ(Path("./."), "./.");
+    EXPECT_EQ(Path("././."), "././.");
+    EXPECT_EQ(Path("./foo/."), "./foo/.");
+    EXPECT_EQ(Path("foo/./bar"), "foo/./bar");
+    EXPECT_EQ(Path("foo/./."), "foo/./.");
+    EXPECT_EQ(Path("foo/./.."), "foo/./..");
+    EXPECT_EQ(Path("foo/./../bar"), "foo/./../bar");
+    EXPECT_EQ(Path("foo/../."), "foo/../.");
+    EXPECT_EQ(Path("././.."), "././..");
+    EXPECT_EQ(Path("./../."), "./../.");
+    EXPECT_EQ(Path(".././."), ".././.");
 }
 
 namespace {
 
-void append_test_aux(const path& p, const std::string& s, const std::string& expect) {
-    EXPECT_EQ((p / path(s)).string(), expect);
+void append_test_aux(const Path& p, const std::string& s, const std::string& expect) {
+    EXPECT_EQ((p / Path(s)).string(), expect);
     EXPECT_EQ((p / s.c_str()).string(), expect);
     EXPECT_EQ((p / s).string(), expect);
-    path x(p);
+    Path x(p);
     x.append(s.begin(), s.end());
     EXPECT_EQ(x.string(), expect);
 }
@@ -2090,62 +2089,62 @@ void append_test_aux(const path& p, const std::string& s, const std::string& exp
 } // namespace
 
 TEST_F(PathTest, append) {
-    EXPECT_EQ(path("") / "", "");
+    EXPECT_EQ(Path("") / "", "");
     append_test_aux("", "", "");
 
-    EXPECT_EQ(path("") / "/", "/");
+    EXPECT_EQ(Path("") / "/", "/");
     append_test_aux("", "/", "/");
 
-    EXPECT_EQ(path("") / "bar", "bar");
+    EXPECT_EQ(Path("") / "bar", "bar");
     append_test_aux("", "bar", "bar");
 
-    EXPECT_EQ(path("") / "/bar", "/bar");
+    EXPECT_EQ(Path("") / "/bar", "/bar");
     append_test_aux("", "/bar", "/bar");
 
-    EXPECT_EQ(path("/") / "", "/");
+    EXPECT_EQ(Path("/") / "", "/");
     append_test_aux("/", "", "/");
 
-    EXPECT_EQ(path("/") / "/", "//");
+    EXPECT_EQ(Path("/") / "/", "//");
     append_test_aux("/", "/", "//");
 
-    EXPECT_EQ(path("/") / "bar", "/bar");
+    EXPECT_EQ(Path("/") / "bar", "/bar");
     append_test_aux("/", "bar", "/bar");
 
-    EXPECT_EQ(path("/") / "/bar", "//bar");
+    EXPECT_EQ(Path("/") / "/bar", "//bar");
     append_test_aux("/", "/bar", "//bar");
 
-    EXPECT_EQ(path("foo") / "", "foo");
+    EXPECT_EQ(Path("foo") / "", "foo");
     append_test_aux("foo", "", "foo");
 
-    EXPECT_EQ(path("foo") / "/", "foo/");
+    EXPECT_EQ(Path("foo") / "/", "foo/");
     append_test_aux("foo", "/", "foo/");
 
-    EXPECT_EQ(path("foo") / "/bar", "foo/bar");
+    EXPECT_EQ(Path("foo") / "/bar", "foo/bar");
     append_test_aux("foo", "/bar", "foo/bar");
 
-    EXPECT_EQ(path("foo/") / "", "foo/");
+    EXPECT_EQ(Path("foo/") / "", "foo/");
     append_test_aux("foo/", "", "foo/");
 
-    EXPECT_EQ(path("foo/") / "/", "foo//");
+    EXPECT_EQ(Path("foo/") / "/", "foo//");
     append_test_aux("foo/", "/", "foo//");
 
-    EXPECT_EQ(path("foo/") / "bar", "foo/bar");
+    EXPECT_EQ(Path("foo/") / "bar", "foo/bar");
     append_test_aux("foo/", "bar", "foo/bar");
 
 
 // TODO: fixme
 #ifdef BUILD_FOR_WINDOWS
-      EXPECT_EQ(path("foo") / "bar", "foo\\bar");
+      EXPECT_EQ(Path("foo") / "bar", "foo\\bar");
       append_test_aux("foo", "bar", "foo\\bar");
 
-      EXPECT_EQ(path("foo\\") / "\\bar", "foo\\\\bar");
+      EXPECT_EQ(Path("foo\\") / "\\bar", "foo\\\\bar");
       append_test_aux("foo\\", "\\bar", "foo\\\\bar");
 
       // hand created test case specific to Windows
-      EXPECT_EQ(path("c:") / "bar", "c:bar");
+      EXPECT_EQ(Path("c:") / "bar", "c:bar");
       append_test_aux("c:", "bar", "c:bar");
 #else
-      EXPECT_EQ(path("foo") / "bar", "foo/bar");
+      EXPECT_EQ(Path("foo") / "bar", "foo/bar");
       append_test_aux("foo", "bar", "foo/bar");
 #endif
 
@@ -2160,13 +2159,13 @@ TEST_F(PathTest, append) {
     u.b[1] = 'b';
     u.b[2] = '\0';
 
-    path p6819;
+    Path p6819;
     p6819 /= u.a;
-    EXPECT_EQ(p6819, path("ab"));
+    EXPECT_EQ(p6819, Path("ab"));
 }
 
 TEST_F(PathTest, self_assign_and_append) {
-    path p;
+    Path p;
 
     p = "snafubar";
     EXPECT_EQ(p = p, "snafubar");
@@ -2176,7 +2175,7 @@ TEST_F(PathTest, self_assign_and_append) {
     EXPECT_EQ(p, "snafubar");
 
     p = "snafubar";
-    p.assign(p.c_str(), path::codecvt());
+    p.assign(p.c_str(), Path::codecvt());
     EXPECT_EQ(p, "snafubar");
 
     p = "snafubar";
@@ -2194,7 +2193,7 @@ TEST_F(PathTest, self_assign_and_append) {
     EXPECT_EQ(p, "snafubar" BOOST_DIR_SEP "snafubar");
 
     p = "snafubar";
-    p.append(p.c_str(), path::codecvt());
+    p.append(p.c_str(), Path::codecvt());
     EXPECT_EQ(p, "snafubar" BOOST_DIR_SEP "snafubar");
 
     p = "snafubar";
@@ -2205,38 +2204,38 @@ TEST_F(PathTest, self_assign_and_append) {
 // need to return it???
 
 TEST_F(PathTest, replace_extension) {
-    EXPECT_TRUE(path().replace_extension().empty());
-    EXPECT_TRUE(path().replace_extension("a") == ".a");
-    EXPECT_TRUE(path().replace_extension("a.") == ".a.");
-    EXPECT_TRUE(path().replace_extension(".a") == ".a");
-    EXPECT_TRUE(path().replace_extension("a.txt") == ".a.txt");
+    EXPECT_TRUE(Path().replace_extension().empty());
+    EXPECT_TRUE(Path().replace_extension("a") == ".a");
+    EXPECT_TRUE(Path().replace_extension("a.") == ".a.");
+    EXPECT_TRUE(Path().replace_extension(".a") == ".a");
+    EXPECT_TRUE(Path().replace_extension("a.txt") == ".a.txt");
     // see the rationale in html docs for explanation why this works:
-    EXPECT_TRUE(path().replace_extension(".txt") == ".txt");
+    EXPECT_TRUE(Path().replace_extension(".txt") == ".txt");
 
-    EXPECT_TRUE(path("a.txt").replace_extension() == "a");
-    EXPECT_TRUE(path("a.txt").replace_extension("") == "a");
-    EXPECT_TRUE(path("a.txt").replace_extension(".") == "a.");
-    EXPECT_TRUE(path("a.txt").replace_extension(".tex") == "a.tex");
-    EXPECT_TRUE(path("a.txt").replace_extension("tex") == "a.tex");
-    EXPECT_TRUE(path("a.").replace_extension(".tex") == "a.tex");
-    EXPECT_TRUE(path("a.").replace_extension("tex") == "a.tex");
-    EXPECT_TRUE(path("a").replace_extension(".txt") == "a.txt");
-    EXPECT_TRUE(path("a").replace_extension("txt") == "a.txt");
-    EXPECT_TRUE(path("a.b.txt").replace_extension(".tex") == "a.b.tex");
-    EXPECT_TRUE(path("a.b.txt").replace_extension("tex") == "a.b.tex");
-    EXPECT_TRUE(path("a/b").replace_extension(".c") == "a/b.c");
-    EXPECT_EQ(path("a.txt/b").replace_extension(".c"), "a.txt/b.c");    // ticket 4702
-    EXPECT_TRUE(path("foo.txt").replace_extension("exe") == "foo.exe"); // ticket 5118
-    EXPECT_TRUE(path("foo.txt").replace_extension(".tar.bz2")
+    EXPECT_TRUE(Path("a.txt").replace_extension() == "a");
+    EXPECT_TRUE(Path("a.txt").replace_extension("") == "a");
+    EXPECT_TRUE(Path("a.txt").replace_extension(".") == "a.");
+    EXPECT_TRUE(Path("a.txt").replace_extension(".tex") == "a.tex");
+    EXPECT_TRUE(Path("a.txt").replace_extension("tex") == "a.tex");
+    EXPECT_TRUE(Path("a.").replace_extension(".tex") == "a.tex");
+    EXPECT_TRUE(Path("a.").replace_extension("tex") == "a.tex");
+    EXPECT_TRUE(Path("a").replace_extension(".txt") == "a.txt");
+    EXPECT_TRUE(Path("a").replace_extension("txt") == "a.txt");
+    EXPECT_TRUE(Path("a.b.txt").replace_extension(".tex") == "a.b.tex");
+    EXPECT_TRUE(Path("a.b.txt").replace_extension("tex") == "a.b.tex");
+    EXPECT_TRUE(Path("a/b").replace_extension(".c") == "a/b.c");
+    EXPECT_EQ(Path("a.txt/b").replace_extension(".c"), "a.txt/b.c");    // ticket 4702
+    EXPECT_TRUE(Path("foo.txt").replace_extension("exe") == "foo.exe"); // ticket 5118
+    EXPECT_TRUE(Path("foo.txt").replace_extension(".tar.bz2")
                                                     == "foo.tar.bz2");  // ticket 5118
   }
 
 TEST_F(PathTest, make_preferred) {
 // TODO: fixme
 #ifdef BUILD_FOR_WINDOWS
-    EXPECT_TRUE(path("//abc\\def/ghi").make_preferred().native() == path("\\\\abc\\def\\ghi").native());
+    EXPECT_TRUE(Path("//abc\\def/ghi").make_preferred().native() == Path("\\\\abc\\def\\ghi").native());
 #else
-    EXPECT_TRUE(path("//abc\\def/ghi").make_preferred().native() == path("//abc\\def/ghi").native());
+    EXPECT_TRUE(Path("//abc\\def/ghi").make_preferred().native() == Path("//abc\\def/ghi").native());
 #endif
 }
 
@@ -2247,193 +2246,193 @@ TEST_F(PathTest, lexically_normal) {
     //  and the expected results are also given in generic form. Otherwise many of the
     //  tests would incorrectly be reported as failing on Windows.
 
-    EXPECT_EQ(path("").lexically_normal().generic_path(), "");
-    EXPECT_EQ(path("/").lexically_normal().generic_path(), "/");
-    EXPECT_EQ(path("//").lexically_normal().generic_path(), "//");
-    EXPECT_EQ(path("///").lexically_normal().generic_path(), "/");
-    EXPECT_EQ(path("f").lexically_normal().generic_path(), "f");
-    EXPECT_EQ(path("foo").lexically_normal().generic_path(), "foo");
-    EXPECT_EQ(path("foo/").lexically_normal().generic_path(), "foo/.");
-    EXPECT_EQ(path("f/").lexically_normal().generic_path(), "f/.");
-    EXPECT_EQ(path("/foo").lexically_normal().generic_path(), "/foo");
-    EXPECT_EQ(path("foo/bar").lexically_normal().generic_path(), "foo/bar");
-    EXPECT_EQ(path("..").lexically_normal().generic_path(), "..");
-    EXPECT_EQ(path("../..").lexically_normal().generic_path(), "../..");
-    EXPECT_EQ(path("/..").lexically_normal().generic_path(), "/..");
-    EXPECT_EQ(path("/../..").lexically_normal().generic_path(), "/../..");
-    EXPECT_EQ(path("../foo").lexically_normal().generic_path(), "../foo");
-    EXPECT_EQ(path("foo/..").lexically_normal().generic_path(), ".");
-    EXPECT_EQ(path("foo/../").lexically_normal().generic_path(), "./.");
-    EXPECT_EQ((path("foo") / "..").lexically_normal().generic_path() , ".");
-    EXPECT_EQ(path("foo/...").lexically_normal().generic_path(), "foo/...");
-    EXPECT_EQ(path("foo/.../").lexically_normal().generic_path(), "foo/.../.");
-    EXPECT_EQ(path("foo/..bar").lexically_normal().generic_path(), "foo/..bar");
-    EXPECT_EQ(path("../f").lexically_normal().generic_path(), "../f");
-    EXPECT_EQ(path("/../f").lexically_normal().generic_path(), "/../f");
-    EXPECT_EQ(path("f/..").lexically_normal().generic_path(), ".");
-    EXPECT_EQ((path("f") / "..").lexically_normal().generic_path() , ".");
-    EXPECT_EQ(path("foo/../..").lexically_normal().generic_path(), "..");
-    EXPECT_EQ(path("foo/../../").lexically_normal().generic_path(), "../.");
-    EXPECT_EQ(path("foo/../../..").lexically_normal().generic_path(), "../..");
-    EXPECT_EQ(path("foo/../../../").lexically_normal().generic_path(), "../../.");
-    EXPECT_EQ(path("foo/../bar").lexically_normal().generic_path(), "bar");
-    EXPECT_EQ(path("foo/../bar/").lexically_normal().generic_path(), "bar/.");
-    EXPECT_EQ(path("foo/bar/..").lexically_normal().generic_path(), "foo");
-    EXPECT_EQ(path("foo/./bar/..").lexically_normal().generic_path(), "foo");
-    EXPECT_EQ(path("foo/bar/../").lexically_normal().generic_path(), "foo/.");
-    EXPECT_EQ(path("foo/./bar/../").lexically_normal().generic_path(), "foo/.");
-    EXPECT_EQ(path("foo/bar/../..").lexically_normal().generic_path(), ".");
-    EXPECT_EQ(path("foo/bar/../../").lexically_normal().generic_path(), "./.");
-    EXPECT_EQ(path("foo/bar/../blah").lexically_normal().generic_path(), "foo/blah");
-    EXPECT_EQ(path("f/../b").lexically_normal().generic_path(), "b");
-    EXPECT_EQ(path("f/b/..").lexically_normal().generic_path(), "f");
-    EXPECT_EQ(path("f/b/../").lexically_normal().generic_path(), "f/.");
-    EXPECT_EQ(path("f/b/../a").lexically_normal().generic_path(), "f/a");
-    EXPECT_EQ(path("foo/bar/blah/../..").lexically_normal().generic_path(), "foo");
-    EXPECT_EQ(path("foo/bar/blah/../../bletch").lexically_normal().generic_path(), "foo/bletch");
-    EXPECT_EQ(path("//net").lexically_normal().generic_path(), "//net");
-    EXPECT_EQ(path("//net/").lexically_normal().generic_path(), "//net/");
-    EXPECT_EQ(path("//..net").lexically_normal().generic_path(), "//..net");
-    EXPECT_EQ(path("//net/..").lexically_normal().generic_path(), "//net/..");
-    EXPECT_EQ(path("//net/foo").lexically_normal().generic_path(), "//net/foo");
-    EXPECT_EQ(path("//net/foo/").lexically_normal().generic_path(), "//net/foo/.");
-    EXPECT_EQ(path("//net/foo/..").lexically_normal().generic_path(), "//net/");
-    EXPECT_EQ(path("//net/foo/../").lexically_normal().generic_path(), "//net/.");
+    EXPECT_EQ(Path("").lexically_normal().generic_path(), "");
+    EXPECT_EQ(Path("/").lexically_normal().generic_path(), "/");
+    EXPECT_EQ(Path("//").lexically_normal().generic_path(), "//");
+    EXPECT_EQ(Path("///").lexically_normal().generic_path(), "/");
+    EXPECT_EQ(Path("f").lexically_normal().generic_path(), "f");
+    EXPECT_EQ(Path("foo").lexically_normal().generic_path(), "foo");
+    EXPECT_EQ(Path("foo/").lexically_normal().generic_path(), "foo/.");
+    EXPECT_EQ(Path("f/").lexically_normal().generic_path(), "f/.");
+    EXPECT_EQ(Path("/foo").lexically_normal().generic_path(), "/foo");
+    EXPECT_EQ(Path("foo/bar").lexically_normal().generic_path(), "foo/bar");
+    EXPECT_EQ(Path("..").lexically_normal().generic_path(), "..");
+    EXPECT_EQ(Path("../..").lexically_normal().generic_path(), "../..");
+    EXPECT_EQ(Path("/..").lexically_normal().generic_path(), "/..");
+    EXPECT_EQ(Path("/../..").lexically_normal().generic_path(), "/../..");
+    EXPECT_EQ(Path("../foo").lexically_normal().generic_path(), "../foo");
+    EXPECT_EQ(Path("foo/..").lexically_normal().generic_path(), ".");
+    EXPECT_EQ(Path("foo/../").lexically_normal().generic_path(), "./.");
+    EXPECT_EQ((Path("foo") / "..").lexically_normal().generic_path() , ".");
+    EXPECT_EQ(Path("foo/...").lexically_normal().generic_path(), "foo/...");
+    EXPECT_EQ(Path("foo/.../").lexically_normal().generic_path(), "foo/.../.");
+    EXPECT_EQ(Path("foo/..bar").lexically_normal().generic_path(), "foo/..bar");
+    EXPECT_EQ(Path("../f").lexically_normal().generic_path(), "../f");
+    EXPECT_EQ(Path("/../f").lexically_normal().generic_path(), "/../f");
+    EXPECT_EQ(Path("f/..").lexically_normal().generic_path(), ".");
+    EXPECT_EQ((Path("f") / "..").lexically_normal().generic_path() , ".");
+    EXPECT_EQ(Path("foo/../..").lexically_normal().generic_path(), "..");
+    EXPECT_EQ(Path("foo/../../").lexically_normal().generic_path(), "../.");
+    EXPECT_EQ(Path("foo/../../..").lexically_normal().generic_path(), "../..");
+    EXPECT_EQ(Path("foo/../../../").lexically_normal().generic_path(), "../../.");
+    EXPECT_EQ(Path("foo/../bar").lexically_normal().generic_path(), "bar");
+    EXPECT_EQ(Path("foo/../bar/").lexically_normal().generic_path(), "bar/.");
+    EXPECT_EQ(Path("foo/bar/..").lexically_normal().generic_path(), "foo");
+    EXPECT_EQ(Path("foo/./bar/..").lexically_normal().generic_path(), "foo");
+    EXPECT_EQ(Path("foo/bar/../").lexically_normal().generic_path(), "foo/.");
+    EXPECT_EQ(Path("foo/./bar/../").lexically_normal().generic_path(), "foo/.");
+    EXPECT_EQ(Path("foo/bar/../..").lexically_normal().generic_path(), ".");
+    EXPECT_EQ(Path("foo/bar/../../").lexically_normal().generic_path(), "./.");
+    EXPECT_EQ(Path("foo/bar/../blah").lexically_normal().generic_path(), "foo/blah");
+    EXPECT_EQ(Path("f/../b").lexically_normal().generic_path(), "b");
+    EXPECT_EQ(Path("f/b/..").lexically_normal().generic_path(), "f");
+    EXPECT_EQ(Path("f/b/../").lexically_normal().generic_path(), "f/.");
+    EXPECT_EQ(Path("f/b/../a").lexically_normal().generic_path(), "f/a");
+    EXPECT_EQ(Path("foo/bar/blah/../..").lexically_normal().generic_path(), "foo");
+    EXPECT_EQ(Path("foo/bar/blah/../../bletch").lexically_normal().generic_path(), "foo/bletch");
+    EXPECT_EQ(Path("//net").lexically_normal().generic_path(), "//net");
+    EXPECT_EQ(Path("//net/").lexically_normal().generic_path(), "//net/");
+    EXPECT_EQ(Path("//..net").lexically_normal().generic_path(), "//..net");
+    EXPECT_EQ(Path("//net/..").lexically_normal().generic_path(), "//net/..");
+    EXPECT_EQ(Path("//net/foo").lexically_normal().generic_path(), "//net/foo");
+    EXPECT_EQ(Path("//net/foo/").lexically_normal().generic_path(), "//net/foo/.");
+    EXPECT_EQ(Path("//net/foo/..").lexically_normal().generic_path(), "//net/");
+    EXPECT_EQ(Path("//net/foo/../").lexically_normal().generic_path(), "//net/.");
 
-    EXPECT_EQ(path("/net/foo/bar").lexically_normal().generic_path(), "/net/foo/bar");
-    EXPECT_EQ(path("/net/foo/bar/").lexically_normal().generic_path(), "/net/foo/bar/.");
-    EXPECT_EQ(path("/net/foo/..").lexically_normal().generic_path(), "/net");
-    EXPECT_EQ(path("/net/foo/../").lexically_normal().generic_path(), "/net/.");
+    EXPECT_EQ(Path("/net/foo/bar").lexically_normal().generic_path(), "/net/foo/bar");
+    EXPECT_EQ(Path("/net/foo/bar/").lexically_normal().generic_path(), "/net/foo/bar/.");
+    EXPECT_EQ(Path("/net/foo/..").lexically_normal().generic_path(), "/net");
+    EXPECT_EQ(Path("/net/foo/../").lexically_normal().generic_path(), "/net/.");
 
-    EXPECT_EQ(path("//net//foo//bar").lexically_normal().generic_path(), "//net/foo/bar");
-    EXPECT_EQ(path("//net//foo//bar//").lexically_normal().generic_path(), "//net/foo/bar/.");
-    EXPECT_EQ(path("//net//foo//..").lexically_normal().generic_path(), "//net/");
-    EXPECT_EQ(path("//net//foo//..//").lexically_normal().generic_path(), "//net/.");
+    EXPECT_EQ(Path("//net//foo//bar").lexically_normal().generic_path(), "//net/foo/bar");
+    EXPECT_EQ(Path("//net//foo//bar//").lexically_normal().generic_path(), "//net/foo/bar/.");
+    EXPECT_EQ(Path("//net//foo//..").lexically_normal().generic_path(), "//net/");
+    EXPECT_EQ(Path("//net//foo//..//").lexically_normal().generic_path(), "//net/.");
 
-    EXPECT_EQ(path("///net///foo///bar").lexically_normal().generic_path(), "/net/foo/bar");
-    EXPECT_EQ(path("///net///foo///bar///").lexically_normal().generic_path(), "/net/foo/bar/.");
-    EXPECT_EQ(path("///net///foo///..").lexically_normal().generic_path(), "/net");
-    EXPECT_EQ(path("///net///foo///..///").lexically_normal().generic_path(), "/net/.");
+    EXPECT_EQ(Path("///net///foo///bar").lexically_normal().generic_path(), "/net/foo/bar");
+    EXPECT_EQ(Path("///net///foo///bar///").lexically_normal().generic_path(), "/net/foo/bar/.");
+    EXPECT_EQ(Path("///net///foo///..").lexically_normal().generic_path(), "/net");
+    EXPECT_EQ(Path("///net///foo///..///").lexically_normal().generic_path(), "/net/.");
 
 // TODO: fixme
 #ifdef BUILD_FOR_WINDOWS
-      EXPECT_EQ(path("c:..").lexically_normal().generic_path(), "c:..");
-      EXPECT_EQ(path("c:foo/..").lexically_normal().generic_path(), "c:");
+      EXPECT_EQ(Path("c:..").lexically_normal().generic_path(), "c:..");
+      EXPECT_EQ(Path("c:foo/..").lexically_normal().generic_path(), "c:");
 
-      EXPECT_EQ(path("c:foo/../").lexically_normal().generic_path(), "c:.");
+      EXPECT_EQ(Path("c:foo/../").lexically_normal().generic_path(), "c:.");
 
-      EXPECT_EQ(path("c:/foo/..").lexically_normal().generic_path(), "c:/");
-      EXPECT_EQ(path("c:/foo/../").lexically_normal().generic_path(), "c:/.");
-      EXPECT_EQ(path("c:/..").lexically_normal().generic_path(), "c:/..");
-      EXPECT_EQ(path("c:/../").lexically_normal().generic_path(), "c:/../.");
-      EXPECT_EQ(path("c:/../..").lexically_normal().generic_path(), "c:/../..");
-      EXPECT_EQ(path("c:/../../").lexically_normal().generic_path(), "c:/../../.");
-      EXPECT_EQ(path("c:/../foo").lexically_normal().generic_path(), "c:/../foo");
-      EXPECT_EQ(path("c:/../foo/").lexically_normal().generic_path(), "c:/../foo/.");
-      EXPECT_EQ(path("c:/../../foo").lexically_normal().generic_path(), "c:/../../foo");
-      EXPECT_EQ(path("c:/../../foo/").lexically_normal().generic_path(), "c:/../../foo/.");
-      EXPECT_EQ(path("c:/..foo").lexically_normal().generic_path(), "c:/..foo");
+      EXPECT_EQ(Path("c:/foo/..").lexically_normal().generic_path(), "c:/");
+      EXPECT_EQ(Path("c:/foo/../").lexically_normal().generic_path(), "c:/.");
+      EXPECT_EQ(Path("c:/..").lexically_normal().generic_path(), "c:/..");
+      EXPECT_EQ(Path("c:/../").lexically_normal().generic_path(), "c:/../.");
+      EXPECT_EQ(Path("c:/../..").lexically_normal().generic_path(), "c:/../..");
+      EXPECT_EQ(Path("c:/../../").lexically_normal().generic_path(), "c:/../../.");
+      EXPECT_EQ(Path("c:/../foo").lexically_normal().generic_path(), "c:/../foo");
+      EXPECT_EQ(Path("c:/../foo/").lexically_normal().generic_path(), "c:/../foo/.");
+      EXPECT_EQ(Path("c:/../../foo").lexically_normal().generic_path(), "c:/../../foo");
+      EXPECT_EQ(Path("c:/../../foo/").lexically_normal().generic_path(), "c:/../../foo/.");
+      EXPECT_EQ(Path("c:/..foo").lexically_normal().generic_path(), "c:/..foo");
 #else
-      EXPECT_EQ(path("c:..").lexically_normal(), "c:..");
-      EXPECT_EQ(path("c:foo/..").lexically_normal(), ".");
-      EXPECT_EQ(path("c:foo/../").lexically_normal(), "./.");
-      EXPECT_EQ(path("c:/foo/..").lexically_normal(), "c:");
-      EXPECT_EQ(path("c:/foo/../").lexically_normal(), "c:/.");
-      EXPECT_EQ(path("c:/..").lexically_normal(), ".");
-      EXPECT_EQ(path("c:/../").lexically_normal(), "./.");
-      EXPECT_EQ(path("c:/../..").lexically_normal(), "..");
-      EXPECT_EQ(path("c:/../../").lexically_normal(), "../.");
-      EXPECT_EQ(path("c:/../foo").lexically_normal(), "foo");
-      EXPECT_EQ(path("c:/../foo/").lexically_normal(), "foo/.");
-      EXPECT_EQ(path("c:/../../foo").lexically_normal(), "../foo");
-      EXPECT_EQ(path("c:/../../foo/").lexically_normal(), "../foo/.");
-      EXPECT_EQ(path("c:/..foo").lexically_normal(), "c:/..foo");
+      EXPECT_EQ(Path("c:..").lexically_normal(), "c:..");
+      EXPECT_EQ(Path("c:foo/..").lexically_normal(), ".");
+      EXPECT_EQ(Path("c:foo/../").lexically_normal(), "./.");
+      EXPECT_EQ(Path("c:/foo/..").lexically_normal(), "c:");
+      EXPECT_EQ(Path("c:/foo/../").lexically_normal(), "c:/.");
+      EXPECT_EQ(Path("c:/..").lexically_normal(), ".");
+      EXPECT_EQ(Path("c:/../").lexically_normal(), "./.");
+      EXPECT_EQ(Path("c:/../..").lexically_normal(), "..");
+      EXPECT_EQ(Path("c:/../../").lexically_normal(), "../.");
+      EXPECT_EQ(Path("c:/../foo").lexically_normal(), "foo");
+      EXPECT_EQ(Path("c:/../foo/").lexically_normal(), "foo/.");
+      EXPECT_EQ(Path("c:/../../foo").lexically_normal(), "../foo");
+      EXPECT_EQ(Path("c:/../../foo/").lexically_normal(), "../foo/.");
+      EXPECT_EQ(Path("c:/..foo").lexically_normal(), "c:/..foo");
 #endif
 }
 
 TEST_F(PathTest, lexically_relative) {
-    EXPECT_TRUE(path("").lexically_relative("") == "");
-    EXPECT_TRUE(path("").lexically_relative("/foo") == "");
-    EXPECT_TRUE(path("/foo").lexically_relative("") == "");
-    EXPECT_TRUE(path("/foo").lexically_relative("/foo") == ".");
-    EXPECT_TRUE(path("").lexically_relative("foo") == "");
-    EXPECT_TRUE(path("foo").lexically_relative("") == "");
-    EXPECT_TRUE(path("foo").lexically_relative("foo") == ".");
+    EXPECT_TRUE(Path("").lexically_relative("") == "");
+    EXPECT_TRUE(Path("").lexically_relative("/foo") == "");
+    EXPECT_TRUE(Path("/foo").lexically_relative("") == "");
+    EXPECT_TRUE(Path("/foo").lexically_relative("/foo") == ".");
+    EXPECT_TRUE(Path("").lexically_relative("foo") == "");
+    EXPECT_TRUE(Path("foo").lexically_relative("") == "");
+    EXPECT_TRUE(Path("foo").lexically_relative("foo") == ".");
 
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a") == "b/c");
-    EXPECT_TRUE(path("a//b//c").lexically_relative("a") == "b/c");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b") == "c");
-    EXPECT_TRUE(path("a///b//c").lexically_relative("a//b") == "c");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/c") == ".");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/c/x") == "..");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/c/x/y") == "../..");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a/x") == "../b/c");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/x") == "../c");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a/x/y") == "../../b/c");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/x/y") == "../../c");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("a/b/c/x/y/z") == "../../..");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a") == "b/c");
+    EXPECT_TRUE(Path("a//b//c").lexically_relative("a") == "b/c");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a/b") == "c");
+    EXPECT_TRUE(Path("a///b//c").lexically_relative("a//b") == "c");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a/b/c") == ".");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a/b/c/x") == "..");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a/b/c/x/y") == "../..");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a/x") == "../b/c");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a/b/x") == "../c");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a/x/y") == "../../b/c");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a/b/x/y") == "../../c");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("a/b/c/x/y/z") == "../../..");
 
     // paths unrelated except first element, and first element is root directory
-    EXPECT_TRUE(path("/a/b/c").lexically_relative("/x") == "../a/b/c");
-    EXPECT_TRUE(path("/a/b/c").lexically_relative("/x/y") == "../../a/b/c");
-    EXPECT_TRUE(path("/a/b/c").lexically_relative("/x/y/z") == "../../../a/b/c");
+    EXPECT_TRUE(Path("/a/b/c").lexically_relative("/x") == "../a/b/c");
+    EXPECT_TRUE(Path("/a/b/c").lexically_relative("/x/y") == "../../a/b/c");
+    EXPECT_TRUE(Path("/a/b/c").lexically_relative("/x/y/z") == "../../../a/b/c");
 
     // paths unrelated
-    EXPECT_TRUE(path("a/b/c").lexically_relative("x") == "");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("x/y") == "");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("x/y/z") == "");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("/x") == "");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("/x/y") == "");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("/x/y/z") == "");
-    EXPECT_TRUE(path("a/b/c").lexically_relative("/a/b/c") == "");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("x") == "");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("x/y") == "");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("x/y/z") == "");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("/x") == "");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("/x/y") == "");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("/x/y/z") == "");
+    EXPECT_TRUE(Path("a/b/c").lexically_relative("/a/b/c") == "");
 
     // TODO: add some Windows-only test cases that probe presence or absence of
     // drive specifier-and root-directory
 
     //  Some tests from Jamie Allsop's paper
-    EXPECT_TRUE(path("/a/d").lexically_relative("/a/b/c") == "../../d");
-    EXPECT_TRUE(path("/a/b/c").lexically_relative("/a/d") == "../b/c");
+    EXPECT_TRUE(Path("/a/d").lexically_relative("/a/b/c") == "../../d");
+    EXPECT_TRUE(Path("/a/b/c").lexically_relative("/a/d") == "../b/c");
 
 // TODO: fixme
   #ifdef BOOST_WINDOWS_API
-    EXPECT_TRUE(path("c:\\y").lexically_relative("c:\\x") == "../y");
+    EXPECT_TRUE(Path("c:\\y").lexically_relative("c:\\x") == "../y");
   #else
-    EXPECT_TRUE(path("c:\\y").lexically_relative("c:\\x") == "");
+    EXPECT_TRUE(Path("c:\\y").lexically_relative("c:\\x") == "");
   #endif
 
-    EXPECT_TRUE(path("d:\\y").lexically_relative("c:\\x") == "");
+    EXPECT_TRUE(Path("d:\\y").lexically_relative("c:\\x") == "");
 
     //  From issue #1976
-    EXPECT_TRUE(path("/foo/new").lexically_relative("/foo/bar") == "../new");
+    EXPECT_TRUE(Path("/foo/new").lexically_relative("/foo/bar") == "../new");
   }
 
 TEST_F(PathTest, lexically_proximate) {
     // paths unrelated
-    EXPECT_TRUE(path("a/b/c").lexically_proximate("x") == "a/b/c");
+    EXPECT_TRUE(Path("a/b/c").lexically_proximate("x") == "a/b/c");
 }
 
 namespace {
 
-inline void odr_use(const path::value_type& c) {
-    static const path::value_type dummy = '\0';
+inline void odr_use(const Path::value_type& c) {
+    static const Path::value_type dummy = '\0';
     EXPECT_TRUE(&c != &dummy);
 }
 
 } // namespace
 
 TEST_F(PathTest, odr_use) {
-    odr_use(path::separator);
-    odr_use(path::preferred_separator);
-    odr_use(path::dot);
+    odr_use(Path::separator);
+    odr_use(Path::preferred_separator);
+    odr_use(Path::dot);
 }
 
 namespace {
 
-path p1("fe/fi/fo/fum");
-path p2(p1);
-path p3;
-path p4("foobar");
-path p5;
+Path p1("fe/fi/fo/fum");
+Path p2(p1);
+Path p3;
+Path p4("foobar");
+Path p5;
 
 } // namespace
 
@@ -2442,14 +2441,14 @@ TEST_F(PathTest, misc) {
   p3 = p2;
   EXPECT_TRUE(p1.string() == p3.string());
 
-  path p04("foobar");
+  Path p04("foobar");
   EXPECT_TRUE(p04.string() == "foobar");
   p04 = p04; // self-assignment
   EXPECT_TRUE(p04.string() == "foobar");
 
   std::string s1("//:somestring");  // this used to be treated specially
 
-  // check the path member templates
+  // check the Path member templates
   p5.assign(s1.begin(), s1.end());
 
   EXPECT_EQ(p5.string(), "//:somestring");
@@ -2468,12 +2467,12 @@ TEST_F(PathTest, misc) {
   EXPECT_TRUE(p1 != p4);
   EXPECT_TRUE(p1.string() == p2.string());
   EXPECT_TRUE(p1.string() == p3.string());
-  EXPECT_TRUE(path("foo").filename() == "foo");
-  EXPECT_TRUE(path("foo").parent_path().string() == "");
+  EXPECT_TRUE(Path("foo").filename() == "foo");
+  EXPECT_TRUE(Path("foo").parent_path().string() == "");
   EXPECT_TRUE(p1.filename() == "fum");
   EXPECT_TRUE(p1.parent_path().string() == "fe/fi/fo");
-  EXPECT_TRUE(path("").empty() == true);
-  EXPECT_TRUE(path("foo").empty() == false);
+  EXPECT_TRUE(Path("").empty() == true);
+  EXPECT_TRUE(Path("foo").empty() == false);
 }
 
 namespace {
@@ -2517,9 +2516,9 @@ protected:
 TEST_F(PathTest, error_handling) {
     std::locale global_loc = std::locale();
     std::locale loc(global_loc, new error_codecvt);
-    std::locale old_loc = path::imbue(loc);
+    std::locale old_loc = Path::imbue(loc);
 
-    //  These tests rely on a path constructor that fails in the locale conversion.
+    //  These tests rely on a Path constructor that fails in the locale conversion.
     //  Thus construction has to call codecvt. Force that by using a narrow string
     //  for Windows, and a wide string for POSIX.
 // TODO: FIXME
@@ -2531,7 +2530,7 @@ TEST_F(PathTest, error_handling) {
 
     {
       bool exception_thrown (false);
-      try { path(STRING_FOO_); }
+      try { Path(STRING_FOO_); }
       catch (const std::system_error& ex)
       {
         exception_thrown = true;
@@ -2543,7 +2542,7 @@ TEST_F(PathTest, error_handling) {
 
     {
       bool exception_thrown (false);
-      try { path(STRING_FOO_); }
+      try { Path(STRING_FOO_); }
       catch (const std::system_error& ex)
       {
         exception_thrown = true;
@@ -2555,7 +2554,7 @@ TEST_F(PathTest, error_handling) {
 
     {
       bool exception_thrown (false);
-      try { path(STRING_FOO_); }
+      try { Path(STRING_FOO_); }
       catch (const std::system_error & ex)
       {
         exception_thrown = true;
@@ -2566,5 +2565,5 @@ TEST_F(PathTest, error_handling) {
     }
 
     // restoring original locale
-    path::imbue(old_loc);
+    Path::imbue(old_loc);
 }

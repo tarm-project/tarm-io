@@ -19,7 +19,7 @@
     # include "Utf8CodecvtFacet.h"
 #endif
 
-using io::path;
+using io::Path;
 
 using std::string;
 using std::wstring;
@@ -36,8 +36,8 @@ namespace
   //                        miscellaneous class path helpers                            //
   //------------------------------------------------------------------------------------//
 
-  typedef path::value_type        value_type;
-  typedef path::string_type       string_type;
+  typedef Path::value_type        value_type;
+  typedef Path::string_type       string_type;
   typedef string_type::size_type  size_type;
 
 # ifdef BOOST_WINDOWS_API
@@ -89,13 +89,13 @@ namespace
 namespace io
 {
 
-  IO_DLL_PUBLIC path& path::operator/=(const path& p)
+  IO_DLL_PUBLIC Path& Path::operator/=(const Path& p)
   {
     if (p.empty())
       return *this;
     if (this == &p)  // self-append
     {
-      path rhs(p);
+      Path rhs(p);
       if (!detail::is_directory_separator(rhs.m_pathname[0]))
         m_append_separator_if_needed();
       m_pathname += rhs.m_pathname;
@@ -109,14 +109,14 @@ namespace io
     return *this;
   }
 
-  IO_DLL_PUBLIC path& path::operator/=(const value_type* ptr)
+  IO_DLL_PUBLIC Path& Path::operator/=(const value_type* ptr)
   {
     if (!*ptr)
       return *this;
     if (ptr >= m_pathname.data()
       && ptr < m_pathname.data() + m_pathname.size())  // overlapping source
     {
-      path rhs(ptr);
+      Path rhs(ptr);
       if (!detail::is_directory_separator(rhs.m_pathname[0]))
         m_append_separator_if_needed();
       m_pathname += rhs.m_pathname;
@@ -132,7 +132,7 @@ namespace io
 
 # ifdef BOOST_WINDOWS_API
 
-  IO_DLL_PUBLIC path path::generic_path() const
+  IO_DLL_PUBLIC path Path::generic_path() const
   {
     path tmp(*this);
     std::replace(tmp.m_pathname.begin(), tmp.m_pathname.end(), L'\\', L'/');
@@ -141,14 +141,14 @@ namespace io
 
 # endif  // BOOST_WINDOWS_API
 
-  IO_DLL_PUBLIC int path::compare(const path& p) const noexcept
+  IO_DLL_PUBLIC int Path::compare(const Path& p) const noexcept
   {
     return detail::lex_compare(begin(), end(), p.begin(), p.end());
   }
 
   //  m_append_separator_if_needed  ----------------------------------------------------//
 
-  IO_DLL_PUBLIC path::string_type::size_type path::m_append_separator_if_needed()
+  IO_DLL_PUBLIC Path::string_type::size_type Path::m_append_separator_if_needed()
   {
     if (!m_pathname.empty() &&
 #     ifdef BOOST_WINDOWS_API
@@ -165,7 +165,7 @@ namespace io
 
   //  m_erase_redundant_separator  -----------------------------------------------------//
 
-  IO_DLL_PUBLIC void path::m_erase_redundant_separator(string_type::size_type sep_pos)
+  IO_DLL_PUBLIC void Path::m_erase_redundant_separator(string_type::size_type sep_pos)
   {
     if (sep_pos                         // a separator was added
       && sep_pos < m_pathname.size()         // and something was appended
@@ -179,20 +179,20 @@ namespace io
   //  modifiers  -----------------------------------------------------------------------//
 
 # ifdef BOOST_WINDOWS_API
-  IO_DLL_PUBLIC path& path::make_preferred()
+  IO_DLL_PUBLIC Path& Path::make_preferred()
   {
     std::replace(m_pathname.begin(), m_pathname.end(), L'/', L'\\');
     return *this;
   }
 # endif
 
-  IO_DLL_PUBLIC path& path::remove_filename()
+  IO_DLL_PUBLIC Path& Path::remove_filename()
   {
     m_pathname.erase(m_parent_path_end());
     return *this;
   }
 // TODO: not tested by Boost, need write own test
-  IO_DLL_PUBLIC path& path::remove_trailing_separator()
+  IO_DLL_PUBLIC Path& Path::remove_trailing_separator()
   {
     if (!m_pathname.empty()
       && detail::is_directory_separator(m_pathname[m_pathname.size() - 1]))
@@ -200,7 +200,7 @@ namespace io
     return *this;
   }
 
-  IO_DLL_PUBLIC path& path::replace_extension(const path& new_extension)
+  IO_DLL_PUBLIC Path& Path::replace_extension(const Path& new_extension)
   {
     // erase existing extension, including the dot, if any
     m_pathname.erase(m_pathname.size()-extension().m_pathname.size());
@@ -218,14 +218,14 @@ namespace io
 
   //  decomposition  -------------------------------------------------------------------//
 
-  IO_DLL_PUBLIC path path::root_path() const
+  IO_DLL_PUBLIC Path Path::root_path() const
   {
-    path temp(root_name());
+    Path temp(root_name());
     if (!root_directory().empty()) temp.m_pathname += root_directory().c_str();
     return temp;
   }
 
-  IO_DLL_PUBLIC path path::root_name() const
+  IO_DLL_PUBLIC Path Path::root_name() const
   {
     iterator itr(begin());
 
@@ -239,19 +239,19 @@ namespace io
 #       endif
       ))
       ? itr.m_element
-      : path();
+      : Path();
   }
 
-  IO_DLL_PUBLIC path path::root_directory() const
+  IO_DLL_PUBLIC Path Path::root_directory() const
   {
     size_type pos(root_directory_start(m_pathname, m_pathname.size()));
 
     return pos == string_type::npos
-      ? path()
-      : path(m_pathname.c_str() + pos, m_pathname.c_str() + pos + 1);
+      ? Path()
+      : Path(m_pathname.c_str() + pos, m_pathname.c_str() + pos + 1);
   }
 
-  IO_DLL_PUBLIC path path::relative_path() const
+  IO_DLL_PUBLIC Path Path::relative_path() const
   {
     iterator itr(begin());
 
@@ -262,10 +262,10 @@ namespace io
 #     endif
     ); ++itr) {}
 
-    return path(m_pathname.c_str() + itr.m_pos);
+    return Path(m_pathname.c_str() + itr.m_pos);
   }
 
-  IO_DLL_PUBLIC string_type::size_type path::m_parent_path_end() const
+  IO_DLL_PUBLIC string_type::size_type Path::m_parent_path_end() const
   {
     size_type end_pos(filename_pos(m_pathname, m_pathname.size()));
 
@@ -286,15 +286,15 @@ namespace io
      : end_pos;
   }
 
-  IO_DLL_PUBLIC path path::parent_path() const
+  IO_DLL_PUBLIC Path Path::parent_path() const
   {
    size_type end_pos(m_parent_path_end());
    return end_pos == string_type::npos
-     ? path()
-     : path(m_pathname.c_str(), m_pathname.c_str() + end_pos);
+     ? Path()
+     : Path(m_pathname.c_str(), m_pathname.c_str() + end_pos);
   }
 
-  IO_DLL_PUBLIC path path::filename() const
+  IO_DLL_PUBLIC Path Path::filename() const
   {
     size_type pos(filename_pos(m_pathname, m_pathname.size()));
     return (m_pathname.size()
@@ -302,27 +302,27 @@ namespace io
               && detail::is_directory_separator(m_pathname[pos])
               && !is_root_separator(m_pathname, pos))
       ? detail::dot_path()
-      : path(m_pathname.c_str() + pos);
+      : Path(m_pathname.c_str() + pos);
   }
 
-  IO_DLL_PUBLIC path path::stem() const
+  IO_DLL_PUBLIC Path Path::stem() const
   {
-    path name(filename());
+    Path name(filename());
     if (name == detail::dot_path() || name == detail::dot_dot_path()) return name;
     size_type pos(name.m_pathname.rfind(dot));
     return pos == string_type::npos
       ? name
-      : path(name.m_pathname.c_str(), name.m_pathname.c_str() + pos);
+      : Path(name.m_pathname.c_str(), name.m_pathname.c_str() + pos);
   }
 
-  IO_DLL_PUBLIC path path::extension() const
+  IO_DLL_PUBLIC Path Path::extension() const
   {
-    path name(filename());
-    if (name == detail::dot_path() || name == detail::dot_dot_path()) return path();
+    Path name(filename());
+    if (name == detail::dot_path() || name == detail::dot_dot_path()) return Path();
     size_type pos(name.m_pathname.rfind(dot));
     return pos == string_type::npos
-      ? path()
-      : path(name.m_pathname.c_str() + pos);
+      ? Path()
+      : Path(name.m_pathname.c_str() + pos);
   }
 
   //  lexical operations  --------------------------------------------------------------//
@@ -332,8 +332,8 @@ namespace io
     // C++14 provides a mismatch algorithm with four iterator arguments(), but earlier
     // standard libraries didn't, so provide this needed functionality.
     inline
-    std::pair<path::iterator, path::iterator> mismatch(path::iterator it1,
-      path::iterator it1end, path::iterator it2, path::iterator it2end)
+    std::pair<Path::iterator, Path::iterator> mismatch(Path::iterator it1,
+      Path::iterator it1end, Path::iterator it2, Path::iterator it2end)
     {
       for (; it1 != it1end && it2 != it2end && *it1 == *it2;)
       {
@@ -344,15 +344,15 @@ namespace io
     }
   }
 
-  IO_DLL_PUBLIC path path::lexically_relative(const path& base) const
+  IO_DLL_PUBLIC Path Path::lexically_relative(const Path& base) const
   {
-    std::pair<path::iterator, path::iterator> mm
+    std::pair<Path::iterator, Path::iterator> mm
       = detail::mismatch(begin(), end(), base.begin(), base.end());
     if (mm.first == begin() && mm.second == base.begin())
-      return path();
+      return Path();
     if (mm.first == end() && mm.second == base.end())
       return detail::dot_path();
-    path tmp;
+    Path tmp;
     for (; mm.second != base.end(); ++mm.second)
       tmp /= detail::dot_dot_path();
     for (; mm.first != end(); ++mm.first)
@@ -362,12 +362,12 @@ namespace io
 
   //  normal  --------------------------------------------------------------------------//
 
-  IO_DLL_PUBLIC path path::lexically_normal() const
+  IO_DLL_PUBLIC Path Path::lexically_normal() const
   {
     if (m_pathname.empty())
       return *this;
 
-    path temp;
+    Path temp;
     iterator start(begin());
     iterator last(end());
     iterator stop(last--);
@@ -623,8 +623,8 @@ namespace io
   namespace detail
   {
     IO_DLL_PUBLIC
-    int lex_compare(path::iterator first1, path::iterator last1,
-        path::iterator first2, path::iterator last2)
+    int lex_compare(Path::iterator first1, Path::iterator last1,
+        Path::iterator first2, Path::iterator last2)
     {
       for (; first1 != last1 && first2 != last2;)
       {
@@ -640,23 +640,23 @@ namespace io
     }
 
     IO_DLL_PUBLIC
-    const path&  dot_path()
+    const Path&  dot_path()
     {
 #   ifdef BOOST_WINDOWS_API
-      static const io::path dot_pth(L".");
+      static const io::Path dot_pth(L".");
 #   else
-      static const io::path dot_pth(".");
+      static const io::Path dot_pth(".");
 #   endif
       return dot_pth;
     }
 
     IO_DLL_PUBLIC
-    const path&  dot_dot_path()
+    const Path&  dot_dot_path()
     {
 #   ifdef BOOST_WINDOWS_API
-      static const io::path dot_dot(L"..");
+      static const io::Path dot_dot(L"..");
 #   else
-      static const io::path dot_dot("..");
+      static const io::Path dot_dot("..");
 #   endif
       return dot_dot;
     }
@@ -664,11 +664,11 @@ namespace io
 
 //--------------------------------------------------------------------------------------//
 //                                                                                      //
-//                        class path::iterator implementation                           //
+//                        class Path::iterator implementation                           //
 //                                                                                      //
 //--------------------------------------------------------------------------------------//
 
-  IO_DLL_PUBLIC path::iterator path::begin() const
+  IO_DLL_PUBLIC Path::iterator Path::begin() const
   {
     iterator itr;
     itr.m_path_ptr = this;
@@ -680,7 +680,7 @@ namespace io
     return itr;
   }
 
-  IO_DLL_PUBLIC path::iterator path::end() const
+  IO_DLL_PUBLIC Path::iterator Path::end() const
   {
     iterator itr;
     itr.m_path_ptr = this;
@@ -688,9 +688,9 @@ namespace io
     return itr;
   }
 
-  IO_DLL_PUBLIC void path::m_path_iterator_increment(path::iterator & it)
+  IO_DLL_PUBLIC void Path::m_path_iterator_increment(Path::iterator & it)
   {
-    noexcept(it.m_pos < it.m_path_ptr->m_pathname.size() && "path::basic_iterator increment past end()");
+    assert(it.m_pos < it.m_path_ptr->m_pathname.size() && "Path::basic_iterator increment past end()");
 
     // increment to position past current element; if current element is implicit dot,
     // this will cause it.m_pos to represent the end iterator
@@ -746,9 +746,9 @@ namespace io
     it.m_element = it.m_path_ptr->m_pathname.substr(it.m_pos, end_pos - it.m_pos);
   }
 
-  IO_DLL_PUBLIC void path::m_path_iterator_decrement(path::iterator & it)
+  IO_DLL_PUBLIC void Path::m_path_iterator_decrement(Path::iterator & it)
   {
-    assert(it.m_pos && "path::iterator decrement past begin()");
+    assert(it.m_pos && "Path::iterator decrement past begin()");
 
     size_type end_pos(it.m_pos);
 
@@ -846,7 +846,7 @@ namespace
   // (if environmental variables LC_MESSAGES or LANG are wrong, for example), so
   // path_locale() provides lazy initialization via a local static to ensure that any
   // exceptions occur after main() starts and so can be caught. Furthermore,
-  // path_locale() is only called if path::codecvt() or path::imbue() are themselves
+  // path_locale() is only called if Path::codecvt() or Path::imbue() are themselves
   // actually called, ensuring that an exception will only be thrown if std::locale("")
   // is really needed.
   {
@@ -861,21 +861,21 @@ namespace
 }  // unnamed namespace
 
 //--------------------------------------------------------------------------------------//
-//              path::codecvt() and path::imbue() implementation                        //
+//              Path::codecvt() and Path::imbue() implementation                        //
 //--------------------------------------------------------------------------------------//
 
 namespace io
 {
   // See comments above
 
-  IO_DLL_PUBLIC const path::codecvt_type& path::codecvt()
+  IO_DLL_PUBLIC const Path::codecvt_type& Path::codecvt()
   {
     assert(&path_locale() && "boost::filesystem::path locale initialization error");
 
     return std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >(path_locale());
   }
 
-  IO_DLL_PUBLIC std::locale path::imbue(const std::locale& loc)
+  IO_DLL_PUBLIC std::locale Path::imbue(const std::locale& loc)
   {
     std::locale temp(path_locale());
     path_locale() = loc;

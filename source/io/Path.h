@@ -9,8 +9,6 @@
 #include "Export.h"
 #include "HashRange.h"
 #include "PathTraits.h"
-
-//#include <boost/io/detail/quoted_manip.hpp>
 #include "QuotedManip.h"
 
 #include <string>
@@ -28,8 +26,8 @@ namespace io {
 namespace path_detail { // intentionally don't use io::detail to not bring internal filesystem functions into ADL via path_constants
 
 template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-struct path_constants {
-    using path_constants_base = path_constants< Char, Separator, PreferredSeparator, Dot > ;
+struct PathConstants {
+    using path_constants_base = PathConstants<Char, Separator, PreferredSeparator, Dot>;
     using value_type = Char;
 
     static constexpr value_type separator = Separator;
@@ -38,16 +36,16 @@ struct path_constants {
 };
 
 template<typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
-path_constants< Char, Separator, PreferredSeparator, Dot >::separator;
+constexpr typename PathConstants< Char, Separator, PreferredSeparator, Dot >::value_type
+PathConstants< Char, Separator, PreferredSeparator, Dot >::separator;
 
 template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
-path_constants< Char, Separator, PreferredSeparator, Dot >::preferred_separator;
+constexpr typename PathConstants< Char, Separator, PreferredSeparator, Dot >::value_type
+PathConstants< Char, Separator, PreferredSeparator, Dot >::preferred_separator;
 
 template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
-constexpr typename path_constants< Char, Separator, PreferredSeparator, Dot >::value_type
-path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
+constexpr typename PathConstants< Char, Separator, PreferredSeparator, Dot >::value_type
+PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
 
 } // namespace path_detail
 
@@ -57,7 +55,7 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
   //                                                                                    //
   //------------------------------------------------------------------------------------//
 
-  class path : public path_detail::path_constants<
+  class Path : public path_detail::PathConstants<
 #ifdef BOOST_WINDOWS_API
       wchar_t, L'/', L'\\', L'.'
 #else
@@ -133,33 +131,30 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     //  -----  constructors  -----
 
-    path() noexcept {}
-    path(const path& p) : m_pathname(p.m_pathname) {}
+    Path() noexcept {}
+    Path(const Path& p) : m_pathname(p.m_pathname) {}
 
     template <class Source>
-    path(Source const& source,
-      typename std::enable_if<path_traits::is_pathable<
-        typename std::decay<Source>::type>::value >::type* =0)
-    {
+    Path(Source const& source,
+      typename std::enable_if<path_traits::is_pathable<typename std::decay<Source>::type>::value >::type* = 0) {
       path_traits::dispatch(source, m_pathname);
     }
 
-    path(const value_type* s) : m_pathname(s) {}
-    path(value_type* s) : m_pathname(s) {}
-    path(const string_type& s) : m_pathname(s) {}
-    path(string_type& s) : m_pathname(s) {}
+    Path(const value_type* s) : m_pathname(s) {}
+    Path(value_type* s) : m_pathname(s) {}
+    Path(const string_type& s) : m_pathname(s) {}
+    Path(string_type& s) : m_pathname(s) {}
 
-    path(path&& p) noexcept : m_pathname(std::move(p.m_pathname)) {}
-    path& operator=(path&& p) noexcept { m_pathname = std::move(p.m_pathname); return *this; }
+    Path(Path&& p) noexcept : m_pathname(std::move(p.m_pathname)) {}
+    Path& operator=(Path&& p) noexcept { m_pathname = std::move(p.m_pathname); return *this; }
 
     template <class Source>
-    path(Source const& source, const codecvt_type& cvt)
-    {
+    Path(Source const& source, const codecvt_type& cvt) {
       path_traits::dispatch(source, m_pathname, cvt);
     }
 
     template <class InputIterator>
-    path(InputIterator begin, InputIterator end) {
+    Path(InputIterator begin, InputIterator end) {
       if (begin != end) {
         // convert requires contiguous string, so copy
         std::basic_string<typename std::iterator_traits<InputIterator>::value_type> seq(begin, end);
@@ -168,7 +163,7 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
     }
 
     template <class InputIterator>
-    path(InputIterator begin, InputIterator end, const codecvt_type& cvt) {
+    Path(InputIterator begin, InputIterator end, const codecvt_type& cvt) {
       if (begin != end) {
         // convert requires contiguous string, so copy
         std::basic_string<typename std::iterator_traits<InputIterator>::value_type>
@@ -179,13 +174,13 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     //  -----  assignments  -----
 
-    path& operator=(const path& p) {
+    Path& operator=(const Path& p) {
       m_pathname = p.m_pathname;
       return *this;
     }
 
     template <class Source>
-    typename std::enable_if<path_traits::is_pathable<typename std::decay<Source>::type>::value, path&>::type
+    typename std::enable_if<path_traits::is_pathable<typename std::decay<Source>::type>::value, Path&>::type
     operator=(Source const& source) {
       m_pathname.clear();
       path_traits::dispatch(source, m_pathname);
@@ -195,22 +190,22 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  value_type overloads
 
 
-    path& operator=(const value_type* ptr) {m_pathname = ptr; return *this;} // required in case ptr overlaps *this
-    path& operator=(value_type* ptr) {m_pathname = ptr; return *this;} // required in case ptr overlaps *this
-    path& operator=(const string_type& s) {m_pathname = s; return *this;}
-    path& operator=(string_type& s)       {m_pathname = s; return *this;}
+    Path& operator=(const value_type* ptr) {m_pathname = ptr; return *this;} // required in case ptr overlaps *this
+    Path& operator=(value_type* ptr) {m_pathname = ptr; return *this;} // required in case ptr overlaps *this
+    Path& operator=(const string_type& s) {m_pathname = s; return *this;}
+    Path& operator=(string_type& s)       {m_pathname = s; return *this;}
 
-    path& assign(const value_type* ptr, const codecvt_type&) {m_pathname = ptr; return *this;} // required in case ptr overlaps *this
+    Path& assign(const value_type* ptr, const codecvt_type&) {m_pathname = ptr; return *this;} // required in case ptr overlaps *this
 
     template <class Source>
-    path& assign(Source const& source, const codecvt_type& cvt) {
+    Path& assign(Source const& source, const codecvt_type& cvt) {
       m_pathname.clear();
       path_traits::dispatch(source, m_pathname, cvt);
       return *this;
     }
 
     template <class InputIterator>
-    path& assign(InputIterator begin, InputIterator end)
+    Path& assign(InputIterator begin, InputIterator end)
     {
       m_pathname.clear();
       if (begin != end)
@@ -223,7 +218,7 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
     }
 
     template <class InputIterator>
-    path& assign(InputIterator begin, InputIterator end, const codecvt_type& cvt)
+    Path& assign(InputIterator begin, InputIterator end, const codecvt_type& cvt)
     {
       m_pathname.clear();
       if (begin != end)
@@ -238,23 +233,21 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  -----  concatenation  -----
 
     template <class Source>
-      typename std::enable_if<path_traits::is_pathable<
-        typename std::decay<Source>::type>::value, path&>::type
-    operator+=(Source const& source)
-    {
+    typename std::enable_if<path_traits::is_pathable<typename std::decay<Source>::type>::value, Path&>::type
+    operator+=(Source const& source) {
       return concat(source);
     }
 
     //  value_type overloads. Same rationale as for constructors above
-    path& operator+=(const path& p)         { m_pathname += p.m_pathname; return *this; }
-    path& operator+=(const value_type* ptr) { m_pathname += ptr; return *this; }
-    path& operator+=(value_type* ptr)       { m_pathname += ptr; return *this; }
-    path& operator+=(const string_type& s)  { m_pathname += s; return *this; }
-    path& operator+=(string_type& s)        { m_pathname += s; return *this; }
-    path& operator+=(value_type c)          { m_pathname += c; return *this; }
+    Path& operator+=(const Path& p)         { m_pathname += p.m_pathname; return *this; }
+    Path& operator+=(const value_type* ptr) { m_pathname += ptr; return *this; }
+    Path& operator+=(value_type* ptr)       { m_pathname += ptr; return *this; }
+    Path& operator+=(const string_type& s)  { m_pathname += s; return *this; }
+    Path& operator+=(string_type& s)        { m_pathname += s; return *this; }
+    Path& operator+=(value_type c)          { m_pathname += c; return *this; }
 
     template <class CharT>
-    typename std::enable_if<std::is_integral<CharT>::value, path&>::type
+    typename std::enable_if<std::is_integral<CharT>::value, Path&>::type
     operator+=(CharT c) {
       CharT tmp[2];
       tmp[0] = c;
@@ -263,19 +256,19 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
     }
 
     template <class Source>
-    path& concat(Source const& source) {
+    Path& concat(Source const& source) {
       path_traits::dispatch(source, m_pathname);
       return *this;
     }
 
     template <class Source>
-    path& concat(Source const& source, const codecvt_type& cvt) {
+    Path& concat(Source const& source, const codecvt_type& cvt) {
       path_traits::dispatch(source, m_pathname, cvt);
       return *this;
     }
 
     template <class InputIterator>
-    path& concat(InputIterator begin, InputIterator end) {
+    Path& concat(InputIterator begin, InputIterator end) {
       if (begin == end)
         return *this;
       std::basic_string<typename std::iterator_traits<InputIterator>::value_type>
@@ -285,7 +278,7 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
     }
 
     template <class InputIterator>
-    path& concat(InputIterator begin, InputIterator end, const codecvt_type& cvt) {
+    Path& concat(InputIterator begin, InputIterator end, const codecvt_type& cvt) {
       if (begin == end)
         return *this;
       std::basic_string<typename std::iterator_traits<InputIterator>::value_type>
@@ -299,58 +292,58 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  if a separator is added, it is the preferred separator for the platform;
     //  slash for POSIX, backslash for Windows
 
-    IO_DLL_PUBLIC path& operator/=(const path& p);
+    IO_DLL_PUBLIC Path& operator/=(const Path& p);
 
     template <class Source>
-    typename std::enable_if<path_traits::is_pathable<typename std::decay<Source>::type>::value, path&>::type
+    typename std::enable_if<path_traits::is_pathable<typename std::decay<Source>::type>::value, Path&>::type
     operator/=(Source const& source) {
       return append(source);
     }
 
-    IO_DLL_PUBLIC path& operator/=(const value_type* ptr);
-    path& operator/=(value_type* ptr)
+    IO_DLL_PUBLIC Path& operator/=(const value_type* ptr);
+    Path& operator/=(value_type* ptr)
     {
       return this->operator/=(const_cast<const value_type*>(ptr));
     }
-    path& operator/=(const string_type& s) { return this->operator/=(path(s)); }
-    path& operator/=(string_type& s)       { return this->operator/=(path(s)); }
+    Path& operator/=(const string_type& s) { return this->operator/=(Path(s)); }
+    Path& operator/=(string_type& s)       { return this->operator/=(Path(s)); }
 
-    path& append(const value_type* ptr)  // required in case ptr overlaps *this
+    Path& append(const value_type* ptr)  // required in case ptr overlaps *this
     {
       this->operator/=(ptr);
       return *this;
     }
 
-    path& append(const value_type* ptr, const codecvt_type&)  // required in case ptr overlaps *this
+    Path& append(const value_type* ptr, const codecvt_type&)  // required in case ptr overlaps *this
     {
       this->operator/=(ptr);
       return *this;
     }
 
     template <class Source>
-    path& append(Source const& source);
+    Path& append(Source const& source);
 
     template <class Source>
-    path& append(Source const& source, const codecvt_type& cvt);
+    Path& append(Source const& source, const codecvt_type& cvt);
 
     template <class InputIterator>
-    path& append(InputIterator begin, InputIterator end);
+    Path& append(InputIterator begin, InputIterator end);
 
     template <class InputIterator>
-    path& append(InputIterator begin, InputIterator end, const codecvt_type& cvt);
+    Path& append(InputIterator begin, InputIterator end, const codecvt_type& cvt);
 
     //  -----  modifiers  -----
 
     void clear() noexcept { m_pathname.clear(); }
 #   ifdef BOOST_WINDOWS_API
-    IO_DLL_PUBLIC path& make_preferred();  // change slashes to backslashes
+    IO_DLL_PUBLIC Path& make_preferred();  // change slashes to backslashes
 #   else // BOOST_POSIX_API
-    path& make_preferred() { return *this; }  // POSIX no effect
+    Path& make_preferred() { return *this; }  // POSIX no effect
 #   endif
-    IO_DLL_PUBLIC path& remove_filename();
-    IO_DLL_PUBLIC path& remove_trailing_separator();
-    IO_DLL_PUBLIC path& replace_extension(const path& new_extension = path());
-    void swap(path& rhs) noexcept { m_pathname.swap(rhs.m_pathname); }
+    IO_DLL_PUBLIC Path& remove_filename();
+    IO_DLL_PUBLIC Path& remove_trailing_separator();
+    IO_DLL_PUBLIC Path& replace_extension(const Path& new_extension = Path());
+    void swap(Path& rhs) noexcept { m_pathname.swap(rhs.m_pathname); }
 
     //  -----  observers  -----
 
@@ -432,9 +425,9 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  are forward slashes). Motivation: simpler than a family of generic_*string
     //  functions.
 #   ifdef BOOST_WINDOWS_API
-    IO_DLL_PUBLIC path generic_path() const;
+    IO_DLL_PUBLIC Path generic_path() const;
 #   else
-    path generic_path() const { return path(*this); }
+    Path generic_path() const { return Path(*this); }
 #   endif
 
     template <class String>
@@ -458,21 +451,21 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     //  -----  compare  -----
 
-    IO_DLL_PUBLIC int compare(const path& p) const noexcept;  // generic, lexicographical
-    int compare(const std::string& s) const { return compare(path(s)); }
-    int compare(const value_type* s) const  { return compare(path(s)); }
+    IO_DLL_PUBLIC int compare(const Path& p) const noexcept;  // generic, lexicographical
+    int compare(const std::string& s) const { return compare(Path(s)); }
+    int compare(const value_type* s) const  { return compare(Path(s)); }
 
     //  -----  decomposition  -----
 
-    IO_DLL_PUBLIC path  root_path() const;
-    IO_DLL_PUBLIC path  root_name() const;         // returns 0 or 1 element path
+    IO_DLL_PUBLIC Path  root_path() const;
+    IO_DLL_PUBLIC Path  root_name() const;         // returns 0 or 1 element path
                                                    // even on POSIX, root_name() is non-empty() for network paths
-    IO_DLL_PUBLIC path  root_directory() const;    // returns 0 or 1 element path
-    IO_DLL_PUBLIC path  relative_path() const;
-    IO_DLL_PUBLIC path  parent_path() const;
-    IO_DLL_PUBLIC path  filename() const;          // returns 0 or 1 element path
-    IO_DLL_PUBLIC path  stem() const;              // returns 0 or 1 element path
-    IO_DLL_PUBLIC path  extension() const;         // returns 0 or 1 element path
+    IO_DLL_PUBLIC Path  root_directory() const;    // returns 0 or 1 element path
+    IO_DLL_PUBLIC Path  relative_path() const;
+    IO_DLL_PUBLIC Path  parent_path() const;
+    IO_DLL_PUBLIC Path  filename() const;          // returns 0 or 1 element path
+    IO_DLL_PUBLIC Path  stem() const;              // returns 0 or 1 element path
+    IO_DLL_PUBLIC Path  extension() const;         // returns 0 or 1 element path
 
     //  -----  query  -----
 
@@ -500,11 +493,10 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     //  -----  lexical operations  -----
 
-    IO_DLL_PUBLIC path lexically_normal() const;
-    IO_DLL_PUBLIC path lexically_relative(const path& base) const;
-    path lexically_proximate(const path& base) const
-    {
-      path tmp(lexically_relative(base));
+    IO_DLL_PUBLIC Path lexically_normal() const;
+    IO_DLL_PUBLIC Path lexically_relative(const Path& base) const;
+    Path lexically_proximate(const Path& base) const {
+      Path tmp(lexically_relative(base));
       return tmp.empty() ? *this : tmp;
     }
 
@@ -560,49 +552,49 @@ path_constants< Char, Separator, PreferredSeparator, Dot >::dot;
     // Was qualified; como433beta8 reports:
     //    warning #427-D: qualified name is not allowed in member declaration
     friend class iterator;
-    friend bool operator<(const path& lhs, const path& rhs);
+    friend bool operator<(const Path& lhs, const Path& rhs);
 
-    // see path::iterator::increment/decrement comment below
-    static IO_DLL_PUBLIC void m_path_iterator_increment(path::iterator& it);
-    static IO_DLL_PUBLIC void m_path_iterator_decrement(path::iterator& it);
+    // see Path::iterator::increment/decrement comment below
+    static IO_DLL_PUBLIC void m_path_iterator_increment(Path::iterator& it);
+    static IO_DLL_PUBLIC void m_path_iterator_decrement(Path::iterator& it);
 
   };  // class path
 
   namespace detail
   {
     IO_DLL_PUBLIC
-      int lex_compare(path::iterator first1, path::iterator last1,
-        path::iterator first2, path::iterator last2);
+      int lex_compare(Path::iterator first1, Path::iterator last1, Path::iterator first2, Path::iterator last2);
     IO_DLL_PUBLIC
-      const path&  dot_path();
+      const Path& dot_path();
     IO_DLL_PUBLIC
-      const path&  dot_dot_path();
+      const Path& dot_dot_path();
   } // namespace detail
 
   //------------------------------------------------------------------------------------//
-  //                             class path::iterator                                   //
+  //                             class Path::iterator                                   //
   //------------------------------------------------------------------------------------//
 
-class path::iterator : public std::iterator<
+class Path::iterator : public std::iterator<
                           std::bidirectional_iterator_tag, // iterator_category
-                          path,                            // value_type
+                          Path,                            // value_type
                           long,                            // difference_type
-                          const path*,                     // pointer
-                          path&                            // reference
+                          const Path*,                     // pointer
+                          Path&                            // reference
                         > {
-    friend class io::path;
-    friend class io::path::reverse_iterator;
-    friend void m_path_iterator_increment(path::iterator & it);
-    friend void m_path_iterator_decrement(path::iterator & it);
+    friend class io::Path;
+    friend class io::Path::reverse_iterator;
+    friend void m_path_iterator_increment(Path::iterator & it);
+    friend void m_path_iterator_decrement(Path::iterator & it);
 
 public:
-    const path& operator*() const { return dereference(); }
-    const path* operator->() const { return &dereference(); }
+    const Path& operator*() const { return dereference(); }
+    const Path* operator->() const { return &dereference(); }
 
     iterator& operator++() {
         increment();
         return *this;
     }
+
     iterator operator++(int) {
         auto tmp = *this;
         increment();
@@ -613,6 +605,7 @@ public:
         decrement();
         return *this;
     }
+
     iterator operator--(int) {
         auto tmp = *this;
         decrement();
@@ -623,79 +616,41 @@ public:
     bool operator!=(const iterator& rhs) const { return !equal(rhs);}
 
 private:
-    const path& dereference() const { return m_element; }
+    const Path& dereference() const { return m_element; }
     bool equal(const iterator& rhs) const { return m_path_ptr == rhs.m_path_ptr && m_pos == rhs.m_pos; }
     void increment() { m_path_iterator_increment(*this); }
     void decrement() { m_path_iterator_decrement(*this); }
 
-    path                    m_element;   // current element
-    const path*             m_path_ptr;  // path being iterated over
+    Path                    m_element;   // current element
+    const Path*             m_path_ptr;  // path being iterated over
     string_type::size_type  m_pos;       // position of m_element in
                                          // m_path_ptr->m_pathname.
                                          // if m_element is implicit dot, m_pos is the
                                          // position of the last separator in the path.
                                          // end() iterator is indicated by
                                          // m_pos == m_path_ptr->m_pathname.size()
-  }; // path::iterator
-
-// TODO: remove this
-/*
-  class path::iterator
-    : public boost::iterator_facade<
-      path::iterator,
-      path const,
-      boost::bidirectional_traversal_tag >
-  {
-  private:
-    friend class boost::iterator_core_access;
-    friend class io::path;
-    friend class io::path::reverse_iterator;
-    friend void m_path_iterator_increment(path::iterator & it);
-    friend void m_path_iterator_decrement(path::iterator & it);
-
-    const path& dereference() const { return m_element; }
-
-    bool equal(const iterator & rhs) const
-    {
-      return m_path_ptr == rhs.m_path_ptr && m_pos == rhs.m_pos;
-    }
-
-    // iterator_facade derived classes don't seem to like implementations in
-    // separate translation unit dll's, so forward to class path static members
-    void increment() { m_path_iterator_increment(*this); }
-    void decrement() { m_path_iterator_decrement(*this); }
-
-    path                    m_element;   // current element
-    const path*             m_path_ptr;  // path being iterated over
-    string_type::size_type  m_pos;       // position of m_element in
-                                         // m_path_ptr->m_pathname.
-                                         // if m_element is implicit dot, m_pos is the
-                                         // position of the last separator in the path.
-                                         // end() iterator is indicated by
-                                         // m_pos == m_path_ptr->m_pathname.size()
-  }; // path::iterator
-*/
+  }; // Path::iterator
 
   //------------------------------------------------------------------------------------//
-  //                         class path::reverse_iterator                               //
+  //                         class Path::reverse_iterator                               //
   //------------------------------------------------------------------------------------//
 
-  class path::reverse_iterator : public std::iterator<
+  class Path::reverse_iterator : public std::iterator<
                           std::bidirectional_iterator_tag, // iterator_category
-                          path,                            // value_type
+                          Path,                            // value_type
                           long,                            // difference_type
-                          const path*,                     // pointer
-                          path&                            // reference
+                          const Path*,                     // pointer
+                          Path&                            // reference
                         > {
 public:
-    explicit reverse_iterator(path::iterator itr) :
+    explicit reverse_iterator(Path::iterator itr) :
         m_itr(itr) {
         if (itr != itr.m_path_ptr->begin())
             m_element = *--itr;
     }
 
-    const path& operator*() const { return dereference(); }
-    const path* operator->() const { return &dereference(); }
+    const Path& operator*() const { return dereference(); }
+    const Path* operator->() const { return &dereference(); }
 
     reverse_iterator& operator++() {
         increment();
@@ -721,15 +676,14 @@ public:
     bool operator!=(const reverse_iterator& rhs) const { return !equal(rhs);}
 
 private:
-    friend class io::path;
+    friend class io::Path;
 
-    const path& dereference() const { return m_element; }
+    const Path& dereference() const { return m_element; }
     bool equal(const reverse_iterator& rhs) const { return m_itr == rhs.m_itr; }
     void increment() {
       --m_itr;
-      if (m_itr != m_itr.m_path_ptr->begin())
-      {
-        path::iterator tmp = m_itr;
+      if (m_itr != m_itr.m_path_ptr->begin()) {
+        Path::iterator tmp = m_itr;
         m_element = *--tmp;
       }
     }
@@ -739,10 +693,10 @@ private:
       ++m_itr;
     }
 
-    path::iterator m_itr;
-    path     m_element;
+    Path::iterator m_itr;
+    Path     m_element;
 
-  }; // path::reverse_iterator
+  }; // Path::reverse_iterator
 
   //------------------------------------------------------------------------------------//
   //                                                                                    //
@@ -752,34 +706,36 @@ private:
 
   //  std::lexicographical_compare would infinitely recurse because path iterators
   //  yield paths, so provide a path aware version
-  inline bool lexicographical_compare(path::iterator first1, path::iterator last1,
-    path::iterator first2, path::iterator last2)
+  inline bool lexicographical_compare(Path::iterator first1,
+                                      Path::iterator last1,
+                                      Path::iterator first2,
+                                      Path::iterator last2)
     { return detail::lex_compare(first1, last1, first2, last2) < 0; }
 
-  inline bool operator==(const path& lhs, const path& rhs)              {return lhs.compare(rhs) == 0;}
-  inline bool operator==(const path& lhs, const path::string_type& rhs) {return lhs.compare(rhs) == 0;}
-  inline bool operator==(const path::string_type& lhs, const path& rhs) {return rhs.compare(lhs) == 0;}
-  inline bool operator==(const path& lhs, const path::value_type* rhs)  {return lhs.compare(rhs) == 0;}
-  inline bool operator==(const path::value_type* lhs, const path& rhs)  {return rhs.compare(lhs) == 0;}
+  inline bool operator==(const Path& lhs, const Path& rhs)              {return lhs.compare(rhs) == 0;}
+  inline bool operator==(const Path& lhs, const Path::string_type& rhs) {return lhs.compare(rhs) == 0;}
+  inline bool operator==(const Path::string_type& lhs, const Path& rhs) {return rhs.compare(lhs) == 0;}
+  inline bool operator==(const Path& lhs, const Path::value_type* rhs)  {return lhs.compare(rhs) == 0;}
+  inline bool operator==(const Path::value_type* lhs, const Path& rhs)  {return rhs.compare(lhs) == 0;}
 
-  inline bool operator!=(const path& lhs, const path& rhs)              {return lhs.compare(rhs) != 0;}
-  inline bool operator!=(const path& lhs, const path::string_type& rhs) {return lhs.compare(rhs) != 0;}
-  inline bool operator!=(const path::string_type& lhs, const path& rhs) {return rhs.compare(lhs) != 0;}
-  inline bool operator!=(const path& lhs, const path::value_type* rhs)  {return lhs.compare(rhs) != 0;}
-  inline bool operator!=(const path::value_type* lhs, const path& rhs)  {return rhs.compare(lhs) != 0;}
+  inline bool operator!=(const Path& lhs, const Path& rhs)              {return lhs.compare(rhs) != 0;}
+  inline bool operator!=(const Path& lhs, const Path::string_type& rhs) {return lhs.compare(rhs) != 0;}
+  inline bool operator!=(const Path::string_type& lhs, const Path& rhs) {return rhs.compare(lhs) != 0;}
+  inline bool operator!=(const Path& lhs, const Path::value_type* rhs)  {return lhs.compare(rhs) != 0;}
+  inline bool operator!=(const Path::value_type* lhs, const Path& rhs)  {return rhs.compare(lhs) != 0;}
 
   // TODO: why do == and != have additional overloads, but the others don't?
 
-  inline bool operator<(const path& lhs, const path& rhs)  {return lhs.compare(rhs) < 0;}
-  inline bool operator<=(const path& lhs, const path& rhs) {return !(rhs < lhs);}
-  inline bool operator> (const path& lhs, const path& rhs) {return rhs < lhs;}
-  inline bool operator>=(const path& lhs, const path& rhs) {return !(lhs < rhs);}
+  inline bool operator<(const Path& lhs, const Path& rhs)  {return lhs.compare(rhs) < 0;}
+  inline bool operator<=(const Path& lhs, const Path& rhs) {return !(rhs < lhs);}
+  inline bool operator> (const Path& lhs, const Path& rhs) {return rhs < lhs;}
+  inline bool operator>=(const Path& lhs, const Path& rhs) {return !(lhs < rhs);}
 
-  inline std::size_t hash_value(const path& x) noexcept
+  inline std::size_t hash_value(const Path& x) noexcept
   {
 # ifdef BOOST_WINDOWS_API
     std::size_t seed = 0;
-    for(const path::value_type* it = x.c_str(); *it; ++it)
+    for(const Path::value_type* it = x.c_str(); *it; ++it)
       hash_combine(seed, *it == L'/' ? L'\\' : *it);
     return seed;
 # else   // BOOST_POSIX_API
@@ -787,15 +743,15 @@ private:
 # endif
   }
 
-  inline void swap(path& lhs, path& rhs) noexcept { lhs.swap(rhs); }
+  inline void swap(Path& lhs, Path& rhs) noexcept { lhs.swap(rhs); }
 
-  inline path operator/(const path& lhs, const path& rhs) {
-    path p = lhs;
+  inline Path operator/(const Path& lhs, const Path& rhs) {
+    Path p = lhs;
     p /= rhs;
     return p;
   }
 
-  inline path operator/(path&& lhs, const path& rhs) {
+  inline Path operator/(Path&& lhs, const Path& rhs) {
     lhs /= rhs;
     return std::move(lhs);
   }
@@ -806,13 +762,13 @@ private:
 
   template <class Char, class Traits>
   inline std::basic_ostream<Char, Traits>&
-  operator<<(std::basic_ostream<Char, Traits>& os, const path& p) {
+  operator<<(std::basic_ostream<Char, Traits>& os, const Path& p) {
     return os << ::io::quoted(p.template string<std::basic_string<Char> >(), static_cast<Char>('&'));
   }
 
   template <class Char, class Traits>
   inline std::basic_istream<Char, Traits>&
-  operator>>(std::basic_istream<Char, Traits>& is, path& p) {
+  operator>>(std::basic_istream<Char, Traits>& is, Path& p) {
     std::basic_string<Char> str;
     is >> ::io::quoted(str, static_cast<Char>('&'));
     p = str;
@@ -838,19 +794,19 @@ private:
     //  element separator. For Windows, forward slash and back slash are the possible
     //  directory separators, but colon (example: "c:foo") is also an element separator.
 
-    inline bool is_directory_separator(path::value_type c) noexcept
+    inline bool is_directory_separator(Path::value_type c) noexcept
     {
-      return c == path::separator
+      return c == Path::separator
 #     ifdef BOOST_WINDOWS_API
-        || c == path::preferred_separator
+        || c == Path::preferred_separator
 #     endif
       ;
     }
-    inline bool is_element_separator(path::value_type c) noexcept
+    inline bool is_element_separator(Path::value_type c) noexcept
     {
-      return c == path::separator
+      return c == Path::separator
 #     ifdef BOOST_WINDOWS_API
-        || c == path::preferred_separator || c == L':'
+        || c == Path::preferred_separator || c == L':'
 #     endif
       ;
     }
@@ -860,19 +816,17 @@ private:
   //                  class path miscellaneous function implementations                 //
   //------------------------------------------------------------------------------------//
 
-  inline path::reverse_iterator path::rbegin() const { return reverse_iterator(end()); }
-  inline path::reverse_iterator path::rend() const   { return reverse_iterator(begin()); }
+  inline Path::reverse_iterator Path::rbegin() const { return reverse_iterator(end()); }
+  inline Path::reverse_iterator Path::rend() const   { return reverse_iterator(begin()); }
 
-  inline bool path::filename_is_dot() const
-  {
-    // implicit dot is tricky, so actually call filename(); see path::filename() example
+  inline bool Path::filename_is_dot() const {
+    // implicit dot is tricky, so actually call filename(); see Path::filename() example
     // in reference.html
-    path p(filename());
+    Path p(filename());
     return p.size() == 1 && *p.c_str() == dot;
   }
 
-  inline bool path::filename_is_dot_dot() const
-  {
+  inline bool Path::filename_is_dot_dot() const {
     return size() >= 2 && m_pathname[size()-1] == dot && m_pathname[size()-2] == dot
       && (m_pathname.size() == 2 || detail::is_element_separator(m_pathname[size()-3]));
       // use detail::is_element_separator() rather than detail::is_directory_separator
@@ -884,50 +838,60 @@ private:
 //--------------------------------------------------------------------------------------//
 
   template <class InputIterator>
-  path& path::append(InputIterator begin, InputIterator end) {
+  Path& Path::append(InputIterator begin, InputIterator end) {
     if (begin == end)
       return *this;
+
     string_type::size_type sep_pos(m_append_separator_if_needed());
-    std::basic_string<typename std::iterator_traits<InputIterator>::value_type>
-      seq(begin, end);
+    std::basic_string<typename std::iterator_traits<InputIterator>::value_type> seq(begin, end);
     path_traits::convert(seq.c_str(), seq.c_str()+seq.size(), m_pathname);
+
     if (sep_pos)
       m_erase_redundant_separator(sep_pos);
+
     return *this;
   }
 
   template <class InputIterator>
-  path& path::append(InputIterator begin, InputIterator end, const codecvt_type& cvt) {
+  Path& Path::append(InputIterator begin, InputIterator end, const codecvt_type& cvt) {
     if (begin == end)
       return *this;
+
     string_type::size_type sep_pos(m_append_separator_if_needed());
-    std::basic_string<typename std::iterator_traits<InputIterator>::value_type>
-      seq(begin, end);
+    std::basic_string<typename std::iterator_traits<InputIterator>::value_type> seq(begin, end);
     path_traits::convert(seq.c_str(), seq.c_str()+seq.size(), m_pathname, cvt);
+
     if (sep_pos)
       m_erase_redundant_separator(sep_pos);
+
     return *this;
   }
 
   template <class Source>
-  path& path::append(Source const& source) {
+  Path& Path::append(Source const& source) {
     if (path_traits::empty(source))
       return *this;
+
     string_type::size_type sep_pos(m_append_separator_if_needed());
     path_traits::dispatch(source, m_pathname);
+
     if (sep_pos)
       m_erase_redundant_separator(sep_pos);
+
     return *this;
   }
 
   template <class Source>
-  path& path::append(Source const& source, const codecvt_type& cvt) {
+  Path& Path::append(Source const& source, const codecvt_type& cvt) {
     if (path_traits::empty(source))
       return *this;
+
     string_type::size_type sep_pos(m_append_separator_if_needed());
     path_traits::dispatch(source, m_pathname, cvt);
+
     if (sep_pos)
       m_erase_redundant_separator(sep_pos);
+
     return *this;
   }
 
@@ -936,35 +900,35 @@ private:
 //--------------------------------------------------------------------------------------//
 
   template <> inline
-  std::string path::string<std::string>() const
+  std::string Path::string<std::string>() const
     { return string(); }
 
   template <> inline
-  std::wstring path::string<std::wstring>() const
+  std::wstring Path::string<std::wstring>() const
     { return wstring(); }
 
   template <> inline
-  std::string path::string<std::string>(const codecvt_type& cvt) const
+  std::string Path::string<std::string>(const codecvt_type& cvt) const
     { return string(cvt); }
 
   template <> inline
-  std::wstring path::string<std::wstring>(const codecvt_type& cvt) const
+  std::wstring Path::string<std::wstring>(const codecvt_type& cvt) const
     { return wstring(cvt); }
 
   template <> inline
-  std::string path::generic_string<std::string>() const
+  std::string Path::generic_string<std::string>() const
     { return generic_string(); }
 
   template <> inline
-  std::wstring path::generic_string<std::wstring>() const
+  std::wstring Path::generic_string<std::wstring>() const
     { return generic_wstring(); }
 
   template <> inline
-  std::string path::generic_string<std::string>(const codecvt_type& cvt) const
+  std::string Path::generic_string<std::string>(const codecvt_type& cvt) const
     { return generic_string(cvt); }
 
   template <> inline
-  std::wstring path::generic_string<std::wstring>(const codecvt_type& cvt) const
+  std::wstring Path::generic_string<std::wstring>(const codecvt_type& cvt) const
     { return generic_wstring(cvt); }
 
 }  // namespace io
@@ -972,8 +936,8 @@ private:
 // Path hasher for std
 namespace std {
 
-template <> struct hash<io::path> {
-    size_t operator()(const io::path& x) const {
+template <> struct hash<io::Path> {
+    size_t operator()(const io::Path& x) const {
         return io::hash_value(x);
     }
 };
