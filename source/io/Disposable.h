@@ -9,6 +9,13 @@ namespace io {
 
 class IO_DLL_PUBLIC_CLASS_UNIX_ONLY Disposable {
 public:
+    // TODO: macro for this
+    Disposable(const Disposable&) = delete;
+    Disposable& operator=(const Disposable&) = delete;
+
+    Disposable(Disposable&&) = default;
+    Disposable& operator=(Disposable&&) = default;
+
     IO_DLL_PUBLIC Disposable(EventLoop& loop);
     IO_DLL_PUBLIC virtual ~Disposable();
 
