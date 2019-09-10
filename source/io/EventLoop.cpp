@@ -15,12 +15,6 @@
 #include <functional>
 #include <type_traits>
 
-
-// TODO: remove
-#include <iostream>
-
-
-
 namespace io {
 
 namespace {
@@ -115,6 +109,7 @@ EventLoop::Impl::Impl(EventLoop& loop) :
     m_async->data = this;
     uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
 
+    // unref is called to make loop exitable if it has no ohter running handles except this async
     uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
 }
 
@@ -201,12 +196,27 @@ void EventLoop::Impl::add_work(WorkCallbackType work_callback, WorkDoneCallbackT
 }
 
 int EventLoop::Impl::run() {
-    m_is_running = true;
-    int run_status = uv_run(this, UV_RUN_DEFAULT);
-    m_is_running = false;
+    bool has_pending_callbacks = false;
 
-    IO_LOG(m_loop, DEBUG, "Pending async events count after loop run:", m_callbacks_queue.size());
-    execute_pending_callbacks();
+    m_is_running = true;
+    int run_status = 0;
+
+    do {
+        run_status = uv_run(this, UV_RUN_DEFAULT);
+
+        // If there were pending async callbacks after the loop exit, executing one more run
+        // because some new events may be scheduled right away.
+        {
+            std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
+            has_pending_callbacks = m_callbacks_queue.size();
+        }
+
+        execute_pending_callbacks();
+
+        // TODO: is it possible to detect here that loop has new running handles and uv_run should be called or not again?
+    } while(run_status == 0 && has_pending_callbacks);
+
+    m_is_running = false;
 
     return run_status;
 }
@@ -271,7 +281,6 @@ void EventLoop::Impl::execute_on_loop_thread(AsyncCallback callback) {
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
         m_callbacks_queue.push_back(callback);
-        uv_ref(reinterpret_cast<uv_handle_t*>(m_async.get()));
     }
 
     uv_async_send(m_async.get());
@@ -287,7 +296,6 @@ void EventLoop::Impl::execute_pending_callbacks() {
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
         m_callbacks_queue.swap(callbacks_queue_copy);
-        uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
     }
 
     for(auto& callback : callbacks_queue_copy) {
