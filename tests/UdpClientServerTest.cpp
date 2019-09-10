@@ -46,6 +46,8 @@ TEST_F(UdpClientServerTest, server_bind) {
     ASSERT_EQ(0, loop.run());
 }
 
+#if defined(__APPLE__) || defined(__linux__)
+// Windows does not have privileged ports
 TEST_F(UdpClientServerTest, bind_privileged) {
     io::EventLoop loop;
 
@@ -55,6 +57,7 @@ TEST_F(UdpClientServerTest, bind_privileged) {
 
     ASSERT_EQ(0, loop.run());
 }
+#endif
 
 TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
     io::EventLoop loop;
