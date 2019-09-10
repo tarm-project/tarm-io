@@ -181,7 +181,6 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
             this_.m_close_callback(*this_.m_parent, Status(0));
         }
 
-        //this_.m_is_open = false;
         this_.m_port = 0;
         this_.m_ipv4_addr = 0;
     };
@@ -199,8 +198,9 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
         }
     } else {
         if (this_.m_close_callback) {
+            this_.m_is_open = false;
+
             if (status.code() == io::StatusCode::END_OF_FILE) {
-                this_.m_is_open = false;
                 this_.m_close_callback(*this_.m_parent, Status(0)); // OK
             } else {
                 // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
