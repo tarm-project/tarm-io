@@ -104,7 +104,14 @@ EventLoop::Impl::Impl(EventLoop& loop) :
     m_async(new uv_async_t, [](uv_async_t* async) {
         uv_close(reinterpret_cast<uv_handle_t*>(async), on_async_close);
     }) {
-    uv_loop_init(this);
+
+    // This mutex was added because thread sanitizer complained about data race in epoll_create1
+    // for test EventLoopTest.loop_in_thread
+    static std::mutex loop_init_mutex;
+    {
+        std::lock_guard<std::mutex> guard(loop_init_mutex);
+        uv_loop_init(this);
+    }
     m_async->data = this;
     uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
 
