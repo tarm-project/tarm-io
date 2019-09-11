@@ -40,12 +40,15 @@ TEST_F(TcpClientServerTest, invalid_ip4_address) {
     EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, server.bind("1234567890", m_default_port));
 }
 
-TEST_F(TcpClientServerTest, no_permission_port) {
+#if defined(__APPLE__) || defined(__linux__)
+// Windows does not have privileged ports
+TEST_F(TcpClientServerTest, bind_privileged) {
     io::EventLoop loop;
 
     io::TcpServer server(loop);
     EXPECT_EQ(io::StatusCode::PERMISSION_DENIED, server.bind(m_default_addr, 100));
 }
+#endif
 
 TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     io::EventLoop loop;
