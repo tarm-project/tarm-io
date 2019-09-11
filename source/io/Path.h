@@ -7,9 +7,9 @@
 #pragma once
 
 #include "Export.h"
-#include "HashRange.h"
-#include "PathTraits.h"
-#include "QuotedManip.h"
+#include "path_impl/HashRange.h"
+#include "path_impl/PathTraits.h"
+#include "path_impl/QuotedManip.h"
 
 #include <string>
 #include <iterator>

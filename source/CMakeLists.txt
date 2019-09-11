@@ -1,21 +1,23 @@
 FILE(GLOB IO_HEADERS_LIST
         io/*.h
         io/global/*.h
-        io/detail/*.h)
+        io/detail/*.h
+        io/path_impl/*.h)
 
 list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
         io/global/Configuration.cpp
-        io/CodecvtErrorCategory.cpp
+        io/path_impl/CodecvtErrorCategory.cpp
+        io/path_impl/PathTraits.cpp
+        io/path_impl/HashRange.cpp
+        io/path_impl/Utf8CodecvtFacet.cpp
         io/Common.cpp
         io/Disposable.cpp
         io/Dir.cpp
         io/EventLoop.cpp
         io/File.cpp
-        io/HashRange.cpp
         io/Logger.cpp
         io/Path.cpp
-        io/PathTraits.cpp
         io/StatData.cpp
         io/Status.cpp
         io/StatusCode.cpp
@@ -28,7 +30,6 @@ list(APPEND IO_SOURCE_LIST
         io/UdpServer.h
         io/UdpServer.cpp
         io/UserDataHolder.cpp
-        io/Utf8CodecvtFacet.cpp
 )
 
 if (${CMAKE_VERSION} VERSION_LESS "3.8.2")
