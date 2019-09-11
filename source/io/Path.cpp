@@ -111,7 +111,7 @@ namespace io
 
   IO_DLL_PUBLIC Path& Path::operator/=(const value_type* ptr)
   {
-    if (!*ptr)
+    if (!ptr)
       return *this;
     if (ptr >= m_pathname.data()
       && ptr < m_pathname.data() + m_pathname.size())  // overlapping source

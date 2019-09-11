@@ -2583,3 +2583,13 @@ TEST_F(PathTest, remove_trailing_separator) {
     p.remove_trailing_separator();
     ASSERT_EQ(path_without_trailing_separator, p.string());
 }
+
+TEST_F(PathTest, append_null) {
+    const std::string path_str = "/some/path";
+    Path path(path_str);
+
+    const char* const appendee = nullptr;
+
+    path /= appendee;
+    EXPECT_EQ(path.string(), path_str);
+}
