@@ -56,6 +56,10 @@ target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DI
 target_include_directories(io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 target_compile_definitions(io PRIVATE IO_BUILDING_DLL)
 
+if (WIN32)
+    target_compile_definitions(io PUBLIC IO_WINDOWS_API)
+endif()
+
 # TODO: no exceptions even in regular builds????
 if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
 #    target_compile_options(io PRIVATE -fno-exceptions)
