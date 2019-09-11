@@ -502,15 +502,15 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     //  -----  iterators  -----
 
-    class iterator;
-    typedef iterator const_iterator;
-    class reverse_iterator;
-    typedef reverse_iterator const_reverse_iterator;
+    class Iterator;
+    typedef Iterator const_iterator;
+    class ReverseIterator;
+    typedef ReverseIterator const_ReverseIterator;
 
-    IO_DLL_PUBLIC iterator begin() const;
-    IO_DLL_PUBLIC iterator end() const;
-    reverse_iterator rbegin() const;
-    reverse_iterator rend() const;
+    IO_DLL_PUBLIC Iterator begin() const;
+    IO_DLL_PUBLIC Iterator end() const;
+    ReverseIterator rbegin() const;
+    ReverseIterator rend() const;
 
     //  -----  static member functions  -----
 
@@ -551,19 +551,19 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     // Was qualified; como433beta8 reports:
     //    warning #427-D: qualified name is not allowed in member declaration
-    friend class iterator;
+    friend class Iterator;
     friend bool operator<(const Path& lhs, const Path& rhs);
 
-    // see Path::iterator::increment/decrement comment below
-    static IO_DLL_PUBLIC void m_path_iterator_increment(Path::iterator& it);
-    static IO_DLL_PUBLIC void m_path_iterator_decrement(Path::iterator& it);
+    // see Path::Iterator::increment/decrement comment below
+    static IO_DLL_PUBLIC void m_path_iterator_increment(Path::Iterator& it);
+    static IO_DLL_PUBLIC void m_path_iterator_decrement(Path::Iterator& it);
 
   };  // class path
 
   namespace detail
   {
     IO_DLL_PUBLIC
-      int lex_compare(Path::iterator first1, Path::iterator last1, Path::iterator first2, Path::iterator last2);
+      int lex_compare(Path::Iterator first1, Path::Iterator last1, Path::Iterator first2, Path::Iterator last2);
     IO_DLL_PUBLIC
       const Path& dot_path();
     IO_DLL_PUBLIC
@@ -571,10 +571,10 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
   } // namespace detail
 
   //------------------------------------------------------------------------------------//
-  //                             class Path::iterator                                   //
+  //                             class Path::Iterator                                   //
   //------------------------------------------------------------------------------------//
 
-class Path::iterator : public std::iterator<
+class Path::Iterator : public std::iterator<
                           std::bidirectional_iterator_tag, // iterator_category
                           Path,                            // value_type
                           long,                            // difference_type
@@ -582,42 +582,42 @@ class Path::iterator : public std::iterator<
                           Path&                            // reference
                         > {
     friend class io::Path;
-    friend class io::Path::reverse_iterator;
-    friend void m_path_iterator_increment(Path::iterator & it);
-    friend void m_path_iterator_decrement(Path::iterator & it);
+    friend class io::Path::ReverseIterator;
+    friend void m_path_iterator_increment(Path::Iterator & it);
+    friend void m_path_iterator_decrement(Path::Iterator & it);
 
 public:
     const Path& operator*() const { return dereference(); }
     const Path* operator->() const { return &dereference(); }
 
-    iterator& operator++() {
+    Iterator& operator++() {
         increment();
         return *this;
     }
 
-    iterator operator++(int) {
+    Iterator operator++(int) {
         auto tmp = *this;
         increment();
         return tmp;
     }
 
-    iterator& operator--() {
+    Iterator& operator--() {
         decrement();
         return *this;
     }
 
-    iterator operator--(int) {
+    Iterator operator--(int) {
         auto tmp = *this;
         decrement();
         return tmp;
     }
 
-    bool operator==(const iterator& rhs) const { return equal(rhs);}
-    bool operator!=(const iterator& rhs) const { return !equal(rhs);}
+    bool operator==(const Iterator& rhs) const { return equal(rhs);}
+    bool operator!=(const Iterator& rhs) const { return !equal(rhs);}
 
 private:
     const Path& dereference() const { return m_element; }
-    bool equal(const iterator& rhs) const { return m_path_ptr == rhs.m_path_ptr && m_pos == rhs.m_pos; }
+    bool equal(const Iterator& rhs) const { return m_path_ptr == rhs.m_path_ptr && m_pos == rhs.m_pos; }
     void increment() { m_path_iterator_increment(*this); }
     void decrement() { m_path_iterator_decrement(*this); }
 
@@ -629,13 +629,13 @@ private:
                                          // position of the last separator in the path.
                                          // end() iterator is indicated by
                                          // m_pos == m_path_ptr->m_pathname.size()
-  }; // Path::iterator
+  }; // Path::Iterator
 
   //------------------------------------------------------------------------------------//
-  //                         class Path::reverse_iterator                               //
+  //                         class Path::ReverseIterator                               //
   //------------------------------------------------------------------------------------//
 
-  class Path::reverse_iterator : public std::iterator<
+  class Path::ReverseIterator : public std::iterator<
                           std::bidirectional_iterator_tag, // iterator_category
                           Path,                            // value_type
                           long,                            // difference_type
@@ -643,7 +643,7 @@ private:
                           Path&                            // reference
                         > {
 public:
-    explicit reverse_iterator(Path::iterator itr) :
+    explicit ReverseIterator(Path::Iterator itr) :
         m_itr(itr) {
         if (itr != itr.m_path_ptr->begin())
             m_element = *--itr;
@@ -652,38 +652,38 @@ public:
     const Path& operator*() const { return dereference(); }
     const Path* operator->() const { return &dereference(); }
 
-    reverse_iterator& operator++() {
+    ReverseIterator& operator++() {
         increment();
         return *this;
     }
-    reverse_iterator operator++(int) {
+    ReverseIterator operator++(int) {
         auto tmp = *this;
         increment();
         return tmp;
     }
 
-    reverse_iterator& operator--() {
+    ReverseIterator& operator--() {
         decrement();
         return *this;
     }
-    reverse_iterator operator--(int) {
+    ReverseIterator operator--(int) {
         auto tmp = *this;
         decrement();
         return tmp;
     }
 
-    bool operator==(const reverse_iterator& rhs) const { return equal(rhs);}
-    bool operator!=(const reverse_iterator& rhs) const { return !equal(rhs);}
+    bool operator==(const ReverseIterator& rhs) const { return equal(rhs);}
+    bool operator!=(const ReverseIterator& rhs) const { return !equal(rhs);}
 
 private:
     friend class io::Path;
 
     const Path& dereference() const { return m_element; }
-    bool equal(const reverse_iterator& rhs) const { return m_itr == rhs.m_itr; }
+    bool equal(const ReverseIterator& rhs) const { return m_itr == rhs.m_itr; }
     void increment() {
       --m_itr;
       if (m_itr != m_itr.m_path_ptr->begin()) {
-        Path::iterator tmp = m_itr;
+        Path::Iterator tmp = m_itr;
         m_element = *--tmp;
       }
     }
@@ -693,10 +693,10 @@ private:
       ++m_itr;
     }
 
-    Path::iterator m_itr;
+    Path::Iterator m_itr;
     Path     m_element;
 
-  }; // Path::reverse_iterator
+  }; // Path::ReverseIterator
 
   //------------------------------------------------------------------------------------//
   //                                                                                    //
@@ -706,10 +706,10 @@ private:
 
   //  std::lexicographical_compare would infinitely recurse because path iterators
   //  yield paths, so provide a path aware version
-  inline bool lexicographical_compare(Path::iterator first1,
-                                      Path::iterator last1,
-                                      Path::iterator first2,
-                                      Path::iterator last2)
+  inline bool lexicographical_compare(Path::Iterator first1,
+                                      Path::Iterator last1,
+                                      Path::Iterator first2,
+                                      Path::Iterator last2)
     { return detail::lex_compare(first1, last1, first2, last2) < 0; }
 
   inline bool operator==(const Path& lhs, const Path& rhs)              {return lhs.compare(rhs) == 0;}
@@ -816,8 +816,8 @@ private:
   //                  class path miscellaneous function implementations                 //
   //------------------------------------------------------------------------------------//
 
-  inline Path::reverse_iterator Path::rbegin() const { return reverse_iterator(end()); }
-  inline Path::reverse_iterator Path::rend() const   { return reverse_iterator(begin()); }
+  inline Path::ReverseIterator Path::rbegin() const { return ReverseIterator(end()); }
+  inline Path::ReverseIterator Path::rend() const   { return ReverseIterator(begin()); }
 
   inline bool Path::filename_is_dot() const {
     // implicit dot is tricky, so actually call filename(); see Path::filename() example

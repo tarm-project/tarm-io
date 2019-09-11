@@ -227,7 +227,7 @@ namespace io
 
   IO_DLL_PUBLIC Path Path::root_name() const
   {
-    iterator itr(begin());
+    Iterator itr(begin());
 
     return (itr.m_pos != m_pathname.size()
       && (
@@ -253,7 +253,7 @@ namespace io
 
   IO_DLL_PUBLIC Path Path::relative_path() const
   {
-    iterator itr(begin());
+    Iterator itr(begin());
 
     for (; itr.m_pos != m_pathname.size()
       && (detail::is_directory_separator(itr.m_element.m_pathname[0])
@@ -329,11 +329,11 @@ namespace io
 
   namespace detail
   {
-    // C++14 provides a mismatch algorithm with four iterator arguments(), but earlier
+    // C++14 provides a mismatch algorithm with four Iterator arguments(), but earlier
     // standard libraries didn't, so provide this needed functionality.
     inline
-    std::pair<Path::iterator, Path::iterator> mismatch(Path::iterator it1,
-      Path::iterator it1end, Path::iterator it2, Path::iterator it2end)
+    std::pair<Path::Iterator, Path::Iterator> mismatch(Path::Iterator it1,
+      Path::Iterator it1end, Path::Iterator it2, Path::Iterator it2end)
     {
       for (; it1 != it1end && it2 != it2end && *it1 == *it2;)
       {
@@ -346,7 +346,7 @@ namespace io
 
   IO_DLL_PUBLIC Path Path::lexically_relative(const Path& base) const
   {
-    std::pair<Path::iterator, Path::iterator> mm
+    std::pair<Path::Iterator, Path::Iterator> mm
       = detail::mismatch(begin(), end(), base.begin(), base.end());
     if (mm.first == begin() && mm.second == base.begin())
       return Path();
@@ -368,10 +368,10 @@ namespace io
       return *this;
 
     Path temp;
-    iterator start(begin());
-    iterator last(end());
-    iterator stop(last--);
-    for (iterator itr(start); itr != stop; ++itr)
+    Iterator start(begin());
+    Iterator last(end());
+    Iterator stop(last--);
+    for (Iterator itr(start); itr != stop; ++itr)
     {
       // ignore "." except at start and last
       if (itr->native().size() == 1
@@ -415,7 +415,7 @@ namespace io
           //  }
           //}
 
-          iterator next(itr);
+          Iterator next(itr);
           if (temp.empty() && ++next != stop
             && next == last && *last == detail::dot_path())
           {
@@ -623,8 +623,8 @@ namespace io
   namespace detail
   {
     IO_DLL_PUBLIC
-    int lex_compare(Path::iterator first1, Path::iterator last1,
-        Path::iterator first2, Path::iterator last2)
+    int lex_compare(Path::Iterator first1, Path::Iterator last1,
+        Path::Iterator first2, Path::Iterator last2)
     {
       for (; first1 != last1 && first2 != last2;)
       {
@@ -664,13 +664,13 @@ namespace io
 
 //--------------------------------------------------------------------------------------//
 //                                                                                      //
-//                        class Path::iterator implementation                           //
+//                        class Path::Iterator implementation                           //
 //                                                                                      //
 //--------------------------------------------------------------------------------------//
 
-  IO_DLL_PUBLIC Path::iterator Path::begin() const
+  IO_DLL_PUBLIC Path::Iterator Path::begin() const
   {
-    iterator itr;
+    Iterator itr;
     itr.m_path_ptr = this;
     size_type element_size;
     first_element(m_pathname, itr.m_pos, element_size);
@@ -680,17 +680,17 @@ namespace io
     return itr;
   }
 
-  IO_DLL_PUBLIC Path::iterator Path::end() const
+  IO_DLL_PUBLIC Path::Iterator Path::end() const
   {
-    iterator itr;
+    Iterator itr;
     itr.m_path_ptr = this;
     itr.m_pos = m_pathname.size();
     return itr;
   }
 
-  IO_DLL_PUBLIC void Path::m_path_iterator_increment(Path::iterator & it)
+  IO_DLL_PUBLIC void Path::m_path_iterator_increment(Path::Iterator & it)
   {
-    assert(it.m_pos < it.m_path_ptr->m_pathname.size() && "Path::basic_iterator increment past end()");
+    assert(it.m_pos < it.m_path_ptr->m_pathname.size() && "Path::basic_Iterator increment past end()");
 
     // increment to position past current element; if current element is implicit dot,
     // this will cause it.m_pos to represent the end iterator
@@ -746,9 +746,9 @@ namespace io
     it.m_element = it.m_path_ptr->m_pathname.substr(it.m_pos, end_pos - it.m_pos);
   }
 
-  IO_DLL_PUBLIC void Path::m_path_iterator_decrement(Path::iterator & it)
+  IO_DLL_PUBLIC void Path::m_path_iterator_decrement(Path::Iterator & it)
   {
-    assert(it.m_pos && "Path::iterator decrement past begin()");
+    assert(it.m_pos && "Path::Iterator decrement past begin()");
 
     size_type end_pos(it.m_pos);
 

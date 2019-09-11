@@ -786,7 +786,7 @@ TEST_F(PathTest, reverse_iterators) {
 
     Path p3("foo/bar/baz");
 
-    Path::reverse_iterator it(p3.rbegin());
+    Path::ReverseIterator it(p3.rbegin());
     EXPECT_TRUE(p3.rbegin() != p3.rend());
     EXPECT_TRUE(*it == "baz");
     EXPECT_TRUE(*++it == "bar");
