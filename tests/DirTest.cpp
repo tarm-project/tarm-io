@@ -42,7 +42,7 @@ TEST_F(DirTest, open_then_close) {
         EXPECT_TRUE(status.ok());
         EXPECT_EQ(io::StatusCode::OK, status.code());
 
-        EXPECT_EQ(m_tmp_test_dir, dir.path());
+        EXPECT_EQ(m_tmp_test_dir, dir.path().string());
         EXPECT_TRUE(dir.is_open());
         dir.close();
         EXPECT_TRUE(dir.path().empty());

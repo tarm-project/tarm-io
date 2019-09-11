@@ -24,7 +24,7 @@ public:
 
     IO_DLL_PUBLIC Dir(EventLoop& loop);
 
-    IO_DLL_PUBLIC void open(const std::string& path, OpenCallback callback);
+    IO_DLL_PUBLIC void open(const Path& path, OpenCallback callback);
     IO_DLL_PUBLIC bool is_open() const;
     IO_DLL_PUBLIC void close();
 
@@ -32,7 +32,7 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC const std::string& path() const;
+    IO_DLL_PUBLIC const Path& path() const;
 
 protected:
     IO_DLL_PUBLIC ~Dir();

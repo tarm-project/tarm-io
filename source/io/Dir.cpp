@@ -14,15 +14,13 @@ public:
     Impl(EventLoop& loop, Dir& parent);
     ~Impl();
 
-    void open(const std::string& path, OpenCallback callback);
+    void open(const Path& path, OpenCallback callback);
     bool is_open() const;
     void close();
 
     void read(ReadCallback read_callback, EndReadCallback end_read_callback = nullptr);
 
-    //void schedule_removal() override;
-
-    const std::string& path() const;
+    const Path& path() const;
 
 protected:
     // statics
@@ -39,7 +37,7 @@ private:
     ReadCallback m_read_callback = nullptr;
     EndReadCallback m_end_read_callback = nullptr;
 
-    std::string m_path;
+    Path m_path;
 
     uv_fs_t m_open_dir_req;
     uv_fs_t m_read_dir_req;
@@ -76,7 +74,7 @@ DirectoryEntryType convert_direntry_type(uv_dirent_type_t type) {
 
 }
 
-const std::string& Dir::Impl::path() const {
+const Path& Dir::Impl::path() const {
     return m_path;
 }
 
@@ -90,7 +88,7 @@ Dir::Impl::Impl(EventLoop& loop, Dir& parent) :
 Dir::Impl::~Impl() {
 }
 
-void Dir::Impl::open(const std::string& path, OpenCallback callback) {
+void Dir::Impl::open(const Path& path, OpenCallback callback) {
     m_path = path;
     m_open_callback = callback;
     m_open_dir_req.data = this;
@@ -186,7 +184,7 @@ Dir::Dir(EventLoop& loop) :
 Dir::~Dir() {
 }
 
-void Dir::open(const std::string& path, OpenCallback callback) {
+void Dir::open(const Path& path, OpenCallback callback) {
     return m_impl->open(path, callback);
 }
 
@@ -202,7 +200,7 @@ void Dir::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     return m_impl->read(read_callback, end_read_callback);
 }
 
-const std::string& Dir::path() const {
+const Path& Dir::path() const {
     return m_impl->path();
 }
 
