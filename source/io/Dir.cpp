@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "ScopeExitGuard.h"
 
+#include <codecvt>
 #include <cstring>
 #include <vector>
 #include <assert.h>
@@ -92,6 +93,12 @@ void Dir::Impl::open(const Path& path, OpenCallback callback) {
     m_path = path;
     m_open_callback = callback;
     m_open_dir_req.data = this;
+
+#ifdef IO_WINDOWS_API
+//    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> cvt;
+//    cvt.to_bytes(path.c_str()).c_str()
+#endif
+
     uv_fs_opendir(m_uv_loop, &m_open_dir_req, path.c_str(), on_open_dir);
 }
 

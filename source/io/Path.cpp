@@ -12,7 +12,7 @@
 #include <cassert>
 
 #ifdef IO_WINDOWS_API
-    #include "windows_file_codecvt.hpp"
+    #include "path_impl/WindowsFileCodecvt.h"
     #include <windows.h>
 #elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__) \
  || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__HAIKU__)
@@ -132,9 +132,9 @@ namespace io
 
 # ifdef IO_WINDOWS_API
 
-  IO_DLL_PUBLIC path Path::generic_path() const
+  IO_DLL_PUBLIC Path Path::generic_path() const
   {
-    path tmp(*this);
+    Path tmp(*this);
     std::replace(tmp.m_pathname.begin(), tmp.m_pathname.end(), L'\\', L'/');
     return tmp;
   }
