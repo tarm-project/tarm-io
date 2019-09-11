@@ -59,8 +59,10 @@ empty(const Container& c) {
 
 template <class T>
 inline bool empty(T* const& c_str) {
-    assert(c_str);
-    return !*c_str;
+    // TODO: investigate this
+    //assert(c_str);
+    // return !*c_str; // this was original code
+    return c_str == nullptr || !*c_str;
 }
 
 template <typename T, size_t N>

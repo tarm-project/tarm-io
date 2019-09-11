@@ -95,11 +95,12 @@ void Dir::Impl::open(const Path& path, OpenCallback callback) {
     m_open_dir_req.data = this;
 
 #ifdef IO_WINDOWS_API
+// TODO: remove?
 //    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> cvt;
 //    cvt.to_bytes(path.c_str()).c_str()
 #endif
 
-    uv_fs_opendir(m_uv_loop, &m_open_dir_req, path.c_str(), on_open_dir);
+    uv_fs_opendir(m_uv_loop, &m_open_dir_req, path.string().c_str(), on_open_dir);
 }
 
 void Dir::Impl::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
@@ -241,7 +242,7 @@ void on_make_temp_dir(uv_fs_t* uv_request) {
 
 void make_temp_dir(EventLoop& loop, const Path& name_template, MakeTempDirCallback callback) {
     auto request = new RequestWithCallback<MakeTempDirCallback>(callback);
-    const Status status = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, name_template.c_str(), on_make_temp_dir);
+    const Status status = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, name_template.string().c_str(), on_make_temp_dir);
     if (status.fail()) {
         if (callback) {
             callback("", status);
@@ -275,7 +276,7 @@ void on_make_dir(uv_fs_t* uv_request) {
 
 void make_dir(EventLoop& loop, const Path& path, MakeDirCallback callback) {
     auto request = new RequestWithCallback<MakeDirCallback>(callback);
-    const Status status = uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.c_str(), 0, on_make_dir);
+    const Status status = uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.string().c_str(), 0, on_make_dir);
     if (status.fail()) {
         if (callback) {
             callback(status);
@@ -316,7 +317,7 @@ RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const io::Path& path
 
     const io::Path open_path = path / subpath;
     uv_fs_t open_dir_req;
-    Status open_status = uv_fs_opendir(uv_loop, &open_dir_req, open_path.c_str(), nullptr);
+    Status open_status = uv_fs_opendir(uv_loop, &open_dir_req, open_path.string().c_str(), nullptr);
     if (open_status.fail()) {
         uv_fs_req_cleanup(&open_dir_req);
         return {open_status, open_path};
@@ -349,7 +350,7 @@ RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const io::Path& path
             if (entry.type != UV_DIRENT_DIR) {
                 uv_fs_t unlink_request;
                 const Path unlink_path = path / subpath / entry.name;
-                Status unlink_status = uv_fs_unlink(uv_loop, &unlink_request, unlink_path.c_str(), nullptr);
+                Status unlink_status = uv_fs_unlink(uv_loop, &unlink_request, unlink_path.string().c_str(), nullptr);
                 if (unlink_status.fail()) {
                     return {unlink_status, unlink_path};
                 }
@@ -381,13 +382,13 @@ void remove_dir_impl(EventLoop& loop, const io::Path& path, RemoveDirCallback re
             if (last_entry.processed) {
                 const Path rmdir_path = path / last_entry.path;
                 uv_fs_t rm_dir_req;
-                Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, rmdir_path.c_str(), nullptr);
+                Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, rmdir_path.string().c_str(), nullptr);
                 if (rmdir_status.fail()) {
                     return new RemoveDirStatusContext(rmdir_status, rmdir_path);
                 } else {
                     if (progress_callback) {
                         loop.execute_on_loop_thread([progress_callback, rmdir_path](){
-                            progress_callback(rmdir_path.c_str()); // TODO: remove c_str in future
+                            progress_callback(rmdir_path.string().c_str()); // TODO: remove c_str in future
                         });
                     }
                 }

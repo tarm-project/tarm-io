@@ -163,7 +163,7 @@ void File::Impl::open(const Path& path, OpenCallback callback) {
     std::memset(m_open_request, 0, sizeof(uv_fs_t));
     m_open_callback = callback;
     m_open_request->data = this;
-    uv_fs_open(m_uv_loop, m_open_request, path.c_str(), UV_FS_O_RDWR, 0, on_open);
+    uv_fs_open(m_uv_loop, m_open_request, path.string().c_str(), UV_FS_O_RDWR, 0, on_open);
 }
 
 void File::Impl::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
