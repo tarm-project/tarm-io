@@ -234,7 +234,7 @@ void on_make_temp_dir(uv_fs_t* uv_request) {
     delete &request;
 }
 
-void make_temp_dir(EventLoop& loop, const std::string& name_template, MakeTempDirCallback callback) {
+void make_temp_dir(EventLoop& loop, const Path& name_template, MakeTempDirCallback callback) {
     auto request = new RequestWithCallback<MakeTempDirCallback>(callback);
     const Status status = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, name_template.c_str(), on_make_temp_dir);
     if (status.fail()) {

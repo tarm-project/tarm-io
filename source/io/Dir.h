@@ -45,7 +45,7 @@ private:
 // TODO: transfer mode ???
 using MakeTempDirCallback = std::function<void(const std::string&, const Status&)>;
 IO_DLL_PUBLIC
-void make_temp_dir(EventLoop& loop, const std::string& name_template, MakeTempDirCallback callback);
+void make_temp_dir(EventLoop& loop, const Path& name_template, MakeTempDirCallback callback);
 
 // TODO: transfer mode
 using MakeDirCallback = std::function<void(const Status&)>;
