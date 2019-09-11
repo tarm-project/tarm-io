@@ -56,7 +56,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
   //------------------------------------------------------------------------------------//
 
   class Path : public path_detail::PathConstants<
-#ifdef BOOST_WINDOWS_API
+#ifdef IO_WINDOWS_API
       wchar_t, L'/', L'\\', L'.'
 #else
       char, '/', '/', '.'
@@ -335,9 +335,9 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  -----  modifiers  -----
 
     void clear() noexcept { m_pathname.clear(); }
-#   ifdef BOOST_WINDOWS_API
+#   ifdef IO_WINDOWS_API
     IO_DLL_PUBLIC Path& make_preferred();  // change slashes to backslashes
-#   else // BOOST_POSIX_API
+#   else // IO_POSIX_API
     Path& make_preferred() { return *this; }  // POSIX no effect
 #   endif
     IO_DLL_PUBLIC Path& remove_filename();
@@ -376,7 +376,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     template <class String>
     String string(const codecvt_type& cvt) const;
 
-#   ifdef BOOST_WINDOWS_API
+#   ifdef IO_WINDOWS_API
     const std::string string() const
     {
       std::string tmp;
@@ -397,7 +397,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  string_type is std::wstring, so there is no conversion
     const std::wstring& wstring() const { return m_pathname; }
     const std::wstring& wstring(const codecvt_type&) const { return m_pathname; }
-#   else   // BOOST_POSIX_API
+#   else   // IO_POSIX_API
     //  string_type is std::string, so there is no conversion
     const std::string& string() const { return m_pathname; }
     const std::string& string(const codecvt_type&) const { return m_pathname; }
@@ -424,7 +424,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  Experimental generic function returning generic formatted path (i.e. separators
     //  are forward slashes). Motivation: simpler than a family of generic_*string
     //  functions.
-#   ifdef BOOST_WINDOWS_API
+#   ifdef IO_WINDOWS_API
     IO_DLL_PUBLIC Path generic_path() const;
 #   else
     Path generic_path() const { return Path(*this); }
@@ -436,12 +436,12 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     template <class String>
     String generic_string(const codecvt_type& cvt) const;
 
-#   ifdef BOOST_WINDOWS_API
+#   ifdef IO_WINDOWS_API
     const std::string   generic_string() const { return generic_path().string(); }
     const std::string   generic_string(const codecvt_type& cvt) const { return generic_path().string(cvt); }
     const std::wstring  generic_wstring() const { return generic_path().wstring(); }
     const std::wstring  generic_wstring(const codecvt_type&) const { return generic_wstring(); }
-#   else // BOOST_POSIX_API
+#   else // IO_POSIX_API
     //  On POSIX-like systems, the generic format is the same as the native format
     const std::string&  generic_string() const  { return m_pathname; }
     const std::string&  generic_string(const codecvt_type&) const  { return m_pathname; }
@@ -484,7 +484,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     bool is_absolute() const
     {
       // Windows CE has no root name (aka drive letters)
-#     if defined(BOOST_WINDOWS_API) && !defined(UNDER_CE)
+#     if defined(IO_WINDOWS_API) && !defined(UNDER_CE)
       return has_root_name() && has_root_directory();
 #     else
       return has_root_directory();
@@ -733,12 +733,12 @@ private:
 
   inline std::size_t hash_value(const Path& x) noexcept
   {
-# ifdef BOOST_WINDOWS_API
+# ifdef IO_WINDOWS_API
     std::size_t seed = 0;
     for(const Path::value_type* it = x.c_str(); *it; ++it)
       hash_combine(seed, *it == L'/' ? L'\\' : *it);
     return seed;
-# else   // BOOST_POSIX_API
+# else   // IO_POSIX_API
     return hash_range(x.native().begin(), x.native().end());
 # endif
   }
@@ -797,7 +797,7 @@ private:
     inline bool is_directory_separator(Path::value_type c) noexcept
     {
       return c == Path::separator
-#     ifdef BOOST_WINDOWS_API
+#     ifdef IO_WINDOWS_API
         || c == Path::preferred_separator
 #     endif
       ;
@@ -805,7 +805,7 @@ private:
     inline bool is_element_separator(Path::value_type c) noexcept
     {
       return c == Path::separator
-#     ifdef BOOST_WINDOWS_API
+#     ifdef IO_WINDOWS_API
         || c == Path::preferred_separator || c == L':'
 #     endif
       ;

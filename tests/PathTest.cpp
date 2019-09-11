@@ -22,10 +22,10 @@ void PrintTo(const io::Path& path, std::ostream* os) {
 } // namespace io
 
 // TODO: fixme
-#ifdef BOOST_WINDOWS_API
-# define BOOST_DIR_SEP "\\"
+#ifdef IO_WINDOWS_API
+# define IO_TEST_DIR_SEP "\\"
 #else
-# define BOOST_DIR_SEP "/"
+# define IO_TEST_DIR_SEP "/"
 #endif
 
 using io::Path;
@@ -202,10 +202,10 @@ TEST_F(PathTest, move_construction_and_assignment) {
 
 TEST_F(PathTest, appends) {
 // TODO: fixme
-# ifdef BOOST_WINDOWS_API
-#   define BOOST_FS_FOO L"/foo\\"
+# ifdef IO_WINDOWS_API
+#   define IO_TEST_FS_FOO L"/foo\\"
 # else   // POSIX paths
-#   define BOOST_FS_FOO L"/foo/"
+#   define IO_TEST_FS_FOO L"/foo/"
 # endif
 
     m_x = "/foo";
@@ -226,39 +226,39 @@ TEST_F(PathTest, appends) {
 
     m_x = "/foo";
     m_x /= Path("yet another path");                      // another path
-    EXPECT_EQ(m_x, BOOST_FS_FOO L"yet another path");
+    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"yet another path");
 
     m_x = "/foo";
     m_x.append(m_l.begin(), m_l.end());                      // iterator range char
-    EXPECT_EQ(m_x, BOOST_FS_FOO L"string");
+    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"string");
 
     m_x = "/foo";
     m_x.append(m_wl.begin(), m_wl.end());                    // iterator range wchar_t
-    EXPECT_EQ(m_x, BOOST_FS_FOO L"wstring");
+    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"wstring");
 
     m_x = "/foo";
     m_x /= std::string("std::string");                         // container char
-    EXPECT_EQ(m_x, BOOST_FS_FOO L"std::string");
+    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"std::string");
 
     m_x = "/foo";
     m_x /= std::wstring(L"std::wstring");                      // container wchar_t
-    EXPECT_EQ(m_x, BOOST_FS_FOO L"std::wstring");
+    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"std::wstring");
 
     m_x = "/foo";
     m_x /= "array char";                                  // array char
-    EXPECT_EQ(m_x, BOOST_FS_FOO L"array char");
+    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"array char");
 
     m_x = "/foo";
     m_x /= L"array wchar";                                // array wchar_t
-    EXPECT_EQ(m_x, BOOST_FS_FOO L"array wchar");
+    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"array wchar");
 
     m_x = "/foo";
     m_x /= m_s.c_str();                                     // const char* null terminated
-    EXPECT_EQ(m_x, BOOST_FS_FOO L"string");
+    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"string");
 
     m_x = "/foo";
     m_x /= m_ws.c_str();                                    // const wchar_t* null terminated
-    EXPECT_EQ(m_x, BOOST_FS_FOO L"wstring");
+    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"wstring");
 }
 
 TEST_F(PathTest, concats) {
@@ -338,7 +338,7 @@ TEST_F(PathTest, observers) {
     EXPECT_TRUE(p0.size() == 0);
 
 // TODO: fixme
-# ifdef BOOST_WINDOWS_API
+# ifdef IO_WINDOWS_API
     Path p("abc\\def/ghi");
 
     EXPECT_TRUE(std::wstring(p.c_str()) == L"abc\\def/ghi");
@@ -353,7 +353,7 @@ TEST_F(PathTest, observers) {
     EXPECT_TRUE(p.generic_string<std::string>() == "abc/def/ghi");
     EXPECT_TRUE(p.generic_string<std::wstring>() == L"abc/def/ghi");
     EXPECT_TRUE(p.generic_string<Path::string_type>() == L"abc/def/ghi");
-# else  // BOOST_POSIX_API
+# else  // IO_POSIX_API
     Path p("abc\\def/ghi");
 
     EXPECT_TRUE(std::string(p.c_str()) == "abc\\def/ghi");
@@ -374,7 +374,7 @@ TEST_F(PathTest, observers) {
 TEST_F(PathTest, relationals) {
     std::hash<Path> hash;
 
-# ifdef BOOST_WINDOWS_API
+# ifdef IO_WINDOWS_API
     // this is a critical use case to meet user expectations
     EXPECT_TRUE(Path("c:\\abc") == Path("c:/abc"));
     EXPECT_TRUE(hash(Path("c:\\abc")) == hash(Path("c:/abc")));
@@ -487,7 +487,7 @@ TEST_F(PathTest, other_non_members) {
     EXPECT_TRUE(Path("/").filename() == Path("/"));
     EXPECT_TRUE(!Path("/").filename_is_dot());
 // TODO: fixme
-# ifdef BOOST_WINDOWS_API
+# ifdef IO_WINDOWS_API
     EXPECT_TRUE(Path("c:.").filename() == Path("."));
     EXPECT_TRUE(Path("c:.").filename_is_dot());
     EXPECT_TRUE(Path("c:/").filename() == Path("/"));
@@ -834,7 +834,7 @@ TEST_F(PathTest, decompositions) {
     EXPECT_TRUE(Path("//netname/foo").root_path().string() == "//netname/");
 
     // TODO: fixme
-#   ifdef BOOST_WINDOWS_API
+#   ifdef IO_WINDOWS_API
     EXPECT_TRUE(Path("c:/foo").root_path().string() == "c:/");
 #   endif
 
@@ -977,7 +977,7 @@ virtual std::codecvt_base::result do_out(std::mbstate_t&,
 };
 
 // TODO: fixme
-# ifdef BOOST_WINDOWS_API
+# ifdef IO_WINDOWS_API
   void check_native(const Path& p,
     const std::string&, const std::wstring& expected)
 # else
@@ -2185,18 +2185,18 @@ TEST_F(PathTest, self_assign_and_append) {
 
     p = "snafubar";
     p /= p;
-    EXPECT_EQ(p, "snafubar" BOOST_DIR_SEP "snafubar");
+    EXPECT_EQ(p, "snafubar" IO_TEST_DIR_SEP "snafubar");
 
     p = "snafubar";
     p /= p.c_str();
-    EXPECT_EQ(p, "snafubar" BOOST_DIR_SEP "snafubar");
+    EXPECT_EQ(p, "snafubar" IO_TEST_DIR_SEP "snafubar");
 
     p = "snafubar";
     p.append(p.c_str(), Path::codecvt());
-    EXPECT_EQ(p, "snafubar" BOOST_DIR_SEP "snafubar");
+    EXPECT_EQ(p, "snafubar" IO_TEST_DIR_SEP "snafubar");
 
     p = "snafubar";
-    EXPECT_EQ(p.append(p.c_str() + 5, p.c_str() + 7), "snafubar" BOOST_DIR_SEP "ba");
+    EXPECT_EQ(p.append(p.c_str() + 5, p.c_str() + 7), "snafubar" IO_TEST_DIR_SEP "ba");
 }
 
 // TODO: skipped void name_function_tests() from original source code
@@ -2393,7 +2393,7 @@ TEST_F(PathTest, lexically_relative) {
     EXPECT_TRUE(Path("/a/b/c").lexically_relative("/a/d") == "../b/c");
 
 // TODO: fixme
-  #ifdef BOOST_WINDOWS_API
+  #ifdef IO_WINDOWS_API
     EXPECT_TRUE(Path("c:\\y").lexically_relative("c:\\x") == "../y");
   #else
     EXPECT_TRUE(Path("c:\\y").lexically_relative("c:\\x") == "");
@@ -2521,7 +2521,7 @@ TEST_F(PathTest, error_handling) {
     //  Thus construction has to call codecvt. Force that by using a narrow string
     //  for Windows, and a wide string for POSIX.
 // TODO: FIXME
-#   ifdef BOOST_WINDOWS_API
+#   ifdef IO_WINDOWS_API
 #     define STRING_FOO_ "foo"
 #   else
 #     define STRING_FOO_ L"foo"
