@@ -468,7 +468,7 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
         ASSERT_LT(value, clinets_data_log.size());
         clinets_data_log[value] = true;
 
-        if (server_reads_counter == NUMBER_OF_CLIENTS - 1) {
+        if (server_reads_counter == NUMBER_OF_CLIENTS) {
             server.shutdown();
         }
     });
