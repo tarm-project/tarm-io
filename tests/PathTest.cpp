@@ -2566,3 +2566,16 @@ TEST_F(PathTest, error_handling) {
     // restoring original locale
     Path::imbue(old_loc);
 }
+
+// Tests not present in original Boost::path
+
+TEST_F(PathTest, remove_trailing_separator) {
+
+    const std::string path_without_trailing_separator = "/some/path/with/trailing/slash";
+    const std::string path_with_trailing_separator = path_without_trailing_separator + IO_TEST_DIR_SEP;
+
+    Path p(path_with_trailing_separator);
+    ASSERT_EQ(p.string(), path_with_trailing_separator);
+    p.remove_trailing_separator();
+    ASSERT_EQ(p.string(), path_without_trailing_separator);
+}
