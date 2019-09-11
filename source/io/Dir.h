@@ -50,7 +50,7 @@ void make_temp_dir(EventLoop& loop, const std::string& name_template, MakeTempDi
 // TODO: transfer mode
 using MakeDirCallback = std::function<void(const Status&)>;
 IO_DLL_PUBLIC
-void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback);
+void make_dir(EventLoop& loop, const Path& path, MakeDirCallback callback);
 
 using RemoveDirCallback = std::function<void(const Status&)>;
 using ProgressCallback = std::function<void(const std::string&)>;
