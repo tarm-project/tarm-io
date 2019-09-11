@@ -28,7 +28,7 @@ public:
     Impl(EventLoop& loop, File& parent);
     ~Impl();
 
-    void open(const std::string& path, OpenCallback callback);
+    void open(const Path& path, OpenCallback callback);
     void close();
     bool is_open() const;
 
@@ -37,7 +37,7 @@ public:
 
     void read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback);
 
-    const std::string& path() const;
+    const Path& path() const;
 
     void stat(StatCallback callback);
 
@@ -80,7 +80,7 @@ private:
     uv_fs_t m_stat_req;
     uv_fs_t m_write_req;
 
-    std::string m_path;
+    Path m_path;
 };
 
 File::Impl::Impl(EventLoop& loop, File& parent) :
@@ -150,7 +150,7 @@ void File::Impl::close() {
     m_path.clear();
 }
 
-void File::Impl::open(const std::string& path, OpenCallback callback) {
+void File::Impl::open(const Path& path, OpenCallback callback) {
     if (is_open()) {
         close();
     }
@@ -233,7 +233,7 @@ void File::Impl::stat(StatCallback callback) {
     uv_fs_fstat(m_uv_loop, &m_stat_req, m_file_handle, on_stat);
 }
 
-const std::string& File::Impl::path() const {
+const Path& File::Impl::path() const {
     return m_path;
 }
 
@@ -445,7 +445,7 @@ File::File(EventLoop& loop) :
 File::~File() {
 }
 
-void File::open(const std::string& path, OpenCallback callback) {
+void File::open(const Path& path, OpenCallback callback) {
     return m_impl->open(path, callback);
 }
 
@@ -469,7 +469,7 @@ void File::read_block(off_t offset, unsigned int bytes_count, ReadCallback read_
     return m_impl->read_block(offset, bytes_count, read_callback);
 }
 
-const std::string& File::path() const {
+const Path& File::path() const {
     return m_impl->path();
 }
 

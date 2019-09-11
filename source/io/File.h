@@ -4,6 +4,7 @@
 #include "Disposable.h"
 #include "EventLoop.h"
 #include "Export.h"
+#include "Path.h"
 #include "Status.h"
 #include "StatData.h"
 #include "UserDataHolder.h"
@@ -29,7 +30,7 @@ public:
 
     IO_DLL_PUBLIC File(EventLoop& loop);
 
-    IO_DLL_PUBLIC void open(const std::string& path, OpenCallback callback); // TODO: pass open flags
+    IO_DLL_PUBLIC void open(const Path& path, OpenCallback callback); // TODO: pass open flags
     IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC bool is_open() const;
 
@@ -38,7 +39,7 @@ public:
 
     IO_DLL_PUBLIC void read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback);
 
-    IO_DLL_PUBLIC const std::string& path() const;
+    IO_DLL_PUBLIC const Path& path() const;
 
     IO_DLL_PUBLIC void stat(StatCallback callback);
 
