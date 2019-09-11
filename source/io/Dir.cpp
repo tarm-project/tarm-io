@@ -283,33 +283,33 @@ void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback
 namespace {
 
 struct RemoveDirWorkEntry {
-    RemoveDirWorkEntry(const std::string& p) :
+    RemoveDirWorkEntry(const io::Path& p) :
         path(p),
         processed(false) {
     }
 
-    std::string path;
+    io::Path path;
     bool processed;
 };
 
 struct RemoveDirStatusContext {
-    RemoveDirStatusContext(const Status& s, const std::string& p) :
+    RemoveDirStatusContext(const Status& s, const io::Path& p) :
         status(s),
         path(p) {
     }
 
     Status status = 0;
-    std::string path;
+    io::Path path;
 };
 
 } // namespace
 
 using RemoveDirWorkData = std::vector<RemoveDirWorkEntry>;
 
-RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const std::string& path, std::string subpath, RemoveDirWorkData& work_data) {
+RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const io::Path& path, Path subpath, RemoveDirWorkData& work_data) {
     work_data.back().processed = true;
 
-    const std::string open_path = path + "/" + subpath;
+    const io::Path open_path = path / subpath;
     uv_fs_t open_dir_req;
     Status open_status = uv_fs_opendir(uv_loop, &open_dir_req, open_path.c_str(), nullptr);
     if (open_status.fail()) {
@@ -343,13 +343,13 @@ RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const std::string& p
 
             if (entry.type != UV_DIRENT_DIR) {
                 uv_fs_t unlink_request;
-                const std::string unlink_path = path + "/" + subpath + "/" + entry.name;
+                const Path unlink_path = path / subpath / entry.name;
                 Status unlink_status = uv_fs_unlink(uv_loop, &unlink_request, unlink_path.c_str(), nullptr);
                 if (unlink_status.fail()) {
                     return {unlink_status, unlink_path};
                 }
             } else {
-                work_data.emplace_back(subpath + "/" + entry.name);
+                work_data.emplace_back(subpath / entry.name);
             }
         } else if (entries_count < 0) {
             return {entries_count, path};
@@ -359,7 +359,7 @@ RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const std::string& p
     return {Status(0), ""};
 }
 
-void remove_dir_impl(EventLoop& loop, const std::string& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
+void remove_dir_impl(EventLoop& loop, const io::Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
     loop.add_work([&loop, path, progress_callback]() -> void* {
         auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
 
@@ -374,7 +374,7 @@ void remove_dir_impl(EventLoop& loop, const std::string& path, RemoveDirCallback
 
             auto& last_entry = work_data.back();
             if (last_entry.processed) {
-                const std::string rmdir_path = path + "/" + last_entry.path;
+                const Path rmdir_path = path / last_entry.path;
                 uv_fs_t rm_dir_req;
                 Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, rmdir_path.c_str(), nullptr);
                 if (rmdir_status.fail()) {
@@ -382,7 +382,7 @@ void remove_dir_impl(EventLoop& loop, const std::string& path, RemoveDirCallback
                 } else {
                     if (progress_callback) {
                         loop.execute_on_loop_thread([progress_callback, rmdir_path](){
-                            progress_callback(rmdir_path);
+                            progress_callback(rmdir_path.c_str()); // TODO: remove c_str in future
                         });
                     }
                 }
@@ -400,7 +400,7 @@ void remove_dir_impl(EventLoop& loop, const std::string& path, RemoveDirCallback
     });
 }
 
-void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
+void remove_dir(EventLoop& loop, const io::Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
     if (loop.is_running()) {
         remove_dir_impl(loop, path, remove_callback, progress_callback);
     } else {

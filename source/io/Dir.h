@@ -1,9 +1,10 @@
 #pragma once
 
-#include "EventLoop.h"
-#include "Export.h"
 #include "DirectoryEntryType.h"
 #include "Disposable.h"
+#include "EventLoop.h"
+#include "Export.h"
+#include "Path.h"
 #include "Status.h"
 #include "UserDataHolder.h"
 
@@ -54,6 +55,6 @@ void make_dir(EventLoop& loop, const std::string& path, MakeDirCallback callback
 using RemoveDirCallback = std::function<void(const Status&)>;
 using ProgressCallback = std::function<void(const std::string&)>;
 IO_DLL_PUBLIC
-void remove_dir(EventLoop& loop, const std::string& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback = nullptr);
+void remove_dir(EventLoop& loop, const Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback = nullptr);
 
 } // namespace io

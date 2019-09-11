@@ -529,7 +529,7 @@ TEST_F(DirTest, remove_dir_with_progress) {
         m_tmp_test_dir / "a" / "e",
         m_tmp_test_dir / "a",
         m_tmp_test_dir / "h",
-        m_tmp_test_dir / "."
+        m_tmp_test_dir
     };
 
     std::set<boost::filesystem::path> actual_paths;
@@ -562,7 +562,7 @@ TEST_F(DirTest, remove_dir_with_progress) {
     EXPECT_EQ(7, progress_callback_call_count);
 
     for (size_t i = 0; i < expected_paths.size(); ++i) {
-        ASSERT_NE(actual_paths.end(), actual_paths.find(expected_paths[i])) << "i= " << i;
+        ASSERT_NE(actual_paths.end(), actual_paths.find(expected_paths[i])) << "i= " << i << " " << expected_paths[i];
     }
 }
 
