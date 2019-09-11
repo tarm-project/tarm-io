@@ -2571,11 +2571,15 @@ TEST_F(PathTest, error_handling) {
 
 TEST_F(PathTest, remove_trailing_separator) {
 
+    EXPECT_EQ("", Path().remove_trailing_separator().string());
+
     const std::string path_without_trailing_separator = "/some/path/with/trailing/slash";
     const std::string path_with_trailing_separator = path_without_trailing_separator + IO_TEST_DIR_SEP;
 
     Path p(path_with_trailing_separator);
-    ASSERT_EQ(p.string(), path_with_trailing_separator);
+    ASSERT_EQ(path_with_trailing_separator, p.string());
     p.remove_trailing_separator();
-    ASSERT_EQ(p.string(), path_without_trailing_separator);
+    ASSERT_EQ(path_without_trailing_separator, p.string());
+    p.remove_trailing_separator();
+    ASSERT_EQ(path_without_trailing_separator, p.string());
 }
