@@ -852,7 +852,6 @@ TEST_F(FileTest, stat_time) {
 
 // TODO: more tests for various fields of StatData
 
-
 TEST_F(FileTest, try_open_dir) {
 
     io::EventLoop loop;
@@ -864,5 +863,3 @@ TEST_F(FileTest, try_open_dir) {
 
     ASSERT_EQ(0, loop.run());
 }
-
-// TODO: open file wich is dir
