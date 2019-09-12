@@ -842,6 +842,8 @@ TEST_F(FileTest, stat_time) {
 
             EXPECT_LE(std::abs(stat.last_status_change_time.seconds - seconds), 1l);
             EXPECT_LE(std::abs(stat.last_status_change_time.nanoseconds - nano_seconds), 10000000l);
+
+            file.schedule_removal();
         });
     });
 
@@ -849,12 +851,6 @@ TEST_F(FileTest, stat_time) {
 }
 
 // TODO: more tests for various fields of StatData
-
-TEST_F(FileTest, stat_not_existing) {
-}
-
-TEST_F(FileTest, close_in_stat) {
-}
 
 
 // TODO: open file wich is dir
