@@ -15,12 +15,12 @@ list(APPEND IO_SOURCE_LIST
         io/Common.cpp
         io/Disposable.cpp
         io/Dir.cpp
+        io/Error.cpp
         io/EventLoop.cpp
         io/File.cpp
         io/Logger.cpp
         io/Path.cpp
         io/StatData.cpp
-        io/Status.cpp
         io/StatusCode.cpp
         io/Timer.cpp
         io/TcpClient.cpp
