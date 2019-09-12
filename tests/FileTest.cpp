@@ -853,4 +853,16 @@ TEST_F(FileTest, stat_time) {
 // TODO: more tests for various fields of StatData
 
 
+TEST_F(FileTest, try_open_dir) {
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+    file->open(m_tmp_test_dir, [&](io::File& file, const io::Status& status) {
+        ASSERT_FALSE(status.ok());
+        EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, status.code());
+    });
+
+    ASSERT_EQ(0, loop.run());
+}
+
 // TODO: open file wich is dir
