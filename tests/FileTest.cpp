@@ -5,10 +5,13 @@
 #include "io/Timer.h"
 #include "io/ScopeExitGuard.h"
 
-#include <cstdint>
 #include <boost/filesystem.hpp>
-#include <thread>
+
+#include <cstdint>
+#include <chrono>
 #include <mutex>
+#include <thread>
+
 
 namespace {
 
@@ -787,23 +790,62 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
     EXPECT_TRUE(file_buffers_in_use_event_occured);
 }
 
-TEST_F(FileTest, simple_stat) {
+TEST_F(FileTest, stat_size) {
     const std::size_t SIZE = 1236;
     auto path = create_file_for_read(m_tmp_test_dir, SIZE);
     ASSERT_FALSE(path.empty());
 
+    std::size_t stat_call_count = 0;
+
     io::EventLoop loop;
     auto file = new io::File(loop);
-    file->open(path, [&SIZE](io::File& file, const io::Status& status) {
+    file->open(path, [&SIZE, &stat_call_count](io::File& file, const io::Status& status) {
         ASSERT_TRUE(status.ok());
 
-        file.stat([&SIZE](io::File& file, const io::StatData& stat){
+        file.stat([&SIZE, &stat_call_count](io::File& file, const io::StatData& stat){
             EXPECT_EQ(SIZE, stat.size);
+            ++stat_call_count;
+        });
+    });
+
+    ASSERT_EQ(0, stat_call_count);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    ASSERT_EQ(0, stat_call_count);
+
+    ASSERT_EQ(0, loop.run());
+    file->schedule_removal();
+    ASSERT_EQ(1, stat_call_count);
+}
+
+TEST_F(FileTest, stat_time) {
+    // Note: unfortunately file creation time may differ by 10-20msec from time get by std::chrono
+    // or ::gettimeofday so using fuzzy comparison
+
+    const auto now_time = std::chrono::high_resolution_clock::now();
+    const auto seconds = now_time.time_since_epoch().count() / 1000000000l;
+    const auto nano_seconds = now_time.time_since_epoch().count() % 1000000000l;
+
+    auto path = create_file_for_read(m_tmp_test_dir, 16);
+    ASSERT_FALSE(path.empty());
+
+    io::EventLoop loop;
+    auto file = new io::File(loop);
+    file->open(path, [&](io::File& file, const io::Status& status) {
+        ASSERT_TRUE(status.ok());
+
+        file.stat([&](io::File& file, const io::StatData& stat){
+            EXPECT_LE(std::abs(stat.last_access_time.seconds - seconds), 1l);
+            EXPECT_LE(std::abs(stat.last_access_time.nanoseconds - nano_seconds), 10000000l);
+
+            EXPECT_LE(std::abs(stat.last_modification_time.seconds - seconds), 1l);
+            EXPECT_LE(std::abs(stat.last_modification_time.nanoseconds - nano_seconds), 10000000l);
+
+            EXPECT_LE(std::abs(stat.last_status_change_time.seconds - seconds), 1l);
+            EXPECT_LE(std::abs(stat.last_status_change_time.nanoseconds - nano_seconds), 10000000l);
         });
     });
 
     ASSERT_EQ(0, loop.run());
-    file->schedule_removal();
 }
 
 // TODO: more tests for various fields of StatData
