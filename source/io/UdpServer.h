@@ -4,7 +4,7 @@
 #include "Export.h"
 #include "DataChunk.h"
 #include "Disposable.h"
-#include "Status.h"
+#include "Error.h"
 #include "UserDataHolder.h"
 
 #include <memory>

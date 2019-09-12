@@ -3,7 +3,7 @@
 #include "Disposable.h"
 #include "EventLoop.h"
 #include "Export.h"
-#include "Status.h"
+#include "Error.h"
 #include "UserDataHolder.h"
 
 #include <memory>

@@ -3,7 +3,7 @@
 #include "Common.h"
 #include "Logger.h"
 #include "ScopeExitGuard.h"
-#include "Status.h"
+#include "Error.h"
 #include "global/Configuration.h"
 
 #include <unordered_map>

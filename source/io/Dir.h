@@ -5,7 +5,7 @@
 #include "EventLoop.h"
 #include "Export.h"
 #include "Path.h"
-#include "Status.h"
+#include "Error.h"
 #include "UserDataHolder.h"
 
 #include <functional>
