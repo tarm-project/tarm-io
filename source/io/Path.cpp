@@ -868,10 +868,7 @@ namespace io
 {
   // See comments above
 
-  IO_DLL_PUBLIC const Path::codecvt_type& Path::codecvt()
-  {
-    assert(&path_locale() && "boost::filesystem::path locale initialization error");
-
+  IO_DLL_PUBLIC const Path::codecvt_type& Path::codecvt() {
     return std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >(path_locale());
   }
 
