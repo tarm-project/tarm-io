@@ -106,7 +106,7 @@ typename std::underlying_type<T>::type as_integral(T t) {
     Expected equality of these values:
   io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY
     Which is: 39
-  status.code()
+  error.code()
     Which is: 31
 */
 

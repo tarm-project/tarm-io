@@ -91,9 +91,9 @@ void UdpClient::Impl::on_send(uv_udp_send_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<UdpClient::Impl*>(req->data);
     auto& parent = *reinterpret_cast<UdpClient*>(this_.data);
 
-    Status status(uv_status);
+    Error error(uv_status);
     if (request.end_send_callback) {
-        request.end_send_callback(parent, status);
+        request.end_send_callback(parent, error);
     }
 
     delete &request;

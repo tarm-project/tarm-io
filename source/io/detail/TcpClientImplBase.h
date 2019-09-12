@@ -94,12 +94,12 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
     req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
 
     int uv_code = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write);
-    Status status(uv_code);
+    Error error(uv_code);
 
-    if (status.fail()) {
+    if (error) {
         IO_LOG(m_loop, ERROR, m_parent, "Error:", uv_strerror(uv_code));
         if (callback) {
-            callback(*m_parent, status);
+            callback(*m_parent, error);
         }
         delete req;
         return;
@@ -156,13 +156,13 @@ void TcpClientImplBase<ParentType, ImplType>::after_write(uv_write_t* req, int u
     auto request = reinterpret_cast<WriteRequest*>(req);
     std::unique_ptr<WriteRequest> guard(request);
 
-    Status status(uv_status);
-    if (status.fail()) {
+    Error error(uv_status);
+    if (error) {
         IO_LOG(this_.m_loop, ERROR, this_.m_parent, "Error:", uv_strerror(uv_status));
     }
 
     if (request->end_send_callback) {
-        request->end_send_callback(*this_.m_parent, status);
+        request->end_send_callback(*this_.m_parent, error);
     }
 }
 

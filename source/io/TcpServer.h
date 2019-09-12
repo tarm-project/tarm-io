@@ -39,7 +39,7 @@ public:
     TcpServer(TcpServer&& other) = default;
     TcpServer& operator=(TcpServer&& other) = delete; // default
 
-    IO_DLL_PUBLIC Status bind(const std::string& ip_addr_str, std::uint16_t port);
+    IO_DLL_PUBLIC Error bind(const std::string& ip_addr_str, std::uint16_t port);
 
     // On success, zero is returned
     IO_DLL_PUBLIC

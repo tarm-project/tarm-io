@@ -11,7 +11,7 @@ class UdpServer::Impl : public uv_udp_t {
 public:
     Impl(EventLoop& loop, UdpServer& parent);
 
-    Status bind(const std::string& ip_addr_str, std::uint16_t port);
+    Error bind(const std::string& ip_addr_str, std::uint16_t port);
     void start_receive(DataReceivedCallback data_receive_callback);
 
     void close();
@@ -42,13 +42,13 @@ UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
     this->data = &parent;
 }
 
-Status UdpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
+Error UdpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
     struct sockaddr_in unix_addr;
     uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
 
     auto uv_status = uv_udp_bind(this, reinterpret_cast<const struct sockaddr*>(&unix_addr), UV_UDP_REUSEADDR);
-    Status status(uv_status);
-    return status;
+    Error error(uv_status);
+    return error;
 }
 
 void UdpServer::Impl::start_receive(DataReceivedCallback data_receive_callback) {
@@ -86,18 +86,18 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
     auto& parent = *reinterpret_cast<UdpServer*>(this_.data);
 
     if (this_.m_data_receive_callback) {
-        Status status(nread);
+        Error error(nread);
 
-        if (status.ok()) {
+        if (!error) {
             if (addr && nread) {
                 const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
                 DataChunk data_chunk(std::shared_ptr<const char>(buf->base, std::default_delete<char[]>()), std::size_t(nread));
-                this_.m_data_receive_callback(parent, network_to_host(address->sin_addr.s_addr), network_to_host(address->sin_port), data_chunk, status);
+                this_.m_data_receive_callback(parent, network_to_host(address->sin_addr.s_addr), network_to_host(address->sin_port), data_chunk, error);
             }
         } else {
             DataChunk data(nullptr, 0);
             // TODO: log here???
-            this_.m_data_receive_callback(parent, 0, 0, data, status);
+            this_.m_data_receive_callback(parent, 0, 0, data, error);
         }
     }
 }
@@ -124,7 +124,7 @@ UdpServer::UdpServer(EventLoop& loop) :
 UdpServer::~UdpServer() {
 }
 
-Status UdpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
+Error UdpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
     return m_impl->bind(ip_addr_str, port);
 }
 

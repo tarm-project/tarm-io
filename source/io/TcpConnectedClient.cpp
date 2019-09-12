@@ -83,7 +83,7 @@ void TcpConnectedClient::Impl::close() {
 
     // TODO: move into on_close???
     if (m_close_callback) {
-        m_close_callback(*m_parent, Status(0));
+        m_close_callback(*m_parent, Error(0));
     }
 
     m_server->remove_client_connection(m_parent);
@@ -99,6 +99,7 @@ void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callb
     m_receive_callback = data_receive_callback;
 
     if (m_receive_callback) {
+        // TODO: handle return status code
         uv_read_start(reinterpret_cast<uv_stream_t*>(m_tcp_stream),
                       alloc_read_buffer,
                       on_read);
@@ -137,22 +138,22 @@ void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
 void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
 
-    Status status(nread);
-    if (status.ok()) {
+    Error error(nread);
+    if (!error) {
         if (this_.m_receive_callback) {
             this_.m_receive_callback(*this_.m_server, *this_.m_parent, buf->base, nread);
         }
     } else {
         // TODO: this is common code with TcpCLient. Extract to TcpClientImplBase???
         //---------------------------------------------
-        IO_LOG(this_.m_loop, DEBUG, "connection end address:", ip4_addr_to_string(this_.ipv4_addr()), ":", this_.port(), "reason:", status.as_string());
+        IO_LOG(this_.m_loop, DEBUG, "connection end address:", ip4_addr_to_string(this_.ipv4_addr()), ":", this_.port(), "reason:", error.string());
 
         if (this_.m_close_callback) {
-            if (status.code() == io::StatusCode::END_OF_FILE) {
-                this_.m_close_callback(*this_.m_parent, Status(0)); // OK
+            if (error.code() == io::StatusCode::END_OF_FILE) {
+                this_.m_close_callback(*this_.m_parent, Error(0)); // OK
             } else {
                 // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
-                this_.m_close_callback(*this_.m_parent, status);
+                this_.m_close_callback(*this_.m_parent, error);
             }
         }
         //---------------------------------------------

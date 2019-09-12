@@ -40,7 +40,8 @@ TEST_F(UdpClientServerTest, server_bind) {
     io::EventLoop loop;
 
     auto server = new io::UdpServer(loop);
-    ASSERT_TRUE(server->bind(m_default_addr, m_default_port).ok());
+    auto error = server->bind(m_default_addr, m_default_port);
+    ASSERT_FALSE(error);
     server->schedule_removal();
 
     ASSERT_EQ(0, loop.run());
@@ -52,7 +53,7 @@ TEST_F(UdpClientServerTest, bind_privileged) {
     io::EventLoop loop;
 
     auto server = new io::UdpServer(loop);
-    ASSERT_EQ(io::Status(io::StatusCode::PERMISSION_DENIED), server->bind(m_default_addr, 80));
+    ASSERT_EQ(io::Error(io::StatusCode::PERMISSION_DENIED), server->bind(m_default_addr, 80));
     server->schedule_removal();
 
     ASSERT_EQ(0, loop.run());
@@ -68,9 +69,9 @@ TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
     bool data_received = false;
 
     auto server = new io::UdpServer(loop);
-    ASSERT_EQ(0, server->bind(m_default_addr, m_default_port));
-    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Status& status) {
-        EXPECT_TRUE(status.ok());
+    ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
+    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
         data_received = true;
         std::string s(data.buf.get(), data.size);
         EXPECT_EQ(message, s);
@@ -79,8 +80,8 @@ TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
 
     auto client = new io::UdpClient(loop);
     client->send_data(message, 0x7F000001, m_default_port,
-        [&](io::UdpClient& client, const io::Status& status) {
-            EXPECT_TRUE(status.ok());
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
             data_sent = true;
             client.schedule_removal();
         });
@@ -99,9 +100,9 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
     bool data_received = false;
 
     auto server = new io::UdpServer(loop);
-    ASSERT_EQ(0, server->bind(m_default_addr, m_default_port));
-    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Status& status) {
-        EXPECT_TRUE(status.ok());
+    ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
+    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
         EXPECT_EQ(SIZE, data.size);
         data_received = true;
 
@@ -119,8 +120,8 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
 
     auto client = new io::UdpClient(loop);
     client->send_data(message, SIZE, 0x7F000001, m_default_port,
-        [&](io::UdpClient& client, const io::Status& status) {
-            EXPECT_TRUE(status.ok());
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
             data_sent = true;
             client.schedule_removal();
         });
@@ -140,9 +141,9 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
 
     auto client = new io::UdpClient(loop);
     client->send_data(message, SIZE, 0x7F000001, m_default_port,
-        [&](io::UdpClient& client, const io::Status& status) {
-            EXPECT_TRUE(status.fail());
-            EXPECT_EQ(io::StatusCode::MESSAGE_TOO_LONG, status.code());
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::MESSAGE_TOO_LONG, error.code());
             client.schedule_removal();
         });
 

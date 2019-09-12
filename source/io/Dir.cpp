@@ -154,11 +154,11 @@ void Dir::Impl::on_open_dir(uv_fs_t* req) {
     }
 
     if (this_.m_open_callback) {
-        Status status(req->result);
-        this_.m_open_callback(*this_.m_parent, status);
+        Error error(req->result);
+        this_.m_open_callback(*this_.m_parent, error);
     }
 
-    if (req->result < 0 ) { // TODO: replace with if status.fail()
+    if (req->result < 0 ) { // TODO: replace with if error
         this_.m_path.clear();
     }
 }
@@ -233,7 +233,7 @@ void on_make_temp_dir(uv_fs_t* uv_request) {
     auto& request = *reinterpret_cast<RequestWithCallback<MakeTempDirCallback>*>(uv_request);
 
     if (request.callback) {
-        request.callback(request.path, Status(request.result));
+        request.callback(request.path, Error(request.result));
     }
 
     uv_fs_req_cleanup(uv_request);
@@ -242,10 +242,10 @@ void on_make_temp_dir(uv_fs_t* uv_request) {
 
 void make_temp_dir(EventLoop& loop, const Path& name_template, MakeTempDirCallback callback) {
     auto request = new RequestWithCallback<MakeTempDirCallback>(callback);
-    const Status status = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, name_template.string().c_str(), on_make_temp_dir);
-    if (status.fail()) {
+    const Error error = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, name_template.string().c_str(), on_make_temp_dir);
+    if (error) {
         if (callback) {
-            callback("", status);
+            callback("", error);
         }
 
         delete request;
@@ -256,18 +256,18 @@ void on_make_dir(uv_fs_t* uv_request) {
     auto& request = *reinterpret_cast<RequestWithCallback<MakeDirCallback>*>(uv_request);
 
     if (request.callback) {
-        Status status = request.result;
+        Error error = request.result;
 
 #ifdef _MSC_VER
         // CreateDirectory function on Windows returns only 2 values on error
         // ERROR_ALREADY_EXISTS and ERROR_PATH_NOT_FOUND
         // to make bahavior consistent between platforms we handle case of long name errors manually
-        if (status.fail() && strlen(request.path) + 1 > MAX_PATH) { // +1 is for 0 terminating char
+        if (error && strlen(request.path) + 1 > MAX_PATH) { // +1 is for 0 terminating char
             status = Status(StatusCode::NAME_TOO_LONG);
         }
 #endif // _MSC_VER
 
-        request.callback(status);
+        request.callback(error);
     }
 
     uv_fs_req_cleanup(uv_request);
@@ -276,10 +276,10 @@ void on_make_dir(uv_fs_t* uv_request) {
 
 void make_dir(EventLoop& loop, const Path& path, MakeDirCallback callback) {
     auto request = new RequestWithCallback<MakeDirCallback>(callback);
-    const Status status = uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.string().c_str(), 0, on_make_dir);
-    if (status.fail()) {
+    const Error error = uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.string().c_str(), 0, on_make_dir);
+    if (error) {
         if (callback) {
-            callback(status);
+            callback(error);
         }
 
         delete request;
@@ -299,12 +299,12 @@ struct RemoveDirWorkEntry {
 };
 
 struct RemoveDirStatusContext {
-    RemoveDirStatusContext(const Status& s, const io::Path& p) :
-        status(s),
+    RemoveDirStatusContext(const Error& e, const io::Path& p) :
+        error(e),
         path(p) {
     }
 
-    Status status = 0;
+    Error error = 0;
     io::Path path;
 };
 
@@ -317,10 +317,10 @@ RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const io::Path& path
 
     const io::Path open_path = path / subpath;
     uv_fs_t open_dir_req;
-    Status open_status = uv_fs_opendir(uv_loop, &open_dir_req, open_path.string().c_str(), nullptr);
-    if (open_status.fail()) {
+    Error open_error = uv_fs_opendir(uv_loop, &open_dir_req, open_path.string().c_str(), nullptr);
+    if (open_error) {
         uv_fs_req_cleanup(&open_dir_req);
-        return {open_status, open_path};
+        return {open_error, open_path};
     }
 
     uv_dirent_t uv_dir_entry[1];
@@ -350,9 +350,9 @@ RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const io::Path& path
             if (entry.type != UV_DIRENT_DIR) {
                 uv_fs_t unlink_request;
                 const Path unlink_path = path / subpath / entry.name;
-                Status unlink_status = uv_fs_unlink(uv_loop, &unlink_request, unlink_path.string().c_str(), nullptr);
-                if (unlink_status.fail()) {
-                    return {unlink_status, unlink_path};
+                Error unlink_error = uv_fs_unlink(uv_loop, &unlink_request, unlink_path.string().c_str(), nullptr);
+                if (unlink_error) {
+                    return {unlink_error, unlink_path};
                 }
             } else {
                 work_data.emplace_back(subpath / entry.name);
@@ -362,7 +362,7 @@ RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const io::Path& path
         }
     } while (entries_count > 0);
 
-    return {Status(0), ""};
+    return {Error(0), ""};
 }
 
 void remove_dir_impl(EventLoop& loop, const io::Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
@@ -374,7 +374,7 @@ void remove_dir_impl(EventLoop& loop, const io::Path& path, RemoveDirCallback re
 
         do {
             const auto& status_context = remove_dir_entry(uv_loop, path, work_data.back().path, work_data);
-            if (status_context.status.fail()) {
+            if (status_context.error) {
                 return new RemoveDirStatusContext(status_context);
             }
 
@@ -382,9 +382,9 @@ void remove_dir_impl(EventLoop& loop, const io::Path& path, RemoveDirCallback re
             if (last_entry.processed) {
                 const Path rmdir_path = path / last_entry.path;
                 uv_fs_t rm_dir_req;
-                Status rmdir_status = uv_fs_rmdir(uv_loop, &rm_dir_req, rmdir_path.string().c_str(), nullptr);
-                if (rmdir_status.fail()) {
-                    return new RemoveDirStatusContext(rmdir_status, rmdir_path);
+                Error rmdir_error = uv_fs_rmdir(uv_loop, &rm_dir_req, rmdir_path.string().c_str(), nullptr);
+                if (rmdir_error) {
+                    return new RemoveDirStatusContext(rmdir_error, rmdir_path);
                 } else {
                     if (progress_callback) {
                         loop.execute_on_loop_thread([progress_callback, rmdir_path](){
@@ -397,11 +397,11 @@ void remove_dir_impl(EventLoop& loop, const io::Path& path, RemoveDirCallback re
             }
         } while(!work_data.empty());
 
-        return new RemoveDirStatusContext(Status(0), "");
+        return new RemoveDirStatusContext(Error(0), "");
     },
     [remove_callback](void* user_data) {
         auto& status_context = *reinterpret_cast<RemoveDirStatusContext*>(user_data);
-        remove_callback(status_context.status);
+        remove_callback(status_context.error);
         delete &status_context;
     });
 }

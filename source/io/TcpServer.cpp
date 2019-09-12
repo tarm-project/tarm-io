@@ -19,7 +19,7 @@ public:
     Impl(EventLoop& loop, TcpServer& parent);
     ~Impl();
 
-    Status bind(const std::string& ip_addr_str, std::uint16_t port);
+    Error bind(const std::string& ip_addr_str, std::uint16_t port);
 
     int listen(NewConnectionCallback new_connection_callback,
                DataReceivedCallback data_receive_callback,
@@ -80,7 +80,7 @@ TcpServer::Impl::~Impl() {
     }
 }
 
-Status TcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
+Error TcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
     m_server_handle = new uv_tcp_t;
     auto init_status = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
     m_server_handle->data = this;
@@ -237,7 +237,7 @@ TcpServer::TcpServer(EventLoop& loop) :
 TcpServer::~TcpServer() {
 }
 
-Status TcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
+Error TcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
     return m_impl->bind(ip_addr_str, port);
 }
 

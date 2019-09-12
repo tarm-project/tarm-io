@@ -14,7 +14,7 @@ namespace io {
 class UdpClient : public Disposable,
                   public UserDataHolder {
 public:
-    using EndSendCallback = std::function<void(UdpClient&, const Status&)>;
+    using EndSendCallback = std::function<void(UdpClient&, const Error&)>;
 
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
 

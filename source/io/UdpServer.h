@@ -17,7 +17,7 @@ class UdpClient;
 class UdpServer : public Disposable,
                   public UserDataHolder {
 public:
-    using DataReceivedCallback = std::function<void(UdpServer&, std::uint32_t, std::uint16_t, const DataChunk&, const Status&)>;
+    using DataReceivedCallback = std::function<void(UdpServer&, std::uint32_t, std::uint16_t, const DataChunk&, const Error&)>;
 
 UdpServer(const UdpServer& other) = delete;
     UdpServer& operator=(const UdpServer& other) = delete;
@@ -29,7 +29,7 @@ UdpServer(const UdpServer& other) = delete;
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC Status bind(const std::string& ip_addr_str, std::uint16_t port);
+    IO_DLL_PUBLIC Error bind(const std::string& ip_addr_str, std::uint16_t port);
 
     IO_DLL_PUBLIC void start_receive(DataReceivedCallback receive_callback);
 

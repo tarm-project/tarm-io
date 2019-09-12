@@ -169,7 +169,7 @@ void File::Impl::open(const Path& path, OpenCallback callback) {
 void File::Impl::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
     if (!is_open()) {
         if (read_callback) {
-            read_callback(*m_parent, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
+            read_callback(*m_parent, DataChunk(), Error(StatusCode::FILE_NOT_OPEN));
         }
 
         return;
@@ -202,7 +202,7 @@ struct ReadBlockReq : public uv_fs_t {
 void File::Impl::read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback) {
     if (!is_open()) {
         if (read_callback) {
-            read_callback(*m_parent, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
+            read_callback(*m_parent, DataChunk(), Error(StatusCode::FILE_NOT_OPEN));
         }
 
         return;
@@ -334,16 +334,16 @@ void File::Impl::on_open(uv_fs_t* req) {
 
     auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
 
-    Status status(req->result > 0 ? 0 : req->result);
-    if (status.ok()) {
+    Error error(req->result > 0 ? 0 : req->result); // TODO: fixme
+    if (!error) {
         this_.m_file_handle = static_cast<uv_file>(req->result);
     }
 
     if (this_.m_open_callback) {
-        this_.m_open_callback(*this_.m_parent, status);
+        this_.m_open_callback(*this_.m_parent, error);
     }
 
-    if (status.fail()) {
+    if (error) {
         this_.m_path.clear();
     }
 }
@@ -358,7 +358,7 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
 
     if (!this_.is_open()) {
         if (this_.m_read_callback) {
-            this_.m_read_callback(*this_.m_parent, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
+            this_.m_read_callback(*this_.m_parent, DataChunk(), Error(StatusCode::FILE_NOT_OPEN));
         }
 
         return;
@@ -370,9 +370,9 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
         IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(static_cast<int>(req.result)));
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
-            io::Status status(0);
+            io::Error error(0);
             DataChunk data_chunk(req.buf, req.result, req.offset);
-            this_.m_read_callback(*this_.m_parent, data_chunk, status);
+            this_.m_read_callback(*this_.m_parent, data_chunk, error);
         }
     }
 }
@@ -385,7 +385,7 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         req.buf.reset();
 
         if (this_.m_read_callback) {
-            this_.m_read_callback(*this_.m_parent, DataChunk(), Status(StatusCode::FILE_NOT_OPEN));
+            this_.m_read_callback(*this_.m_parent, DataChunk(), Error(StatusCode::FILE_NOT_OPEN));
         }
 
         return;
@@ -400,8 +400,8 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(static_cast<int>(req.result)));
 
         if (this_.m_read_callback) {
-            io::Status status(req.result);
-            this_.m_read_callback(*this_.m_parent, DataChunk(), status);
+            io::Error error(req.result);
+            this_.m_read_callback(*this_.m_parent, DataChunk(), error);
         }
     } else if (req.result == 0) {
         this_.m_done_read = true;
@@ -416,9 +416,9 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         //this_.m_loop->stop_dummy_idle();
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
-            io::Status status(0);
+            io::Error error(0);
             DataChunk data_chunk(req.buf, req.result, this_.m_current_offset);
-            this_.m_read_callback(*this_.m_parent, data_chunk, status);
+            this_.m_read_callback(*this_.m_parent, data_chunk, error);
             this_.m_current_offset += req.result;
         }
 

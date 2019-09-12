@@ -7,16 +7,15 @@
 
 namespace io {
 
-class IO_DLL_PUBLIC Status {
+class IO_DLL_PUBLIC Error {
 public:
-    Status(std::int64_t libuv_code);
-    Status(StatusCode status_code);
+    Error(std::int64_t libuv_code);
+    Error(StatusCode status_code);
 
     StatusCode code() const;
-    std::string as_string() const;
+    std::string string() const;
 
-    bool ok() const;
-    bool fail() const;
+    operator bool() const;
 
 private:
     std::int64_t m_libuv_code = 0;
@@ -24,9 +23,9 @@ private:
 };
 
 IO_DLL_PUBLIC
-bool operator==(const Status& s1, const Status& s2);
+bool operator==(const Error& s1, const Error& s2);
 
 IO_DLL_PUBLIC
-bool operator!=(const Status& s1, const Status& s2);
+bool operator!=(const Error& s1, const Error& s2);
 
 } // namespace io

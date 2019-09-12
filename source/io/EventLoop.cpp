@@ -185,11 +185,11 @@ void EventLoop::Impl::add_work(WorkCallbackType work_callback, WorkDoneCallbackT
     auto work = new Work<WorkCallbackType, WorkDoneCallbackType>;
     work->work_callback = work_callback;
     work->work_done_callback = work_done_callback;
-    Status status = uv_queue_work(this,
+    Error error = uv_queue_work(this,
                                   work,
                                   on_work<WorkCallbackType, WorkDoneCallbackType>,
                                   on_after_work<WorkCallbackType, WorkDoneCallbackType>);
-    if (status.fail()) {
+    if (error) {
         // TODO: error handling
     }
 

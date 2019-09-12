@@ -80,9 +80,9 @@ void TcpClient::Impl::connect(const std::string& address,
 
     int uv_status = uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(&addr), on_connect);
     if (uv_status < 0) {
-        Status status(uv_status);
+        Error error(uv_status);
         if (m_connect_callback) {
-            m_connect_callback(*m_parent, status);
+            m_connect_callback(*m_parent, error);
         }
 
         // TODO: if not close TcpClient handle, memory leak will occur
@@ -137,9 +137,9 @@ void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int uv_status) {
 
     IO_LOG(this_.m_loop, TRACE, "address:", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
 
-    Status status(uv_status);
-    if (this_.m_close_callback && status.fail()) {
-        this_.m_close_callback(*this_.m_parent, status);
+    Error error(uv_status);
+    if (this_.m_close_callback && error) {
+        this_.m_close_callback(*this_.m_parent, error);
     }
 
     this_.m_is_open = false;
@@ -151,14 +151,14 @@ void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int uv_status) {
 void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(req->data);
 
-    Status status(uv_status);
-    this_.m_is_open = status.ok();
+    Error error(uv_status);
+    this_.m_is_open = !error;
 
     if (this_.m_connect_callback) {
-        this_.m_connect_callback(*this_.m_parent, status);
+        this_.m_connect_callback(*this_.m_parent, error);
     }
 
-    if (status.fail()) {
+    if (error) {
         this_.m_tcp_stream->data = nullptr;
         uv_close(reinterpret_cast<uv_handle_t*>(this_.m_tcp_stream), on_close);
         return;
@@ -178,7 +178,7 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
         auto& this_ = *reinterpret_cast<TcpClient::Impl*>(handle->data);
 
         if (this_.m_close_callback) {
-            this_.m_close_callback(*this_.m_parent, Status(0));
+            this_.m_close_callback(*this_.m_parent, Error(0));
         }
 
         this_.m_port = 0;
@@ -191,8 +191,8 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
 void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(handle->data);
 
-    Status status(nread);
-    if (status.ok()) {
+    Error error(nread);
+    if (!error) {
         if (this_.m_receive_callback) {
             this_.m_receive_callback(*this_.m_parent, buf->base,  nread);
         }
@@ -200,11 +200,11 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
         if (this_.m_close_callback) {
             this_.m_is_open = false;
 
-            if (status.code() == io::StatusCode::END_OF_FILE) {
-                this_.m_close_callback(*this_.m_parent, Status(0)); // OK
+            if (error.code() == io::StatusCode::END_OF_FILE) {
+                this_.m_close_callback(*this_.m_parent, Error(0)); // OK
             } else {
                 // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
-                this_.m_close_callback(*this_.m_parent, status);
+                this_.m_close_callback(*this_.m_parent, error);
             }
 
             this_.m_tcp_stream->data = nullptr;

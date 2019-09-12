@@ -18,8 +18,8 @@ class TcpConnectedClient : protected Disposable,
 public:
     friend class TcpServer;
 
-    using CloseCallback = std::function<void(TcpConnectedClient&, const Status&)>;
-    using EndSendCallback = std::function<void(TcpConnectedClient&, const Status&)>;
+    using CloseCallback = std::function<void(TcpConnectedClient&, const Error&)>;
+    using EndSendCallback = std::function<void(TcpConnectedClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(TcpServer&, TcpConnectedClient&, const char*, std::size_t)>;
 
     IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;

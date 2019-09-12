@@ -47,8 +47,8 @@ void Disposable::Impl::schedule_removal() {
     idle_ptr->data = m_parent;
 
     // TODO: error handling
-    Status init_status = uv_idle_init(reinterpret_cast<uv_loop_t*>(m_loop->raw_loop()), idle_ptr);
-    Status start_status = uv_idle_start(idle_ptr, on_removal);
+    Error init_error = uv_idle_init(reinterpret_cast<uv_loop_t*>(m_loop->raw_loop()), idle_ptr);
+    Error start_error = uv_idle_start(idle_ptr, on_removal);
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////

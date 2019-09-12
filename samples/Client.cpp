@@ -18,9 +18,9 @@ int main(int argc, char* argv[]) {
     }
 
     auto client = new io::TcpClient(loop);
-    client->connect(argv[1], std::atoi(argv[2]), [](io::TcpClient& client, const io::Status& status) {
+    client->connect(argv[1], std::atoi(argv[2]), [](io::TcpClient& client, const io::Error& error) {
         std::cout << "Connected!!!" << std::endl;
-        client.send_data("Hello world!\n", [](io::TcpClient& client, const io::Status& status) {
+        client.send_data("Hello world!\n", [](io::TcpClient& client, const io::Error& error) {
             // TODO: check status
             std::cout << "Data sent!!!" << std::endl;
 

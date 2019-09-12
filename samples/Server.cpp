@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 
         if (message.find("ls") != std::string::npos ) {
             auto dir = new io::Dir(loop);
-            dir->open(".", [&client](io::Dir& dir, const io::Status& status) {
+            dir->open(".", [&client](io::Dir& dir, const io::Error& error) {
                 std::cout << "Opened dir: " << dir.path() << std::endl;
 
                 dir.read([&client] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
@@ -121,9 +121,9 @@ int main(int argc, char* argv[]) {
             auto file_name = extract_parameter(message);
             auto file_ptr = new io::File(loop);
 
-            file_ptr->open(file_name, [&client](io::File& file, const io::Status& status) {
-                if (status.fail()) {
-                    std::cerr << status.as_string() << " " << file.path() << std::endl;
+            file_ptr->open(file_name, [&client](io::File& file, const io::Error& error) {
+                if (error) {
+                    std::cerr << error.string() << " " << file.path() << std::endl;
                     file.schedule_removal();
                     return;
                 }
@@ -134,18 +134,18 @@ int main(int argc, char* argv[]) {
                     std::cout << "File size is: " << stat.size << std::endl;
                 });
 
-                client.set_close_callback([&file](io::TcpConnectedClient& client, const io::Status& status){
+                client.set_close_callback([&file](io::TcpConnectedClient& client, const io::Error& error){
                     file.schedule_removal();
                 });
 
-                file.read([&client](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+                file.read([&client](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
                     //std::cout.write(buf.get(), size);
 
                     if (client.pending_write_requesets() > 0) {
                         //std::cout << "pending_write_requesets " << client.pending_write_requesets() << std::endl;
                     }
 
-                    client.send_data(chunk.buf, chunk.size, [&file](io::TcpConnectedClient& client, const io::Status& status) {
+                    client.send_data(chunk.buf, chunk.size, [&file](io::TcpConnectedClient& client, const io::Error& error) {
                         static int counter = 0;
                         std::cout << "TcpClient after send counter: " << counter++ << std::endl;
 
@@ -169,14 +169,14 @@ int main(int argc, char* argv[]) {
         }
     };
 
-    auto status = server.bind("0.0.0.0", 1234);
-    if (status != 0) {
-        std::cerr << "[Server] Failed to bind. Reason: " << status.as_string() << std::endl;
+    auto error = server.bind("0.0.0.0", 1234);
+    if (error) {
+        std::cerr << "[Server] Failed to bind. Reason: " << error.string() << std::endl;
         return 1;
     }
 
-    if ((status = server.listen(on_new_connection, on_data_read)) != 0) {
-        std::cerr << "[Server] Failed to listen. Reason: " << status.as_string() << std::endl;
+    if ((error = server.listen(on_new_connection, on_data_read))) {
+        std::cerr << "[Server] Failed to listen. Reason: " << error.string() << std::endl;
         return 1;
     }
 

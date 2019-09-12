@@ -38,9 +38,9 @@ TEST_F(DirTest, open_then_close) {
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
 
-    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status& status) {
-        EXPECT_TRUE(status.ok());
-        EXPECT_EQ(io::StatusCode::OK, status.code());
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Error& error) {
+        EXPECT_FALSE(error);
+        EXPECT_EQ(io::StatusCode::OK, error.code());
 
         EXPECT_EQ(m_tmp_test_dir, dir.path().string());
         EXPECT_TRUE(dir.is_open());
@@ -63,9 +63,9 @@ TEST_F(DirTest, open_not_existing) {
     bool callback_called = false;
 
     auto path = (m_tmp_test_dir / "not_exists").string();
-    dir->open(path, [&](io::Dir& dir, const io::Status& status) {
-        EXPECT_FALSE(status.ok());
-        EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status.code());
+    dir->open(path, [&](io::Dir& dir, const io::Error& error) {
+        EXPECT_TRUE(error);
+        EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, error.code());
 
         callback_called = true;
 
@@ -102,7 +102,7 @@ TEST_F(DirTest, list_elements) {
 
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
-    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status&) {
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Error&) {
         dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
             if (std::string(name) == "dir_1") {
                 EXPECT_FALSE(dir_1_listed);
@@ -150,7 +150,7 @@ TEST_F(DirTest, empty_dir) {
     bool read_called = false;
     bool end_read_called = false;
 
-    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status&) {
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Error&) {
         dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
             read_called = true;
         }, // end_read
@@ -178,7 +178,7 @@ TEST_F(DirTest, no_read_callback) {
     // TODO: rename???? to "list"
     bool end_read_called = false;
 
-    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status&) {
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Error&) {
         dir.read(nullptr,
         [&](io::Dir& dir) { // end_read
             end_read_called = true;
@@ -206,7 +206,7 @@ TEST_F(DirTest, list_symlink) {
 
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
-    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status&) {
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Error&) {
         dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
             if (std::string(name) == "some_file") {
                 EXPECT_EQ(io::DirectoryEntryType::FILE, entry_type);
@@ -232,8 +232,8 @@ TEST_F(DirTest, list_block_and_char_devices) {
 
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
-    dir->open("/dev", [&](io::Dir& dir, const io::Status& status) {
-        ASSERT_TRUE(status.ok());
+    dir->open("/dev", [&](io::Dir& dir, const io::Error& error) {
+        EXPECT_TRUE(!error);
 
         dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
             if (entry_type == io::DirectoryEntryType::BLOCK) {
@@ -256,8 +256,8 @@ TEST_F(DirTest, list_domain_sockets) {
 
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
-    dir->open("/var/run", [&](io::Dir& dir, const io::Status& status) {
-        ASSERT_TRUE(status.ok());
+    dir->open("/var/run", [&](io::Dir& dir, const io::Error& error) {
+        EXPECT_TRUE(!error);
 
         dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
             if (entry_type == io::DirectoryEntryType::SOCKET) {
@@ -280,8 +280,8 @@ TEST_F(DirTest, list_fifo) {
 
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
-    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Status& status) {
-        ASSERT_TRUE(status.ok());
+    dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Error& error) {
+        EXPECT_TRUE(!error);
 
         dir.read([&](io::Dir& dir, const char* name, io::DirectoryEntryType entry_type) {
             if (entry_type == io::DirectoryEntryType::FIFO) {
@@ -306,9 +306,9 @@ TEST_F(DirTest, make_temp_dir) {
     const std::string template_path = (m_tmp_test_dir / "temp-XXXXXX").string();
 
     io::make_temp_dir(loop, template_path,
-        [&](const std::string& dir, const io::Status& status) {
+        [&](const std::string& dir, const io::Error& error) {
             callback_called = true;
-            EXPECT_TRUE(status.ok());
+            EXPECT_FALSE(error);
             EXPECT_EQ(template_path.size(), dir.size());
             EXPECT_EQ(0, dir.find((m_tmp_test_dir / "temp-").string()));
             EXPECT_TRUE(boost::filesystem::exists(dir));
@@ -330,10 +330,10 @@ TEST_F(DirTest, DISABLED_make_temp_dir_invalid_template) {
     const std::string template_path = (m_tmp_test_dir / "temp-XXXXX").string();
 
     io::make_temp_dir(loop, template_path,
-        [&](const std::string& dir, const io::Status& status) {
+        [&](const std::string& dir, const io::Error& error) {
             callback_called = true;
-            EXPECT_TRUE(status.fail());
-            EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, status.code());
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
         }
     );
 
@@ -351,9 +351,9 @@ TEST_F(DirTest, make_dir) {
     const std::string path = (m_tmp_test_dir / "new_dir").string();
 
     io::make_dir(loop, path,
-        [&](const io::Status& status) {
+        [&](const io::Error& error) {
             callback_called = true;
-            EXPECT_TRUE(status.ok());
+            EXPECT_FALSE(error);
             EXPECT_TRUE(boost::filesystem::exists(path));
         }
     );
@@ -371,10 +371,10 @@ TEST_F(DirTest, make_dir_no_such_dir_error) {
     const std::string path = (m_tmp_test_dir / "no_exists" / "new_dir").string();
 
     io::make_dir(loop, path,
-        [&](const io::Status& status) {
+        [&](const io::Error& error) {
             callback_called = true;
-            EXPECT_TRUE(status.fail());
-            EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status.code());
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, error.code());
         }
     );
 
@@ -391,10 +391,10 @@ TEST_F(DirTest, make_dir_exists_error) {
     const std::string path = (m_tmp_test_dir).string();
 
     io::make_dir(loop, path,
-        [&](const io::Status& status) {
+        [&](const io::Error& error) {
             callback_called = true;
-            EXPECT_TRUE(status.fail());
-            EXPECT_EQ(io::StatusCode::FILE_OR_DIR_ALREADY_EXISTS, status.code());
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::FILE_OR_DIR_ALREADY_EXISTS, error.code());
         }
     );
 
@@ -409,12 +409,12 @@ TEST_F(DirTest, make_dir_empty_path_error) {
     bool callback_called = false;
 
     io::make_dir(loop, "",
-        [&](const io::Status& status) {
+        [&](const io::Error& error) {
             callback_called = true;
-            EXPECT_TRUE(status.fail());
+            EXPECT_TRUE(error);
             // TODO:
             // On Linux io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY is returned here
-            //EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, status.code());
+            //EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
         }
     );
 
@@ -431,10 +431,10 @@ TEST_F(DirTest, make_dir_name_to_long_error) {
     const std::string path = (m_tmp_test_dir / "1234567890qwertyuiopasdfgghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm").string();
 
     io::make_dir(loop, path,
-        [&](const io::Status& status) {
+        [&](const io::Error& error) {
             callback_called = true;
-            EXPECT_TRUE(status.fail());
-            EXPECT_EQ(io::StatusCode::NAME_TOO_LONG, status.code());
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::NAME_TOO_LONG, error.code());
         }
     );
 
@@ -452,12 +452,12 @@ TEST_F(DirTest, make_dir_root_dir_error) {
     bool callback_called = false;
 
     io::make_dir(loop, "/",
-        [&](const io::Status& status) {
+        [&](const io::Error& error) {
             callback_called = true;
-            EXPECT_TRUE(status.fail());
+            EXPECT_TRUE(error);
             // TODO:
             // On Linux another error: io::StatusCode::FILE_OR_DIR_ALREADY_EXISTS
-            //EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, status.code());
+            //EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, error.code());
         }
     );
 
@@ -498,9 +498,9 @@ TEST_F(DirTest, remove_dir) {
 
     io::EventLoop loop;
 
-    io::remove_dir(loop, m_tmp_test_dir.string(), [&](const io::Status& status) {
+    io::remove_dir(loop, m_tmp_test_dir.string(), [&](const io::Error& error) {
         ++callback_call_count;
-        EXPECT_TRUE(status.ok());
+        EXPECT_FALSE(error);
         EXPECT_FALSE(boost::filesystem::exists(m_tmp_test_dir));
     });
 
@@ -535,9 +535,9 @@ TEST_F(DirTest, remove_dir_with_progress) {
     std::set<boost::filesystem::path> actual_paths;
 
     io::EventLoop loop;
-    io::remove_dir(loop, m_tmp_test_dir.string(), [&](const io::Status& status) {
+    io::remove_dir(loop, m_tmp_test_dir.string(), [&](const io::Error& error) {
         ++remove_callback_call_count;
-        EXPECT_TRUE(status.ok());
+        EXPECT_FALSE(error);
         EXPECT_FALSE(boost::filesystem::exists(m_tmp_test_dir));
     },
     [&](const std::string& path) {
@@ -571,10 +571,10 @@ TEST_F(DirTest, remove_dir_not_exist) {
     io::EventLoop loop;
 
     auto remove_path = m_tmp_test_dir / "not_exist";
-    io::remove_dir(loop, remove_path.string(), [&](const io::Status& status) {
+    io::remove_dir(loop, remove_path.string(), [&](const io::Error& error) {
         ++callback_call_count;
-        EXPECT_TRUE(status.fail());
-        EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status.code());
+        EXPECT_TRUE(error);
+        EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, error.code());
         EXPECT_TRUE(boost::filesystem::exists(m_tmp_test_dir));
     });
 
@@ -589,10 +589,10 @@ TEST_F(DirTest, remove_dir_not_exist_and_progress_callback) {
     io::EventLoop loop;
 
     auto remove_path = m_tmp_test_dir / "not_exist";
-    io::remove_dir(loop, remove_path.string(), [&](const io::Status& status) {
+    io::remove_dir(loop, remove_path.string(), [&](const io::Error& error) {
         ++callback_call_count;
-        EXPECT_TRUE(status.fail());
-        EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status.code());
+        EXPECT_TRUE(error);
+        EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, error.code());
         EXPECT_TRUE(boost::filesystem::exists(m_tmp_test_dir));
     },
     [&](const std::string& path) {

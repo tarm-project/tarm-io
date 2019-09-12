@@ -17,7 +17,7 @@ namespace io {
 class Dir : public Disposable,
             public UserDataHolder {
 public:
-    using OpenCallback = std::function<void(Dir&, const Status&)>;
+    using OpenCallback = std::function<void(Dir&, const Error&)>;
     using ReadCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
     using CloseCallback = std::function<void(Dir&)>;
     using EndReadCallback = std::function<void(Dir&)>;
@@ -43,16 +43,16 @@ private:
 };
 
 // TODO: transfer mode ???
-using MakeTempDirCallback = std::function<void(const std::string&, const Status&)>;
+using MakeTempDirCallback = std::function<void(const std::string&, const Error&)>;
 IO_DLL_PUBLIC
 void make_temp_dir(EventLoop& loop, const Path& name_template, MakeTempDirCallback callback);
 
 // TODO: transfer mode
-using MakeDirCallback = std::function<void(const Status&)>;
+using MakeDirCallback = std::function<void(const Error&)>;
 IO_DLL_PUBLIC
 void make_dir(EventLoop& loop, const Path& path, MakeDirCallback callback);
 
-using RemoveDirCallback = std::function<void(const Status&)>;
+using RemoveDirCallback = std::function<void(const Error&)>;
 using ProgressCallback = std::function<void(const std::string&)>;
 IO_DLL_PUBLIC
 void remove_dir(EventLoop& loop, const Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback = nullptr);

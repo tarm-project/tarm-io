@@ -75,11 +75,11 @@ TEST_F(FileTest, open_existing) {
     ASSERT_FALSE(file->is_open());
     EXPECT_EQ("", file->path());
 
-    file->open(path, [&](io::File& file, const io::Status& status) {
+    file->open(path, [&](io::File& file, const io::Error& error) {
         ASSERT_TRUE(file.is_open());
         EXPECT_EQ(path, file.path());
 
-        open_status_code = status.code();
+        open_status_code = error.code();
     });
     EXPECT_FALSE(file->is_open());
 
@@ -100,14 +100,14 @@ TEST_F(FileTest, DISABLED_double_open) {
     bool opened_2 = false;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& status) {
+    file->open(path, [&](io::File& file, const io::Error& error) {
         opened_1 = true;
     });
 
     // TODO: fixme, data race possible here. The first open callback already triggered work in libuv
 
     // Overwriting callback and state, previous one will never be executed
-    file->open(path, [&](io::File& file, const io::Status& status) {
+    file->open(path, [&](io::File& file, const io::Error& error) {
         opened_2 = true;
         file.schedule_removal();
     });
@@ -129,10 +129,10 @@ TEST_F(FileTest, open_in_open_callback) {
     bool opened_2 = false;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& status) {
+    file->open(path, [&](io::File& file, const io::Error& error) {
         opened_1 = true;
 
-        file.open(path, [&](io::File& file, const io::Status& status) {
+        file.open(path, [&](io::File& file, const io::Error& error) {
             opened_2 = true;
             file.schedule_removal();
         });
@@ -154,12 +154,12 @@ TEST_F(FileTest, open_not_existing) {
     io::StatusCode status_code = io::StatusCode::UNDEFINED;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& status) {
+    file->open(path, [&](io::File& file, const io::Error& error) {
         EXPECT_FALSE(file.is_open());
         EXPECT_EQ(path, file.path());
 
-        opened = status.ok();
-        status_code = status.code();
+        opened = !error;
+        status_code = error.code();
     });
 
     ASSERT_EQ(0, loop.run());
@@ -179,12 +179,12 @@ TEST_F(FileTest, open_existing_open_not_existing) {
 
     io::EventLoop loop;
     auto file = new io::File(loop);
-    file->open(existing_path, [&not_existing_path](io::File& file, const io::Status& status) {
-        EXPECT_TRUE(status.ok());
+    file->open(existing_path, [&not_existing_path](io::File& file, const io::Error& error) {
+        EXPECT_FALSE(error);
         EXPECT_TRUE(file.is_open());
 
-        file.open(not_existing_path, [](io::File& file, const io::Status& status) {
-            EXPECT_FALSE(status.ok());
+        file.open(not_existing_path, [](io::File& file, const io::Error& error) {
+            EXPECT_TRUE(error);
             EXPECT_FALSE(file.is_open());
         });
     });
@@ -200,7 +200,7 @@ TEST_F(FileTest, close_in_open_callback) {
     io::EventLoop loop;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& status) {
+    file->open(path, [&](io::File& file, const io::Error& error) {
         EXPECT_TRUE(file.is_open());
 
         file.close();
@@ -230,7 +230,7 @@ TEST_F(FileTest, double_close) {
     io::EventLoop loop;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& status) {
+    file->open(path, [&](io::File& file, const io::Error& error) {
         EXPECT_TRUE(file.is_open());
 
         file.close();
@@ -257,15 +257,15 @@ TEST_F(FileTest, simple_read) {
 
     io::EventLoop loop;
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& open_status) {
-        open_status_code = open_status.code();
+    file->open(path, [&](io::File& file, const io::Error& open_error) {
+        open_status_code = open_error.code();
 
-        if (open_status.fail()) {
+        if (open_error) {
             return;
         }
 
-        file.read([&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
-            read_status_code = read_status.code();
+        file.read([&](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
+            read_status_code = read_error.code();
             ASSERT_EQ(SIZE, chunk.size);
 
             EXPECT_TRUE(file.is_open());
@@ -297,10 +297,10 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
     auto path_2 = create_file_for_read(m_tmp_test_dir, SIZE_2);
     ASSERT_FALSE(path_2.empty());
 
-    std::function<void(io::File&, const io::Status&)> open;
+    std::function<void(io::File&, const io::Error&)> open;
 
-    auto read = [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
-        ASSERT_TRUE(read_status.ok());
+    auto read = [&](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
+        ASSERT_TRUE(!read_error);
         ASSERT_EQ(0, chunk.size % 4);
 
         for(std::size_t i = 0; i < chunk.size / 4; i ++) {
@@ -318,8 +318,8 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
         }
     };
 
-    open = [&](io::File& file, const io::Status& open_status) {
-        ASSERT_TRUE(open_status.ok());
+    open = [&](io::File& file, const io::Error& open_error) {
+        ASSERT_TRUE(!open_error);
 
         file.read(read, end_read);
     };
@@ -342,10 +342,10 @@ TEST_F(FileTest, read_10mb_file) {
 
     io::EventLoop loop;
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& open_status) {
-        ASSERT_FALSE(open_status.fail());
+    file->open(path, [&](io::File& file, const io::Error& open_error) {
+        ASSERT_FALSE(open_error);
 
-        file.read([&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+        file.read([&](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
             ASSERT_EQ(READ_BUF_SIZE, chunk.size);
 
             for (size_t i = 0; i < chunk.size; i += 4) {
@@ -373,8 +373,8 @@ TEST_F(FileTest, read_not_open_file) {
     io::EventLoop loop;
     auto file = new io::File(loop);
 
-    file->read([&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
-        read_status_code = read_status.code();
+    file->read([&](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
+        read_status_code = read_error.code();
     },
     [&](io::File& file) {
         end_read_called = true;
@@ -398,14 +398,14 @@ TEST_F(FileTest, sequential_read_data_past_eof) {
 
     io::EventLoop loop;
     auto file = new io::File(loop);
-    file->open(path, [&second_read_called](io::File& file, const io::Status& open_status) {
-        ASSERT_TRUE(open_status.ok());
+    file->open(path, [&second_read_called](io::File& file, const io::Error& open_error) {
+        ASSERT_TRUE(!open_error);
 
-        file.read([](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
-            ASSERT_TRUE(read_status.ok());
+        file.read([](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
+            ASSERT_TRUE(!read_error);
         },
         [&second_read_called](io::File& file) { // end read
-            file.read([&second_read_called](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+            file.read([&second_read_called](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
                 second_read_called = true;
             });
         });
@@ -428,11 +428,11 @@ TEST_F(FileTest, close_in_read) {
     std::size_t counter = 0;
     bool end_read_called = false;
 
-    file->open(path, [&counter, &end_read_called](io::File& file, const io::Status& open_status) {
-        ASSERT_TRUE(open_status.ok());
+    file->open(path, [&counter, &end_read_called](io::File& file, const io::Error& open_error) {
+        ASSERT_TRUE(!open_error);
 
-        file.read([&counter](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
-            ASSERT_TRUE(read_status.ok());
+        file.read([&counter](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
+            ASSERT_TRUE(!read_error);
             EXPECT_LE(counter, 5);
 
             if (counter == 5) {
@@ -465,11 +465,11 @@ TEST_F(FileTest, DISABLED_read_sequential_of_closed_file) {
     bool read_called = false;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& status) {
-        ASSERT_TRUE(status.ok());
+    file->open(path, [&](io::File& file, const io::Error& error) {
+        EXPECT_TRUE(!error);
 
-        file.read([&](io::File&, const io::DataChunk& chunk, const io::Status& status) {
-            EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, status.code());
+        file.read([&](io::File&, const io::DataChunk& chunk, const io::Error& error) {
+            EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, error.code());
 
             read_called = true;
         });
@@ -494,15 +494,15 @@ TEST_F(FileTest, read_block) {
 
     io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
 
-    file->open(path, [&](io::File& file, const io::Status& open_status) {
-        ASSERT_TRUE(open_status.ok());
+    file->open(path, [&](io::File& file, const io::Error& open_error) {
+        ASSERT_TRUE(!open_error);
 
-        file.read_block(8, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+        file.read_block(8, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
             ASSERT_NE(nullptr, chunk.buf);
             ASSERT_EQ(8, chunk.offset);
             ASSERT_EQ(16, chunk.size);
 
-            read_status_code = read_status.code();
+            read_status_code = read_error.code();
 
             EXPECT_EQ(2, *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + 0));
             EXPECT_EQ(3, *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + 4));
@@ -528,11 +528,11 @@ TEST_F(FileTest, read_block_past_edge) {
 
     io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
 
-    file->open(path, [&](io::File& file, const io::Status& open_status) {
-        ASSERT_TRUE(open_status.ok());
+    file->open(path, [&](io::File& file, const io::Error& open_error) {
+        ASSERT_TRUE(!open_error);
 
-        file.read_block(120, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
-            read_status_code = read_status.code();
+        file.read_block(120, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
+            read_status_code = read_error.code();
             EXPECT_EQ(8, chunk.size);
 
             EXPECT_EQ(30, *reinterpret_cast<const std::uint32_t*>(chunk.buf.get() + 0));
@@ -559,12 +559,12 @@ TEST_F(FileTest, DISABLED_read_block_not_existing_chunk) {
 
     io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
 
-    file->open(path, [&](io::File& file, const io::Status& open_status) {
-        ASSERT_TRUE(open_status.ok());
+    file->open(path, [&](io::File& file, const io::Error& open_error) {
+        ASSERT_TRUE(!open_error);
 
-        file.read_block(123456, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Status& read_status) {
+        file.read_block(123456, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
             // TODO: this is not called
-            read_status_code = read_status.code();
+            read_status_code = read_error.code();
         });
     });
 
@@ -581,12 +581,12 @@ TEST_F(FileTest, read_block_not_opened) {
     io::StatusCode read_status = io::StatusCode::UNDEFINED;
 
     auto file = new io::File(loop);
-    file->read_block(0, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Status& status) {
+    file->read_block(0, 16, [&](io::File& file, const io::DataChunk& chunk, const io::Error& error) {
         EXPECT_EQ(nullptr, chunk.buf);
         EXPECT_EQ(0, chunk.size);
-        EXPECT_FALSE(status.ok());
+        EXPECT_TRUE(error);
 
-        read_status = status.code();
+        read_status = error.code();
     });
 
     ASSERT_EQ(0, loop.run());
@@ -606,11 +606,11 @@ TEST_F(FileTest, DISABLED_read_block_of_closed_file) {
     bool read_called = false;
 
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& status) {
-        ASSERT_TRUE(status.ok());
+    file->open(path, [&](io::File& file, const io::Error& error) {
+        EXPECT_TRUE(!error);
 
-        file.read_block(1024, 1024, [&](io::File&, const io::DataChunk& chunk, const io::Status& status) {
-            EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, status.code());
+        file.read_block(1024, 1024, [&](io::File&, const io::DataChunk& chunk, const io::Error& error) {
+            EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, error.code());
 
             read_called = true;
         });
@@ -683,13 +683,13 @@ TEST_F(FileTest, slow_read_data_consumer) {
     std::size_t bytes_read = 0;
 
     auto file = new io::File(loop);
-    file->open(path, [&captured_bufs, &mutex, &exit_reseting_thread, &bytes_read](io::File& file, const io::Status& open_status) {
-        ASSERT_TRUE(open_status.ok());
+    file->open(path, [&captured_bufs, &mutex, &exit_reseting_thread, &bytes_read](io::File& file, const io::Error& open_error) {
+        ASSERT_TRUE(!open_error);
 
         file.read([&captured_bufs, &mutex, &bytes_read](io::File& file,
                                                         const io::DataChunk& chunk,
-                                                        const io::Status& read_status){
-            ASSERT_TRUE(read_status.ok());
+                                                        const io::Error& read_error){
+            ASSERT_TRUE(!read_error);
             bytes_read += chunk.size;
 
             std::lock_guard<std::mutex> guard(mutex);
@@ -767,10 +767,10 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
         t.join();
     });
 
-    file->open(path, [&end_read_called, &captured_buf, &mutex](io::File& file, const io::Status& open_status) {
-        ASSERT_TRUE(open_status.ok());
+    file->open(path, [&end_read_called, &captured_buf, &mutex](io::File& file, const io::Error& open_error) {
+        ASSERT_TRUE(!open_error);
 
-        file.read([&captured_buf, &mutex](io::File& file, const io::DataChunk& chunk, const io::Status& read_status){
+        file.read([&captured_buf, &mutex](io::File& file, const io::DataChunk& chunk, const io::Error& read_error){
             {
                 std::lock_guard<decltype(mutex)> guard(mutex);
                 captured_buf = chunk.buf;
@@ -799,8 +799,8 @@ TEST_F(FileTest, stat_size) {
 
     io::EventLoop loop;
     auto file = new io::File(loop);
-    file->open(path, [&SIZE, &stat_call_count](io::File& file, const io::Status& status) {
-        ASSERT_TRUE(status.ok());
+    file->open(path, [&SIZE, &stat_call_count](io::File& file, const io::Error& error) {
+        EXPECT_TRUE(!error);
 
         file.stat([&SIZE, &stat_call_count](io::File& file, const io::StatData& stat){
             EXPECT_EQ(SIZE, stat.size);
@@ -830,8 +830,8 @@ TEST_F(FileTest, stat_time) {
 
     io::EventLoop loop;
     auto file = new io::File(loop);
-    file->open(path, [&](io::File& file, const io::Status& status) {
-        ASSERT_TRUE(status.ok());
+    file->open(path, [&](io::File& file, const io::Error& error) {
+        EXPECT_TRUE(!error);
 
         file.stat([&](io::File& file, const io::StatData& stat){
             EXPECT_LE(std::abs(stat.last_access_time.seconds - seconds), 1l);
@@ -856,9 +856,9 @@ TEST_F(FileTest, try_open_dir) {
 
     io::EventLoop loop;
     auto file = new io::File(loop);
-    file->open(m_tmp_test_dir, [&](io::File& file, const io::Status& status) {
-        ASSERT_FALSE(status.ok());
-        EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, status.code());
+    file->open(m_tmp_test_dir, [&](io::File& file, const io::Error& error) {
+        ASSERT_TRUE(error);
+        EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, error.code());
     });
 
     ASSERT_EQ(0, loop.run());
