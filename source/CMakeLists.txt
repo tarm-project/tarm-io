@@ -69,6 +69,16 @@ endif()
 
 add_dependencies(io libuv)
 
+# TODO: make optional
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SSL REQUIRED libssl)
+pkg_check_modules(CRYPTO REQUIRED libcrypto)
+
+target_include_directories(io PUBLIC $<BUILD_INTERFACE:${SSL_INCLUDEDIR}>)
+target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CRYPTO_INCLUDEDIR}>)
+target_link_libraries(io PUBLIC ${SSL_LIBRARIES})
+target_link_libraries(io PUBLIC ${CRYPTO_LIBRARIES})
+
 # installation
 # Unfortunately can not use target property PUBLIC_HEADER here
 # because of https://gitlab.kitware.com/cmake/cmake/issues/16739

@@ -11,5 +11,10 @@ protected:
 };
 
 TEST_F(TlsTcpClientServerTest,  constructor) {
+    io::EventLoop loop;
+    auto client = new io::TlsTcpClient(loop);
 
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
 }

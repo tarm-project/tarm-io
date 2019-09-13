@@ -11,6 +11,8 @@ namespace io {
 class TlsTcpClient : public Disposable {
 public:
     IO_DLL_PUBLIC TlsTcpClient(EventLoop& loop);
+
+protected:
     IO_DLL_PUBLIC ~TlsTcpClient();
 
 private:

@@ -1,5 +1,7 @@
 #include "TlsTcpClient.h"
 
+#include <openssl/ssl.h>
+
 namespace io {
 
 class TlsTcpClient::Impl {
@@ -21,6 +23,7 @@ TlsTcpClient::Impl::Impl(EventLoop& loop, TlsTcpClient& parent) :
 TlsTcpClient::TlsTcpClient(EventLoop& loop) :
     Disposable(loop),
     m_impl(new Impl(loop, *this)) {
+    SSL_load_error_strings();
 }
 
 TlsTcpClient::~TlsTcpClient() {
