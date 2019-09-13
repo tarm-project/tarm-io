@@ -11,10 +11,22 @@ protected:
 };
 
 TEST_F(TlsTcpClientServerTest,  constructor) {
+    //this->log_to_stdout();
+
     io::EventLoop loop;
     auto client = new io::TlsTcpClient(loop);
 
-    client->schedule_removal();
+    client->connect("64.233.162.113", 443,
+        [](io::TlsTcpClient& client, const io::Error& error) {
+            std::cout << "Connected!" << std::endl;
+            client.send_data("GET / HTTP/1.0\r\n\r\n");
+        },
+        [](io::TlsTcpClient& client, const char* buf, size_t size) {
+            std::cout.write(buf, size);
+        },
+        [](io::TlsTcpClient& client, const io::Error& error) {
+            client.schedule_removal();
+        });
 
     ASSERT_EQ(0, loop.run());
 }
