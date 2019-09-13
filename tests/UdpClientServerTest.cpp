@@ -7,10 +7,6 @@
 #include "io/Timer.h"
 
 #include <cstdint>
-/*#include <thread>
-#include <vector>
-#include <memory>
-*/
 
 struct UdpClientServerTest : public testing::Test,
                              public LogRedirector {

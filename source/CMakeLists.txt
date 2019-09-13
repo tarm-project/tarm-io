@@ -26,6 +26,7 @@ list(APPEND IO_SOURCE_LIST
         io/TcpClient.cpp
         io/TcpConnectedClient.cpp
         io/TcpServer.cpp
+        io/TlsTcpClient.cpp
         io/UdpClient.cpp
         io/UdpClient.h
         io/UdpServer.h
