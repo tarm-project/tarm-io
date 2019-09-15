@@ -34,6 +34,8 @@ TEST_F(TlsTcpClientServerTest,  constructor) {
 */
 
 TEST_F(TlsTcpClientServerTest, constructor) {
+    this->log_to_stdout();
+
     io::EventLoop loop;
 
     io::TlsTcpServer server(loop);

@@ -750,3 +750,6 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
 // send data of size 0
 
 // investigate from libuv: test-tcp-write-to-half-open-connection.c
+
+
+// TODO: send data with size -1 will trigger Invalid Argument error
