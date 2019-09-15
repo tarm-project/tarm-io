@@ -75,6 +75,7 @@ bool TlsTcpClient::Impl::init_ssl() {
         return false;
     }
 
+    // TODO: support different versions of TLS
     m_ssl_ctx = SSL_CTX_new(TLSv1_2_client_method());
     if (m_ssl_ctx == nullptr) {
         IO_LOG(m_loop, ERROR, "Failed to init SSL context");

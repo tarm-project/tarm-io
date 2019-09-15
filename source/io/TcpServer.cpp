@@ -5,6 +5,9 @@
 
 #include <assert.h>
 
+// TODO: make this optional include
+#include <boost/pool/pool.hpp>
+
 // TODO: move
 #include <iostream>
 #include <string>

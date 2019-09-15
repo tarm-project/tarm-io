@@ -1,13 +1,9 @@
 #pragma once
 
+#include "EventLoop.h"
 #include "Export.h"
 #include "TcpConnectedClient.h"
 #include "UserDataHolder.h"
-
-// TODO: forward declare this???
-#include "EventLoop.h"
-
-#include <boost/pool/pool.hpp>
 
 #include <cstdint>
 #include <functional>
@@ -19,7 +15,7 @@ namespace io {
 
 class TcpConnectedClient;
 
-class TcpServer : public UserDataHolder{
+class TcpServer : public UserDataHolder {
 public:
     friend class TcpConnectedClient;
 
