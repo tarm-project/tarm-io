@@ -81,6 +81,16 @@ bool TlsTcpClient::Impl::init_ssl() {
         return false;
     }
 
+    result = SSL_CTX_set_cipher_list(m_ssl_ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
+    if (result == 0) {
+        IO_LOG(m_loop, ERROR, "Failed to set siphers list");
+        return false;
+    }
+
+    // TODO: most likely need to set also
+    // SSL_CTX_set_verify
+    // SSL_CTX_set_verify_depth
+
     m_ssl = SSL_new(m_ssl_ctx);
     if (m_ssl == nullptr) {
         IO_LOG(m_loop, ERROR, "Failed to create SSL");
