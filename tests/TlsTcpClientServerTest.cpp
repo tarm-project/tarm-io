@@ -45,6 +45,25 @@ TEST_F(TlsTcpClientServerTest, constructor) {
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
         std::cout.write(buf, size);
+
+        std::string str(buf);
+        if (str.find("GET / HTTP/1.1") == 0) {
+            std::cout << "!!!" << std::endl;
+
+            std::string answer = "HTTP/1.1 200 OK\r\n"
+            "Date: Tue, 28 May 2019 13:13:01 GMT\r\n"
+            "Server: My\r\n"
+            "Content-Length: 40\r\n"
+            "Connection: keep-alive\r\n"
+            "Content-Type: text/html; charset=utf-8\r\n"
+            "\r\n"
+            "<html><body>Hello world!!!</body></html>";
+
+
+            client.send_data(answer);
+        } else {
+            client.close();
+        }
     });
 
     ASSERT_EQ(0, loop.run());

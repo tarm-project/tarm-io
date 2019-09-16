@@ -268,8 +268,8 @@ bool TlsTcpClient::Impl::is_open() const {
 }
 
 void TlsTcpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
-    const auto handshake_result = SSL_write(m_ssl, buffer.get(), size);
-    if (handshake_result <= 0) {
+    const auto write_result = SSL_write(m_ssl, buffer.get(), size);
+    if (write_result <= 0) {
         IO_LOG(m_loop, ERROR, "Failed to write buf of size", size);
         // TODO: handle error
         return;
