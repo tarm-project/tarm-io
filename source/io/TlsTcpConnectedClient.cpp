@@ -66,7 +66,8 @@ void TlsTcpConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback 
 void TlsTcpConnectedClient::Impl::do_handshake() {
     IO_LOG(m_loop, TRACE, "Doing handshake");
 
-    auto handshake_result = SSL_accept(m_ssl);
+    //auto handshake_result = SSL_accept(m_ssl);
+    auto handshake_result = SSL_do_handshake(m_ssl);
     if (handshake_result < 0) {
         auto error = SSL_get_error(m_ssl, handshake_result);
 
@@ -197,6 +198,12 @@ bool TlsTcpConnectedClient::Impl::init_ssl() {
         return false;
     }
 
+    result = SSL_CTX_check_private_key(m_ssl_ctx);
+    if (!result) {
+        IO_LOG(m_loop, ERROR, "Failed to check private key");
+        return false;
+    }
+
     // TODO: most likely need to set also
     // SSL_CTX_set_verify
     // SSL_CTX_set_verify_depth
@@ -220,12 +227,6 @@ bool TlsTcpConnectedClient::Impl::init_ssl() {
     }
 
     SSL_set_bio(m_ssl, m_ssl_read_bio, m_ssl_write_bio);
-
-    result = SSL_CTX_check_private_key(m_ssl_ctx);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to check private key");
-        return false;
-    }
 
     IO_LOG(m_loop, DEBUG, "SSL inited");
 
