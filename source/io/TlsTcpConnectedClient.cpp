@@ -75,9 +75,14 @@ void TlsTcpConnectedClient::Impl::do_handshake() {
         } else if (error == SSL_ERROR_WANT_WRITE) {
             IO_LOG(m_loop, TRACE, "SSL_ERROR_WANT_WRITE");
         } else {
-            char buf[4096];
-            ERR_error_string_n(SSL_get_error(m_ssl, error), buf, 4096);
-            IO_LOG(m_loop, ERROR, buf);
+            //char buf[4096];
+            //ERR_error_string_n(SSL_get_error(m_ssl, error), buf, 4096);
+            //IO_LOG(m_loop, ERROR, buf);
+
+            char msg[1024];
+            ERR_error_string_n(ERR_get_error(), msg, sizeof(msg));
+            printf("%s %s %s %s\n", msg, ERR_lib_error_string(0), ERR_func_error_string(0), ERR_reason_error_string(0));
+
             // TODO: error handling here
         }
     } else if (handshake_result == 1) {
@@ -115,22 +120,23 @@ bool TlsTcpConnectedClient::Impl::init_ssl() {
     }
 
     // TODO: support different versions of TLS
-    //m_ssl_ctx = SSL_CTX_new(TLSv1_2_server_method());
     m_ssl_ctx = SSL_CTX_new(TLSv1_2_server_method());
     if (m_ssl_ctx == nullptr) {
         IO_LOG(m_loop, ERROR, "Failed to init SSL context");
         return false;
     }
 
+    // TODO: remove ???
+    SSL_CTX_set_ecdh_auto(m_ssl_ctx, 1);
+
     // TODO: remove this
     SSL_CTX_set_verify(m_ssl_ctx, SSL_VERIFY_NONE, NULL);
 
-    /*
     result = SSL_CTX_set_cipher_list(m_ssl_ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
     if (result == 0) {
         IO_LOG(m_loop, ERROR, "Failed to set siphers list");
         return false;
-    }*/
+    }
 
     // TODO: most likely need to set also
     // SSL_CTX_set_verify
