@@ -68,6 +68,12 @@ void TlsTcpConnectedClient::Impl::do_handshake() {
 
     //auto handshake_result = SSL_accept(m_ssl);
     auto handshake_result = SSL_do_handshake(m_ssl);
+
+    int write_pending = BIO_pending(m_ssl_write_bio);
+    int read_pending = BIO_pending(m_ssl_read_bio);
+    IO_LOG(m_loop, TRACE, "write_pending", write_pending);
+    IO_LOG(m_loop, TRACE, "read_pending", read_pending);
+
     if (handshake_result < 0) {
         auto error = SSL_get_error(m_ssl, handshake_result);
 
@@ -95,6 +101,16 @@ void TlsTcpConnectedClient::Impl::do_handshake() {
         }
     } else if (handshake_result == 1) {
         IO_LOG(m_loop, TRACE, "Connected!!!!");
+
+        if (write_pending) {
+            const std::size_t BUF_SIZE = 4096;
+            std::shared_ptr<char> buf(new char[BUF_SIZE], [](const char* p) { delete[] p; });
+            const auto size = BIO_read(m_ssl_write_bio, buf.get(), BUF_SIZE);
+
+            IO_LOG(m_loop, TRACE, "Getting data from SSL and sending to server, size:", size);
+            m_tcp_client->send_data(buf, size);
+        }
+
         m_ssl_handshake_complete = true;
 
         //if (m_connect_callback) {
