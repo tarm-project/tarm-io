@@ -149,18 +149,20 @@ void TlsTcpConnectedClient::Impl::on_data_receive(const char* buf, std::size_t s
 }
 
 bool TlsTcpConnectedClient::Impl::init_ssl() {
-    int result = 0;
-    /*
     ERR_load_crypto_strings();
     SSL_load_error_strings();
     int result = SSL_library_init();
-    */
-    SSL_load_error_strings();
-    OpenSSL_add_ssl_algorithms();
-    //if (!result) {
-    //    IO_LOG(m_loop, ERROR, "Failed to init OpenSSL");
-    //    return false;
-    //}
+
+    //SSL_load_error_strings();
+    //OpenSSL_add_ssl_algorithms();
+    if (!result) {
+        IO_LOG(m_loop, ERROR, "Failed to init OpenSSL");
+        return false;
+    }
+
+    OpenSSL_add_all_algorithms();
+    //OpenSSL_add_all_ciphers();
+    //OpenSSL_add_all_digests();
 
     // TODO: support different versions of TLS
     m_ssl_ctx = SSL_CTX_new(TLSv1_2_server_method());
