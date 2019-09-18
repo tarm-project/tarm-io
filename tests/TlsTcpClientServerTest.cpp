@@ -56,11 +56,11 @@ TEST_F(TlsTcpClientServerTest, constructor) {
             std::string answer = "HTTP/1.1 200 OK\r\n"
             "Date: Tue, 28 May 2019 13:13:01 GMT\r\n"
             "Server: My\r\n"
-            "Content-Length: 40\r\n"
+            "Content-Length: 41\r\n"
             "Connection: keep-alive\r\n"
             "Content-Type: text/html; charset=utf-8\r\n"
             "\r\n"
-            "<html><body>Hello world!!!</body></html>";
+            "<html><body>Hello world!!!" + std::to_string(::rand() % 10) + "</body></html>";
 
 
             client.send_data(answer);

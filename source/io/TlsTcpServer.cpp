@@ -5,6 +5,8 @@
 #include <openssl/pem.h>
 
 #include <iostream>
+#include <memory>
+#include <cstdio>
 
 namespace io {
 
@@ -29,6 +31,9 @@ protected: // callbacks
     void on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const char* buf, std::size_t size);
 
 private:
+    using X509Ptr = std::unique_ptr<::X509, decltype(&::X509_free)>;
+    using EvpPkeyPtr = std::unique_ptr<::EVP_PKEY, decltype(&::EVP_PKEY_free)>;
+
     TlsTcpServer* m_parent;
     EventLoop* m_loop;
     TcpServer* m_tcp_server;
@@ -36,8 +41,8 @@ private:
     Path m_certificate_path;
     Path m_private_key_path;
 
-    X509* m_certificate;
-    EVP_PKEY* m_private_key;
+    X509Ptr m_certificate;
+    EvpPkeyPtr m_private_key;
 
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
@@ -48,7 +53,9 @@ TlsTcpServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Pa
     m_loop(&loop),
     m_tcp_server(new TcpServer(loop)),
     m_certificate_path(certificate_path),
-    m_private_key_path(private_key_path) {
+    m_private_key_path(private_key_path),
+    m_certificate(nullptr, ::X509_free),
+    m_private_key(nullptr, ::EVP_PKEY_free) {
 }
 
 TlsTcpServer::Impl::~Impl() {
@@ -60,7 +67,8 @@ Error TlsTcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t por
 }
 
 bool TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client) {
-    TlsTcpConnectedClient* tls_client = new TlsTcpConnectedClient(*m_loop, *m_parent, m_certificate, m_private_key, tcp_client);
+    TlsTcpConnectedClient* tls_client =
+        new TlsTcpConnectedClient(*m_loop,*m_parent, m_certificate.get(), m_private_key.get(), tcp_client);
 
     bool accept = true;
     if (m_new_connection_callback) {
@@ -87,22 +95,24 @@ int TlsTcpServer::Impl::listen(NewConnectionCallback new_connection_callback,
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
 
-    FILE* certificate_file = fopen(m_certificate_path.string().c_str(), "r");
+    using FilePtr = std::unique_ptr<FILE, decltype(&std::fclose)>;
+
+    FilePtr certificate_file(std::fopen(m_certificate_path.string().c_str(), "r"), &std::fclose);
     if (certificate_file == nullptr) {
         return -1; // TODO:
     }
 
-    m_certificate = PEM_read_X509(certificate_file, nullptr, nullptr, nullptr);
+    m_certificate.reset(PEM_read_X509(certificate_file.get(), nullptr, nullptr, nullptr));
     if (m_certificate == nullptr) {
         return -1; // TODO:
     }
 
-    FILE* private_key_file = fopen(m_private_key_path.string().c_str(), "r");
+    FilePtr private_key_file(std::fopen(m_private_key_path.string().c_str(), "r"), &std::fclose);
     if (private_key_file == nullptr) {
         return -1; // TODO:
     }
 
-    m_private_key = PEM_read_PrivateKey(private_key_file, nullptr, nullptr, nullptr);
+    m_private_key.reset(PEM_read_PrivateKey(private_key_file.get(), nullptr, nullptr, nullptr));
     if (m_private_key == nullptr) {
         return -1; // TODO:
     }
