@@ -68,3 +68,7 @@ TEST_F(TlsTcpClientServerTest, constructor) {
 
     ASSERT_EQ(0, loop.run());
 }
+
+// TODO: private key with password
+// TODO: multiple private keys and certificates in one file??? https://www.openssl.org/docs/man1.0.2/man3/SSL_CTX_use_PrivateKey_file.html
+// TODO DER (binary file) support???
