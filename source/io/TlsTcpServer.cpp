@@ -2,13 +2,15 @@
 
 #include "TcpServer.h"
 
+#include <openssl/pem.h>
+
 #include <iostream>
 
 namespace io {
 
 class TlsTcpServer::Impl {
 public:
-    Impl(EventLoop& loop, TlsTcpServer& parent);
+    Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsTcpServer& parent);
     ~Impl();
 
     Error bind(const std::string& ip_addr_str, std::uint16_t port);
@@ -31,14 +33,22 @@ private:
     EventLoop* m_loop;
     TcpServer* m_tcp_server;
 
+    Path m_certificate_path;
+    Path m_private_key_path;
+
+    X509* m_certificate;
+    EVP_PKEY* m_private_key;
+
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
 };
 
-TlsTcpServer::Impl::Impl(EventLoop& loop, TlsTcpServer& parent) :
+TlsTcpServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsTcpServer& parent) :
     m_parent(&parent),
     m_loop(&loop),
-    m_tcp_server(new TcpServer(loop)) {
+    m_tcp_server(new TcpServer(loop)),
+    m_certificate_path(certificate_path),
+    m_private_key_path(private_key_path) {
 }
 
 TlsTcpServer::Impl::~Impl() {
@@ -50,7 +60,7 @@ Error TlsTcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t por
 }
 
 bool TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client) {
-    TlsTcpConnectedClient* tls_client = new TlsTcpConnectedClient(*m_loop, *m_parent, tcp_client);
+    TlsTcpConnectedClient* tls_client = new TlsTcpConnectedClient(*m_loop, *m_parent, m_certificate, m_private_key, tcp_client);
 
     bool accept = true;
     if (m_new_connection_callback) {
@@ -77,6 +87,26 @@ int TlsTcpServer::Impl::listen(NewConnectionCallback new_connection_callback,
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
 
+    FILE* certificate_file = fopen(m_certificate_path.string().c_str(), "r");
+    if (certificate_file == nullptr) {
+        return -1; // TODO:
+    }
+
+    m_certificate = PEM_read_X509(certificate_file, nullptr, nullptr, nullptr);
+    if (m_certificate == nullptr) {
+        return -1; // TODO:
+    }
+
+    FILE* private_key_file = fopen(m_private_key_path.string().c_str(), "r");
+    if (private_key_file == nullptr) {
+        return -1; // TODO:
+    }
+
+    m_private_key = PEM_read_PrivateKey(private_key_file, nullptr, nullptr, nullptr);
+    if (m_private_key == nullptr) {
+        return -1; // TODO:
+    }
+
     using namespace std::placeholders;
     return m_tcp_server->listen(std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2),
                                 std::bind(&TlsTcpServer::Impl::on_data_receive, this, _1, _2, _3, _4));
@@ -96,9 +126,9 @@ std::size_t TlsTcpServer::Impl::connected_clients_count() const {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TlsTcpServer::TlsTcpServer(EventLoop& loop) :
+TlsTcpServer::TlsTcpServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path) :
     Disposable(loop),
-    m_impl(new Impl(loop, *this)) {
+    m_impl(new Impl(loop, certificate_path, private_key_path, *this)) {
 }
 
 TlsTcpServer::~TlsTcpServer() {

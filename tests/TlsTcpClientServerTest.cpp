@@ -38,9 +38,12 @@ TEST_F(TlsTcpClientServerTest, constructor) {
 
     io::EventLoop loop;
 
-    io::TlsTcpServer server(loop);
+    const std::string cert_name = "certificate.pem";
+    const std::string key_name = "key.pem";
+
+    io::TlsTcpServer server(loop, cert_name, key_name);
     server.bind("0.0.0.0", 12345);
-    server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
         return true;
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
@@ -65,6 +68,8 @@ TEST_F(TlsTcpClientServerTest, constructor) {
             client.close();
         }
     });
+
+    ASSERT_EQ(0, listen_result);
 
     ASSERT_EQ(0, loop.run());
 }

@@ -4,6 +4,7 @@
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
+#include "Path.h"
 #include "TlsTcpConnectedClient.h"
 
 #include <memory>
@@ -19,7 +20,7 @@ public:
     using NewConnectionCallback = std::function<bool(TlsTcpServer&, TlsTcpConnectedClient&)>;
     using DataReceivedCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const char*, std::size_t)>;
 
-    IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop);
+    IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path);
 
     // TODO: some sort of macro here???
     TlsTcpServer(const TlsTcpServer& other) = delete;

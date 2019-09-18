@@ -10,7 +10,7 @@ namespace io {
 
 class TlsTcpConnectedClient::Impl {
 public:
-    Impl(EventLoop& loop, TlsTcpServer& tls_server, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent);
+    Impl(EventLoop& loop, TlsTcpServer& tls_server, X509* certificate, X509* private_key, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent);
     ~Impl();
 
     void close();
@@ -32,6 +32,9 @@ private:
     TcpConnectedClient* m_tcp_client;
     TlsTcpServer* m_tls_server;
 
+    ::X509* m_certificate;
+    ::EVP_PKEY* m_private_key;
+
     DataReceiveCallback m_data_receive_callback = nullptr;
 
     bool m_ssl_handshake_complete = false;
@@ -42,11 +45,13 @@ private:
     SSL* m_ssl = nullptr;
 };
 
-TlsTcpConnectedClient::Impl::Impl(EventLoop& loop, TlsTcpServer& tls_server, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent) :
+TlsTcpConnectedClient::Impl::Impl(EventLoop& loop, TlsTcpServer& tls_server, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_tcp_client(&tcp_client),
-    m_tls_server(&tls_server) {
+    m_tls_server(&tls_server),
+    m_certificate(reinterpret_cast<::X509*>(certificate)),
+    m_private_key(reinterpret_cast<::EVP_PKEY*>(private_key)) {
     m_tcp_client->set_user_data(&parent);
 }
 
@@ -199,20 +204,15 @@ bool TlsTcpConnectedClient::Impl::init_ssl() {
         return false;
     }
 
-    // TODO: hardcoded values!!!
-    // TODO: reading for every client is overhead
-    std::string cert_name = "certificate.pem";
-    std::string key_name = "key.pem";
-
-    result = SSL_CTX_use_certificate_file(m_ssl_ctx, cert_name.c_str(), SSL_FILETYPE_PEM);
+    result = SSL_CTX_use_certificate(m_ssl_ctx, m_certificate);
     if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load certificate", cert_name);
+        IO_LOG(m_loop, ERROR, "Failed to load certificate");
         return false;
     }
 
-    result = SSL_CTX_use_PrivateKey_file(m_ssl_ctx, key_name.c_str(), SSL_FILETYPE_PEM);
+    result = SSL_CTX_use_PrivateKey(m_ssl_ctx, m_private_key);
     if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load private key", key_name);
+        IO_LOG(m_loop, ERROR, "Failed to load private key");
         return false;
     }
 
@@ -294,9 +294,9 @@ bool TlsTcpConnectedClient::Impl::is_open() const {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, TcpConnectedClient& tcp_client) :
+TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client) :
     Disposable(loop),
-    m_impl(new Impl(loop, tls_server, tcp_client, *this)) {
+    m_impl(new Impl(loop, tls_server, certificate, private_key, tcp_client, *this)) {
 }
 
 TlsTcpConnectedClient::~TlsTcpConnectedClient() {
