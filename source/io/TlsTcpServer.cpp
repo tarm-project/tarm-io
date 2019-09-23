@@ -59,7 +59,7 @@ TlsTcpServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Pa
 }
 
 TlsTcpServer::Impl::~Impl() {
-    delete m_tcp_server; // TODO: schedule removal fro TCP server
+    delete m_tcp_server; // TODO: schedule removal from TCP server
 }
 
 Error TlsTcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
@@ -69,6 +69,10 @@ Error TlsTcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t por
 bool TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client) {
     TlsTcpConnectedClient* tls_client =
         new TlsTcpConnectedClient(*m_loop,*m_parent, m_certificate.get(), m_private_key.get(), tcp_client);
+
+    tcp_client.set_close_callback([tls_client, this](TcpConnectedClient& client, const Error& error) {
+        delete tls_client; // TODO: revise this
+    });
 
     bool accept = true;
     if (m_new_connection_callback) {

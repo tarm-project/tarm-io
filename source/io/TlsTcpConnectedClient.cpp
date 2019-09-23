@@ -56,6 +56,13 @@ TlsTcpConnectedClient::Impl::Impl(EventLoop& loop, TlsTcpServer& tls_server, X50
 }
 
 TlsTcpConnectedClient::Impl::~Impl() {
+    if (m_ssl) {
+        SSL_free(m_ssl);
+    }
+
+    if (m_ssl_ctx) {
+        SSL_CTX_free(m_ssl_ctx);
+    }
 }
 
 void TlsTcpConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback callback) {
@@ -76,8 +83,8 @@ void TlsTcpConnectedClient::Impl::do_handshake() {
 
     int write_pending = BIO_pending(m_ssl_write_bio);
     int read_pending = BIO_pending(m_ssl_read_bio);
-    IO_LOG(m_loop, TRACE, "write_pending", write_pending);
-    IO_LOG(m_loop, TRACE, "read_pending", read_pending);
+    IO_LOG(m_loop, TRACE, "write_pending:", write_pending);
+    IO_LOG(m_loop, TRACE, "read_pending:", read_pending);
 
     if (handshake_result < 0) {
         auto error = SSL_get_error(m_ssl, handshake_result);

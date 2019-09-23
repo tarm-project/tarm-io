@@ -9,6 +9,9 @@ struct TlsTcpClientServerTest : public testing::Test,
 protected:
     std::uint16_t m_default_port = 32540;
     std::string m_default_addr = "127.0.0.1";
+
+    const std::string m_cert_name = "certificate.pem";
+    const std::string m_key_name = "key.pem";
 };
 /*
 TEST_F(TlsTcpClientServerTest,  constructor) {
@@ -33,6 +36,7 @@ TEST_F(TlsTcpClientServerTest,  constructor) {
 }
 */
 
+/*
 TEST_F(TlsTcpClientServerTest, constructor) {
     this->log_to_stdout();
 
@@ -72,6 +76,61 @@ TEST_F(TlsTcpClientServerTest, constructor) {
     ASSERT_EQ(0, listen_result);
 
     ASSERT_EQ(0, loop.run());
+}
+*/
+
+
+TEST_F(TlsTcpClientServerTest, client_send_data_to_server) {
+    this->log_to_stdout();
+
+    const std::string message = "Hello!";
+    std::size_t client_on_connect_callback_count = 0;
+    std::size_t client_on_send_callback_count = 0;
+    std::size_t server_on_connect_callback_count = 0;
+    std::size_t server_on_receive_callback_count = 0;
+
+    io::EventLoop loop;
+
+    io::TlsTcpServer server(loop, m_cert_name, m_key_name);
+    server.bind(m_default_addr, m_default_port);
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+        ++server_on_connect_callback_count;
+        return true;
+    },
+    [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+        ++server_on_receive_callback_count;
+
+        EXPECT_EQ(message.size(), size);
+        std::string received_message(buf, size);
+        EXPECT_EQ(message, received_message);
+
+        server.shutdown();
+    });
+    ASSERT_EQ(0, listen_result);
+
+    auto client = new io::TlsTcpClient(loop);
+
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            ++client_on_connect_callback_count;
+            client.send_data(message, [&](io::TlsTcpClient& client, const io::Error& error) {
+                ++client_on_send_callback_count;
+                client.schedule_removal();
+            });
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_callback_count);
+    EXPECT_EQ(0, client_on_send_callback_count);
+    EXPECT_EQ(0, server_on_connect_callback_count);
+    EXPECT_EQ(0, server_on_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_callback_count);
+    EXPECT_EQ(1, client_on_send_callback_count);
+    EXPECT_EQ(1, server_on_connect_callback_count);
+    EXPECT_EQ(1, server_on_receive_callback_count);
 }
 
 // TODO: private key with password

@@ -252,7 +252,9 @@ void TlsTcpClient::Impl::connect(const std::string& address,
     std::function<void(TcpClient&, const Error&)> on_close =
         [this](TcpClient& client, const Error& error) {
             IO_LOG(m_loop, TRACE, "Close", error.code());
-            m_close_callback(*this->m_parent, error);
+            if (m_close_callback) {
+                m_close_callback(*this->m_parent, error);
+            }
         };
 
     m_tcp_client->connect(address, port, on_connect, on_data_receive, on_close);
@@ -286,7 +288,11 @@ void TlsTcpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint
     }
 
     IO_LOG(m_loop, TRACE, "sending message to server of size:", actual_size);
-    m_tcp_client->send_data(ptr, actual_size);
+    m_tcp_client->send_data(ptr, actual_size, [callback, this](TcpClient& client, const Error& error) {
+        if (callback) {
+            callback(*m_parent, error);
+        }
+    });
 }
 
 void TlsTcpClient::Impl::send_data(const std::string& message, EndSendCallback callback) {
