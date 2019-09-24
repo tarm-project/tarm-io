@@ -263,7 +263,7 @@ void on_make_dir(uv_fs_t* uv_request) {
         // ERROR_ALREADY_EXISTS and ERROR_PATH_NOT_FOUND
         // to make bahavior consistent between platforms we handle case of long name errors manually
         if (error && strlen(request.path) + 1 > MAX_PATH) { // +1 is for 0 terminating char
-            status = Status(StatusCode::NAME_TOO_LONG);
+            error = Error(StatusCode::NAME_TOO_LONG);
         }
 #endif // _MSC_VER
 
