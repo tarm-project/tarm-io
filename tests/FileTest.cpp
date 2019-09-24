@@ -857,8 +857,9 @@ TEST_F(FileTest, try_open_dir) {
     io::EventLoop loop;
     auto file = new io::File(loop);
     file->open(m_tmp_test_dir, [&](io::File& file, const io::Error& error) {
-        ASSERT_TRUE(error);
+        EXPECT_TRUE(error);
         EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, error.code());
+        file.schedule_removal();
     });
 
     ASSERT_EQ(0, loop.run());
