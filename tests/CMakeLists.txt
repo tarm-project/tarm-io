@@ -53,6 +53,12 @@ endif()
 
 add_dependencies(${TESTS_EXE_NAME} io)
 
+add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/data"
+            "${CMAKE_BINARY_DIR}/tests/"
+)
+
 #add_custom_target(printFooKeys
 #  COMMAND ${CMAKE_COMMAND} -E
 #    echo $<GENEX_EVAL:$<TARGET_PROPERTY:GTest::gtest,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>>

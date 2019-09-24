@@ -404,8 +404,6 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
 // but which makes close() from server side
 
 TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
-    this->log_to_stdout();
-
     // Test description: in this test we check that optional clase callback is called on server side
     // for connected client on connection termination.
 
