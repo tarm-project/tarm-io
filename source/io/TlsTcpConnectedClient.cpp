@@ -143,7 +143,7 @@ void TlsTcpConnectedClient::Impl::read_from_ssl() {
 
     int decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
     while (decrypted_size > 0) {
-        //IO_LOG(m_loop, TRACE, "Decrypted message size:", decrypted_size, "original_size:", size);
+        IO_LOG(m_loop, TRACE, "Decrypted message size:", decrypted_size);
 
         if (m_data_receive_callback) {
             m_data_receive_callback(*m_tls_server, *m_parent, decrypted_buf.get(), decrypted_size);

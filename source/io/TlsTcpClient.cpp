@@ -151,6 +151,8 @@ TlsTcpClient::Impl::Impl(EventLoop& loop, TlsTcpClient& parent) :
 }
 
 bool TlsTcpClient::Impl::schedule_removal() {
+    IO_LOG(m_loop, TRACE, "");
+
     // TODO: need to revise this?????
     m_tcp_client->schedule_removal();
     return true;
