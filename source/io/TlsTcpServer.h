@@ -16,8 +16,7 @@ namespace io {
 class TlsTcpServer : public Disposable,
                      public UserDataHolder {
 public:
-    // TODO: replace 'int status' with some error
-    using NewConnectionCallback = std::function<bool(TlsTcpServer&, TlsTcpConnectedClient&)>;
+    using NewConnectionCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&)>;
     using DataReceivedCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const char*, std::size_t)>;
 
     IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path);

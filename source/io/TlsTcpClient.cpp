@@ -36,6 +36,8 @@ public:
 protected:
     bool init_ssl();
 
+    void read_from_ssl();
+
     void do_handshake();
 
 private:
@@ -54,6 +56,8 @@ private:
     BIO* m_ssl_read_bio = nullptr;
     BIO* m_ssl_write_bio = nullptr;
     SSL* m_ssl = nullptr;
+
+    std::function<void(TcpClient&, const char*, size_t)> m_on_data_receive = nullptr;
 };
 
 TlsTcpClient::Impl::~Impl() {
@@ -162,6 +166,12 @@ std::uint16_t TlsTcpClient::Impl::port() const {
 
 void TlsTcpClient::Impl::do_handshake() {
     auto handshake_result = SSL_do_handshake(m_ssl);
+
+    int write_pending = BIO_pending(m_ssl_write_bio);
+    int read_pending = BIO_pending(m_ssl_read_bio);
+    IO_LOG(m_loop, TRACE, "write_pending:", write_pending);
+    IO_LOG(m_loop, TRACE, "read_pending:", read_pending);
+
     if (handshake_result < 0) {
         auto error = SSL_get_error(m_ssl, handshake_result);
 
@@ -189,8 +199,37 @@ void TlsTcpClient::Impl::do_handshake() {
         if (m_connect_callback) {
             m_connect_callback(*this->m_parent, Error(0));
         }
+
+        if (read_pending) {
+            IO_LOG(m_loop, TRACE, "read_pending:", read_pending);
+            read_from_ssl();
+        }
+
     } else {
         IO_LOG(m_loop, ERROR, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol.");
+    }
+}
+
+void TlsTcpClient::Impl::read_from_ssl() {
+    const std::size_t SIZE = 16*1024; // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
+    std::unique_ptr<char[]> decrypted_buf(new char[SIZE]);
+
+    int decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
+    IO_LOG(m_loop, TRACE, "Decrypted message size:", decrypted_size);
+    while (decrypted_size > 0) {
+        //IO_LOG(m_loop, TRACE, "Decrypted message size:", decrypted_size, "original_size:", size);
+        m_receive_callback(*this->m_parent, decrypted_buf.get(), decrypted_size);
+
+        decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
+    }
+
+    if (decrypted_size < 0) {
+        int code = SSL_get_error(m_ssl, decrypted_size);
+        if (code != SSL_ERROR_WANT_READ) {
+            IO_LOG(m_loop, ERROR, "Failed to write buf of size", code);
+            // TODO: handle error
+            return;
+        }
     }
 }
 
@@ -213,7 +252,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
 
     std::function<void(TcpClient&, const char*, size_t)> on_data_receive =
         [this](TcpClient& client, const char* buf, size_t size) {
-            //IO_LOG(m_loop, TRACE, "Received data from server, size: ", size);
+            IO_LOG(m_loop, TRACE, "Received data from server, size: ", size);
 
             if (m_ssl_handshake_complete) {
                 const auto written_size = BIO_write(m_ssl_read_bio, buf, size);
@@ -222,25 +261,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
                     return;
                 }
 
-                const std::size_t SIZE = 16*1024; // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
-                std::unique_ptr<char[]> decrypted_buf(new char[SIZE]);
-
-                int decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
-                while (decrypted_size > 0) {
-                    IO_LOG(m_loop, TRACE, "Decrypted message size:", decrypted_size, "original_size:", size);
-                    m_receive_callback(*this->m_parent, decrypted_buf.get(), decrypted_size);
-
-                    decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
-                }
-
-                if (decrypted_size < 0) {
-                    int code = SSL_get_error(m_ssl, decrypted_size);
-                    if (code != SSL_ERROR_WANT_READ) {
-                        IO_LOG(m_loop, ERROR, "Failed to write buf of size", code);
-                        // TODO: handle error
-                        return;
-                    }
-                }
+                read_from_ssl();
             } else {
                 auto write_result = BIO_write(m_ssl_read_bio, buf, size);
                 IO_LOG(m_loop, TRACE, "BIO_write result:", write_result);

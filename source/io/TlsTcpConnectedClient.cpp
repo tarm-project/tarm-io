@@ -10,7 +10,7 @@ namespace io {
 
 class TlsTcpConnectedClient::Impl {
 public:
-    Impl(EventLoop& loop, TlsTcpServer& tls_server, X509* certificate, X509* private_key, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent);
+    Impl(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, X509* private_key, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent);
     ~Impl();
 
     void close();
@@ -26,6 +26,8 @@ public:
     bool init_ssl();
     void do_handshake();
 
+    void read_from_ssl();
+
 private:
     TlsTcpConnectedClient* m_parent;
     EventLoop* m_loop;
@@ -37,6 +39,8 @@ private:
 
     DataReceiveCallback m_data_receive_callback = nullptr;
 
+    NewConnectionCallback m_new_connection_callback = nullptr;
+
     bool m_ssl_handshake_complete = false;
 
     SSL_CTX* m_ssl_ctx = nullptr;
@@ -45,13 +49,14 @@ private:
     SSL* m_ssl = nullptr;
 };
 
-TlsTcpConnectedClient::Impl::Impl(EventLoop& loop, TlsTcpServer& tls_server, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent) :
+TlsTcpConnectedClient::Impl::Impl(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_tcp_client(&tcp_client),
     m_tls_server(&tls_server),
     m_certificate(reinterpret_cast<::X509*>(certificate)),
-    m_private_key(reinterpret_cast<::EVP_PKEY*>(private_key)) {
+    m_private_key(reinterpret_cast<::EVP_PKEY*>(private_key)),
+    m_new_connection_callback(new_connection_callback) {
     m_tcp_client->set_user_data(&parent);
 }
 
@@ -67,12 +72,6 @@ TlsTcpConnectedClient::Impl::~Impl() {
 
 void TlsTcpConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback callback) {
     m_data_receive_callback = callback;
-
-    // TODO: move to some other place like callback which checks for accepting connection
-    bool inited = init_ssl();
-    if (inited) {
-        SSL_set_accept_state(m_ssl);
-    }
 }
 
 void TlsTcpConnectedClient::Impl::do_handshake() {
@@ -125,11 +124,41 @@ void TlsTcpConnectedClient::Impl::do_handshake() {
 
         m_ssl_handshake_complete = true;
 
+        if (m_new_connection_callback) {
+            m_new_connection_callback(*m_tls_server, *m_parent);
+        }
+
         //if (m_connect_callback) {
         //    m_connect_callback(*this->m_parent, Error(0));
         //}
     } else {
         IO_LOG(m_loop, ERROR, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol.");
+    }
+}
+
+void TlsTcpConnectedClient::Impl::read_from_ssl() {
+    IO_LOG(m_loop, TRACE, "Reading decrypted");
+    const std::size_t SIZE = 16*1024; // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
+    std::unique_ptr<char[]> decrypted_buf(new char[SIZE]);
+
+    int decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
+    while (decrypted_size > 0) {
+        //IO_LOG(m_loop, TRACE, "Decrypted message size:", decrypted_size, "original_size:", size);
+
+        if (m_data_receive_callback) {
+            m_data_receive_callback(*m_tls_server, *m_parent, decrypted_buf.get(), decrypted_size);
+        }
+
+        decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
+    }
+
+    if (decrypted_size < 0) {
+        int code = SSL_get_error(m_ssl, decrypted_size);
+        if (code != SSL_ERROR_WANT_READ) {
+            IO_LOG(m_loop, ERROR, "Failed to write buf of size", code);
+            // TODO: handle error
+            return;
+        }
     }
 }
 
@@ -145,31 +174,7 @@ void TlsTcpConnectedClient::Impl::on_data_receive(const char* buf, std::size_t s
             return;
         }
 
-        IO_LOG(m_loop, TRACE, "Reading decrypted");
-        const std::size_t SIZE = 16*1024; // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
-        std::unique_ptr<char[]> decrypted_buf(new char[SIZE]);
-
-        int decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
-        while (decrypted_size > 0) {
-            IO_LOG(m_loop, TRACE, "Decrypted message size:", decrypted_size, "original_size:", size);
-
-            if (m_data_receive_callback) {
-                m_data_receive_callback(*m_tls_server, *m_parent, decrypted_buf.get(), decrypted_size);
-            }
-
-            decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
-        }
-
-        if (decrypted_size < 0) {
-            int code = SSL_get_error(m_ssl, decrypted_size);
-            if (code != SSL_ERROR_WANT_READ) {
-                IO_LOG(m_loop, ERROR, "Failed to write buf of size", code);
-                // TODO: handle error
-                return;
-            }
-        }
-
-
+        read_from_ssl();
     } else {
         const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
         do_handshake();
@@ -253,6 +258,8 @@ bool TlsTcpConnectedClient::Impl::init_ssl() {
 
     SSL_set_bio(m_ssl, m_ssl_read_bio, m_ssl_write_bio);
 
+    SSL_set_accept_state(m_ssl);
+
     IO_LOG(m_loop, DEBUG, "SSL inited");
 
     return true;
@@ -276,8 +283,12 @@ void TlsTcpConnectedClient::Impl::send_data(std::shared_ptr<const char> buffer, 
         return;
     }
 
-    IO_LOG(m_loop, TRACE, "sending message to server of size:", actual_size);
-    m_tcp_client->send_data(ptr, actual_size);
+    IO_LOG(m_loop, TRACE, "Sending message to client. Original size:", size, "encrypted_size:", actual_size);
+    m_tcp_client->send_data(ptr, actual_size, [callback, this](TcpConnectedClient& tcp_client, const Error& error) {
+        if (callback) {
+            callback(*m_parent, error);
+        }
+    });
 }
 
 void TlsTcpConnectedClient::Impl::send_data(const std::string& message, EndSendCallback callback) {
@@ -301,9 +312,9 @@ bool TlsTcpConnectedClient::Impl::is_open() const {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client) :
+TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client) :
     Disposable(loop),
-    m_impl(new Impl(loop, tls_server, certificate, private_key, tcp_client, *this)) {
+    m_impl(new Impl(loop, tls_server, new_connection_callback, certificate, private_key, tcp_client, *this)) {
 }
 
 TlsTcpConnectedClient::~TlsTcpConnectedClient() {
@@ -315,6 +326,10 @@ void TlsTcpConnectedClient::set_data_receive_callback(DataReceiveCallback callba
 
 void TlsTcpConnectedClient::on_data_receive(const char* buf, std::size_t size) {
     return m_impl->on_data_receive(buf, size);
+}
+
+bool TlsTcpConnectedClient::init_ssl() {
+    return m_impl->init_ssl();
 }
 
 void TlsTcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {

@@ -14,6 +14,8 @@ namespace io {
 using X509 = void;
 using EVP_PKEY = void;
 
+// TODO: now we can schedule removal of connected client from any callback
+//       need to revise this. Probably just to use close/shutdown only.
 class TlsTcpConnectedClient : public Disposable {
 public:
     friend class TlsTcpServer;
@@ -21,6 +23,8 @@ public:
     using DataReceiveCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const char*, std::size_t)>;
     using CloseCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
+
+    using NewConnectionCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&)>;
 
     IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC void shutdown();
@@ -33,9 +37,10 @@ protected:
     ~TlsTcpConnectedClient();
 
 private:
-    TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client);
+    TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client);
     void set_data_receive_callback(DataReceiveCallback callback);
     void on_data_receive(const char* buf, std::size_t size);
+    bool init_ssl();
 
     class Impl;
     std::unique_ptr<Impl> m_impl;

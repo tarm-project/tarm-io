@@ -1,5 +1,6 @@
 #include "TlsTcpServer.h"
 
+#include "Common.h"
 #include "TcpServer.h"
 
 #include <openssl/pem.h>
@@ -68,24 +69,19 @@ Error TlsTcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t por
 
 bool TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client) {
     TlsTcpConnectedClient* tls_client =
-        new TlsTcpConnectedClient(*m_loop,*m_parent, m_certificate.get(), m_private_key.get(), tcp_client);
+        new TlsTcpConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_certificate.get(), m_private_key.get(), tcp_client);
 
     tcp_client.set_close_callback([tls_client, this](TcpConnectedClient& client, const Error& error) {
         delete tls_client; // TODO: revise this
     });
 
-    bool accept = true;
-    if (m_new_connection_callback) {
-        accept = m_new_connection_callback(*m_parent, *tls_client);
-    }
-
-    if (accept) {
+    if (tls_client->init_ssl()) {
         tls_client->set_data_receive_callback(m_data_receive_callback);
     } else {
-        // TODO: delete
+        // TODO: error
     }
 
-    return accept;
+    return true;
 }
 
 void TlsTcpServer::Impl::on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const char* buf, std::size_t size) {

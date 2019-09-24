@@ -119,6 +119,10 @@ void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 
     // TODO: close callback call on_shutdown???
 
+    if (this_.m_close_callback) {
+        this_.m_close_callback(*this_.m_parent, Error(status));
+    }
+
     this_.m_server->remove_client_connection(this_.m_parent);
 
     uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
@@ -137,6 +141,12 @@ void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
 
 void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
+
+    if (nread >= 0) {
+        IO_LOG(this_.m_loop, TRACE, "Received data, size:", nread);
+    } else {
+        IO_LOG(this_.m_loop, TRACE, "Receive error:", uv_strerror(nread));
+    }
 
     Error error(nread);
     if (!error) {
@@ -158,6 +168,7 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
         }
         //---------------------------------------------
 
+        this_.m_close_callback = nullptr; // TODO: looks like a hack
         this_.close();
         //this_.m_server->remove_client_connection(this_.m_parent);
         //this_.m_parent->schedule_removal();
