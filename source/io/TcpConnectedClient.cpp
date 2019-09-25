@@ -81,11 +81,6 @@ void TcpConnectedClient::Impl::close() {
 
     m_is_open = false;
 
-    // TODO: move into on_close???
-    if (m_close_callback) {
-        m_close_callback(*m_parent, Error(0));
-    }
-
     m_server->remove_client_connection(m_parent);
 
     //if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
@@ -121,6 +116,7 @@ void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 
     if (this_.m_close_callback) {
         this_.m_close_callback(*this_.m_parent, Error(status));
+        this_.m_close_callback = nullptr; // TODO: looks like a hack
     }
 
     this_.m_server->remove_client_connection(this_.m_parent);
@@ -131,6 +127,11 @@ void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 
 void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
+
+    if (this_.m_close_callback) {
+        this_.m_close_callback(*this_.m_parent, Error(0));
+    }
+
     this_.m_port = 0;
     this_.m_ipv4_addr = 0;
 

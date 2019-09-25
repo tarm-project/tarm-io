@@ -72,6 +72,7 @@ bool TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient
         new TlsTcpConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_certificate.get(), m_private_key.get(), tcp_client);
 
     tcp_client.set_close_callback([tls_client, this](TcpConnectedClient& client, const Error& error) {
+        IO_LOG(this->m_loop, TRACE, "Removing TLS client");
         delete tls_client; // TODO: revise this
     });
 

@@ -214,6 +214,8 @@ TEST_F(TlsTcpClientServerTest, client_send_small_chunks_to_server) {
 }
 
 TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
+    this->log_to_stdout();
+
     const std::string message = "Hello!";
     std::size_t client_on_connect_callback_count = 0;
     std::size_t client_on_receive_callback_count = 0;
@@ -351,6 +353,54 @@ TEST_F(TlsTcpClientServerTest, server_send_small_chunks_to_client) {
     EXPECT_EQ(messages.size(), server_on_send_callback_count);
     EXPECT_EQ(1,               server_on_connect_callback_count);
     EXPECT_EQ(0,               server_on_receive_callback_count);
+}
+
+TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_some_data) {
+    this->log_to_stdout();
+
+    io::EventLoop loop;
+
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
+    server.bind(m_default_addr, m_default_port);
+    auto listen_result = server.listen(
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+            return true;
+        },
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+            std::cout.write(buf, size);
+
+            std::string str(buf, size);
+            if (str == "0") {
+                std::cout << "OK" << std::endl;
+
+                client.send_data("OK");
+            } else {
+                std::cout << "Closing!!!!" << std::endl;
+                client.close();
+            }
+        }
+    );
+    ASSERT_EQ(0, listen_result);
+
+    auto client = new io::TlsTcpClient(loop);
+    unsigned counter = 0;
+
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            client.send_data(std::to_string(counter++));
+        },
+        [&](io::TlsTcpClient& client, const char* buf, std::size_t size) {
+            std::cout.write(buf, size);
+            client.send_data(std::to_string(counter++));
+        },
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            std::cout << "Client closed!" << std::endl;
+            client.schedule_removal();
+            server.shutdown(); // Note: shutdowning server from client callback
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
 }
 
 // TODO: the same test as server_send_data_to_client but multiple sends
