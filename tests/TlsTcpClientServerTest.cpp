@@ -1,7 +1,11 @@
 #include "UTCommon.h"
 
+#include "io/Path.h"
 #include "io/TlsTcpClient.h"
 #include "io/TlsTcpServer.h"
+
+
+#include <boost/dll.hpp>
 
 #include <vector>
 // TODO: if win32
@@ -14,8 +18,10 @@ protected:
     std::uint16_t m_default_port = 32541;
     std::string m_default_addr = "127.0.0.1";
 
-    const std::string m_cert_name = "certificate.pem";
-    const std::string m_key_name = "key.pem";
+    const io::Path m_test_path = boost::dll::program_location().parent_path().string();
+
+    const io::Path m_cert_path = m_test_path / "certificate.pem";
+    const io::Path m_key_path = m_test_path / "key.pem";
 };
 /*
 TEST_F(TlsTcpClientServerTest,  constructor) {
@@ -93,7 +99,7 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server) {
 
     io::EventLoop loop;
 
-    io::TlsTcpServer server(loop, m_cert_name, m_key_name);
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
     auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
         ++server_on_connect_callback_count;
@@ -156,7 +162,7 @@ TEST_F(TlsTcpClientServerTest, client_send_small_chunks_to_server) {
 
     io::EventLoop loop;
 
-    io::TlsTcpServer server(loop, m_cert_name, m_key_name);
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
     auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
         ++server_on_connect_callback_count;
@@ -217,7 +223,7 @@ TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
 
     io::EventLoop loop;
 
-    io::TlsTcpServer server(loop, m_cert_name, m_key_name);
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
     auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
         ++server_on_connect_callback_count;
@@ -289,7 +295,7 @@ TEST_F(TlsTcpClientServerTest, server_send_small_chunks_to_client) {
 
     io::EventLoop loop;
 
-    io::TlsTcpServer server(loop, m_cert_name, m_key_name);
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
     auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
         ++server_on_connect_callback_count;
