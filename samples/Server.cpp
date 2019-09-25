@@ -1,3 +1,55 @@
+
+#include "io/EventLoop.h"
+#include "io/TlsTcpServer.h"
+#include "io/TlsTcpClient.h"
+#include "io/global/Configuration.h"
+
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+    //signal(SIGPIPE, SIG_IGN);
+
+    io::global::set_logger_callback([](const std::string& message) {
+            std::cout << message << std::endl;
+        });
+
+    io::EventLoop loop;
+
+    const std::string cert_name = "certificate.pem";
+    const std::string key_name = "key.pem";
+
+    io::TlsTcpServer server(loop, cert_name, key_name);
+    server.bind("0.0.0.0", 12345);
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+        return true;
+    },
+    [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+        std::cout.write(buf, size);
+
+        std::string str(buf);
+        if (str.find("GET / HTTP/1.1") == 0) {
+            std::cout << "!!!" << std::endl;
+
+            std::string answer = "HTTP/1.1 200 OK\r\n"
+            "Date: Tue, 28 May 2019 13:13:01 GMT\r\n"
+            "Server: My\r\n"
+            "Content-Length: 41\r\n"
+            "Connection: keep-alive\r\n"
+            "Content-Type: text/html; charset=utf-8\r\n"
+            "\r\n"
+            "<html><body>Hello world!!!" + std::to_string(::rand() % 10) + "</body></html>";
+
+
+            client.send_data(answer);
+        } else {
+            client.close();
+        }
+    });
+
+    return loop.run();
+}
+
+/*
 #include "io/EventLoop.h"
 #include "io/TcpServer.h"
 #include "io/Timer.h"
@@ -184,3 +236,5 @@ int main(int argc, char* argv[]) {
     return loop.run();
     std::cout << "Shutting down..." << std::endl;
 }
+
+*/

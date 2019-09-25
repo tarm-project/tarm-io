@@ -67,9 +67,7 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 add_subdirectory("thirdparty")
 add_subdirectory("source")
-if (UNIX) # TODO: FIXME
-    add_subdirectory("samples")
-endif()
+add_subdirectory("samples")
 
 # TODO: move to test folder
 set(BUILD_WITH_TESTS ON)
