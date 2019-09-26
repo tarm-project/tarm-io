@@ -1,5 +1,7 @@
 #pragma once
 
+#include "io/EventLoop.h"
+
 #include <memory>
 #include <assert.h>
 
@@ -21,7 +23,7 @@ public:
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
 
-    std::size_t pending_write_requesets() const;
+    std::size_t pending_write_requests() const;
 
     void init_stream();
 
@@ -38,7 +40,7 @@ protected:
     ParentType* m_parent;
 
     uv_tcp_t* m_tcp_stream = nullptr;
-    std::size_t m_pending_write_requesets = 0;
+    std::size_t m_pending_write_requests = 0;
 
     std::uint32_t m_ipv4_addr = 0;
     std::uint16_t m_port = 0;
@@ -105,7 +107,7 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
         return;
     }
 
-    ++m_pending_write_requesets;
+    ++m_pending_write_requests;
 }
 
 template<typename ParentType, typename ImplType>
@@ -116,8 +118,8 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(const std::string& messa
 }
 
 template<typename ParentType, typename ImplType>
-std::size_t TcpClientImplBase<ParentType, ImplType>::pending_write_requesets() const {
-    return m_pending_write_requesets;
+std::size_t TcpClientImplBase<ParentType, ImplType>::pending_write_requests() const {
+    return m_pending_write_requests;
 }
 
 template<typename ParentType, typename ImplType>
@@ -150,8 +152,8 @@ template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::after_write(uv_write_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<ImplType*>(req->data);
 
-    assert(this_.m_pending_write_requesets >= 1);
-    --this_.m_pending_write_requesets;
+    assert(this_.m_pending_write_requests >= 1);
+    --this_.m_pending_write_requests;
 
     auto request = reinterpret_cast<WriteRequest*>(req);
     std::unique_ptr<WriteRequest> guard(request);

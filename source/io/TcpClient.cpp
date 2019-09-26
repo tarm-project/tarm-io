@@ -267,7 +267,7 @@ void TcpClient::set_close_callback(CloseCallback callback) {
 }
 
 std::size_t TcpClient::pending_write_requesets() const {
-    return m_impl->pending_write_requesets();
+    return m_impl->pending_write_requests();
 }
 
 void TcpClient::shutdown(CloseCallback callback) {
