@@ -36,7 +36,29 @@ public:
     void send_data(const std::string& message, EndSendCallback callback);
 
 protected:
-    bool init_ssl();
+    //bool init_ssl();
+
+    const SSL_METHOD* ssl_method() override {
+        return TLSv1_2_client_method();
+    }
+
+    bool ssl_set_siphers() override {
+        auto result = SSL_CTX_set_cipher_list(m_ssl_ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
+        if (result == 0) {
+            IO_LOG(m_loop, ERROR, "Failed to set siphers list");
+            return false;
+        }
+        return true;
+    }
+
+    bool ssl_init_certificate_and_key() override {
+        // Do nothing
+        return true;
+    }
+
+    void ssl_set_state() override {
+        SSL_set_connect_state(m_ssl);
+    }
 
     void read_from_ssl();
 
@@ -64,10 +86,11 @@ TlsTcpClient::Impl::~Impl() {
         SSL_CTX_free(m_ssl_ctx);
     }
 }
-
+/*
 bool TlsTcpClient::Impl::init_ssl() {
     ERR_load_crypto_strings();
     SSL_load_error_strings();
+    // TODO: potantially heavy code in 'SSL_library_init'. Need to investigate impact
     int result = SSL_library_init();
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to init OpenSSL");
@@ -111,34 +134,11 @@ bool TlsTcpClient::Impl::init_ssl() {
 
     SSL_set_bio(m_ssl, m_ssl_read_bio, m_ssl_write_bio);
 
-    /*
-    std::string cert_name = "certificate.pem";
-    std::string key_name = "key.pem";
-
-    result = SSL_CTX_use_certificate_file(m_ssl_ctx, cert_name.c_str(), SSL_FILETYPE_PEM);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load certificate", cert_name);
-        return false;
-    }
-
-    result = SSL_CTX_use_PrivateKey_file(m_ssl_ctx, key_name.c_str(), SSL_FILETYPE_PEM);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load private key", key_name);
-        return false;
-    }
-
-    result = SSL_CTX_check_private_key(m_ssl_ctx);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to check private key");
-        return false;
-    }
-    */
-
     IO_LOG(m_loop, DEBUG, "SSL inited");
 
     return true;
 }
-
+*/
 TlsTcpClient::Impl::Impl(EventLoop& loop, TlsTcpClient& parent) :
     TlsTcpClientImplBase(loop, parent),
     m_loop(&loop),
@@ -236,7 +236,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback) {
-    bool is_connected = init_ssl();
+    bool is_connected = ssl_init();
 
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;
@@ -244,7 +244,6 @@ void TlsTcpClient::Impl::connect(const std::string& address,
 
     std::function<void(TcpClient&, const Error&)> on_connect =
         [this](TcpClient& client, const Error& error) {
-            SSL_set_connect_state(m_ssl);
             do_handshake();
         };
 

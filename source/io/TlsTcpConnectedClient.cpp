@@ -24,10 +24,50 @@ public:
     void set_data_receive_callback(DataReceiveCallback callback);
     void on_data_receive(const char* buf, std::size_t size);
 
-    bool init_ssl();
+    //bool init_ssl();
     void do_handshake();
 
     void read_from_ssl();
+
+protected:
+    const SSL_METHOD* ssl_method() override {
+        return TLSv1_2_server_method();
+    }
+
+    bool ssl_set_siphers() override {
+        auto result = SSL_CTX_set_cipher_list(m_ssl_ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
+        if (result == 0) {
+            IO_LOG(m_loop, ERROR, "Failed to set siphers list");
+            return false;
+        }
+        return true;
+    }
+
+    bool ssl_init_certificate_and_key() override {
+        auto result = SSL_CTX_use_certificate(m_ssl_ctx, m_certificate);
+        if (!result) {
+            IO_LOG(m_loop, ERROR, "Failed to load certificate");
+            return false;
+        }
+
+        result = SSL_CTX_use_PrivateKey(m_ssl_ctx, m_private_key);
+        if (!result) {
+            IO_LOG(m_loop, ERROR, "Failed to load private key");
+            return false;
+        }
+
+        result = SSL_CTX_check_private_key(m_ssl_ctx);
+        if (!result) {
+            IO_LOG(m_loop, ERROR, "Failed to check private key");
+            return false;
+        }
+
+        return true;
+    }
+
+    void ssl_set_state() override {
+        SSL_set_accept_state(m_ssl);
+    }
 
 private:
     TlsTcpConnectedClient* m_parent;
@@ -182,6 +222,7 @@ void TlsTcpConnectedClient::Impl::on_data_receive(const char* buf, std::size_t s
     }
 }
 
+/*
 bool TlsTcpConnectedClient::Impl::init_ssl() {
     ERR_load_crypto_strings();
     SSL_load_error_strings();
@@ -194,7 +235,7 @@ bool TlsTcpConnectedClient::Impl::init_ssl() {
         return false;
     }
 
-    OpenSSL_add_all_algorithms();
+    //OpenSSL_add_all_algorithms();
     //OpenSSL_add_all_ciphers();
     //OpenSSL_add_all_digests();
 
@@ -265,7 +306,7 @@ bool TlsTcpConnectedClient::Impl::init_ssl() {
 
     return true;
 }
-
+*/
 void TlsTcpConnectedClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
     const auto write_result = SSL_write(m_ssl, buffer.get(), size);
     if (write_result <= 0) {
@@ -330,7 +371,7 @@ void TlsTcpConnectedClient::on_data_receive(const char* buf, std::size_t size) {
 }
 
 bool TlsTcpConnectedClient::init_ssl() {
-    return m_impl->init_ssl();
+    return m_impl->ssl_init();
 }
 
 void TlsTcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
