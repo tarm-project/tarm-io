@@ -2,13 +2,14 @@
 
 #include "Common.h"
 #include "TcpConnectedClient.h"
+#include "detail/TlsTcpClientImplBase.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
 namespace io {
 
-class TlsTcpConnectedClient::Impl {
+class TlsTcpConnectedClient::Impl : public detail::TlsTcpClientImplBase<TlsTcpConnectedClient, TlsTcpConnectedClient::Impl> {
 public:
     Impl(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, X509* private_key, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent);
     ~Impl();
@@ -40,16 +41,16 @@ private:
     DataReceiveCallback m_data_receive_callback = nullptr;
 
     NewConnectionCallback m_new_connection_callback = nullptr;
-
-    bool m_ssl_handshake_complete = false;
-
-    SSL_CTX* m_ssl_ctx = nullptr;
-    BIO* m_ssl_read_bio = nullptr;
-    BIO* m_ssl_write_bio = nullptr;
-    SSL* m_ssl = nullptr;
 };
 
-TlsTcpConnectedClient::Impl::Impl(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent) :
+TlsTcpConnectedClient::Impl::Impl(EventLoop& loop,
+                                  TlsTcpServer& tls_server,
+                                  NewConnectionCallback new_connection_callback,
+                                  X509* certificate,
+                                  EVP_PKEY* private_key,
+                                  TcpConnectedClient& tcp_client,
+                                  TlsTcpConnectedClient& parent) :
+    TlsTcpClientImplBase(loop, parent),
     m_parent(&parent),
     m_loop(&loop),
     m_tcp_client(&tcp_client),

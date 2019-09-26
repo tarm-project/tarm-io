@@ -2,6 +2,8 @@
 
 #include "Common.h"
 #include "TcpClient.h"
+#include "detail/TlsTcpClientImplBase.h"
+
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -12,7 +14,7 @@
 
 namespace io {
 
-class TlsTcpClient::Impl {
+class TlsTcpClient::Impl : public detail::TlsTcpClientImplBase<TlsTcpClient, TlsTcpClient::Impl> {
 public:
     Impl(EventLoop& loop, TlsTcpClient& parent);
     ~Impl();
@@ -49,13 +51,6 @@ private:
     ConnectCallback m_connect_callback;
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
-
-    bool m_ssl_handshake_complete = false;
-
-    SSL_CTX* m_ssl_ctx = nullptr;
-    BIO* m_ssl_read_bio = nullptr;
-    BIO* m_ssl_write_bio = nullptr;
-    SSL* m_ssl = nullptr;
 
     std::function<void(TcpClient&, const char*, size_t)> m_on_data_receive = nullptr;
 };
@@ -145,6 +140,7 @@ bool TlsTcpClient::Impl::init_ssl() {
 }
 
 TlsTcpClient::Impl::Impl(EventLoop& loop, TlsTcpClient& parent) :
+    TlsTcpClientImplBase(loop, parent),
     m_loop(&loop),
     m_parent(&parent),
     m_tcp_client(new TcpClient(loop)) {
