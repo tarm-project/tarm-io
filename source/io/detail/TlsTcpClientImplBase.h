@@ -43,7 +43,14 @@ TlsTcpClientImplBase<ParentType, ImplType>::TlsTcpClientImplBase(EventLoop& loop
 
 template<typename ParentType, typename ImplType>
 TlsTcpClientImplBase<ParentType, ImplType>::~TlsTcpClientImplBase() {
+    // TODO: smart pointers???
+    if (m_ssl) {
+        SSL_free(m_ssl);
+    }
 
+    if (m_ssl_ctx) {
+        SSL_CTX_free(m_ssl_ctx);
+    }
 }
 
 template<typename ParentType, typename ImplType>

@@ -102,13 +102,6 @@ TlsTcpConnectedClient::Impl::Impl(EventLoop& loop,
 }
 
 TlsTcpConnectedClient::Impl::~Impl() {
-    if (m_ssl) {
-        SSL_free(m_ssl);
-    }
-
-    if (m_ssl_ctx) {
-        SSL_CTX_free(m_ssl_ctx);
-    }
 }
 
 void TlsTcpConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback callback) {
