@@ -60,7 +60,13 @@ protected:
         SSL_set_connect_state(m_ssl);
     }
 
-    void read_from_ssl();
+    //void read_from_ssl();
+
+    void on_ssl_read(const char* buf, std::size_t size) override {
+        if (m_receive_callback) {
+            m_receive_callback(*this->m_parent, buf, size);
+        }
+    }
 
     void do_handshake();
 
@@ -201,6 +207,7 @@ void TlsTcpClient::Impl::do_handshake() {
     }
 }
 
+/*
 void TlsTcpClient::Impl::read_from_ssl() {
     const std::size_t SIZE = 16*1024; // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
     std::unique_ptr<char[]> decrypted_buf(new char[SIZE]);
@@ -223,6 +230,7 @@ void TlsTcpClient::Impl::read_from_ssl() {
         }
     }
 }
+*/
 
 void TlsTcpClient::Impl::connect(const std::string& address,
                  std::uint16_t port,
