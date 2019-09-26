@@ -4,6 +4,7 @@
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
+#include "Forward.h"
 
 #include <memory>
 
@@ -11,6 +12,8 @@ namespace io {
 
 class TlsTcpClient : public Disposable {
 public:
+    using UnderlyingTcpType = TcpClient;
+
     using ConnectCallback = std::function<void(TlsTcpClient&, const Error&)>;
     using CloseCallback = std::function<void(TlsTcpClient&, const Error&)>;
     using EndSendCallback = std::function<void(TlsTcpClient&, const Error&)>;

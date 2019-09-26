@@ -29,6 +29,8 @@ public:
 protected:
     EventLoop* m_loop;
 
+    typename ParentType::UnderlyingTcpType* m_tcp_client = nullptr;
+
     SSL_CTX* m_ssl_ctx = nullptr;
     BIO* m_ssl_read_bio = nullptr;
     BIO* m_ssl_write_bio = nullptr;

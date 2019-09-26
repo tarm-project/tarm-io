@@ -74,8 +74,6 @@ private:
     TlsTcpClient* m_parent;
     EventLoop* m_loop;
 
-    TcpClient* m_tcp_client;
-
     ConnectCallback m_connect_callback;
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
@@ -141,8 +139,8 @@ bool TlsTcpClient::Impl::init_ssl() {
 TlsTcpClient::Impl::Impl(EventLoop& loop, TlsTcpClient& parent) :
     TlsTcpClientImplBase(loop, parent),
     m_loop(&loop),
-    m_parent(&parent),
-    m_tcp_client(new TcpClient(loop)) {
+    m_parent(&parent) {
+    m_tcp_client = new TcpClient(loop);
 }
 
 bool TlsTcpClient::Impl::schedule_removal() {

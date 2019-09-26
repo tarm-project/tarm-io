@@ -20,6 +20,8 @@ class TlsTcpConnectedClient : public Disposable {
 public:
     friend class TlsTcpServer;
 
+    using UnderlyingTcpType = TcpConnectedClient;
+
     using DataReceiveCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const char*, std::size_t)>;
     using CloseCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;

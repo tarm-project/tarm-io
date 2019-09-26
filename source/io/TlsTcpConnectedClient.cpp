@@ -78,14 +78,13 @@ protected:
 private:
     TlsTcpConnectedClient* m_parent;
     EventLoop* m_loop;
-    TcpConnectedClient* m_tcp_client;
+
     TlsTcpServer* m_tls_server;
 
     ::X509* m_certificate;
     ::EVP_PKEY* m_private_key;
 
     DataReceiveCallback m_data_receive_callback = nullptr;
-
     NewConnectionCallback m_new_connection_callback = nullptr;
 };
 
@@ -99,11 +98,11 @@ TlsTcpConnectedClient::Impl::Impl(EventLoop& loop,
     TlsTcpClientImplBase(loop, parent),
     m_parent(&parent),
     m_loop(&loop),
-    m_tcp_client(&tcp_client),
     m_tls_server(&tls_server),
     m_certificate(reinterpret_cast<::X509*>(certificate)),
     m_private_key(reinterpret_cast<::EVP_PKEY*>(private_key)),
     m_new_connection_callback(new_connection_callback) {
+    m_tcp_client = &tcp_client;
     m_tcp_client->set_user_data(&parent);
 }
 
