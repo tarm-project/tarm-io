@@ -32,43 +32,14 @@ public:
     void close();
     bool is_open() const;
 
-    //void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback);
-    //void send_data(const std::string& message, EndSendCallback callback);
-
 protected:
-    const SSL_METHOD* ssl_method() override {
-        return TLSv1_2_client_method();
-    }
+    const SSL_METHOD* ssl_method() override;
+    bool ssl_set_siphers() override;
+    bool ssl_init_certificate_and_key() override;
+    void ssl_set_state() override;
 
-    bool ssl_set_siphers() override {
-        auto result = SSL_CTX_set_cipher_list(m_ssl_ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
-        if (result == 0) {
-            IO_LOG(m_loop, ERROR, "Failed to set siphers list");
-            return false;
-        }
-        return true;
-    }
-
-    bool ssl_init_certificate_and_key() override {
-        // Do nothing
-        return true;
-    }
-
-    void ssl_set_state() override {
-        SSL_set_connect_state(m_ssl);
-    }
-
-    void on_ssl_read(const char* buf, std::size_t size) override {
-        if (m_receive_callback) {
-            m_receive_callback(*this->m_parent, buf, size);
-        }
-    }
-
-    void on_handshake_complete() override {
-        if (m_connect_callback) {
-            m_connect_callback(*this->m_parent, Error(0));
-        }
-    }
+    void on_ssl_read(const char* buf, std::size_t size) override;
+    void on_handshake_complete() override;
 
 private:
     ConnectCallback m_connect_callback;
@@ -156,40 +127,40 @@ bool TlsTcpClient::Impl::is_open() const {
     // TODO: implement
     return true;
 }
-/*
-void TlsTcpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
-    const auto write_result = SSL_write(m_ssl, buffer.get(), size);
-    if (write_result <= 0) {
-        IO_LOG(m_loop, ERROR, "Failed to write buf of size", size);
-        // TODO: handle error
-        return;
-    }
 
-    // TODO: fixme
-    const std::size_t SIZE = 1024 + size * 2; // TODO:
-    std::shared_ptr<char> ptr(new char[SIZE], [](const char* p) { delete[] p;});
-
-    const auto actual_size = BIO_read(m_ssl_write_bio, ptr.get(), SIZE);
-    if (actual_size < 0) {
-        IO_LOG(m_loop, ERROR, "BIO_read failed code:", actual_size);
-        return;
-    }
-
-    IO_LOG(m_loop, TRACE, "sending message to server of size:", actual_size);
-    m_tcp_client->send_data(ptr, actual_size, [callback, this](TcpClient& client, const Error& error) {
-        if (callback) {
-            callback(*m_parent, error);
-        }
-    });
+const SSL_METHOD* TlsTcpClient::Impl::ssl_method() {
+    return TLSv1_2_client_method();
 }
 
-void TlsTcpClient::Impl::send_data(const std::string& message, EndSendCallback callback) {
-    std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
-    std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
-    send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
+bool TlsTcpClient::Impl::ssl_set_siphers() {
+    auto result = SSL_CTX_set_cipher_list(m_ssl_ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
+    if (result == 0) {
+        IO_LOG(m_loop, ERROR, "Failed to set siphers list");
+        return false;
+    }
+    return true;
 }
 
-*/
+bool TlsTcpClient::Impl::ssl_init_certificate_and_key() {
+    // Do nothing
+    return true;
+}
+
+void TlsTcpClient::Impl::ssl_set_state() {
+    SSL_set_connect_state(m_ssl);
+}
+
+void TlsTcpClient::Impl::on_ssl_read(const char* buf, std::size_t size) {
+    if (m_receive_callback) {
+        m_receive_callback(*this->m_parent, buf, size);
+    }
+}
+
+void TlsTcpClient::Impl::on_handshake_complete() {
+    if (m_connect_callback) {
+        m_connect_callback(*this->m_parent, Error(0));
+    }
+}
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
