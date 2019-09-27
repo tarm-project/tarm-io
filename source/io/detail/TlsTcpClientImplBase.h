@@ -26,7 +26,9 @@ public:
     void read_from_ssl();
     virtual void on_ssl_read(const char* buf, std::size_t size) = 0;
 
+    void do_handshake();
     void handshake_read_from_sll_and_send();
+    virtual void on_handshake_complete() = 0;
 
 protected:
     EventLoop* m_loop;
@@ -149,7 +151,6 @@ bool TlsTcpClientImplBase<ParentType, ImplType>::ssl_init() {
 
     SSL_set_bio(m_ssl, m_ssl_read_bio, m_ssl_write_bio);
 
-    //SSL_set_accept_state(m_ssl);
     ssl_set_state();
 
     IO_LOG(m_loop, DEBUG, "SSL inited");
@@ -192,6 +193,53 @@ void TlsTcpClientImplBase<ParentType, ImplType>::handshake_read_from_sll_and_sen
 
     IO_LOG(m_loop, TRACE, "Getting data from SSL and sending to server, size:", size);
     m_tcp_client->send_data(buf, size);
+}
+
+template<typename ParentType, typename ImplType>
+void TlsTcpClientImplBase<ParentType, ImplType>::do_handshake() {
+    IO_LOG(m_loop, DEBUG, "Doing handshake");
+
+    auto handshake_result = SSL_do_handshake(m_ssl);
+
+    int write_pending = BIO_pending(m_ssl_write_bio);
+    int read_pending = BIO_pending(m_ssl_read_bio);
+    IO_LOG(m_loop, TRACE, "write_pending:", write_pending);
+    IO_LOG(m_loop, TRACE, "read_pending:", read_pending);
+
+    if (handshake_result < 0) {
+        auto error = SSL_get_error(m_ssl, handshake_result);
+
+        if (error == SSL_ERROR_WANT_READ) {
+            IO_LOG(m_loop, TRACE, "SSL_ERROR_WANT_READ");
+
+            handshake_read_from_sll_and_send();
+        } else if (error == SSL_ERROR_WANT_WRITE) {
+            IO_LOG(m_loop, TRACE, "SSL_ERROR_WANT_WRITE");
+        } else {
+            char msg[1024];
+            ERR_error_string_n(ERR_get_error(), msg, sizeof(msg));
+            printf("%s %s %s %s\n", msg, ERR_lib_error_string(0), ERR_func_error_string(0), ERR_reason_error_string(0));
+
+            // TODO: error handling here
+        }
+    } else if (handshake_result == 1) {
+        IO_LOG(m_loop, DEBUG, "Connected!");
+
+        if (write_pending) {
+            handshake_read_from_sll_and_send();
+        }
+
+        m_ssl_handshake_complete = true;
+
+        if (read_pending) {
+            read_from_ssl();
+        }
+
+        on_handshake_complete();
+    } else {
+        IO_LOG(m_loop, ERROR, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol.");
+        // TODO: error handling
+    }
 }
 
 } // namespace detail
