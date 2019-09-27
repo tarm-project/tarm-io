@@ -30,7 +30,11 @@ public:
     void handshake_read_from_sll_and_send();
     virtual void on_handshake_complete() = 0;
 
+    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
+    void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
+
 protected:
+    ParentType* m_parent;
     EventLoop* m_loop;
 
     typename ParentType::UnderlyingTcpType* m_tcp_client = nullptr;
@@ -47,6 +51,7 @@ protected:
 
 template<typename ParentType, typename ImplType>
 TlsTcpClientImplBase<ParentType, ImplType>::TlsTcpClientImplBase(EventLoop& loop, ParentType& parent) :
+    m_parent(&parent),
     m_loop(&loop) {
 }
 
@@ -240,6 +245,40 @@ void TlsTcpClientImplBase<ParentType, ImplType>::do_handshake() {
         IO_LOG(m_loop, ERROR, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol.");
         // TODO: error handling
     }
+}
+
+template<typename ParentType, typename ImplType>
+void TlsTcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+    const auto write_result = SSL_write(m_ssl, buffer.get(), size);
+    if (write_result <= 0) {
+        IO_LOG(m_loop, ERROR, "Failed to write buf of size", size);
+        // TODO: handle error
+        return;
+    }
+
+    // TODO: fixme
+    const std::size_t SIZE = 1024 + size * 2; // TODO:
+    std::shared_ptr<char> ptr(new char[SIZE], [](const char* p) { delete[] p;});
+
+    const auto actual_size = BIO_read(m_ssl_write_bio, ptr.get(), SIZE);
+    if (actual_size < 0) {
+        IO_LOG(m_loop, ERROR, "BIO_read failed code:", actual_size);
+        return;
+    }
+
+    IO_LOG(m_loop, TRACE, "Sending message to client. Original size:", size, "encrypted_size:", actual_size);
+    m_tcp_client->send_data(ptr, actual_size, [callback, this](typename ParentType::UnderlyingTcpType& tcp_client, const Error& error) {
+        if (callback) {
+            callback(*m_parent, error);
+        }
+    });
+}
+
+template<typename ParentType, typename ImplType>
+void TlsTcpClientImplBase<ParentType, ImplType>::send_data(const std::string& message, typename ParentType::EndSendCallback callback) {
+    std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
+    std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
+    send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
 }
 
 } // namespace detail

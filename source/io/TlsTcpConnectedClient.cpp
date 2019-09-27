@@ -18,8 +18,8 @@ public:
     void shutdown();
     bool is_open() const;
 
-    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback);
-    void send_data(const std::string& message, EndSendCallback callback);
+    //void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback);
+    //void send_data(const std::string& message, EndSendCallback callback);
 
     void set_data_receive_callback(DataReceiveCallback callback);
     void on_data_receive(const char* buf, std::size_t size);
@@ -77,9 +77,6 @@ protected:
     }
 
 private:
-    TlsTcpConnectedClient* m_parent;
-    EventLoop* m_loop;
-
     TlsTcpServer* m_tls_server;
 
     ::X509* m_certificate;
@@ -97,8 +94,6 @@ TlsTcpConnectedClient::Impl::Impl(EventLoop& loop,
                                   TcpConnectedClient& tcp_client,
                                   TlsTcpConnectedClient& parent) :
     TlsTcpClientImplBase(loop, parent),
-    m_parent(&parent),
-    m_loop(&loop),
     m_tls_server(&tls_server),
     m_certificate(reinterpret_cast<::X509*>(certificate)),
     m_private_key(reinterpret_cast<::EVP_PKEY*>(private_key)),
@@ -130,7 +125,7 @@ void TlsTcpConnectedClient::Impl::on_data_receive(const char* buf, std::size_t s
         do_handshake();
     }
 }
-
+/*
 void TlsTcpConnectedClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
     const auto write_result = SSL_write(m_ssl, buffer.get(), size);
     if (write_result <= 0) {
@@ -162,6 +157,8 @@ void TlsTcpConnectedClient::Impl::send_data(const std::string& message, EndSendC
     std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
     send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
 }
+
+*/
 
 void TlsTcpConnectedClient::Impl::close() {
     m_tcp_client->close();

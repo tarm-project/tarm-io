@@ -32,8 +32,8 @@ public:
     void close();
     bool is_open() const;
 
-    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback);
-    void send_data(const std::string& message, EndSendCallback callback);
+    //void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback);
+    //void send_data(const std::string& message, EndSendCallback callback);
 
 protected:
     const SSL_METHOD* ssl_method() override {
@@ -71,23 +71,16 @@ protected:
     }
 
 private:
-    TlsTcpClient* m_parent;
-    EventLoop* m_loop;
-
     ConnectCallback m_connect_callback;
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
-
-    std::function<void(TcpClient&, const char*, size_t)> m_on_data_receive = nullptr;
 };
 
 TlsTcpClient::Impl::~Impl() {
 }
 
 TlsTcpClient::Impl::Impl(EventLoop& loop, TlsTcpClient& parent) :
-    TlsTcpClientImplBase(loop, parent),
-    m_loop(&loop),
-    m_parent(&parent) {
+    TlsTcpClientImplBase(loop, parent) {
     m_tcp_client = new TcpClient(loop);
 }
 
@@ -138,6 +131,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
             } else {
                 auto write_result = BIO_write(m_ssl_read_bio, buf, size);
                 IO_LOG(m_loop, TRACE, "BIO_write result:", write_result);
+                // TODO: error handling here
 
                 do_handshake();
             }
@@ -162,7 +156,7 @@ bool TlsTcpClient::Impl::is_open() const {
     // TODO: implement
     return true;
 }
-
+/*
 void TlsTcpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
     const auto write_result = SSL_write(m_ssl, buffer.get(), size);
     if (write_result <= 0) {
@@ -194,6 +188,8 @@ void TlsTcpClient::Impl::send_data(const std::string& message, EndSendCallback c
     std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
     send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
 }
+
+*/
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
