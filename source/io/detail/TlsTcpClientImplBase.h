@@ -33,7 +33,7 @@ public:
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
 
-    void on_data_receive_impl(const char* buf, std::size_t size);
+    void on_data_receive(const char* buf, std::size_t size);
 
 protected:
     ParentType* m_parent;
@@ -284,8 +284,8 @@ void TlsTcpClientImplBase<ParentType, ImplType>::send_data(const std::string& me
 }
 
 template<typename ParentType, typename ImplType>
-void TlsTcpClientImplBase<ParentType, ImplType>::on_data_receive_impl(const char* buf, std::size_t size) {
-    IO_LOG(m_loop, TRACE, "on_data_receive_impl");
+void TlsTcpClientImplBase<ParentType, ImplType>::on_data_receive(const char* buf, std::size_t size) {
+    IO_LOG(m_loop, TRACE, "on_data_receive");
 
     if (m_ssl_handshake_complete) {
         const auto written_size = BIO_write(m_ssl_read_bio, buf, size);

@@ -19,7 +19,6 @@ public:
     bool is_open() const;
 
     void set_data_receive_callback(DataReceiveCallback callback);
-    void on_data_receive(const char* buf, std::size_t size);
 
 protected:
     const SSL_METHOD* ssl_method() override;
@@ -61,10 +60,6 @@ TlsTcpConnectedClient::Impl::~Impl() {
 
 void TlsTcpConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback callback) {
     m_data_receive_callback = callback;
-}
-
-void TlsTcpConnectedClient::Impl::on_data_receive(const char* buf, std::size_t size) {
-    on_data_receive_impl(buf, size);
 }
 
 void TlsTcpConnectedClient::Impl::close() {

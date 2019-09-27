@@ -89,7 +89,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
 
     std::function<void(TcpClient&, const char*, size_t)> on_data_receive =
         [this](TcpClient& client, const char* buf, size_t size) {
-            on_data_receive_impl(buf, size);
+            this->on_data_receive(buf, size);
         };
 
     std::function<void(TcpClient&, const Error&)> on_close =
