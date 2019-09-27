@@ -173,12 +173,7 @@ void TlsTcpClient::Impl::do_handshake() {
         if (error == SSL_ERROR_WANT_READ) {
             IO_LOG(m_loop, TRACE, "SSL_ERROR_WANT_READ");
 
-            const std::size_t BUF_SIZE = 4096;
-            std::shared_ptr<char> buf(new char[BUF_SIZE], [](const char* p) { delete[] p; });
-            const auto size = BIO_read(m_ssl_write_bio, buf.get(), BUF_SIZE);
-
-            IO_LOG(m_loop, TRACE, "Getting data from SSL and sending to server, size:", size);
-            m_tcp_client->send_data(buf, size);
+            handshake_read_from_sll_and_send();
         } else if (error == SSL_ERROR_WANT_WRITE) {
             IO_LOG(m_loop, TRACE, "SSL_ERROR_WANT_WRITE");
         } else {

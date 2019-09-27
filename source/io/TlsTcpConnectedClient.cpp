@@ -130,19 +130,10 @@ void TlsTcpConnectedClient::Impl::do_handshake() {
         if (error == SSL_ERROR_WANT_READ) {
             IO_LOG(m_loop, TRACE, "SSL_ERROR_WANT_READ");
 
-            const std::size_t BUF_SIZE = 4096;
-            std::shared_ptr<char> buf(new char[BUF_SIZE], [](const char* p) { delete[] p; });
-            const auto size = BIO_read(m_ssl_write_bio, buf.get(), BUF_SIZE);
-
-            IO_LOG(m_loop, TRACE, "Getting data from SSL and sending to server, size:", size);
-            m_tcp_client->send_data(buf, size);
+            handshake_read_from_sll_and_send();
         } else if (error == SSL_ERROR_WANT_WRITE) {
             IO_LOG(m_loop, TRACE, "SSL_ERROR_WANT_WRITE");
         } else {
-            //char buf[4096];
-            //ERR_error_string_n(SSL_get_error(m_ssl, error), buf, 4096);
-            //IO_LOG(m_loop, ERROR, buf);
-
             char msg[1024];
             ERR_error_string_n(ERR_get_error(), msg, sizeof(msg));
             printf("%s %s %s %s\n", msg, ERR_lib_error_string(0), ERR_func_error_string(0), ERR_reason_error_string(0));
@@ -153,12 +144,7 @@ void TlsTcpConnectedClient::Impl::do_handshake() {
         IO_LOG(m_loop, TRACE, "Connected!!!!");
 
         if (write_pending) {
-            const std::size_t BUF_SIZE = 4096;
-            std::shared_ptr<char> buf(new char[BUF_SIZE], [](const char* p) { delete[] p; });
-            const auto size = BIO_read(m_ssl_write_bio, buf.get(), BUF_SIZE);
-
-            IO_LOG(m_loop, TRACE, "Getting data from SSL and sending to server, size:", size);
-            m_tcp_client->send_data(buf, size);
+            handshake_read_from_sll_and_send();
         }
 
         m_ssl_handshake_complete = true;
@@ -166,12 +152,9 @@ void TlsTcpConnectedClient::Impl::do_handshake() {
         if (m_new_connection_callback) {
             m_new_connection_callback(*m_tls_server, *m_parent);
         }
-
-        //if (m_connect_callback) {
-        //    m_connect_callback(*this->m_parent, Error(0));
-        //}
     } else {
         IO_LOG(m_loop, ERROR, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol.");
+        // TODO: error handling
     }
 }
 

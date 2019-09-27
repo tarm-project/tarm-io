@@ -26,6 +26,8 @@ public:
     void read_from_ssl();
     virtual void on_ssl_read(const char* buf, std::size_t size) = 0;
 
+    void handshake_read_from_sll_and_send();
+
 protected:
     EventLoop* m_loop;
 
@@ -180,6 +182,16 @@ void TlsTcpClientImplBase<ParentType, ImplType>::read_from_ssl() {
             return;
         }
     }
+}
+
+template<typename ParentType, typename ImplType>
+void TlsTcpClientImplBase<ParentType, ImplType>::handshake_read_from_sll_and_send() {
+    const std::size_t BUF_SIZE = 4096;
+    std::shared_ptr<char> buf(new char[BUF_SIZE], [](const char* p) { delete[] p; });
+    const auto size = BIO_read(m_ssl_write_bio, buf.get(), BUF_SIZE);
+
+    IO_LOG(m_loop, TRACE, "Getting data from SSL and sending to server, size:", size);
+    m_tcp_client->send_data(buf, size);
 }
 
 } // namespace detail
