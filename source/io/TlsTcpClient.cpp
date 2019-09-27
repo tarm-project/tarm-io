@@ -89,23 +89,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
 
     std::function<void(TcpClient&, const char*, size_t)> on_data_receive =
         [this](TcpClient& client, const char* buf, size_t size) {
-            IO_LOG(m_loop, TRACE, "Received data from server, size: ", size);
-
-            if (m_ssl_handshake_complete) {
-                const auto written_size = BIO_write(m_ssl_read_bio, buf, size);
-                if (written_size < 0) {
-                    IO_LOG(m_loop, ERROR, "BIO_write failed with code:", written_size);
-                    return;
-                }
-
-                read_from_ssl();
-            } else {
-                auto write_result = BIO_write(m_ssl_read_bio, buf, size);
-                IO_LOG(m_loop, TRACE, "BIO_write result:", write_result);
-                // TODO: error handling here
-
-                do_handshake();
-            }
+            on_data_receive_impl(buf, size);
         };
 
     std::function<void(TcpClient&, const Error&)> on_close =

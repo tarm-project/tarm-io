@@ -33,6 +33,8 @@ public:
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
 
+    void on_data_receive_impl(const char* buf, std::size_t size);
+
 protected:
     ParentType* m_parent;
     EventLoop* m_loop;
@@ -279,6 +281,25 @@ void TlsTcpClientImplBase<ParentType, ImplType>::send_data(const std::string& me
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
     send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
+}
+
+template<typename ParentType, typename ImplType>
+void TlsTcpClientImplBase<ParentType, ImplType>::on_data_receive_impl(const char* buf, std::size_t size) {
+    IO_LOG(m_loop, TRACE, "on_data_receive_impl");
+
+    if (m_ssl_handshake_complete) {
+        const auto written_size = BIO_write(m_ssl_read_bio, buf, size);
+        if (written_size < 0) {
+            IO_LOG(m_loop, ERROR, "BIO_write failed with code:", written_size);
+            return;
+        }
+
+        read_from_ssl();
+    } else {
+        const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
+        // TODO: error handling
+        do_handshake();
+    }
 }
 
 } // namespace detail

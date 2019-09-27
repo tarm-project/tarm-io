@@ -64,20 +64,7 @@ void TlsTcpConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback 
 }
 
 void TlsTcpConnectedClient::Impl::on_data_receive(const char* buf, std::size_t size) {
-    IO_LOG(m_loop, TRACE, "on_data_receive");
-
-    if (m_ssl_handshake_complete) {
-        const auto written_size = BIO_write(m_ssl_read_bio, buf, size);
-        if (written_size < 0) {
-            IO_LOG(m_loop, ERROR, "BIO_write failed with code:", written_size);
-            return;
-        }
-
-        read_from_ssl();
-    } else {
-        const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
-        do_handshake();
-    }
+    on_data_receive_impl(buf, size);
 }
 
 void TlsTcpConnectedClient::Impl::close() {
