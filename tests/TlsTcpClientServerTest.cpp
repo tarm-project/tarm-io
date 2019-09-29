@@ -429,6 +429,92 @@ TEST_F(TlsTcpClientServerTest, server_send_small_chunks_to_client) {
     EXPECT_EQ(0,               server_on_receive_callback_count);
 }
 
+TEST_F(TlsTcpClientServerTest, server_send_simultaneous_multiple_chunks_to_client) {
+    const std::vector<std::string> messages = {
+        "a",
+        "ab",
+        "abc",
+        "abcd",
+        "abcde",
+        "abcdef",
+        "abcdefg",
+        "abcdefgh",
+        "abcdefghi",
+        "abcdefghij",
+    };
+
+    std::size_t client_on_connect_callback_count = 0;
+    std::size_t client_on_receive_callback_count = 0;
+    std::size_t server_on_receive_callback_count = 0;
+    std::size_t server_on_send_callback_count = 0;
+    std::size_t server_on_connect_callback_count = 0;
+
+
+    std::size_t client_message_counter = 0;
+
+    io::EventLoop loop;
+
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
+    server.bind(m_default_addr, m_default_port);
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+        ++server_on_connect_callback_count;
+
+        for (std::size_t i = 0; i < messages.size(); ++i) {
+            client.send_data(messages[i],
+                [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    ++server_on_send_callback_count;
+
+                    if (server_on_send_callback_count == messages.size()) {
+                        server.shutdown();
+                    }
+                }
+            );
+        }
+
+        return true;
+    },
+    [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+        ++server_on_receive_callback_count;
+    });
+    ASSERT_EQ(0, listen_result);
+
+    auto client = new io::TlsTcpClient(loop);
+
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            ++client_on_connect_callback_count;
+        },
+        [&](io::TlsTcpClient& client, const char* buf, std::size_t size) {
+            const auto& expected_message = messages[client_message_counter++];
+
+            EXPECT_EQ(expected_message.size(), size);
+            std::string received_message(buf, size);
+            EXPECT_EQ(expected_message, received_message);
+
+            ++client_on_receive_callback_count;
+
+            if (client_on_receive_callback_count == messages.size()) {
+                client.schedule_removal();
+            }
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_callback_count);
+    EXPECT_EQ(0, client_on_receive_callback_count);
+    EXPECT_EQ(0, server_on_receive_callback_count);
+    EXPECT_EQ(0, server_on_send_callback_count);
+    EXPECT_EQ(0, server_on_connect_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1,               client_on_connect_callback_count);
+    EXPECT_EQ(messages.size(), client_on_receive_callback_count);
+    EXPECT_EQ(0,               server_on_receive_callback_count);
+    EXPECT_EQ(messages.size(), server_on_send_callback_count);
+    EXPECT_EQ(1,               server_on_connect_callback_count);
+}
+
 TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_some_data) {
     this->log_to_stdout();
 
