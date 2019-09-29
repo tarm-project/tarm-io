@@ -515,6 +515,104 @@ TEST_F(TlsTcpClientServerTest, server_send_simultaneous_multiple_chunks_to_clien
     EXPECT_EQ(1,               server_on_connect_callback_count);
 }
 
+TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
+    this->log_to_stdout();
+
+    const std::size_t DATA_SIZE = 1024 * 1024;
+    static_assert(DATA_SIZE % 4 == 0, "Data size should be divisible by 4");
+
+    std::shared_ptr<char> client_buf(new char[DATA_SIZE], std::default_delete<char[]>());
+    std::shared_ptr<char> server_buf(new char[DATA_SIZE], std::default_delete<char[]>());
+
+    std::size_t i = 0;
+    for (; i < DATA_SIZE; i+= 4) {
+        *reinterpret_cast<std::uint32_t*>(client_buf.get() + i) = i / 4;
+        *reinterpret_cast<std::uint32_t*>(server_buf.get() + i) = DATA_SIZE / 4 - i / 4;
+    }
+
+    std::size_t client_on_connect_callback_count = 0;
+    std::size_t server_on_connect_callback_count = 0;
+
+    std::size_t client_on_data_send_callback_count = 0;
+    std::size_t server_on_data_send_callback_count = 0;
+
+    std::size_t client_data_receive_size = 0;
+    std::size_t server_data_receive_size = 0;
+
+    io::EventLoop loop;
+
+    // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // ADD DATA values check here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
+    EXPECT_FALSE(server.bind(m_default_addr, m_default_port));
+    auto listen_error = server.listen(
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+            ++server_on_connect_callback_count;
+            client.send_data(server_buf, DATA_SIZE,
+                [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+                    ++server_on_data_send_callback_count;
+                    EXPECT_FALSE(error);
+
+                    if (server_data_receive_size == DATA_SIZE) {
+                        server.shutdown();
+                    }
+                }
+            );
+            return true;
+        },
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+            server_data_receive_size += size;
+            if (server_data_receive_size == DATA_SIZE && server_on_data_send_callback_count) {
+                server.shutdown();
+            }
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+    auto client = new io::TlsTcpClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            ++client_on_connect_callback_count;
+            client.send_data(client_buf, DATA_SIZE,
+                [&](io::TlsTcpClient& client, const io::Error& error) {
+                    ++client_on_data_send_callback_count;
+                    EXPECT_FALSE(error);
+
+                    if (client_data_receive_size == DATA_SIZE) {
+                        client.schedule_removal();
+                    }
+                }
+            );
+        },
+        [&](io::TlsTcpClient& client, const char* buf, std::size_t size) {
+            std::cout << "ololo: " << std::endl;
+            client_data_receive_size += size;
+
+            if (client_data_receive_size == DATA_SIZE && client_on_data_send_callback_count) {
+                client.schedule_removal();
+            }
+        }
+    );
+
+
+    EXPECT_EQ(0, client_on_connect_callback_count);
+    EXPECT_EQ(0, server_on_connect_callback_count);
+    EXPECT_EQ(0, client_data_receive_size);
+    EXPECT_EQ(0, server_data_receive_size);
+    EXPECT_EQ(0, client_on_data_send_callback_count);
+    EXPECT_EQ(0, server_on_data_send_callback_count);
+
+    EXPECT_FALSE(loop.run());
+
+    EXPECT_EQ(1, client_on_connect_callback_count);
+    EXPECT_EQ(1, server_on_connect_callback_count);
+    EXPECT_EQ(1, client_on_data_send_callback_count);
+    EXPECT_EQ(1, server_on_data_send_callback_count);
+    EXPECT_EQ(DATA_SIZE, client_data_receive_size);
+    EXPECT_EQ(DATA_SIZE, server_data_receive_size);
+}
+
 TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_some_data) {
     this->log_to_stdout();
 
@@ -564,6 +662,7 @@ TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_som
 }
 
 // TODO: the same test as server_send_data_to_client but multiple sends
+// TODO: SSL_renegotiate test
 
 // TODO: private key with password
 // TODO: multiple private keys and certificates in one file??? https://www.openssl.org/docs/man1.0.2/man3/SSL_CTX_use_PrivateKey_file.html
