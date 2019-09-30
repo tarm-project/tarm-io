@@ -541,9 +541,6 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
 
     io::EventLoop loop;
 
-    // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // ADD DATA values check here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     EXPECT_FALSE(server.bind(m_default_addr, m_default_port));
     auto listen_error = server.listen(
@@ -562,7 +559,13 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
             return true;
         },
         [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+            auto previous_size = server_data_receive_size;
             server_data_receive_size += size;
+
+            for (std::size_t i = previous_size; i < server_data_receive_size; ++i) {
+                ASSERT_EQ(client_buf.get()[i], buf[i - previous_size]);
+            }
+
             if (server_data_receive_size == DATA_SIZE && server_on_data_send_callback_count) {
                 server.shutdown();
             }
@@ -586,15 +589,19 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
             );
         },
         [&](io::TlsTcpClient& client, const char* buf, std::size_t size) {
-            std::cout << "ololo: " << std::endl;
+            auto previous_size = client_data_receive_size;
+
             client_data_receive_size += size;
+
+            for (std::size_t i = previous_size; i < client_data_receive_size; ++i) {
+                ASSERT_EQ(server_buf.get()[i], buf[i - previous_size]);
+            }
 
             if (client_data_receive_size == DATA_SIZE && client_on_data_send_callback_count) {
                 client.schedule_removal();
             }
         }
     );
-
 
     EXPECT_EQ(0, client_on_connect_callback_count);
     EXPECT_EQ(0, server_on_connect_callback_count);
