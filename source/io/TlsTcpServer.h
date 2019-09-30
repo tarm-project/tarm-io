@@ -30,11 +30,15 @@ public:
 
     IO_DLL_PUBLIC Error bind(const std::string& ip_addr_str, std::uint16_t port);
 
-    // TODO: do not return error code
+    // TODO: do not return error code and return io::Error
     // On success, zero is returned
     IO_DLL_PUBLIC
     int listen(NewConnectionCallback new_connection_callback,
                DataReceivedCallback data_receive_callback,
+               int backlog_size = 128);
+
+    IO_DLL_PUBLIC
+    int listen(DataReceivedCallback data_receive_callback,
                int backlog_size = 128);
 
     IO_DLL_PUBLIC void shutdown();

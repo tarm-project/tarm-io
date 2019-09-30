@@ -149,6 +149,11 @@ Error TlsTcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
     return m_impl->bind(ip_addr_str, port);
 }
 
+int TlsTcpServer::listen(DataReceivedCallback data_receive_callback,
+                         int backlog_size) {
+    return m_impl->listen(nullptr, data_receive_callback, backlog_size);
+}
+
 int TlsTcpServer::listen(NewConnectionCallback new_connection_callback,
                          DataReceivedCallback data_receive_callback,
                          int backlog_size) {

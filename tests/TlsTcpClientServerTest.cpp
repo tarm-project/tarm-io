@@ -57,8 +57,7 @@ TEST_F(TlsTcpClientServerTest, constructor) {
 
     io::TlsTcpServer server(loop, cert_name, key_name);
     server.bind("0.0.0.0", 12345);
-    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
-        return true;
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
         std::cout.write(buf, size);
@@ -101,9 +100,8 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server) {
 
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
-    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
         ++server_on_connect_callback_count;
-        return true;
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
         ++server_on_receive_callback_count;
@@ -164,9 +162,8 @@ TEST_F(TlsTcpClientServerTest, client_send_small_chunks_to_server) {
 
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
-    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
         ++server_on_connect_callback_count;
-        return true;
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
         EXPECT_EQ(messages[server_on_receive_callback_count].size(), size);
@@ -238,9 +235,8 @@ TEST_F(TlsTcpClientServerTest, client_send_simultaneous_multiple_chunks_to_serve
 
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
-    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
         ++server_on_connect_callback_count;
-        return true;
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
         const auto& expected_message = messages[server_message_counter++];
@@ -291,8 +287,6 @@ TEST_F(TlsTcpClientServerTest, client_send_simultaneous_multiple_chunks_to_serve
 }
 
 TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
-    this->log_to_stdout();
-
     const std::string message = "Hello!";
     std::size_t client_on_connect_callback_count = 0;
     std::size_t client_on_receive_callback_count = 0;
@@ -304,13 +298,12 @@ TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
 
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
-    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
         ++server_on_connect_callback_count;
         client.send_data(message, [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
                 ++server_on_send_callback_count;
                 server.shutdown();
             });
-        return true;
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
         ++server_on_receive_callback_count;
@@ -373,7 +366,7 @@ TEST_F(TlsTcpClientServerTest, server_send_small_chunks_to_client) {
 
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
-    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
         ++server_on_connect_callback_count;
 
         for (const auto& m: messages) {
@@ -387,8 +380,6 @@ TEST_F(TlsTcpClientServerTest, server_send_small_chunks_to_client) {
                 }
             );
         }
-
-        return true;
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
         ++server_on_receive_callback_count;
@@ -456,7 +447,7 @@ TEST_F(TlsTcpClientServerTest, server_send_simultaneous_multiple_chunks_to_clien
 
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
-    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
         ++server_on_connect_callback_count;
 
         for (std::size_t i = 0; i < messages.size(); ++i) {
@@ -471,8 +462,6 @@ TEST_F(TlsTcpClientServerTest, server_send_simultaneous_multiple_chunks_to_clien
                 }
             );
         }
-
-        return true;
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
         ++server_on_receive_callback_count;
@@ -516,8 +505,6 @@ TEST_F(TlsTcpClientServerTest, server_send_simultaneous_multiple_chunks_to_clien
 }
 
 TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
-    this->log_to_stdout();
-
     const std::size_t DATA_SIZE = 1024 * 1024;
     static_assert(DATA_SIZE % 4 == 0, "Data size should be divisible by 4");
 
@@ -544,7 +531,7 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     EXPECT_FALSE(server.bind(m_default_addr, m_default_port));
     auto listen_error = server.listen(
-        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
             ++server_on_connect_callback_count;
             client.send_data(server_buf, DATA_SIZE,
                 [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
@@ -556,7 +543,6 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
                     }
                 }
             );
-            return true;
         },
         [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
             auto previous_size = server_data_receive_size;
@@ -621,26 +607,16 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
 }
 
 TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_some_data) {
-    this->log_to_stdout();
-
     io::EventLoop loop;
 
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     server.bind(m_default_addr, m_default_port);
     auto listen_result = server.listen(
-        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
-            return true;
-        },
         [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
-            std::cout.write(buf, size);
-
             std::string str(buf, size);
             if (str == "0") {
-                std::cout << "OK" << std::endl;
-
                 client.send_data("OK");
             } else {
-                std::cout << "Closing!!!!" << std::endl;
                 client.close();
             }
         }
@@ -668,7 +644,6 @@ TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_som
     ASSERT_EQ(0, loop.run());
 }
 
-// TODO: the same test as server_send_data_to_client but multiple sends
 // TODO: SSL_renegotiate test
 
 // TODO: private key with password
