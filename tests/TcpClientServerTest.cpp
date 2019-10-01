@@ -805,6 +805,69 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
     EXPECT_TRUE(server_closed_from_client_side);
 }
 
+// TODO: the same test but for client and for receiving data
+TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
+    // Note: in this test server send large cunk of data to client but in receive callback closes that connection
+    //       which does not allow to complete that sending operation, thus it is cancelled
+
+    const std::size_t DATA_SIZE = 128 * 1024 * 1024;
+
+    std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
+
+    for (std::size_t i = 0; i < DATA_SIZE; ++i) {
+        buf.get()[i] = static_cast<char>(i);
+    }
+
+    std::size_t server_on_send_callback_count = 0;
+
+    io::TcpClient* client = nullptr;
+
+    io::EventLoop loop;
+
+    io::TcpServer server(loop);
+    EXPECT_FALSE(server.bind(m_default_addr, m_default_port));
+    auto listen_error = server.listen(
+        [&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
+            client.send_data(buf, DATA_SIZE,
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    ++server_on_send_callback_count;
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
+                }
+            );
+            return true;
+        },
+        [&](io::TcpServer& /*server*/, io::TcpConnectedClient& client, const char* /*buf*/, std::size_t /*size*/) {
+            client.close();
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+    client = new io::TcpClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TcpClient& client, const io::Error& error) {
+            client.send_data("_",
+                [](io::TcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                }
+            );
+        },
+        [&](io::TcpClient& client, const char* buf, std::size_t size) {
+        },
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            server.shutdown();
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_send_callback_count);
+
+    EXPECT_FALSE(loop.run());
+
+    EXPECT_EQ(1, server_on_send_callback_count);
+}
+
 // TODO: server sends lot of data to many connected clients
 
 // TODO: client's write after close in server receive callback
@@ -820,89 +883,3 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
 
 
 // TODO: send data with size -1 will trigger Invalid Argument error
-
-
-// TODO: ECANCELLED test
-/*
-TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
-    this->log_to_stdout();
-
-    const std::size_t DATA_SIZE = 1024 * 1024;
-    static_assert(DATA_SIZE % 4 == 0, "Data size should be divisible by 4");
-
-    std::shared_ptr<char> client_buf(new char[DATA_SIZE], std::default_delete<char[]>());
-    std::shared_ptr<char> server_buf(new char[DATA_SIZE], std::default_delete<char[]>());
-
-    std::size_t i = 0;
-    for (; i < DATA_SIZE; i+= 4) {
-        *reinterpret_cast<std::uint32_t*>(client_buf.get() + i) = i / 4;
-        *reinterpret_cast<std::uint32_t*>(server_buf.get() + i) = DATA_SIZE / 4 - i / 4;
-    }
-
-    std::size_t client_on_connect_callback_count = 0;
-    std::size_t server_on_connect_callback_count = 0;
-
-    std::size_t client_data_receive_size = 0;
-    std::size_t server_data_receive_size = 0;
-
-    io::EventLoop loop;
-
-    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
-    EXPECT_FALSE(server.bind(m_default_addr, m_default_port));
-    auto listen_error = server.listen(
-        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
-            ++server_on_connect_callback_count;
-            client.send_data(server_buf, DATA_SIZE,
-                [](io::TlsTcpConnectedClient& client, const io::Error& error) {
-                    EXPECT_FALSE(error);
-                }
-            );
-            return true;
-        },
-        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
-            server_data_receive_size += size;
-            if (server_data_receive_size == DATA_SIZE) {
-                server.shutdown();
-            }
-        }
-    );
-    EXPECT_FALSE(listen_error);
-
-    auto client = new io::TlsTcpClient(loop);
-    client->connect(m_default_addr, m_default_port,
-        [&](io::TlsTcpClient& client, const io::Error& error) {
-            ++client_on_connect_callback_count;
-            client.send_data(client_buf, DATA_SIZE,
-                [](io::TlsTcpClient& client, const io::Error& error) {
-                    EXPECT_FALSE(error);
-                    if (error) {
-                        // ECANCELLED here because client closes connection in data receive callback
-                        std::cout << "error: " << error.string() << std::endl;
-                    }
-                }
-            );
-        },
-        [&](io::TlsTcpClient& client, const char* buf, std::size_t size) {
-            std::cout << "ololo: " << std::endl;
-            client_data_receive_size += size;
-
-            if (client_data_receive_size == DATA_SIZE) {
-                client.schedule_removal();
-            }
-        }
-    );
-
-
-    EXPECT_EQ(0, client_on_connect_callback_count);
-    EXPECT_EQ(0, server_on_connect_callback_count);
-    EXPECT_EQ(0, client_data_receive_size);
-    EXPECT_EQ(0, server_data_receive_size);
-
-    EXPECT_FALSE(loop.run());
-
-    EXPECT_EQ(1, client_on_connect_callback_count);
-    EXPECT_EQ(1, server_on_connect_callback_count);
-    EXPECT_EQ(DATA_SIZE, client_data_receive_size);
-    EXPECT_EQ(DATA_SIZE, server_data_receive_size);
-}
-*/
