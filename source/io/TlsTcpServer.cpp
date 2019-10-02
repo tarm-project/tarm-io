@@ -28,7 +28,7 @@ public:
     std::size_t connected_clients_count() const;
 
 protected: // callbacks
-    bool on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client);
+    void on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client, const io::Error& error);
     void on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const char* buf, std::size_t size);
 
 private:
@@ -67,7 +67,13 @@ Error TlsTcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t por
     return m_tcp_server->bind(ip_addr_str, port);
 }
 
-bool TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client) {
+void TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client, const io::Error& error) {
+    if (error) {
+        //m_new_connection_callback(.......);
+        // TODO: error handling here
+        return;
+    }
+
     TlsTcpConnectedClient* tls_client =
         new TlsTcpConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_certificate.get(), m_private_key.get(), tcp_client);
 
@@ -81,8 +87,6 @@ bool TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient
     } else {
         // TODO: error
     }
-
-    return true;
 }
 
 void TlsTcpServer::Impl::on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const char* buf, std::size_t size) {
@@ -119,7 +123,7 @@ int TlsTcpServer::Impl::listen(NewConnectionCallback new_connection_callback,
     }
 
     using namespace std::placeholders;
-    return m_tcp_server->listen(std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2),
+    return m_tcp_server->listen(std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2, _3),
                                 std::bind(&TlsTcpServer::Impl::on_data_receive, this, _1, _2, _3, _4));
 }
 

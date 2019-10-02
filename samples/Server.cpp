@@ -20,8 +20,7 @@ int main(int argc, char* argv[]) {
 
     io::TlsTcpServer server(loop, cert_name, key_name);
     server.bind("0.0.0.0", 12345);
-    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) -> bool {
-        return true;
+    auto listen_result = server.listen([&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
     },
     [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
         std::cout.write(buf, size);
@@ -118,13 +117,11 @@ int main(int argc, char* argv[]) {
     //     });
     // });
 
-    auto on_new_connection = [](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
+    auto on_new_connection = [](io::TcpServer& server, io::TcpConnectedClient& client) {
         std::cout << "New connection from " << io::ip4_addr_to_string(client.ipv4_addr()) << ":" << client.port() << std::endl;
 
         // std::memcpy(write_data_buf.get(), "Hello", 5);
         // client_.send_data(write_data_buf, 5);
-
-        return true;
     };
 
     auto on_data_read = [&loop](io::TcpServer& server, io::TcpConnectedClient& client, const char* data, size_t len) {

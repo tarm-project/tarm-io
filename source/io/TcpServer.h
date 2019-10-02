@@ -21,8 +21,7 @@ public:
 
     static const size_t READ_BUFFER_SIZE = 65536;
 
-    // TODO: replace 'int status' with some error
-    using NewConnectionCallback = std::function<bool(TcpServer&, TcpConnectedClient&)>;
+    using NewConnectionCallback = std::function<void(TcpServer&, TcpConnectedClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(TcpServer&, TcpConnectedClient&, const char*, std::size_t)>;
 
     IO_DLL_PUBLIC TcpServer(EventLoop& loop);

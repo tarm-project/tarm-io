@@ -174,22 +174,28 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
     auto tcp_client = new TcpConnectedClient(*this_.m_loop, *this_.m_parent);
 
-    if (uv_accept(server, reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream())) == 0) {
+    auto accept_status = uv_accept(server, reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream()));
+    if (accept_status == 0) {
         //sockaddr_storage info;
         struct sockaddr info;
         int info_len = sizeof info;
-        int status = uv_tcp_getpeername(reinterpret_cast<uv_tcp_t*>(tcp_client->tcp_client_stream()),
-                                        &info,
-                                        &info_len);
-        if (status == 0) {
+        int getpeername_status = uv_tcp_getpeername(reinterpret_cast<uv_tcp_t*>(tcp_client->tcp_client_stream()),
+                                                    &info,
+                                                    &info_len);
+        if (getpeername_status == 0) {
             auto addr_info = reinterpret_cast<sockaddr_in*>(&info);
             tcp_client->set_port(network_to_host(addr_info->sin_port));
             tcp_client->set_ipv4_addr(network_to_host(addr_info->sin_addr.s_addr));
 
             bool allow_connection = true;
+            // TODO: add some optional callback call here to reject undesired connections
+            /*
             if (this_.m_new_connection_callback) {
                 allow_connection = this_.m_new_connection_callback(*this_.m_parent, *tcp_client);
             }
+            */
+
+            this_.m_new_connection_callback(*this_.m_parent, *tcp_client, Error(0));
 
             if (allow_connection) {
                 this_.m_client_connections.insert(tcp_client);
@@ -207,9 +213,11 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
         } else {
             // TODO: call close???
-            IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", uv_strerror(status));
+            IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", uv_strerror(getpeername_status));
+            this_.m_new_connection_callback(*this_.m_parent, *tcp_client, Error(getpeername_status));
         }
     } else {
+        this_.m_new_connection_callback(*this_.m_parent, *tcp_client, Error(accept_status));
         //uv_close(reinterpret_cast<uv_handle_t*>(tcp_client), nullptr/*on_close*/);
         // TODO: schedule TcpConnectedClient removal here
     }
