@@ -868,6 +868,72 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
     EXPECT_EQ(1, server_on_send_callback_count);
 }
 
+TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
+    const std::size_t DATA_SIZE = 128 * 1024 * 1024;
+
+    std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
+
+    for (std::size_t i = 0; i < DATA_SIZE; ++i) {
+        buf.get()[i] = static_cast<char>(i);
+    }
+
+    std::size_t client_on_send_callback_count = 0;
+
+    io::TcpClient* client_ptr = nullptr;
+
+    io::EventLoop loop;
+
+    io::TcpServer server(loop);
+    EXPECT_FALSE(server.bind(m_default_addr, m_default_port));
+    auto listen_error = server.listen(
+        [&](io::TcpServer& server, io::TcpConnectedClient& client) -> bool {
+            client.send_data("_",
+                [](io::TcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                }
+            );
+
+            client.set_close_callback(
+                [&](io::TcpConnectedClient& /*client*/, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    server.shutdown();
+                    client_ptr->schedule_removal();
+                }
+            );
+
+            return true;
+        },
+        [&](io::TcpServer& /*server*/, io::TcpConnectedClient& client, const char* /*buf*/, std::size_t /*size*/) {
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+    client_ptr = new io::TcpClient(loop);
+    client_ptr->connect(m_default_addr, m_default_port,
+        [&](io::TcpClient& client, const io::Error& error) {
+            client.send_data(buf, DATA_SIZE,
+                [&](io::TcpClient& client, const io::Error& error) {
+                    ++client_on_send_callback_count;
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
+                }
+            );
+        },
+        [&](io::TcpClient& client, const char* buf, std::size_t size) {
+            client.close();
+        },
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        }
+    );
+
+    EXPECT_EQ(0, client_on_send_callback_count);
+
+    EXPECT_FALSE(loop.run());
+
+    EXPECT_EQ(1, client_on_send_callback_count);
+}
+
 // TODO: server sends lot of data to many connected clients
 
 // TODO: client's write after close in server receive callback
