@@ -16,9 +16,9 @@ public:
     Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsTcpServer& parent);
     ~Impl();
 
-    Error bind(const std::string& ip_addr_str, std::uint16_t port);
-
-    int listen(NewConnectionCallback new_connection_callback,
+    int listen(const std::string& ip_addr_str,
+               std::uint16_t port,
+               NewConnectionCallback new_connection_callback,
                DataReceivedCallback data_receive_callback,
                int backlog_size);
 
@@ -63,10 +63,6 @@ TlsTcpServer::Impl::~Impl() {
     delete m_tcp_server; // TODO: schedule removal from TCP server
 }
 
-Error TlsTcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
-    return m_tcp_server->bind(ip_addr_str, port);
-}
-
 void TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client, const io::Error& error) {
     if (error) {
         //m_new_connection_callback(.......);
@@ -94,7 +90,9 @@ void TlsTcpServer::Impl::on_data_receive(TcpServer& server, TcpConnectedClient& 
     tls_client.on_data_receive(buf, size);
 }
 
-int TlsTcpServer::Impl::listen(NewConnectionCallback new_connection_callback,
+int TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
+                               std::uint16_t port,
+                               NewConnectionCallback new_connection_callback,
                                DataReceivedCallback data_receive_callback,
                                int backlog_size) {
     m_new_connection_callback = new_connection_callback;
@@ -123,7 +121,9 @@ int TlsTcpServer::Impl::listen(NewConnectionCallback new_connection_callback,
     }
 
     using namespace std::placeholders;
-    return m_tcp_server->listen(std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2, _3),
+    return m_tcp_server->listen(ip_addr_str,
+                                port,
+                                std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2, _3),
                                 std::bind(&TlsTcpServer::Impl::on_data_receive, this, _1, _2, _3, _4));
 }
 
@@ -149,19 +149,19 @@ TlsTcpServer::TlsTcpServer(EventLoop& loop, const Path& certificate_path, const 
 TlsTcpServer::~TlsTcpServer() {
 }
 
-Error TlsTcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
-    return m_impl->bind(ip_addr_str, port);
-}
-
-int TlsTcpServer::listen(DataReceivedCallback data_receive_callback,
-                         int backlog_size) {
-    return m_impl->listen(nullptr, data_receive_callback, backlog_size);
-}
-
-int TlsTcpServer::listen(NewConnectionCallback new_connection_callback,
+int TlsTcpServer::listen(const std::string& ip_addr_str,
+                         std::uint16_t port,
                          DataReceivedCallback data_receive_callback,
                          int backlog_size) {
-    return m_impl->listen(new_connection_callback, data_receive_callback, backlog_size);
+    return m_impl->listen(ip_addr_str, port, nullptr, data_receive_callback, backlog_size);
+}
+
+int TlsTcpServer::listen(const std::string& ip_addr_str,
+                         std::uint16_t port,
+                         NewConnectionCallback new_connection_callback,
+                         DataReceivedCallback data_receive_callback,
+                         int backlog_size) {
+    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, backlog_size);
 }
 
 void TlsTcpServer::shutdown() {

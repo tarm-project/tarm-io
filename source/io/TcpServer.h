@@ -34,13 +34,13 @@ public:
     TcpServer(TcpServer&& other) = default;
     TcpServer& operator=(TcpServer&& other) = delete; // default
 
-    IO_DLL_PUBLIC Error bind(const std::string& ip_addr_str, std::uint16_t port);
-
     // On success, zero is returned
     IO_DLL_PUBLIC
-    int listen(NewConnectionCallback new_connection_callback,
-               DataReceivedCallback data_receive_callback,
-               int backlog_size = 128);
+    Error listen(const std::string& ip_addr_str,
+                 std::uint16_t port,
+                 NewConnectionCallback new_connection_callback,
+                 DataReceivedCallback data_receive_callback,
+                 int backlog_size = 128);
 
     IO_DLL_PUBLIC void shutdown();
     IO_DLL_PUBLIC void close();

@@ -19,7 +19,9 @@ public:
     using NewConnectionCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&)>;
     using DataReceivedCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const char*, std::size_t)>;
 
-    IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path);
+    IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,
+                               const Path& certificate_path,
+                               const Path& private_key_path);
 
     // TODO: some sort of macro here???
     TlsTcpServer(const TlsTcpServer& other) = delete;
@@ -28,17 +30,19 @@ public:
     TlsTcpServer(TlsTcpServer&& other) = default;
     TlsTcpServer& operator=(TlsTcpServer&& other) = delete; // default
 
-    IO_DLL_PUBLIC Error bind(const std::string& ip_addr_str, std::uint16_t port);
-
     // TODO: do not return error code and return io::Error
     // On success, zero is returned
     IO_DLL_PUBLIC
-    int listen(NewConnectionCallback new_connection_callback,
+    int listen(const std::string& ip_addr_str,
+               std::uint16_t port,
+               NewConnectionCallback new_connection_callback,
                DataReceivedCallback data_receive_callback,
                int backlog_size = 128);
 
     IO_DLL_PUBLIC
-    int listen(DataReceivedCallback data_receive_callback,
+    int listen(const std::string& ip_addr_str,
+               std::uint16_t port,
+               DataReceivedCallback data_receive_callback,
                int backlog_size = 128);
 
     IO_DLL_PUBLIC void shutdown();

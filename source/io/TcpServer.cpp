@@ -22,11 +22,11 @@ public:
     Impl(EventLoop& loop, TcpServer& parent);
     ~Impl();
 
-    Error bind(const std::string& ip_addr_str, std::uint16_t port);
-
-    int listen(NewConnectionCallback new_connection_callback,
-               DataReceivedCallback data_receive_callback,
-               int backlog_size = 128);
+    Error listen(const std::string& ip_addr_str,
+                 std::uint16_t port,
+                 NewConnectionCallback new_connection_callback,
+                 DataReceivedCallback data_receive_callback,
+                 int backlog_size);
 
     void shutdown();
     void close();
@@ -83,10 +83,18 @@ TcpServer::Impl::~Impl() {
     }
 }
 
-Error TcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
+Error TcpServer::Impl::listen(const std::string& ip_addr_str,
+                              std::uint16_t port,
+                              NewConnectionCallback new_connection_callback,
+                              DataReceivedCallback data_receive_callback,
+                              int backlog_size) {
     m_server_handle = new uv_tcp_t;
-    auto init_status = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
+    const auto init_status = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
     m_server_handle->data = this;
+
+    if (init_status < 0) {
+        return init_status;
+    }
 
     /*
     uv_os_fd_t handle;
@@ -99,26 +107,26 @@ Error TcpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) 
     setsockopt(handle, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
     */
 
-    int uv_status = uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
-    if (uv_status < 0) {
-        return uv_status;
+    const int ip4_status = uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
+    if (ip4_status < 0) {
+        return ip4_status;
     }
 
-    return uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
-}
+    const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
+    if (bind_status < 0) {
+        return bind_status;
+    }
 
-int TcpServer::Impl::listen(NewConnectionCallback new_connection_callback,
-                            DataReceivedCallback data_receive_callback,
-                            int backlog_size) {
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
-    int status = uv_listen(reinterpret_cast<uv_stream_t*>(m_server_handle), backlog_size, on_new_connection);
+    const int listen_status = uv_listen(reinterpret_cast<uv_stream_t*>(m_server_handle), backlog_size, on_new_connection);
 
-    // TODO: instead of returning status code need to call TcpServer::on_new_connection with appropriate status set
-    if (status < 0) {
-        std::cout << uv_strerror(status) << std::endl;
+    if (listen_status < 0) {
+        // TODO: remove this????
+        std::cout << uv_strerror(listen_status) << std::endl;
     }
-    return status;
+
+    return listen_status;
 }
 
 void TcpServer::Impl::shutdown() {
@@ -248,14 +256,12 @@ TcpServer::TcpServer(EventLoop& loop) :
 TcpServer::~TcpServer() {
 }
 
-Error TcpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
-    return m_impl->bind(ip_addr_str, port);
-}
-
-int TcpServer::listen(NewConnectionCallback new_connection_callback,
-                      DataReceivedCallback data_receive_callback,
-                      int backlog_size) {
-    return m_impl->listen(new_connection_callback, data_receive_callback, backlog_size);
+Error TcpServer::listen(const std::string& ip_addr_str,
+                        std::uint16_t port,
+                        NewConnectionCallback new_connection_callback,
+                        DataReceivedCallback data_receive_callback,
+                        int backlog_size) {
+    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, backlog_size);
 }
 
 void TcpServer::shutdown() {
