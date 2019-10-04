@@ -34,7 +34,6 @@ public:
     TcpServer(TcpServer&& other) = default;
     TcpServer& operator=(TcpServer&& other) = delete; // default
 
-    // On success, zero is returned
     IO_DLL_PUBLIC
     Error listen(const std::string& ip_addr_str,
                  std::uint16_t port,

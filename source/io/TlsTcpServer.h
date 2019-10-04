@@ -30,20 +30,18 @@ public:
     TlsTcpServer(TlsTcpServer&& other) = default;
     TlsTcpServer& operator=(TlsTcpServer&& other) = delete; // default
 
-    // TODO: do not return error code and return io::Error
-    // On success, zero is returned
     IO_DLL_PUBLIC
-    int listen(const std::string& ip_addr_str,
-               std::uint16_t port,
-               NewConnectionCallback new_connection_callback,
-               DataReceivedCallback data_receive_callback,
-               int backlog_size = 128);
+    Error listen(const std::string& ip_addr_str,
+                 std::uint16_t port,
+                 NewConnectionCallback new_connection_callback,
+                 DataReceivedCallback data_receive_callback,
+                 int backlog_size = 128);
 
     IO_DLL_PUBLIC
-    int listen(const std::string& ip_addr_str,
-               std::uint16_t port,
-               DataReceivedCallback data_receive_callback,
-               int backlog_size = 128);
+    Error listen(const std::string& ip_addr_str,
+                 std::uint16_t port,
+                 DataReceivedCallback data_receive_callback,
+                 int backlog_size = 128);
 
     IO_DLL_PUBLIC void shutdown();
     IO_DLL_PUBLIC void close();

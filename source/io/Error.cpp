@@ -23,7 +23,11 @@ std::string Error::string() const {
     if (m_status_code == StatusCode::OK) {
         return "No error. Status OK";
     } else if (m_status_code == StatusCode::FILE_NOT_OPEN) {
-            return "File is not opened";
+        return "File is not opened";
+    } else if (m_status_code == StatusCode::TLS_CERTIFICATE_ERROR_FILE_NOT_EXIST) {
+        return "Certificate error. File does not exist";
+    } else if (m_status_code == StatusCode::TLS_PRIVATE_KEY_ERROR_FILE_NOT_EXIST) {
+        return "Private key error. File does not exist";
     } else if (m_status_code == StatusCode::UNDEFINED) {
         return "Unknow status code from libuv: " + std::to_string(m_libuv_code);
     }

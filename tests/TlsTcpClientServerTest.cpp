@@ -315,8 +315,7 @@ TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
         [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
             ++server_on_receive_callback_count;
         });
-        ASSERT_EQ(0, listen_error)
-    ;
+    ASSERT_FALSE(listen_error);
 
     auto client = new io::TlsTcpClient(loop);
 
@@ -655,6 +654,7 @@ TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_som
     ASSERT_EQ(0, loop.run());
 }
 
+// TODO: the same test about not existing private key
 TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
     io::EventLoop loop;
 
@@ -679,7 +679,8 @@ TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
         }
     );
 
-        EXPECT_TRUE(error);
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::TLS_CERTIFICATE_ERROR_FILE_NOT_EXIST, error.code()) << error.string();
 
 
     // TODO: check io::Error code

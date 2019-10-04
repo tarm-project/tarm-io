@@ -16,11 +16,11 @@ public:
     Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsTcpServer& parent);
     ~Impl();
 
-    int listen(const std::string& ip_addr_str,
-               std::uint16_t port,
-               NewConnectionCallback new_connection_callback,
-               DataReceivedCallback data_receive_callback,
-               int backlog_size);
+    Error listen(const std::string& ip_addr_str,
+                 std::uint16_t port,
+                 NewConnectionCallback new_connection_callback,
+                 DataReceivedCallback data_receive_callback,
+                 int backlog_size);
 
     void shutdown();
     void close();
@@ -90,11 +90,11 @@ void TlsTcpServer::Impl::on_data_receive(TcpServer& server, TcpConnectedClient& 
     tls_client.on_data_receive(buf, size);
 }
 
-int TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
-                               std::uint16_t port,
-                               NewConnectionCallback new_connection_callback,
-                               DataReceivedCallback data_receive_callback,
-                               int backlog_size) {
+Error TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
+                                 std::uint16_t port,
+                                 NewConnectionCallback new_connection_callback,
+                                 DataReceivedCallback data_receive_callback,
+                                 int backlog_size) {
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
 
@@ -102,7 +102,7 @@ int TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
 
     FilePtr certificate_file(std::fopen(m_certificate_path.string().c_str(), "r"), &std::fclose);
     if (certificate_file == nullptr) {
-        return -1; // TODO:
+        return Error(StatusCode::TLS_CERTIFICATE_ERROR_FILE_NOT_EXIST);
     }
 
     m_certificate.reset(PEM_read_X509(certificate_file.get(), nullptr, nullptr, nullptr));
@@ -112,7 +112,7 @@ int TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
 
     FilePtr private_key_file(std::fopen(m_private_key_path.string().c_str(), "r"), &std::fclose);
     if (private_key_file == nullptr) {
-        return -1; // TODO:
+        return Error(StatusCode::TLS_PRIVATE_KEY_ERROR_FILE_NOT_EXIST);
     }
 
     m_private_key.reset(PEM_read_PrivateKey(private_key_file.get(), nullptr, nullptr, nullptr));
@@ -149,18 +149,18 @@ TlsTcpServer::TlsTcpServer(EventLoop& loop, const Path& certificate_path, const 
 TlsTcpServer::~TlsTcpServer() {
 }
 
-int TlsTcpServer::listen(const std::string& ip_addr_str,
-                         std::uint16_t port,
-                         DataReceivedCallback data_receive_callback,
-                         int backlog_size) {
+Error TlsTcpServer::listen(const std::string& ip_addr_str,
+                           std::uint16_t port,
+                           DataReceivedCallback data_receive_callback,
+                           int backlog_size) {
     return m_impl->listen(ip_addr_str, port, nullptr, data_receive_callback, backlog_size);
 }
 
-int TlsTcpServer::listen(const std::string& ip_addr_str,
-                         std::uint16_t port,
-                         NewConnectionCallback new_connection_callback,
-                         DataReceivedCallback data_receive_callback,
-                         int backlog_size) {
+Error TlsTcpServer::listen(const std::string& ip_addr_str,
+                           std::uint16_t port,
+                           NewConnectionCallback new_connection_callback,
+                           DataReceivedCallback data_receive_callback,
+                           int backlog_size) {
     return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, backlog_size);
 }
 
