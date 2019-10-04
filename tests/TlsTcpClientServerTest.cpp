@@ -635,7 +635,6 @@ TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_som
             client.send_data(std::to_string(counter++));
         },
         [&](io::TlsTcpClient& client, const io::Error& error) {
-            std::cout << "Client closed!" << std::endl;
             client.schedule_removal();
             server.shutdown(); // Note: shutdowning server from client callback
         }
