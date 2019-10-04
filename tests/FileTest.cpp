@@ -818,12 +818,12 @@ TEST_F(FileTest, stat_size) {
 }
 
 TEST_F(FileTest, stat_time) {
-    // Note: unfortunately file creation time may differ by 10-20msec from time get by std::chrono
+    // Note: unfortunately file creation time may differ by 5-20msec from time get by std::chrono
     // or ::gettimeofday so using fuzzy comparison
 
-    const auto now_time = std::chrono::system_clock::now();
-    const auto seconds = now_time.time_since_epoch().count() / 1000000ll;
-    const auto nano_seconds = now_time.time_since_epoch().count() % 1000000ll;
+    auto unix_time = std::chrono::system_clock::now().time_since_epoch();
+    const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(unix_time).count();
+    const auto nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(unix_time).count() - seconds * 1000000000ll;
 
     auto path = create_file_for_read(m_tmp_test_dir, 16);
     ASSERT_FALSE(path.empty());
@@ -836,13 +836,13 @@ TEST_F(FileTest, stat_time) {
         file.stat([&](io::File& file, const io::StatData& stat){
             auto file_str = file.path().string().c_str();
             EXPECT_LE(std::abs(stat.last_access_time.seconds - seconds), 1l) << file_str;
-            EXPECT_LE(std::abs(stat.last_access_time.nanoseconds - nano_seconds), 900000000l) << file_str;
+            EXPECT_LE(std::abs(stat.last_access_time.nanoseconds - nano_seconds), 100000000l) << file_str;
 
             EXPECT_LE(std::abs(stat.last_modification_time.seconds - seconds), 1l) << file_str;
-            EXPECT_LE(std::abs(stat.last_modification_time.nanoseconds - nano_seconds), 900000000l) << file_str;
+            EXPECT_LE(std::abs(stat.last_modification_time.nanoseconds - nano_seconds), 100000000l) << file_str;
 
             EXPECT_LE(std::abs(stat.last_status_change_time.seconds - seconds), 1l) << file_str;
-            EXPECT_LE(std::abs(stat.last_status_change_time.nanoseconds - nano_seconds), 900000000l) << file_str;
+            EXPECT_LE(std::abs(stat.last_status_change_time.nanoseconds - nano_seconds), 100000000l) << file_str;
 
             file.schedule_removal();
         });
