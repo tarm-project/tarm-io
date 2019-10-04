@@ -643,6 +643,42 @@ TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_som
     ASSERT_EQ(0, loop.run());
 }
 
+
+TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
+    io::EventLoop loop;
+
+    io::Path not_existing_path;
+#if defined(__APPLE__) || defined(__linux__)
+    not_existing_path = "/no/existing/path.pem";
+#else
+    not_existing_path = "C:\\no\\existing\\path.pem";
+#endif
+
+    io::TlsTcpServer server(loop, not_existing_path, m_key_path);
+    EXPECT_FALSE(server.bind(m_default_addr, m_default_port));
+
+    std::size_t server_new_connection_callback_count = 0;
+    std::size_t server_data_receive_callback_count = 0;
+
+    auto error = server.listen(
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
+            ++server_new_connection_callback_count;
+        },
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+            ++server_data_receive_callback_count;
+        }
+    );
+
+    EXPECT_TRUE(error);
+
+    // TODO: check io::Error code
+
+    //std::cout << error.string() << std::endl;
+
+    EXPECT_EQ(0, server_new_connection_callback_count);
+    EXPECT_EQ(0, server_data_receive_callback_count);
+}
+
 // TODO: SSL_renegotiate test
 
 // TODO: private key with password
