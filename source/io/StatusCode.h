@@ -8,17 +8,17 @@
 
 namespace io {
 
-//#ifdef _MSC_VER
-//    using ssize_t = intptr_t;
-//#endif
-
 enum class StatusCode : uint32_t {
+    // custom codes
     OK = 0,
     UNDEFINED,
     FILE_NOT_OPEN,
-    TLS_CERTIFICATE_ERROR_FILE_NOT_EXIST,
-    TLS_PRIVATE_KEY_ERROR_FILE_NOT_EXIST,
+    TLS_CERTIFICATE_FILE_NOT_EXIST,
+    TLS_PRIVATE_KEY_FILE_NOT_EXIST,
+    TLS_CERTIFICATE_INVALID,
+    TLS_PRIVATE_KEY_INVALID,
 
+    // libuv codes
     ARGUMENT_LIST_TOO_LONG,
     PERMISSION_DENIED,
     ADDRESS_ALREADY_IN_USE,

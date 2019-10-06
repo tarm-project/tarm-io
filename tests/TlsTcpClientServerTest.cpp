@@ -679,7 +679,7 @@ TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
     );
 
     EXPECT_TRUE(error);
-    EXPECT_EQ(io::StatusCode::TLS_CERTIFICATE_ERROR_FILE_NOT_EXIST, error.code()) << error.string();
+    EXPECT_EQ(io::StatusCode::TLS_CERTIFICATE_FILE_NOT_EXIST, error.code()) << error.string();
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
@@ -710,7 +710,57 @@ TEST_F(TlsTcpClientServerTest, not_existing_key) {
     );
 
     EXPECT_TRUE(error);
-    EXPECT_EQ(io::StatusCode::TLS_PRIVATE_KEY_ERROR_FILE_NOT_EXIST, error.code()) << error.string();
+    EXPECT_EQ(io::StatusCode::TLS_PRIVATE_KEY_FILE_NOT_EXIST, error.code()) << error.string();
+
+    EXPECT_EQ(0, server_new_connection_callback_count);
+    EXPECT_EQ(0, server_data_receive_callback_count);
+}
+
+TEST_F(TlsTcpClientServerTest, invalid_certificate) {
+    io::EventLoop loop;
+
+    io::Path certificate_path = m_test_path / "invalid_certificate.pem";;
+    io::TlsTcpServer server(loop, certificate_path, m_key_path);
+
+    std::size_t server_new_connection_callback_count = 0;
+    std::size_t server_data_receive_callback_count = 0;
+
+    auto error = server.listen(m_default_addr, m_default_port,
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
+            ++server_new_connection_callback_count;
+        },
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+            ++server_data_receive_callback_count;
+        }
+    );
+
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::TLS_CERTIFICATE_INVALID, error.code()) << error.string();
+
+    EXPECT_EQ(0, server_new_connection_callback_count);
+    EXPECT_EQ(0, server_data_receive_callback_count);
+}
+
+TEST_F(TlsTcpClientServerTest, invalid_private_key) {
+    io::EventLoop loop;
+
+    io::Path key_path = m_test_path / "invalid_key.pem";;
+    io::TlsTcpServer server(loop, m_cert_path, key_path);
+
+    std::size_t server_new_connection_callback_count = 0;
+    std::size_t server_data_receive_callback_count = 0;
+
+    auto error = server.listen(m_default_addr, m_default_port,
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
+            ++server_new_connection_callback_count;
+        },
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+            ++server_data_receive_callback_count;
+        }
+    );
+
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::TLS_PRIVATE_KEY_INVALID, error.code()) << error.string();
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);

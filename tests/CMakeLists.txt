@@ -56,8 +56,12 @@ add_dependencies(${TESTS_EXE_NAME} io)
 add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/data
-            ${CMAKE_BINARY_DIR}/tests/$<$<PLATFORM_ID:Windows>:$<CONFIG>>
+            ${CMAKE_BINARY_DIR}/tests/$<$<OR:$<PLATFORM_ID:Windows>,$<PLATFORM_ID:Darwin>>:$<CONFIG>>
 )
+
+#add_custom_target(printFooKeys
+#  COMMAND ${CMAKE_COMMAND} -E echo $<CONFIG>
+#)
 
 # TODO: replace hardcoded 'tests' with ${TESTS_EXE_NAME}
 if(WIN32) # AND BUILD_SHARED_LIBS

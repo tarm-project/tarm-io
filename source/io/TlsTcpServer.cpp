@@ -102,22 +102,22 @@ Error TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
 
     FilePtr certificate_file(std::fopen(m_certificate_path.string().c_str(), "r"), &std::fclose);
     if (certificate_file == nullptr) {
-        return Error(StatusCode::TLS_CERTIFICATE_ERROR_FILE_NOT_EXIST);
+        return Error(StatusCode::TLS_CERTIFICATE_FILE_NOT_EXIST);
     }
 
     m_certificate.reset(PEM_read_X509(certificate_file.get(), nullptr, nullptr, nullptr));
     if (m_certificate == nullptr) {
-        return -1; // TODO:
+        return Error(StatusCode::TLS_CERTIFICATE_INVALID);
     }
 
     FilePtr private_key_file(std::fopen(m_private_key_path.string().c_str(), "r"), &std::fclose);
     if (private_key_file == nullptr) {
-        return Error(StatusCode::TLS_PRIVATE_KEY_ERROR_FILE_NOT_EXIST);
+        return Error(StatusCode::TLS_PRIVATE_KEY_FILE_NOT_EXIST);
     }
 
     m_private_key.reset(PEM_read_PrivateKey(private_key_file.get(), nullptr, nullptr, nullptr));
     if (m_private_key == nullptr) {
-        return -1; // TODO:
+        return Error(StatusCode::TLS_PRIVATE_KEY_INVALID);
     }
 
     using namespace std::placeholders;
