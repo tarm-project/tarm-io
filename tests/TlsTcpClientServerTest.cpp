@@ -766,6 +766,32 @@ TEST_F(TlsTcpClientServerTest, invalid_private_key) {
     EXPECT_EQ(0, server_data_receive_callback_count);
 }
 
+TEST_F(TlsTcpClientServerTest, not_matching_certificate_and_key) {
+    io::EventLoop loop;
+
+    const io::Path cert_path = m_test_path / "not_matching_certificate.pem";
+    const io::Path key_path = m_test_path / "not_matching_key.pem";
+    io::TlsTcpServer server(loop, cert_path, key_path);
+
+    std::size_t server_new_connection_callback_count = 0;
+    std::size_t server_data_receive_callback_count = 0;
+
+    auto error = server.listen(m_default_addr, m_default_port,
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
+            ++server_new_connection_callback_count;
+        },
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+            ++server_data_receive_callback_count;
+        }
+    );
+
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH, error.code()) << error.string();
+
+    EXPECT_EQ(0, server_new_connection_callback_count);
+    EXPECT_EQ(0, server_data_receive_callback_count);
+}
+
 // TODO: not matching certificate and key
 // TODO: connect as TCP and send invalid data on various stages
 // TODO: listen on invalid address

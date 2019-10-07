@@ -33,6 +33,8 @@ std::string Error::string() const {
             return "Certificate error. Certificate is invalid or corrupted";
         case StatusCode::TLS_PRIVATE_KEY_INVALID:
             return "Private key error. Private key is invalid or corrupted";
+        case StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH:
+            return "Private key and certificate do not match";
 
         case StatusCode::UNDEFINED:
             return "Unknow status code from libuv: " + std::to_string(m_libuv_code);
