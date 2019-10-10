@@ -163,7 +163,7 @@ bool TlsTcpServer::Impl::certificate_and_key_match() {
     assert(m_certificate);
     assert(m_private_key);
 
-    return X509_verify(m_certificate.get(), m_private_key.get()) == 1;
+    return X509_verify(m_certificate.get(), m_private_key.get()) != 0;
     //err = ERR_get_error();
 
     // verify that key is well-encoded
