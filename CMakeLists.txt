@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.5.0)
 
+# TODO: this is needed for executables like Tests, move to corresponding cmake????
+if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version")
+endif()
+
 project(connection_test VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 11)
