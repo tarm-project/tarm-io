@@ -88,6 +88,10 @@ void TcpClientImplBase<ParentType, ImplType>::init_stream() {
 
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+    IO_LOG(m_loop, ERROR, m_parent, "size:", size);
+
+    // TODO: check if connection is open.
+    // TODO: Write test first!!!111
     auto req = new WriteRequest;
     req->end_send_callback = callback;
     req->data = this;

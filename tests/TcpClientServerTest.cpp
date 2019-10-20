@@ -490,11 +490,16 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     server.listen(m_default_addr, m_default_port,
     [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
+
+        client.set_close_callback([&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_EQ(0, server.connected_clients_count());
+        });
     },
     [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
         EXPECT_EQ(std::string(buf, size), client_message);
         client.close();
-        EXPECT_EQ(0, server.connected_clients_count());
+        EXPECT_EQ(1, server.connected_clients_count()); // not closed yet
+
         // TODO: also test with shutdown
         //client.shutdown();
     });
@@ -944,6 +949,71 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
     EXPECT_EQ(1, client_on_send_callback_count);
 }
 
+TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
+    //this->log_to_stdout();
+    io::EventLoop loop;
+
+    io::TcpServer server(loop);
+    io::TcpClient* client_ptr = nullptr;
+
+    std::shared_ptr<char> message_ptr(new char[100], std::default_delete<char[]>());
+    std::memset(message_ptr.get(), 0, 100);
+
+    int counter = 0;
+
+    std::function<void(io::TcpConnectedClient&)> send_data = [&](io::TcpConnectedClient& client) {
+        if (!client.is_open()) {
+            return;
+        }
+
+        client.send_data(message_ptr, 100,
+            [&](io::TcpConnectedClient& client, const io::Error& error) {
+                if (error) {
+                    // Chance to reproduce is about 5-10%
+                    // In this test client closes conenction first and sends RESET to server.
+                    // Server may send some data meantime and connection may become reset from client side but not closed yet
+                    // And this callback is called with "BROKEN_PIPE" error and than close.
+                    // This error means that message was not delivered because peer closed connection.
+                    // TODO: BROKEN_PIPE error name is not descriptiove enough. Convert all such errors into CONNECTION_RESET_BY_PEER????
+                    EXPECT_EQ(io::StatusCode::BROKEN_PIPE, error.code()) << error.string();
+                }
+
+                send_data(client);
+            }
+        );
+
+        if (counter++ == 5) {
+            // Imitation of sudden client exit
+            client_ptr->schedule_removal();
+        }
+    };
+
+    auto listen_error = server.listen(m_default_addr, m_default_port,
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            send_data(client);
+
+            client.set_close_callback([&](io::TcpConnectedClient&, const io::Error& error) {
+                server.shutdown();
+            });
+        },
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+        }
+    );
+
+    ASSERT_FALSE(listen_error) << listen_error.string();
+
+    client_ptr = new io::TcpClient(loop);
+    client_ptr->connect(m_default_addr, m_default_port,
+        [&](io::TcpClient& client, const io::Error& error) {
+        },
+        [&](io::TcpClient& client, const char* buf, std::size_t size) {
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
+}
+
 // TODO: server sends lot of data to many connected clients
 
 // TODO: client's write after close in server receive callback
@@ -959,3 +1029,5 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
 
 
 // TODO: send data with size -1 will trigger Invalid Argument error
+
+// TODO: connect->close->connect->close cycle for TcpCLient

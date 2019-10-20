@@ -20,11 +20,13 @@ public:
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback = nullptr);
-    void close();
+    bool close();
 
     void set_close_callback(CloseCallback callback);
 
     void shutdown(CloseCallback callback);
+
+    EventLoop* loop();
 
 protected:
     // statics
@@ -40,6 +42,8 @@ private:
     DataReceiveCallback m_receive_callback = nullptr;
 
     CloseCallback m_close_callback = nullptr;
+
+    bool m_want_delete_object = false;
 };
 
 TcpClient::Impl::Impl(EventLoop& loop, TcpClient& parent) :
@@ -52,6 +56,10 @@ TcpClient::Impl::~Impl() {
     if (m_connect_req) {
         delete m_connect_req; // TODO: delete right after connect???
     }
+}
+
+EventLoop* TcpClient::Impl::loop() {
+    return m_loop;
 }
 
 void TcpClient::Impl::connect(const std::string& address,
@@ -110,14 +118,14 @@ void TcpClient::Impl::set_close_callback(CloseCallback callback) {
 bool TcpClient::Impl::schedule_removal() {
     IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
 
-    close();
+    m_want_delete_object = true;
 
-    return true;
+    return close();
 }
 
-void TcpClient::Impl::close() {
+bool TcpClient::Impl::close() {
     if (!is_open()) {
-        return;
+        return true; // allow to remove object
     }
 
     IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
@@ -129,6 +137,8 @@ void TcpClient::Impl::close() {
         m_tcp_stream->data = nullptr;
         m_tcp_stream = nullptr;
     }
+
+    return false;
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
@@ -174,8 +184,13 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
 }
 
 void TcpClient::Impl::on_close(uv_handle_t* handle) {
+    auto loop_ptr = reinterpret_cast<EventLoop*>(handle->loop->data);
+    IO_LOG(loop_ptr, TRACE, "");
+
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpClient::Impl*>(handle->data);
+
+        const bool should_delete = this_.m_want_delete_object;
 
         if (this_.m_close_callback) {
             this_.m_close_callback(*this_.m_parent, Error(0));
@@ -183,6 +198,10 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
 
         this_.m_port = 0;
         this_.m_ipv4_addr = 0;
+
+        if (should_delete) {
+            this_.m_parent->schedule_removal();
+        }
     };
 
     delete reinterpret_cast<uv_tcp_t*>(handle);
@@ -224,6 +243,8 @@ TcpClient::~TcpClient() {
 }
 
 void TcpClient::schedule_removal() {
+    IO_LOG(m_impl->loop(), TRACE, this, "");
+
     const bool ready_to_remove = m_impl->schedule_removal();
     if (ready_to_remove) {
         Disposable::schedule_removal();

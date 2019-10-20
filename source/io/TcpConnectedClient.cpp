@@ -81,8 +81,6 @@ void TcpConnectedClient::Impl::close() {
 
     m_is_open = false;
 
-    m_server->remove_client_connection(m_parent);
-
     //if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
         //m_tcp_stream->data = nullptr;
@@ -126,7 +124,11 @@ void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 }
 
 void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
+    auto loop_ptr = reinterpret_cast<EventLoop*>(handle->loop->data);
+    IO_LOG(loop_ptr, TRACE, "");
+
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
+    this_.m_server->remove_client_connection(this_.m_parent);
 
     if (this_.m_close_callback) {
         this_.m_close_callback(*this_.m_parent, Error(0));

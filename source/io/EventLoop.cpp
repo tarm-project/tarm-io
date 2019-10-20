@@ -99,6 +99,8 @@ EventLoop::Impl::Impl(EventLoop& loop) :
         uv_close(reinterpret_cast<uv_handle_t*>(async), on_async_close);
     }) {
 
+    this->data = &loop;
+
     // This mutex was added because thread sanitizer complained about data race in epoll_create1
     // for test EventLoopTest.loop_in_thread
     static std::mutex loop_init_mutex;
