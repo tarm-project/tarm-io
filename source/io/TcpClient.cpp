@@ -134,8 +134,6 @@ bool TcpClient::Impl::close() {
 
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
-        m_tcp_stream->data = nullptr;
-        m_tcp_stream = nullptr;
     }
 
     return false;
