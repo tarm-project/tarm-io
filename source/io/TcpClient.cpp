@@ -268,7 +268,7 @@ void TcpClient::connect(const std::string& address,
 }
 
 void TcpClient::close() {
-    return m_impl->close();
+    m_impl->close(); // returns bool
 }
 
 bool TcpClient::is_open() const {
