@@ -792,6 +792,47 @@ TEST_F(TlsTcpClientServerTest, not_matching_certificate_and_key) {
     EXPECT_EQ(0, server_data_receive_callback_count);
 }
 
+TEST_F(TlsTcpClientServerTest, DISABLED_interrupted_handshake) {
+    io::EventLoop loop;
+
+    const std::string client_message = "client message";
+    const std::string server_message = "server message";
+
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
+    auto listen_error = server.listen(m_default_addr, m_default_port,
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
+            client.send_data(server_message,
+                [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                }
+            );
+        },
+        [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+            server.shutdown();
+        }
+    );
+
+    ASSERT_FALSE(listen_error) << listen_error.string();
+
+    auto client = new io::TlsTcpClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            client.send_data(client_message,
+                [&](io::TlsTcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                }
+            );
+        },
+        [&](io::TlsTcpClient& client, const char* buf, std::size_t size) {
+            client.schedule_removal();
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
+
+    // TODO: add checks
+}
+
 // TODO: not matching certificate and key
 // TODO: connect as TCP and send invalid data on various stages
 // TODO: listen on invalid address
