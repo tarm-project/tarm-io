@@ -238,11 +238,11 @@ void TlsTcpClientImplBase<ParentType, ImplType>::do_handshake() {
 
         m_ssl_handshake_complete = true;
 
+        on_handshake_complete();
+
         if (read_pending) {
             read_from_ssl();
         }
-
-        on_handshake_complete();
     } else {
         IO_LOG(m_loop, ERROR, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol.");
         // TODO: error handling

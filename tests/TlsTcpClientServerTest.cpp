@@ -792,15 +792,26 @@ TEST_F(TlsTcpClientServerTest, not_matching_certificate_and_key) {
     EXPECT_EQ(0, server_data_receive_callback_count);
 }
 
-TEST_F(TlsTcpClientServerTest, DISABLED_interrupted_handshake) {
+TEST_F(TlsTcpClientServerTest, callbacks_order) {
+    // Test description: in this test we check that 'connect' callback is called before 'data receive'
+    //                   callback for TLS connections
     io::EventLoop loop;
 
     const std::string client_message = "client message";
     const std::string server_message = "server message";
 
+    std::size_t server_new_connection_callback_count = 0;
+    std::size_t server_data_receive_callback_count = 0;
+
+    std::size_t client_new_connection_callback_count = 0;
+    std::size_t client_data_receive_callback_count = 0;
+
     io::TlsTcpServer server(loop, m_cert_path, m_key_path);
     auto listen_error = server.listen(m_default_addr, m_default_port,
         [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
+            ++server_new_connection_callback_count;
+            EXPECT_EQ(0, server_data_receive_callback_count);
+
             client.send_data(server_message,
                 [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
@@ -808,6 +819,7 @@ TEST_F(TlsTcpClientServerTest, DISABLED_interrupted_handshake) {
             );
         },
         [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
+            ++server_data_receive_callback_count;
             server.shutdown();
         }
     );
@@ -817,6 +829,9 @@ TEST_F(TlsTcpClientServerTest, DISABLED_interrupted_handshake) {
     auto client = new io::TlsTcpClient(loop);
     client->connect(m_default_addr, m_default_port,
         [&](io::TlsTcpClient& client, const io::Error& error) {
+            ++client_new_connection_callback_count;
+            EXPECT_EQ(0, client_data_receive_callback_count);
+
             client.send_data(client_message,
                 [&](io::TlsTcpClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
@@ -824,13 +839,24 @@ TEST_F(TlsTcpClientServerTest, DISABLED_interrupted_handshake) {
             );
         },
         [&](io::TlsTcpClient& client, const char* buf, std::size_t size) {
+            ++client_data_receive_callback_count;
             client.schedule_removal();
         }
     );
 
+    EXPECT_EQ(0, server_new_connection_callback_count);
+    EXPECT_EQ(0, server_data_receive_callback_count);
+
+    EXPECT_EQ(0, client_new_connection_callback_count);
+    EXPECT_EQ(0, client_data_receive_callback_count);
+
     ASSERT_EQ(0, loop.run());
 
-    // TODO: add checks
+    EXPECT_EQ(1, server_new_connection_callback_count);
+    EXPECT_EQ(1, server_data_receive_callback_count);
+
+    EXPECT_EQ(1, client_new_connection_callback_count);
+    EXPECT_EQ(1, client_data_receive_callback_count);
 }
 
 // TODO: not matching certificate and key
