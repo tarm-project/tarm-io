@@ -90,6 +90,13 @@ TEST_F(TlsTcpClientServerTest, constructor) {
 }
 */
 
+TEST_F(TlsTcpClientServerTest, schedule_removal_not_connected_client) {
+    io::EventLoop loop;
+    auto client = new io::TlsTcpClient(loop);
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
 
 TEST_F(TlsTcpClientServerTest, client_send_data_to_server) {
     const std::string message = "Hello!";

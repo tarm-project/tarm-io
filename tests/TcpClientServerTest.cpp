@@ -47,6 +47,14 @@ TEST_F(TcpClientServerTest, invalid_ip4_address) {
     EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, listen_error.code());
 }
 
+TEST_F(TcpClientServerTest, schedule_removal_not_connected_client) {
+    io::EventLoop loop;
+    auto client = new io::TcpClient(loop);
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
 #if defined(__APPLE__) || defined(__linux__)
 // Windows does not have privileged ports
 TEST_F(TcpClientServerTest, bind_privileged) {
