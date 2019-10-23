@@ -71,6 +71,7 @@ TlsTcpClientImplBase<ParentType, ImplType>::~TlsTcpClientImplBase() {
 
 template<typename ParentType, typename ImplType>
 bool TlsTcpClientImplBase<ParentType, ImplType>::ssl_init() {
+    // TOOD: looks like this could be done only once
     ERR_load_crypto_strings();
     SSL_load_error_strings();
     int result = SSL_library_init();
@@ -102,33 +103,6 @@ bool TlsTcpClientImplBase<ParentType, ImplType>::ssl_init() {
     if (!ssl_set_siphers()) {
         return false;
     }
-    /*
-    result = SSL_CTX_set_cipher_list(m_ssl_ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
-    if (result == 0) {
-        IO_LOG(m_loop, ERROR, "Failed to set siphers list");
-        return false;
-    }
-    */
-
-    /*
-    result = SSL_CTX_use_certificate(m_ssl_ctx, m_certificate);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load certificate");
-        return false;
-    }
-
-    result = SSL_CTX_use_PrivateKey(m_ssl_ctx, m_private_key);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load private key");
-        return false;
-    }
-
-    result = SSL_CTX_check_private_key(m_ssl_ctx);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to check private key");
-        return false;
-    }
-    */
 
    if (!ssl_init_certificate_and_key()) {
        return false;
@@ -175,10 +149,7 @@ void TlsTcpClientImplBase<ParentType, ImplType>::read_from_ssl() {
     int decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
     while (decrypted_size > 0) {
         IO_LOG(m_loop, TRACE, "Decrypted message of size:", decrypted_size);
-
-        //m_receive_callback(*this->m_parent, decrypted_buf.get(), decrypted_size);
         on_ssl_read(decrypted_buf.get(), decrypted_size);
-
         decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
     }
 
