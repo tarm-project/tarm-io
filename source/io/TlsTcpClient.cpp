@@ -45,6 +45,9 @@ private:
     ConnectCallback m_connect_callback;
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
+
+    // Removal is scheduled in 2 steps. First TCP connection is removed, then TLS
+    bool m_ready_schedule_removal = false;
 };
 
 TlsTcpClient::Impl::~Impl() {
@@ -52,14 +55,19 @@ TlsTcpClient::Impl::~Impl() {
 
 TlsTcpClient::Impl::Impl(EventLoop& loop, TlsTcpClient& parent) :
     TlsTcpClientImplBase(loop, parent) {
-    m_tcp_client = new TcpClient(loop);
 }
 
 bool TlsTcpClient::Impl::schedule_removal() {
     IO_LOG(m_loop, TRACE, "");
 
-    // TODO: need to revise this?????
-    m_tcp_client->schedule_removal();
+    if (m_tcp_client) {
+        if (!m_ready_schedule_removal) {
+            m_tcp_client->schedule_removal();
+            m_ready_schedule_removal = true;
+            return false; // postpone removal
+        }
+    }
+
     return true;
 }
 
@@ -76,6 +84,8 @@ void TlsTcpClient::Impl::connect(const std::string& address,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback) {
+    m_tcp_client = new TcpClient(*m_loop);
+
     bool is_connected = ssl_init();
 
     m_connect_callback = connect_callback;
@@ -97,6 +107,10 @@ void TlsTcpClient::Impl::connect(const std::string& address,
             IO_LOG(m_loop, TRACE, "Close", error.code());
             if (m_close_callback) {
                 m_close_callback(*this->m_parent, error);
+            }
+
+            if (m_ready_schedule_removal) {
+                m_parent->schedule_removal();
             }
         };
 

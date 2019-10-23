@@ -1039,3 +1039,5 @@ TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
 // TODO: send data with size -1 will trigger Invalid Argument error
 
 // TODO: connect->close->connect->close cycle for TcpCLient
+
+// TODO: simultaneous connect attempts (multiple connect calls)
