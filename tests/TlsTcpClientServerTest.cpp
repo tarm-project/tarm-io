@@ -866,6 +866,34 @@ TEST_F(TlsTcpClientServerTest, callbacks_order) {
     EXPECT_EQ(1, client_data_receive_callback_count);
 }
 
+// TODO: fix for TLS
+/*
+TEST_F(TcpClientServerTest, client_send_without_connect_with_callback) {
+    io::EventLoop loop;
+
+    auto client = new io::TcpClient(loop);
+    client->send_data("Hello",
+        [](io::TcpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
+            client.schedule_removal();
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(TcpClientServerTest, client_send_without_connect_no_callback) {
+    io::EventLoop loop;
+
+    auto client = new io::TcpClient(loop);
+    client->send_data("Hello"); // Just do nothing and hope for miracle
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+*/
+
 // TODO: not matching certificate and key
 // TODO: connect as TCP and send invalid data on various stages
 // TODO: listen on invalid address
