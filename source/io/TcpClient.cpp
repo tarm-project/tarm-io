@@ -109,10 +109,6 @@ void TcpClient::Impl::shutdown(CloseCallback callback) {
     uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), on_shutdown);
 }
 
-void TcpClient::Impl::set_close_callback(CloseCallback callback) {
-    m_close_callback = callback;
-}
-
 bool TcpClient::Impl::schedule_removal() {
     IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
 
@@ -277,10 +273,6 @@ void TcpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size
 
 void TcpClient::send_data(const std::string& message, EndSendCallback callback) {
     return m_impl->send_data(message, callback);
-}
-
-void TcpClient::set_close_callback(CloseCallback callback) {
-    return m_impl->set_close_callback(callback);
 }
 
 std::size_t TcpClient::pending_write_requesets() const {

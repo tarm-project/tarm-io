@@ -402,19 +402,20 @@ TEST_F(TcpClientServerTest, DISABLED_server_disconnect_client_from_new_connectio
     nullptr);
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
-        client.send_data(client_message);
-    },
-    [&](io::TcpClient& client, const char* buf, size_t size) {
-        client_receive_callback_called = true;
-        EXPECT_EQ(std::string(buf, size), server_message);
-    });
-
-    client->set_close_callback([&](io::TcpClient& client, const io::Error& error) {
-        // Not checking status here bacause could be connection reset error
-        client_close_callback_called = true;
-    });
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.send_data(client_message);
+        },
+        [&](io::TcpClient& client, const char* buf, size_t size) {
+            client_receive_callback_called = true;
+            EXPECT_EQ(std::string(buf, size), server_message);
+        },
+        [&](io::TcpClient& client, const io::Error& error) {
+            // Not checking status here bacause could be connection reset error
+            client_close_callback_called = true;
+        }
+    );
 
     io::Timer timer(loop);
     timer.start(500, [&](io::Timer& timer) {
@@ -1027,6 +1028,17 @@ TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
 
     ASSERT_EQ(0, loop.run());
 }
+/*
+TEST_F(TcpClientServerTest, client_send_without_connect) {
+    io::EventLoop loop;
+
+    auto client = new io::TcpClient(loop);
+
+}
+*/
+
+
+// TODO: disconnect client from server and try to send data (should fail)
 
 // TODO: server sends lot of data to many connected clients
 
