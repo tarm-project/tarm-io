@@ -23,6 +23,7 @@ public:
 
     using NewConnectionCallback = std::function<void(TcpServer&, TcpConnectedClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(TcpServer&, TcpConnectedClient&, const char*, std::size_t)>;
+    using CloseConnectionCallback = std::function<void(TcpServer&, TcpConnectedClient&, const Error&)>;
 
     IO_DLL_PUBLIC TcpServer(EventLoop& loop);
     IO_DLL_PUBLIC ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server
@@ -39,6 +40,7 @@ public:
                  std::uint16_t port,
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback,
+                 CloseConnectionCallback close_connection_callback,
                  int backlog_size = 128);
 
     IO_DLL_PUBLIC void shutdown();

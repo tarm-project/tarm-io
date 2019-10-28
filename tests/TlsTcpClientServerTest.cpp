@@ -878,3 +878,6 @@ TEST_F(TlsTcpClientServerTest, callbacks_order) {
 // TODO DER (binary file) support???
 
 // TODO: simultaneous connect attempts (multiple connect calls)
+
+
+// TODO: tests with close callbacks (react on both sef-close and remote close)

@@ -26,6 +26,7 @@ public:
                  std::uint16_t port,
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback,
+                 CloseConnectionCallback close_connection_callback,
                  int backlog_size);
 
     void shutdown();
@@ -57,6 +58,7 @@ private:
 
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
+    CloseConnectionCallback m_close_connection_callback = nullptr;
 
     // Using such interesting kind of mapping here to be able find connections by raw C pointer
     // and also have benefits of RAII with unique_ptr
@@ -87,6 +89,7 @@ Error TcpServer::Impl::listen(const std::string& ip_addr_str,
                               std::uint16_t port,
                               NewConnectionCallback new_connection_callback,
                               DataReceivedCallback data_receive_callback,
+                              CloseConnectionCallback close_connection_callback,
                               int backlog_size) {
     m_server_handle = new uv_tcp_t;
     const auto init_status = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
@@ -119,6 +122,7 @@ Error TcpServer::Impl::listen(const std::string& ip_addr_str,
 
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
+    m_close_connection_callback = close_connection_callback;
     const int listen_status = uv_listen(reinterpret_cast<uv_stream_t*>(m_server_handle), backlog_size, on_new_connection);
 
     if (listen_status < 0) {
@@ -180,7 +184,13 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
         return;
     }
 
-    auto tcp_client = new TcpConnectedClient(*this_.m_loop, *this_.m_parent);
+    auto on_client_close_callback = [&this_](TcpConnectedClient& client, const Error& error) {
+        if (this_.m_close_connection_callback) {
+            this_.m_close_connection_callback(*this_.m_parent, client, error);
+        }
+    };
+
+    auto tcp_client = new TcpConnectedClient(*this_.m_loop, *this_.m_parent, on_client_close_callback);
 
     auto accept_status = uv_accept(server, reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream()));
     if (accept_status == 0) {
@@ -260,8 +270,9 @@ Error TcpServer::listen(const std::string& ip_addr_str,
                         std::uint16_t port,
                         NewConnectionCallback new_connection_callback,
                         DataReceivedCallback data_receive_callback,
+                        CloseConnectionCallback close_connection_callback,
                         int backlog_size) {
-    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, backlog_size);
+    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, close_connection_callback, backlog_size);
 }
 
 void TcpServer::shutdown() {

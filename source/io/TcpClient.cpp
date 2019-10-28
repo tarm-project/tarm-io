@@ -41,8 +41,6 @@ private:
 
     DataReceiveCallback m_receive_callback = nullptr;
 
-    CloseCallback m_close_callback = nullptr;
-
     bool m_want_delete_object = false;
 };
 

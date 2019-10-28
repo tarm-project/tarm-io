@@ -35,6 +35,7 @@ public:
 protected: // callbacks
     void on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client, const io::Error& error);
     void on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const char* buf, std::size_t size);
+    void on_close(TcpServer& server, TcpConnectedClient& tcp_client, const Error& error);
 
 private:
     using X509Ptr = std::unique_ptr<::X509, decltype(&::X509_free)>;
@@ -78,11 +79,6 @@ void TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient
     TlsTcpConnectedClient* tls_client =
         new TlsTcpConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_certificate.get(), m_private_key.get(), tcp_client);
 
-    tcp_client.set_close_callback([tls_client, this](TcpConnectedClient& client, const Error& error) {
-        IO_LOG(this->m_loop, TRACE, "Removing TLS client");
-        delete tls_client; // TODO: revise this
-    });
-
     if (tls_client->init_ssl()) {
         tls_client->set_data_receive_callback(m_data_receive_callback);
     } else {
@@ -93,6 +89,13 @@ void TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient
 void TlsTcpServer::Impl::on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const char* buf, std::size_t size) {
     auto& tls_client = *reinterpret_cast<TlsTcpConnectedClient*>(tcp_client.user_data());
     tls_client.on_data_receive(buf, size);
+}
+
+void TlsTcpServer::Impl::on_close(TcpServer& server, TcpConnectedClient& tcp_client, const Error& error) {
+    IO_LOG(this->m_loop, TRACE, "Removing TLS client");
+
+    auto& tls_client = *reinterpret_cast<TlsTcpConnectedClient*>(tcp_client.user_data());
+    delete &tls_client;
 }
 
 Error TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
@@ -135,7 +138,8 @@ Error TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
     return m_tcp_server->listen(ip_addr_str,
                                 port,
                                 std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2, _3),
-                                std::bind(&TlsTcpServer::Impl::on_data_receive, this, _1, _2, _3, _4));
+                                std::bind(&TlsTcpServer::Impl::on_data_receive, this, _1, _2, _3, _4),
+                                std::bind(&TlsTcpServer::Impl::on_close, this, _1, _2, _3));
 }
 
 void TlsTcpServer::Impl::shutdown() {

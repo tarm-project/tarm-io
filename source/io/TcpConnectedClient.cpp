@@ -10,12 +10,10 @@
 namespace io {
 class TcpConnectedClient::Impl : public detail::TcpClientImplBase<TcpConnectedClient, TcpConnectedClient::Impl> {
 public:
-    Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent);
+    Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, CloseCallback cloase_callback);
     ~Impl();
 
     void close();
-
-    void set_close_callback(CloseCallback callback);
 
     void shutdown();
 
@@ -32,16 +30,15 @@ private:
     TcpServer* m_server = nullptr;
 
     DataReceiveCallback m_receive_callback = nullptr;
-
-    CloseCallback m_close_callback = nullptr;
 };
 
 
-TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent) :
+TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, CloseCallback cloase_callback) :
     TcpClientImplBase(loop, parent),
     m_server(&server) {
     init_stream();
     m_is_open = true;
+    m_close_callback = cloase_callback;
 }
 
 TcpConnectedClient::Impl::~Impl() {
@@ -62,10 +59,6 @@ void TcpConnectedClient::Impl::shutdown() {
     auto shutdown_req = new uv_shutdown_t;
     shutdown_req->data = this;
     uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), on_shutdown);
-}
-
-void TcpConnectedClient::Impl::set_close_callback(CloseCallback callback) {
-    m_close_callback = callback;
 }
 
 uv_tcp_t* TcpConnectedClient::Impl::tcp_client_stream() {
@@ -180,9 +173,9 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TcpConnectedClient::TcpConnectedClient(EventLoop& loop, TcpServer& server) :
+TcpConnectedClient::TcpConnectedClient(EventLoop& loop, TcpServer& server, CloseCallback cloase_callback) :
     Disposable(loop),
-    m_impl(new Impl(loop, server, *this)) {
+    m_impl(new Impl(loop, server, *this, cloase_callback)) {
 }
 
 TcpConnectedClient::~TcpConnectedClient() {
@@ -214,10 +207,6 @@ void TcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint
 
 void TcpConnectedClient::send_data(const std::string& message, EndSendCallback callback) {
     return m_impl->send_data(message, callback);
-}
-
-void TcpConnectedClient::set_close_callback(CloseCallback callback) {
-    return m_impl->set_close_callback(callback);
 }
 
 std::size_t TcpConnectedClient::pending_write_requesets() const {

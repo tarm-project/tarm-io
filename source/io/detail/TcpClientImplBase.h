@@ -51,6 +51,8 @@ protected:
 
     bool m_is_open = false;
 
+    typename ParentType::CloseCallback m_close_callback = nullptr;
+
 private:
     struct WriteRequest : public uv_write_t {
         uv_buf_t uv_buf;

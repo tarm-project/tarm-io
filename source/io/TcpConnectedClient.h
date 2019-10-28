@@ -29,8 +29,6 @@ public:
     IO_DLL_PUBLIC void shutdown();
     IO_DLL_PUBLIC bool is_open() const;
 
-    IO_DLL_PUBLIC void set_close_callback(CloseCallback callback);
-
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
 
@@ -38,7 +36,7 @@ public:
     IO_DLL_PUBLIC std::size_t pending_write_requesets() const;
 
 protected:
-    IO_DLL_PUBLIC TcpConnectedClient(EventLoop& loop, TcpServer& server);
+    IO_DLL_PUBLIC TcpConnectedClient(EventLoop& loop, TcpServer& server, CloseCallback cloase_callback);
     IO_DLL_PUBLIC ~TcpConnectedClient();
 
     IO_DLL_PUBLIC void schedule_removal() override;

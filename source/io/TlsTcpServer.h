@@ -18,6 +18,7 @@ class TlsTcpServer : public Disposable,
 public:
     using NewConnectionCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&)>;
     using DataReceivedCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const char*, std::size_t)>;
+    using CloseConnectionCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const Error&)>;
 
     IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,
                                const Path& certificate_path,
