@@ -90,6 +90,16 @@ void TcpClientImplBase<ParentType, ImplType>::init_stream() {
 
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+
+    if (!is_open()) {
+        // TODO: revise this. User do not need to know about sockets.
+        //       Error like NOT_CONNECTED would sound much better.
+        if (callback) {
+            callback(*m_parent, io::Error(StatusCode::SOCKET_IS_NOT_CONNECTED));
+        }
+        return;
+    }
+
     IO_LOG(m_loop, ERROR, m_parent, "size:", size);
 
     // TODO: check if connection is open.
