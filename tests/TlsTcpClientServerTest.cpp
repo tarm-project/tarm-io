@@ -98,6 +98,40 @@ TEST_F(TlsTcpClientServerTest, schedule_removal_not_connected_client) {
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(TlsTcpClientServerTest, is_open_not_connected_client) {
+    io::EventLoop loop;
+    auto client = new io::TlsTcpClient(loop);
+    EXPECT_FALSE(client->is_open());
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(TlsTcpClientServerTest, client_send_without_connect_with_callback) {
+    io::EventLoop loop;
+
+    auto client = new io::TlsTcpClient(loop);
+    client->send_data("Hello",
+        [](io::TlsTcpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
+            client.schedule_removal();
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(TlsTcpClientServerTest, DISABLED_client_send_without_connect_no_callback) {
+    io::EventLoop loop;
+
+    auto client = new io::TlsTcpClient(loop);
+    client->send_data("Hello"); // Just do nothing and hope for miracle
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
 TEST_F(TlsTcpClientServerTest, client_send_data_to_server) {
     const std::string message = "Hello!";
     std::size_t client_on_connect_callback_count = 0;
@@ -865,34 +899,6 @@ TEST_F(TlsTcpClientServerTest, callbacks_order) {
     EXPECT_EQ(1, client_new_connection_callback_count);
     EXPECT_EQ(1, client_data_receive_callback_count);
 }
-
-// TODO: fix for TLS
-/*
-TEST_F(TcpClientServerTest, client_send_without_connect_with_callback) {
-    io::EventLoop loop;
-
-    auto client = new io::TcpClient(loop);
-    client->send_data("Hello",
-        [](io::TcpClient& client, const io::Error& error) {
-            EXPECT_TRUE(error);
-            EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
-            client.schedule_removal();
-        }
-    );
-
-    ASSERT_EQ(0, loop.run());
-}
-
-TEST_F(TcpClientServerTest, client_send_without_connect_no_callback) {
-    io::EventLoop loop;
-
-    auto client = new io::TcpClient(loop);
-    client->send_data("Hello"); // Just do nothing and hope for miracle
-    client->schedule_removal();
-
-    ASSERT_EQ(0, loop.run());
-}
-*/
 
 // TODO: not matching certificate and key
 // TODO: connect as TCP and send invalid data on various stages

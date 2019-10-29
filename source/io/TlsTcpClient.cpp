@@ -30,7 +30,6 @@ public:
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback);
     void close();
-    bool is_open() const;
 
 protected:
     const SSL_METHOD* ssl_method() override;
@@ -119,11 +118,6 @@ void TlsTcpClient::Impl::connect(const std::string& address,
 
 void TlsTcpClient::Impl::close() {
     // TODO: implement
-}
-
-bool TlsTcpClient::Impl::is_open() const {
-    // TODO: implement
-    return true;
 }
 
 const SSL_METHOD* TlsTcpClient::Impl::ssl_method() {

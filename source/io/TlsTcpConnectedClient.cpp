@@ -16,7 +16,6 @@ public:
 
     void close();
     void shutdown();
-    bool is_open() const;
 
     void set_data_receive_callback(DataReceiveCallback callback);
 
@@ -68,10 +67,6 @@ void TlsTcpConnectedClient::Impl::close() {
 
 void TlsTcpConnectedClient::Impl::shutdown() {
     m_tcp_client->shutdown();
-}
-
-bool TlsTcpConnectedClient::Impl::is_open() const {
-    return m_tcp_client->is_open();
 }
 
 const SSL_METHOD* TlsTcpConnectedClient::Impl::ssl_method() {

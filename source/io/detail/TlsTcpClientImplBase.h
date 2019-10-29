@@ -35,6 +35,8 @@ public:
 
     void on_data_receive(const char* buf, std::size_t size);
 
+    bool is_open() const;
+
 protected:
     ParentType* m_parent;
     EventLoop* m_loop;
@@ -67,6 +69,11 @@ TlsTcpClientImplBase<ParentType, ImplType>::~TlsTcpClientImplBase() {
     if (m_ssl_ctx) {
         SSL_CTX_free(m_ssl_ctx);
     }
+}
+
+template<typename ParentType, typename ImplType>
+bool TlsTcpClientImplBase<ParentType, ImplType>::is_open() const {
+    return m_tcp_client && m_tcp_client->is_open();
 }
 
 template<typename ParentType, typename ImplType>
@@ -222,6 +229,12 @@ void TlsTcpClientImplBase<ParentType, ImplType>::do_handshake() {
 
 template<typename ParentType, typename ImplType>
 void TlsTcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+
+    if (!is_open()) {
+        callback(*m_parent, Error(StatusCode::SOCKET_IS_NOT_CONNECTED));
+        return;
+    }
+
     const auto write_result = SSL_write(m_ssl, buffer.get(), size);
     if (write_result <= 0) {
         IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size", size);
