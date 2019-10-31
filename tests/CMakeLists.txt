@@ -21,6 +21,7 @@ list(APPEND TESTS_LIST
     UdpClientServerTest.cpp
     TcpClientServerTest.cpp
     TlsTcpClientServerTest.cpp
+    DtlsClientServerTest.cpp
 )
 
 include_directories(

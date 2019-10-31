@@ -15,6 +15,9 @@ list(APPEND IO_SOURCE_LIST
         io/Common.cpp
         io/Disposable.cpp
         io/Dir.cpp
+        io/DtlsClient.cpp
+        io/DtlsConnectedClient.cpp
+        io/DtlsServer.cpp
         io/Error.cpp
         io/EventLoop.cpp
         io/File.cpp
