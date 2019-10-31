@@ -74,8 +74,8 @@ TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
         server.schedule_removal();
     });
 
-    auto client = new io::UdpClient(loop);
-    client->send_data(message, 0x7F000001, m_default_port,
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port);
+    client->send_data(message,
         [&](io::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             data_sent = true;
@@ -115,12 +115,14 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
     }
 
     auto client = new io::UdpClient(loop);
-    client->send_data(message, SIZE, 0x7F000001, m_default_port,
+    client->set_destination(0x7F000001, m_default_port);
+    client->send_data(message, SIZE,
         [&](io::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             data_sent = true;
             client.schedule_removal();
-        });
+        }
+    );
 
     ASSERT_EQ(0, loop.run());
     EXPECT_TRUE(data_sent);
@@ -135,8 +137,8 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
     std::memset(message.get(), 0, SIZE);
 
-    auto client = new io::UdpClient(loop);
-    client->send_data(message, SIZE, 0x7F000001, m_default_port,
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port);
+    client->send_data(message, SIZE,
         [&](io::UdpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::MESSAGE_TOO_LONG, error.code());

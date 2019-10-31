@@ -10,11 +10,14 @@ namespace io {
 class UdpClient::Impl : public uv_udp_t {
 public:
     Impl(EventLoop& loop, UdpClient& parent);
+    Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent);
 
-    void send_data(const std::string& message, std::uint32_t host, std::uint16_t port, EndSendCallback callback);
-    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback);
+    void send_data(const std::string& message, EndSendCallback callback);
+    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback);
 
     bool close_with_removal();
+
+    void set_destination(std::uint32_t host, std::uint16_t port);
 
 protected:
     // statics
@@ -24,17 +27,36 @@ protected:
 private:
     EventLoop* m_loop = nullptr;
     uv_loop_t* m_uv_loop = nullptr;
+
+    // Note: this type is used in memset operation below
+    sockaddr_storage m_raw_unix_addr;
 };
 
 UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     m_loop(&loop),
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
+
+    std::memset(&m_raw_unix_addr, 0, sizeof(m_raw_unix_addr));
+
     auto status = uv_udp_init(m_uv_loop, this);
     if (status < 0) {
         // TODO: check status
     }
 
     this->data = &parent;
+}
+
+UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent) :
+    Impl(loop, parent) {
+    set_destination(host, port);
+}
+
+void UdpClient::Impl::set_destination(std::uint32_t host, std::uint16_t port) {
+    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_raw_unix_addr);
+    unix_addr.sin_family = AF_INET;
+    unix_addr.sin_port = htons(port);
+    unix_addr.sin_addr.s_addr = htonl(host);
+    //uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
 }
 
 namespace {
@@ -47,7 +69,7 @@ struct SendRequest : public uv_udp_send_t {
 
 } // namespace
 
-void UdpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback) {
+void UdpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
     auto req = new SendRequest;
     req->end_send_callback = callback;
     req->data = this;
@@ -55,25 +77,16 @@ void UdpClient::Impl::send_data(std::shared_ptr<const char> buffer, std::uint32_
     // const_cast is a workaround for lack of constness support in uv_buf_t
     req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
 
-    sockaddr_storage raw_unix_addr;
-    std::memset(&raw_unix_addr, 0, sizeof(sockaddr_storage));
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&raw_unix_addr);
-    unix_addr.sin_family = AF_INET;
-    unix_addr.sin_port = htons(port);
-    unix_addr.sin_addr.s_addr = htonl(host);
-    //uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
-
-    int uv_status = uv_udp_send(req, this, &req->uv_buf, 1, reinterpret_cast<const sockaddr*>(&raw_unix_addr), on_send);
+    int uv_status = uv_udp_send(req, this, &req->uv_buf, 1, reinterpret_cast<const sockaddr*>(&m_raw_unix_addr), on_send);
     if (uv_status < 0) {
 
     }
 }
 
-void UdpClient::Impl::send_data(const std::string& message, std::uint32_t host, std::uint16_t port, EndSendCallback callback) {
+void UdpClient::Impl::send_data(const std::string& message, EndSendCallback callback) {
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
-    //std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
     std::memcpy(ptr.get(), message.c_str(), message.size());
-    send_data(ptr, static_cast<std::uint32_t>(message.size()), host, port, callback);
+    send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
 }
 
 bool UdpClient::Impl::close_with_removal() {
@@ -114,15 +127,24 @@ UdpClient::UdpClient(EventLoop& loop) :
     m_impl(new UdpClient::Impl(loop, *this)) {
 }
 
+UdpClient::UdpClient(EventLoop& loop, std::uint32_t host, std::uint16_t port) :
+    Disposable(loop),
+    m_impl(new UdpClient::Impl(loop, host, port, *this)) {
+}
+
 UdpClient::~UdpClient() {
 }
 
-void UdpClient::send_data(const std::string& message, std::uint32_t host, std::uint16_t port, EndSendCallback callback) {
-    return m_impl->send_data(message, host, port, callback);
+void UdpClient::set_destination(std::uint32_t host, std::uint16_t port) {
+    return m_impl->set_destination(host, port);
 }
 
-void UdpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, std::uint32_t host, std::uint16_t port, EndSendCallback callback) {
-    return m_impl->send_data(buffer, size, host, port, callback);
+void UdpClient::send_data(const std::string& message, EndSendCallback callback) {
+    return m_impl->send_data(message, callback);
+}
+
+void UdpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
+    return m_impl->send_data(buffer, size, callback);
 }
 
 void UdpClient::schedule_removal() {
