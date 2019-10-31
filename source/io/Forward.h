@@ -9,6 +9,10 @@ class TcpClient;
 
 class TlsTcpServer;
 class TlsTcpConnectedClient;
-class TlsClient;
+class TlsTcpClient;
+
+class DtlsServer;
+class DtlsConnectedClient;
+class DtlsClient;
 
 }
