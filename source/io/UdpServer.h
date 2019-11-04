@@ -19,6 +19,9 @@ class UdpServer : public Disposable,
 public:
     using DataReceivedCallback = std::function<void(UdpServer&, std::uint32_t, std::uint16_t, const DataChunk&, const Error&)>;
 
+    // TODO: the type is unused
+    using EndSendCallback = std::function<void(UdpServer&, const Error&)>;
+
 UdpServer(const UdpServer& other) = delete;
     UdpServer& operator=(const UdpServer& other) = delete;
 

@@ -56,7 +56,7 @@ TEST_F(UdpClientServerTest, bind_privileged) {
 }
 #endif
 
-TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
+TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     io::EventLoop loop;
 
     const std::string message = "Hello world!";
@@ -85,6 +85,52 @@ TEST_F(UdpClientServerTest, 1_client_sends_data_to_server) {
     ASSERT_EQ(0, loop.run());
     EXPECT_TRUE(data_sent);
     EXPECT_TRUE(data_received);
+}
+
+
+TEST_F(UdpClientServerTest, DISABLED_client_and_server_send_data_each_other) {
+    io::EventLoop loop;
+
+    const std::string client_message = "Hello from client!";
+    const std::string server_message = "Hello from server!";
+
+    std::size_t server_data_receive_counter = 0;
+    std::size_t server_data_send_counter = 0;
+
+    std::size_t client_data_receive_counter = 0;
+    std::size_t client_data_send_counter = 0;
+
+    auto server = new io::UdpServer(loop);
+    ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
+    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+        ++server_data_receive_counter;
+
+        //std::string s(data.buf.get(), data.size);
+        //EXPECT_EQ(message, s);
+        //server.schedule_removal();
+    });
+
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port);
+    client->send_data(client_message,
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_data_send_counter;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_data_receive_counter);
+    EXPECT_EQ(0, server_data_send_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+    EXPECT_EQ(0, client_data_send_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_data_receive_counter);
+    EXPECT_EQ(1, server_data_send_counter);
+    EXPECT_EQ(1, client_data_receive_counter);
+    EXPECT_EQ(1, client_data_send_counter);
 }
 
 TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
