@@ -5,6 +5,8 @@
 // TODO: remove???
 #include <uv.h>
 
+#include <cstring>
+
 namespace io {
 namespace detail {
 
