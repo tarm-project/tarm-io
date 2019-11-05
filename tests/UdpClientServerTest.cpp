@@ -193,3 +193,5 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
 
     ASSERT_EQ(0, loop.run());
 }
+
+// TODO: UDP client sending test with no destination set
