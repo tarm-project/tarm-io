@@ -2,11 +2,13 @@
 
 #include "ByteSwap.h"
 #include "Common.h"
+#include "Timer.h"
 #include "UdpPeer.h"
 
 #include "detail/UdpImplBase.h"
 
 #include <assert.h>
+#include <unordered_map>
 
 namespace io {
 
@@ -16,9 +18,12 @@ public:
 
     Error bind(const std::string& ip_addr_str, std::uint16_t port);
     void start_receive(DataReceivedCallback data_receive_callback);
+    void start_receive(DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
 
     void close();
     bool close_with_removal();
+
+    void prune_old_peers();
 
 protected:
     // statics
@@ -29,6 +34,10 @@ protected:
 
 private:
     DataReceivedCallback m_data_receive_callback = nullptr;
+    PeerTimeoutCallback m_peer_timeout_callback = nullptr;
+    std::size_t m_timeout_ms = 0;
+
+    std::unique_ptr<Timer> m_timer;
 };
 
 UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
@@ -50,6 +59,27 @@ void UdpServer::Impl::start_receive(DataReceivedCallback data_receive_callback) 
     if (status < 0) {
 
     }
+}
+
+void UdpServer::Impl::start_receive(DataReceivedCallback receive_callback,
+                                    std::size_t timeout_ms,
+                                    PeerTimeoutCallback timeout_callback) {
+    if (m_timeout_ms == 0) {
+        // TODO: error
+    }
+
+    m_timeout_ms = timeout_ms;
+    m_peer_timeout_callback = timeout_callback;
+    m_timer.reset(new Timer(*m_loop));
+    m_timer->start(m_timeout_ms, m_timeout_ms,
+        [this](Timer& timer) {
+
+        }
+    );
+}
+
+void UdpServer::Impl::prune_old_peers() {
+    
 }
 
 void UdpServer::Impl::close() {
@@ -129,6 +159,10 @@ Error UdpServer::bind(const std::string& ip_addr_str, std::uint16_t port) {
 
 void UdpServer::start_receive(DataReceivedCallback data_receive_callback) {
     return m_impl->start_receive(data_receive_callback);
+}
+
+void UdpServer::start_receive(DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback) {
+    return m_impl->start_receive(receive_callback, timeout_ms, timeout_callback);
 }
 
 void UdpServer::close() {
