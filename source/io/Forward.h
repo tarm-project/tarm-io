@@ -11,4 +11,8 @@ class TlsTcpServer;
 class TlsTcpConnectedClient;
 class TlsClient;
 
+class UdpClient;
+class UdpServer;
+class UdpPeer;
+
 }

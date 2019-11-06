@@ -66,7 +66,7 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
 
     auto server = new io::UdpServer(loop);
     ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
-    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Error& error) {
+    server->start_receive([&](io::UdpServer& server, io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
         data_received = true;
         std::string s(data.buf.get(), data.size);
@@ -102,7 +102,7 @@ TEST_F(UdpClientServerTest, DISABLED_client_and_server_send_data_each_other) {
 
     auto server = new io::UdpServer(loop);
     ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
-    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Error& error) {
+    server->start_receive([&](io::UdpServer& server, io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
         ++server_data_receive_counter;
 
@@ -143,7 +143,7 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
 
     auto server = new io::UdpServer(loop);
     ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
-    server->start_receive([&](io::UdpServer& server, std::uint32_t addr, std::uint16_t port, const io::DataChunk& data, const io::Error& error) {
+    server->start_receive([&](io::UdpServer& server, io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
         EXPECT_EQ(SIZE, data.size);
         data_received = true;
@@ -195,3 +195,4 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
 }
 
 // TODO: UDP client sending test with no destination set
+// TODO: check address of UDP peer

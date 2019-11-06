@@ -2,6 +2,7 @@
 
 #include "ByteSwap.h"
 #include "Common.h"
+#include "UdpPeer.h"
 
 #include "detail/UdpImplBase.h"
 
@@ -83,13 +84,19 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
         if (!error) {
             if (addr && nread) {
                 const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
-                DataChunk data_chunk(std::shared_ptr<const char>(buf->base, std::default_delete<char[]>()), std::size_t(nread));
-                this_.m_data_receive_callback(parent, network_to_host(address->sin_addr.s_addr), network_to_host(address->sin_port), data_chunk, error);
+                DataChunk data_chunk(std::shared_ptr<const char>(buf->base, std::default_delete<char[]>()),
+                                     std::size_t(nread));
+                UdpPeer peer(&this_.m_udp_handle,
+                             network_to_host(address->sin_addr.s_addr),
+                             network_to_host(address->sin_port));
+                this_.m_data_receive_callback(parent, peer, data_chunk, error);
             }
         } else {
             DataChunk data(nullptr, 0);
+            // TODO: could address be available here???
+            UdpPeer peer(&this_.m_udp_handle, 0, 0);
             // TODO: log here???
-            this_.m_data_receive_callback(parent, 0, 0, data, error);
+            this_.m_data_receive_callback(parent, peer, data, error);
         }
     }
 }
