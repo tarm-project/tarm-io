@@ -1,6 +1,6 @@
 #include "UdpClient.h"
 
-#include "detail/UdpImplBase.h"
+#include "detail/UdpClientImplBase.h"
 
 #include "Common.h"
 
@@ -9,13 +9,10 @@
 
 namespace io {
 
-class UdpClient::Impl : public detail::UdpImplBase<UdpClient, UdpClient::Impl> {
+class UdpClient::Impl : public detail::UdpClientImplBase<UdpClient, UdpClient::Impl> {
 public:
     Impl(EventLoop& loop, UdpClient& parent);
     Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent);
-
-    //void send_data(const std::string& message, EndSendCallback callback);
-    //void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback);
 
     bool close_with_removal();
 
@@ -26,7 +23,7 @@ protected:
 };
 
 UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
-    UdpImplBase(loop, parent) {
+    UdpClientImplBase(loop, parent) {
 }
 
 UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent) :

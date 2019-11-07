@@ -18,9 +18,6 @@ public:
     using DataReceivedCallback = std::function<void(UdpServer&, UdpPeer&, const DataChunk&, const Error&)>;
     using PeerTimeoutCallback = std::function<void(UdpServer&, UdpPeer&)>;
 
-    // TODO: the type is unused
-    using EndSendCallback = std::function<void(UdpServer&, const Error&)>;
-
     UdpServer(const UdpServer& other) = delete;
     UdpServer& operator=(const UdpServer& other) = delete;
 

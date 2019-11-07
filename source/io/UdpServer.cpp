@@ -25,6 +25,8 @@ public:
 
     void prune_old_peers();
 
+    bool peer_bookkeeping_enabled() const;
+
 protected:
     // statics
     static void on_data_received(
@@ -38,6 +40,7 @@ private:
     std::size_t m_timeout_ms = 0;
 
     std::unique_ptr<Timer> m_timer;
+    std::unordered_map<std::uint64_t, std::unique_ptr<UdpPeer>> m_peers;
 };
 
 UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
@@ -73,13 +76,15 @@ void UdpServer::Impl::start_receive(DataReceivedCallback receive_callback,
     m_timer.reset(new Timer(*m_loop));
     m_timer->start(m_timeout_ms, m_timeout_ms,
         [this](Timer& timer) {
-
+            this->prune_old_peers();
         }
     );
+
+    start_receive(receive_callback);
 }
 
 void UdpServer::Impl::prune_old_peers() {
-    
+
 }
 
 void UdpServer::Impl::close() {
@@ -95,6 +100,10 @@ bool UdpServer::Impl::close_with_removal() {
     }
 
     return true;
+}
+
+bool UdpServer::Impl::peer_bookkeeping_enabled() const {
+    return m_timeout_ms != 0;
 }
 
 ///////////////////////////////////////////  static  ////////////////////////////////////////////
@@ -116,10 +125,21 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                 const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
                 DataChunk data_chunk(std::shared_ptr<const char>(buf->base, std::default_delete<char[]>()),
                                      std::size_t(nread));
-                UdpPeer peer(&this_.m_udp_handle,
+                if (this_.peer_bookkeeping_enabled()) {
+                    std::uint64_t peer_id = std::uint64_t(address->sin_port) << 16 | std::uint64_t(address->sin_addr.s_addr);
+                    auto& peer_ptr = this_.m_peers[peer_id];
+                    if (!peer_ptr.get()) {
+                        peer_ptr.reset(new UdpPeer(&this_.m_udp_handle,
+                                                   network_to_host(address->sin_addr.s_addr),
+                                                   network_to_host(address->sin_port)));
+                    }
+                    this_.m_data_receive_callback(parent, *peer_ptr, data_chunk, error);
+                } else {
+                    UdpPeer peer(&this_.m_udp_handle,
                              network_to_host(address->sin_addr.s_addr),
                              network_to_host(address->sin_port));
-                this_.m_data_receive_callback(parent, peer, data_chunk, error);
+                    this_.m_data_receive_callback(parent, peer, data_chunk, error);
+                }
             }
         } else {
             DataChunk data(nullptr, 0);

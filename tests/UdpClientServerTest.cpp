@@ -87,7 +87,6 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     EXPECT_TRUE(data_received);
 }
 
-
 TEST_F(UdpClientServerTest, DISABLED_client_and_server_send_data_each_other) {
     io::EventLoop loop;
 

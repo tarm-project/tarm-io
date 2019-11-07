@@ -61,5 +61,12 @@ std::uint16_t UdpPeer::port() const {
     return m_impl->port();
 }
 
+void UdpPeer::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
+    //return m_impl->send_data(buffer, size, callback);
+}
+
+void UdpPeer::send_data(const std::string& message, EndSendCallback callback) {
+    //return m_impl->send_data(message, callback);
+}
 
 } // namespace io
