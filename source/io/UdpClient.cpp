@@ -13,13 +13,17 @@ class UdpClient::Impl : public detail::UdpClientImplBase<UdpClient, UdpClient::I
 public:
     Impl(EventLoop& loop, UdpClient& parent);
     Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent);
+    Impl(EventLoop& loop, DataReceivedCallback receive_callback, UdpClient& parent);
+    Impl(EventLoop& loop, DataReceivedCallback receive_callback, std::uint32_t host, std::uint16_t port, UdpClient& parent);
 
     bool close_with_removal();
 
     void set_destination(std::uint32_t host, std::uint16_t port);
 
 protected:
-    //static void on_close_with_removal(uv_handle_t* handle);
+
+private:
+    DataReceivedCallback m_receive_callback = nullptr;
 };
 
 UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
@@ -29,6 +33,17 @@ UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
 UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent) :
     Impl(loop, parent) {
     set_destination(host, port);
+}
+
+UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, UdpClient& parent) :
+    Impl(loop, parent) {
+    m_receive_callback = receive_callback;
+}
+
+UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, std::uint32_t host, std::uint16_t port, UdpClient& parent) :
+    Impl(loop, parent) {
+    set_destination(host, port);
+    m_receive_callback = receive_callback;
 }
 
 void UdpClient::Impl::set_destination(std::uint32_t host, std::uint16_t port) {
@@ -60,9 +75,22 @@ UdpClient::UdpClient(EventLoop& loop) :
     m_impl(new UdpClient::Impl(loop, *this)) {
 }
 
-UdpClient::UdpClient(EventLoop& loop, std::uint32_t host, std::uint16_t port) :
+UdpClient::UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port) :
     Disposable(loop),
-    m_impl(new UdpClient::Impl(loop, host, port, *this)) {
+    m_impl(new UdpClient::Impl(loop, dest_host, dest_port, *this)) {
+}
+
+UdpClient::UdpClient(EventLoop& loop, DataReceivedCallback receive_callback) :
+    Disposable(loop),
+    m_impl(new UdpClient::Impl(loop, receive_callback, *this)) {
+}
+
+UdpClient::UdpClient(EventLoop& loop,
+                     DataReceivedCallback receive_callback,
+                     std::uint32_t dest_host,
+                     std::uint16_t dest_port) :
+    Disposable(loop),
+    m_impl(new UdpClient::Impl(loop, receive_callback, dest_host, dest_port, *this)) {
 }
 
 UdpClient::~UdpClient() {
