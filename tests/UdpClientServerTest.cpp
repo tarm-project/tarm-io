@@ -87,26 +87,75 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     EXPECT_TRUE(data_received);
 }
 
-TEST_F(UdpClientServerTest, peer_identity_preservation_on_server) {
+TEST_F(UdpClientServerTest, peer_identity_without_preservation_on_server) {
     io::EventLoop loop;
 
     const std::string client_message_1 = "message_1";
     const std::string client_message_2 = "close";
 
-    std::size_t server_receive_coiunter = 0;
+    std::size_t server_receive_counter = 0;
 
     auto server = new io::UdpServer(loop);
     ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
     server->start_receive([&](io::UdpServer& server, io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
 
-        if (server_receive_coiunter == 0) {
-            peer.set_user_data(&server_receive_coiunter);
+        if (server_receive_counter == 0) {
+            peer.set_user_data(&server_receive_counter);
         } else {
-            EXPECT_EQ(&server_receive_coiunter, peer.user_data());
+            // This is new instance of io::UdpPeer
+            EXPECT_EQ(nullptr, peer.user_data());
         }
 
-        ++server_receive_coiunter;
+        ++server_receive_counter;
+
+        std::string s(data.buf.get(), data.size);
+        if (s == client_message_2) {
+            server.schedule_removal();
+        }
+    }); // note: callback without timeout set
+
+    // TODO: replace all 0x7F000001 with test-defined constant
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port);
+    client->send_data(client_message_1,
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.send_data(client_message_2,
+                [&](io::UdpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    client.schedule_removal();
+                }
+            );
+        }
+    );
+
+    EXPECT_EQ(0, server_receive_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    ASSERT_EQ(2, server_receive_counter);
+}
+
+TEST_F(UdpClientServerTest, peer_identity_with_preservation_on_server) {
+    io::EventLoop loop;
+
+    const std::string client_message_1 = "message_1";
+    const std::string client_message_2 = "close";
+
+    std::size_t server_receive_counter = 0;
+
+    auto server = new io::UdpServer(loop);
+    ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
+    server->start_receive([&](io::UdpServer& server, io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+
+        if (server_receive_counter == 0) {
+            peer.set_user_data(&server_receive_counter);
+        } else {
+            EXPECT_EQ(&server_receive_counter, peer.user_data());
+        }
+
+        ++server_receive_counter;
 
         std::string s(data.buf.get(), data.size);
         if (s == client_message_2) {
@@ -129,11 +178,11 @@ TEST_F(UdpClientServerTest, peer_identity_preservation_on_server) {
         }
     );
 
-    EXPECT_EQ(0, server_receive_coiunter);
+    EXPECT_EQ(0, server_receive_counter);
 
     ASSERT_EQ(0, loop.run());
 
-    ASSERT_EQ(2, server_receive_coiunter);
+    ASSERT_EQ(2, server_receive_counter);
 }
 
 TEST_F(UdpClientServerTest, DISABLED_client_and_server_send_data_each_other) {
