@@ -4,21 +4,19 @@
 //#include "Export.h"
 //#include "DataChunk.h"
 //#include "Disposable.h"
-//#include "Error.h"
-//#include "UserDataHolder.h"
 
 #include "Error.h"
 #include "Forward.h"
+#include "UserDataHolder.h"
 
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
 
-
 namespace io {
 
-class UdpPeer {
+class UdpPeer : public UserDataHolder {
 public:
     friend class UdpServer;
 

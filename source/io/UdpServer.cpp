@@ -154,15 +154,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
 void UdpServer::Impl::on_close(uv_handle_t* handle) {
     // do nothing
 }
-/*
-void UdpServer::Impl::on_close_with_removal(uv_handle_t* handle) {
-    auto& this_ = *reinterpret_cast<UdpServer::Impl*>(handle);
-    auto& parent = *reinterpret_cast<UdpServer*>(this_.m_udp_handle.data);
 
-    this_.m_udp_handle.data = nullptr;
-    parent.schedule_removal();
-}
-*/
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 UdpServer::UdpServer(EventLoop& loop) :
