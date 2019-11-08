@@ -55,8 +55,8 @@ void UdpClient::Impl::set_destination(std::uint32_t host, std::uint16_t port) {
 }
 
 bool UdpClient::Impl::close_with_removal() {
-    if (m_udp_handle.data) {
-        uv_close(reinterpret_cast<uv_handle_t*>(&m_udp_handle), on_close_with_removal);
+    if (m_udp_handle->data) {
+        uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), on_close_with_removal);
         return false; // not ready to remove
     }
 

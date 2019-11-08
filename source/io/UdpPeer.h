@@ -1,11 +1,12 @@
 #pragma once
 
-//#include "EventLoop.h"
+
 //#include "Export.h"
 //#include "DataChunk.h"
 //#include "Disposable.h"
 
 #include "Error.h"
+#include "EventLoop.h"
 #include "Forward.h"
 #include "UserDataHolder.h"
 
@@ -33,7 +34,7 @@ public:
     IO_DLL_PUBLIC ~UdpPeer();
 
 private:
-    IO_DLL_PUBLIC UdpPeer(void* udp_handle, std::uint32_t address, std::uint16_t port);
+    IO_DLL_PUBLIC UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port);
 
     void set_last_packet_time_ns(std::uint64_t time);
 

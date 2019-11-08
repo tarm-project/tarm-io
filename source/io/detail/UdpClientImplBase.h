@@ -10,6 +10,7 @@ template<typename ParentType, typename ImplType>
 class UdpClientImplBase : public UdpImplBase<ParentType, ImplType> {
 public:
     UdpClientImplBase(EventLoop& loop, ParentType& parent);
+    UdpClientImplBase(EventLoop& loop, ParentType& parent, uv_udp_t* udp_handle);
 
     void send_data(const std::string& message, typename ParentType::EndSendCallback  callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback  callback);
@@ -31,6 +32,11 @@ UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, Pare
 }
 
 template<typename ParentType, typename ImplType>
+UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, ParentType& parent, uv_udp_t* udp_handle) :
+    UdpImplBase<ParentType, ImplType>(loop, parent, udp_handle) {
+}
+
+template<typename ParentType, typename ImplType>
 void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
     auto req = new SendRequest;
     req->end_send_callback = callback;
@@ -39,7 +45,7 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
     req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
 
     int uv_status = uv_udp_send(req,
-                                &(UdpImplBase<ParentType, ImplType>::m_udp_handle),
+                                UdpImplBase<ParentType, ImplType>::m_udp_handle.get(),
                                 &req->uv_buf,
                                 1,
                                 reinterpret_cast<const sockaddr*>(&(UdpImplBase<ParentType, ImplType>::m_raw_unix_addr)),

@@ -1,12 +1,14 @@
 #include "UdpPeer.h"
 
+#include "detail/UdpClientImplBase.h"
+
 #include "Common.h"
 
 namespace io {
 
-class UdpPeer::Impl {
+class UdpPeer::Impl : public detail::UdpClientImplBase<UdpPeer, UdpPeer::Impl> {
 public:
-    Impl(void* udp_handle, std::uint32_t address, std::uint16_t port);
+    Impl(EventLoop& loop, UdpPeer& parent, void* udp_handle, std::uint32_t address, std::uint16_t port);
 
     std::uint32_t address();
     std::uint16_t port();
@@ -14,15 +16,14 @@ public:
     void set_last_packet_time_ns(std::uint64_t time);
 
 private:
-    uv_udp_t* m_udp_handle;
     std::uint32_t m_address;
     std::uint16_t m_port;
 
     std::uint64_t m_last_packet_time_ns = 0;
 };
 
-UdpPeer::Impl::Impl(void* udp_handle, std::uint32_t address, std::uint16_t port) :
-    m_udp_handle(reinterpret_cast<uv_udp_t*>(udp_handle)),
+UdpPeer::Impl::Impl(EventLoop& loop, UdpPeer& parent, void* udp_handle, std::uint32_t address, std::uint16_t port) :
+    UdpClientImplBase(loop, parent, reinterpret_cast<uv_udp_t*>(udp_handle)),
     m_address(address),
     m_port(port) {
 }
@@ -41,8 +42,8 @@ void UdpPeer::Impl::set_last_packet_time_ns(std::uint64_t time) {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-UdpPeer::UdpPeer(void* udp_handle, std::uint32_t address, std::uint16_t port) :
-    m_impl(new Impl(udp_handle, address, port)) {
+UdpPeer::UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port) :
+    m_impl(new Impl(loop, *this, udp_handle, address, port)) {
 }
 
 UdpPeer::~UdpPeer() {
@@ -62,11 +63,11 @@ std::uint16_t UdpPeer::port() const {
 }
 
 void UdpPeer::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
-    //return m_impl->send_data(buffer, size, callback);
+    return m_impl->send_data(buffer, size, callback);
 }
 
 void UdpPeer::send_data(const std::string& message, EndSendCallback callback) {
-    //return m_impl->send_data(message, callback);
+    return m_impl->send_data(message, callback);
 }
 
 } // namespace io

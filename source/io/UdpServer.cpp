@@ -30,7 +30,7 @@ public:
 protected:
     // statics
     static void on_data_received(
-        uv_udp_t* handle, ssize_t nread, const uv_buf_t* buf, const struct sockaddr* addr, unsigned flags);
+        uv_udp_t* handle, ssize_t nread, const uv_buf_t* uv_buf, const struct sockaddr* addr, unsigned flags);
     static void on_close(uv_handle_t* handle);
     //static void on_close_with_removal(uv_handle_t* handle);
 
@@ -51,14 +51,14 @@ Error UdpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) 
     struct sockaddr_in unix_addr;
     uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
 
-    auto uv_status = uv_udp_bind(&m_udp_handle, reinterpret_cast<const struct sockaddr*>(&unix_addr), UV_UDP_REUSEADDR);
+    auto uv_status = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const struct sockaddr*>(&unix_addr), UV_UDP_REUSEADDR);
     Error error(uv_status);
     return error;
 }
 
 void UdpServer::Impl::start_receive(DataReceivedCallback data_receive_callback) {
     m_data_receive_callback = data_receive_callback;
-    int status = uv_udp_recv_start(&m_udp_handle, default_alloc_buffer, on_data_received);
+    int status = uv_udp_recv_start(m_udp_handle.get(), default_alloc_buffer, on_data_received);
     if (status < 0) {
 
     }
@@ -88,14 +88,14 @@ void UdpServer::Impl::prune_old_peers() {
 }
 
 void UdpServer::Impl::close() {
-    uv_udp_recv_stop(&m_udp_handle);
-    uv_close(reinterpret_cast<uv_handle_t*>(&m_udp_handle), nullptr);
+    uv_udp_recv_stop(m_udp_handle.get());
+    uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), nullptr);
 }
 
 bool UdpServer::Impl::close_with_removal() {
-    if (m_udp_handle.data) {
-        uv_udp_recv_stop(&m_udp_handle);
-        uv_close(reinterpret_cast<uv_handle_t*>(&m_udp_handle), on_close_with_removal);
+    if (m_udp_handle->data) {
+        uv_udp_recv_stop(m_udp_handle.get());
+        uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), on_close_with_removal);
         return false; // not ready to remove
     }
 
@@ -110,12 +110,15 @@ bool UdpServer::Impl::peer_bookkeeping_enabled() const {
 
 void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                        ssize_t nread,
-                                       const uv_buf_t* buf,
+                                       const uv_buf_t* uv_buf,
                                        const struct sockaddr* addr,
                                        unsigned flags) {
     assert(handle);
     auto& this_ = *reinterpret_cast<UdpServer::Impl*>(handle->data);
     auto& parent = *this_.m_parent;
+
+    // TODO: need some mechanism to reuse memory
+    std::shared_ptr<const char> buf(uv_buf->base, std::default_delete<char[]>());
 
     if (this_.m_data_receive_callback) {
         Error error(nread);
@@ -123,28 +126,30 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
         if (!error) {
             if (addr && nread) {
                 const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
-                DataChunk data_chunk(std::shared_ptr<const char>(buf->base, std::default_delete<char[]>()),
-                                     std::size_t(nread));
+
+                DataChunk data_chunk(buf, std::size_t(nread));
                 if (this_.peer_bookkeeping_enabled()) {
                     std::uint64_t peer_id = std::uint64_t(address->sin_port) << 16 | std::uint64_t(address->sin_addr.s_addr);
                     auto& peer_ptr = this_.m_peers[peer_id];
                     if (!peer_ptr.get()) {
-                        peer_ptr.reset(new UdpPeer(&this_.m_udp_handle,
+                        peer_ptr.reset(new UdpPeer(*this_.m_loop,
+                                                   this_.m_udp_handle.get(),
                                                    network_to_host(address->sin_addr.s_addr),
                                                    network_to_host(address->sin_port)));
                     }
                     this_.m_data_receive_callback(parent, *peer_ptr, data_chunk, error);
                 } else {
-                    UdpPeer peer(&this_.m_udp_handle,
-                             network_to_host(address->sin_addr.s_addr),
-                             network_to_host(address->sin_port));
+                    UdpPeer peer(*this_.m_loop,
+                                 this_.m_udp_handle.get(),
+                                 network_to_host(address->sin_addr.s_addr),
+                                 network_to_host(address->sin_port));
                     this_.m_data_receive_callback(parent, peer, data_chunk, error);
                 }
             }
         } else {
             DataChunk data(nullptr, 0);
             // TODO: could address be available here???
-            UdpPeer peer(&this_.m_udp_handle, 0, 0);
+            UdpPeer peer(*this_.m_loop, this_.m_udp_handle.get(), 0, 0);
             // TODO: log here???
             this_.m_data_receive_callback(parent, peer, data, error);
         }
