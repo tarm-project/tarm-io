@@ -22,7 +22,7 @@ public:
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
     IO_DLL_PUBLIC UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port);
     IO_DLL_PUBLIC UdpClient(EventLoop& loop, DataReceivedCallback receive_callback);
-    IO_DLL_PUBLIC UdpClient(EventLoop& loop, DataReceivedCallback receive_callback, std::uint32_t dest_host, std::uint16_t dest_port);
+    IO_DLL_PUBLIC UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port, DataReceivedCallback receive_callback);
 
     IO_DLL_PUBLIC void set_destination(std::uint32_t host, std::uint16_t port);
 

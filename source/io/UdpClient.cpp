@@ -1,5 +1,6 @@
 #include "UdpClient.h"
 
+#include "ByteSwap.h"
 #include "detail/UdpClientImplBase.h"
 
 #include "Common.h"
@@ -14,13 +15,18 @@ public:
     Impl(EventLoop& loop, UdpClient& parent);
     Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent);
     Impl(EventLoop& loop, DataReceivedCallback receive_callback, UdpClient& parent);
-    Impl(EventLoop& loop, DataReceivedCallback receive_callback, std::uint32_t host, std::uint16_t port, UdpClient& parent);
+    Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, UdpClient& parent);
 
     bool close_with_removal();
 
     void set_destination(std::uint32_t host, std::uint16_t port);
 
+    void start_receive();
+
 protected:
+    // statics
+    static void on_data_received(
+        uv_udp_t* handle, ssize_t nread, const uv_buf_t* uv_buf, const struct sockaddr* addr, unsigned flags);
 
 private:
     DataReceivedCallback m_receive_callback = nullptr;
@@ -38,24 +44,30 @@ UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, U
 UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, UdpClient& parent) :
     Impl(loop, parent) {
     m_receive_callback = receive_callback;
+    start_receive();
 }
 
-UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, std::uint32_t host, std::uint16_t port, UdpClient& parent) :
+UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, UdpClient& parent) :
     Impl(loop, parent) {
     set_destination(host, port);
     m_receive_callback = receive_callback;
+    start_receive();
 }
 
 void UdpClient::Impl::set_destination(std::uint32_t host, std::uint16_t port) {
     auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_raw_unix_addr);
     unix_addr.sin_family = AF_INET;
-    unix_addr.sin_port = htons(port);
-    unix_addr.sin_addr.s_addr = htonl(host);
+    unix_addr.sin_port = host_to_network(port);
+    unix_addr.sin_addr.s_addr = host_to_network(host);
     //uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
 }
 
 bool UdpClient::Impl::close_with_removal() {
     if (m_udp_handle->data) {
+        if (m_receive_callback) {
+            uv_udp_recv_stop(m_udp_handle.get());
+        }
+
         uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), on_close_with_removal);
         return false; // not ready to remove
     }
@@ -63,10 +75,47 @@ bool UdpClient::Impl::close_with_removal() {
     return true;
 }
 
+void UdpClient::Impl::start_receive() {
+    int status = uv_udp_recv_start(m_udp_handle.get(), default_alloc_buffer, on_data_received);
+    if (status < 0) {
+
+    }
+}
 
 ///////////////////////////////////////////  static  ////////////////////////////////////////////
 
+void UdpClient::Impl::on_data_received(uv_udp_t* handle,
+                                       ssize_t nread,
+                                       const uv_buf_t* uv_buf,
+                                       const struct sockaddr* addr,
+                                       unsigned flags) {
+    assert(handle);
+    auto& this_ = *reinterpret_cast<UdpClient::Impl*>(handle->data);
+    auto& parent = *this_.m_parent;
 
+    // TODO: need some mechanism to reuse memory
+    std::shared_ptr<const char> buf(uv_buf->base, std::default_delete<char[]>());
+
+    if (!this_.m_receive_callback) {
+        return;
+    }
+
+    Error error(nread);
+
+    if (!error) {
+        if (addr && nread) {
+            //const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
+            //network_to_host(address->sin_addr.s_addr);
+            //network_to_host(address->sin_port);
+
+            DataChunk data_chunk(buf, std::size_t(nread));
+            this_.m_receive_callback(parent, data_chunk, error);
+        }
+    } else {
+        DataChunk data(nullptr, 0);
+        this_.m_receive_callback(parent, data, error);
+    }
+}
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
@@ -86,11 +135,11 @@ UdpClient::UdpClient(EventLoop& loop, DataReceivedCallback receive_callback) :
 }
 
 UdpClient::UdpClient(EventLoop& loop,
-                     DataReceivedCallback receive_callback,
                      std::uint32_t dest_host,
-                     std::uint16_t dest_port) :
+                     std::uint16_t dest_port,
+                     DataReceivedCallback receive_callback) :
     Disposable(loop),
-    m_impl(new UdpClient::Impl(loop, receive_callback, dest_host, dest_port, *this)) {
+    m_impl(new UdpClient::Impl(loop, dest_host, dest_port, receive_callback, *this)) {
 }
 
 UdpClient::~UdpClient() {

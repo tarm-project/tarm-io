@@ -185,7 +185,7 @@ TEST_F(UdpClientServerTest, peer_identity_with_preservation_on_server) {
     ASSERT_EQ(2, server_receive_counter);
 }
 
-TEST_F(UdpClientServerTest, DISABLED_client_and_server_send_data_each_other) {
+TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     io::EventLoop loop;
 
     const std::string client_message = "Hello from client!";
@@ -203,17 +203,34 @@ TEST_F(UdpClientServerTest, DISABLED_client_and_server_send_data_each_other) {
         EXPECT_FALSE(error);
         ++server_data_receive_counter;
 
-        //std::string s(data.buf.get(), data.size);
-        //EXPECT_EQ(message, s);
-        //server.schedule_removal();
+        std::string s(data.buf.get(), data.size);
+        EXPECT_EQ(client_message, s);
+
+        peer.send_data(server_message,
+            [&](io::UdpPeer& peer, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                ++server_data_send_counter;
+                server.schedule_removal();
+            }
+        );
     });
 
-    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port);
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            std::string s(data.buf.get(), data.size);
+            EXPECT_EQ(server_message, s);
+
+            ++client_data_receive_counter;
+            client.schedule_removal();
+        }
+    );
+
     client->send_data(client_message,
         [&](io::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++client_data_send_counter;
-            client.schedule_removal();
         }
     );
 
@@ -293,4 +310,5 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
 
 // TODO: UDP client sending test with no destination set
 // TODO: check address of UDP peer
+// TODO: ensure that UDO client receives packets only from destination peer
 // TODO: error on multiple start_receive on UDP server

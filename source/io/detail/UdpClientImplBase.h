@@ -50,8 +50,8 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
                                 1,
                                 reinterpret_cast<const sockaddr*>(&(UdpImplBase<ParentType, ImplType>::m_raw_unix_addr)),
                                 on_send);
-    if (uv_status < 0) {
-
+    if (uv_status < 0 && callback) {
+        callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(uv_status));
     }
 }
 
