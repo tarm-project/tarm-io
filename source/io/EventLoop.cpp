@@ -124,6 +124,10 @@ EventLoop::Impl::~Impl() {
         m_callbacks_queue.clear();
     }
 
+    if (!m_is_running) {
+        return;
+    }
+
     int status = uv_loop_close(this);
     if (status == UV_EBUSY) {
         IO_LOG(m_loop, DEBUG, "loop returned EBUSY at close, running one more time");

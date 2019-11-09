@@ -342,3 +342,21 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     EXPECT_EQ(1, counter_2);
     EXPECT_EQ(1, counter_3);
 }
+
+TEST_F(EventLoopTest, no_callback_call_if_loop_not_run) {
+    unsigned callback_counter = 0;
+    std::size_t handle = 0;
+
+    io::EventLoop* loop_ptr = nullptr;
+
+    io::ScopeExitGuard exit_after_loop([&]() {
+        EXPECT_EQ(0, callback_counter);
+    });
+
+    io::EventLoop loop;
+    loop_ptr = &loop;
+
+    loop.schedule_call_on_each_loop_cycle([&]() {
+        ++callback_counter;
+    });
+}
