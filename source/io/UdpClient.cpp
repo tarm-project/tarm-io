@@ -104,12 +104,15 @@ void UdpClient::Impl::on_data_received(uv_udp_t* handle,
 
     if (!error) {
         if (addr && nread) {
-            //const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
-            //network_to_host(address->sin_addr.s_addr);
-            //network_to_host(address->sin_port);
+            const auto& address_in_from = *reinterpret_cast<const struct sockaddr_in*>(addr);
+            const auto& address_in_expect = *reinterpret_cast<sockaddr_in*>(&this_.m_raw_unix_addr);
 
-            DataChunk data_chunk(buf, std::size_t(nread));
-            this_.m_receive_callback(parent, data_chunk, error);
+            if (address_in_from.sin_addr.s_addr == address_in_expect.sin_addr.s_addr &&
+                address_in_from.sin_port == address_in_expect.sin_port) {
+
+                DataChunk data_chunk(buf, std::size_t(nread));
+                this_.m_receive_callback(parent, data_chunk, error);
+            }
         }
     } else {
         DataChunk data(nullptr, 0);
@@ -162,6 +165,10 @@ void UdpClient::schedule_removal() {
     if (ready_to_remove) {
         Disposable::schedule_removal();
     }
+}
+
+std::uint16_t UdpClient::bound_port() const {
+    return m_impl->bound_port();
 }
 
 } // namespace io

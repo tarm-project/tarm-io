@@ -2,6 +2,8 @@
 
 #include "UdpImplBase.h"
 
+#include <iostream>
+
 namespace io {
 namespace detail {
 
@@ -14,6 +16,8 @@ public:
 
     void send_data(const std::string& message, typename ParentType::EndSendCallback  callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback  callback);
+
+    std::uint16_t bound_port() const;
 
 protected:
     struct SendRequest : public uv_udp_send_t {
@@ -74,6 +78,21 @@ void UdpClientImplBase<ParentType, ImplType>::on_send(uv_udp_send_t* req, int uv
     }
 
     delete &request;
+}
+
+template<typename ParentType, typename ImplType>
+std::uint16_t  UdpClientImplBase<ParentType, ImplType>::bound_port() const  {
+    sockaddr_storage address;
+    int uv_size = sizeof(address);
+
+    auto getsockname_status = uv_udp_getsockname(UdpImplBase<ParentType, ImplType>::m_udp_handle.get(), reinterpret_cast<sockaddr*>(&address), &uv_size);
+    Error error(getsockname_status);
+    if (error) {
+        return 0;
+    }
+
+    auto& addr_in = *reinterpret_cast<sockaddr_in*>(&address);
+    return network_to_host(addr_in.sin_port);
 }
 
 } // namespace detail

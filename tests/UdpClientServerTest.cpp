@@ -247,6 +247,50 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     EXPECT_EQ(1, client_data_send_counter);
 }
 
+TEST_F(UdpClientServerTest, client_receive_data_only_from_it_target) {
+    io::EventLoop loop;
+
+    const std::string client_message = "I am client";
+    const std::string other_message = "Spam!Spam!Spam!";
+
+    std::size_t receive_callback_call_count = 0;
+
+    auto client_2 = new io::UdpClient(loop);
+
+    auto client_1 = new io::UdpClient(loop,
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++receive_callback_call_count;
+        }
+    );
+    client_1->set_destination(0x7F000001, m_default_port);
+    client_1->send_data(client_message,
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            // Note: Client1 bound port is only known when it make some activity like sending data
+            client_2->set_destination(0x7F000001, client.bound_port());
+            client_2->send_data(other_message,
+                [&](io::UdpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                }
+            );
+        }
+    );
+
+    io::Timer timer(loop);
+    timer.start(100, [&](io::Timer&) {
+        client_1->schedule_removal();
+        client_2->schedule_removal();
+    });
+
+    EXPECT_EQ(0, receive_callback_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, receive_callback_call_count);
+}
+
 TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
     io::EventLoop loop;
 

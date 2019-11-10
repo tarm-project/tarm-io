@@ -27,7 +27,7 @@ protected:
     ParentType* m_parent = nullptr;
 
     std::unique_ptr<uv_udp_t, std::function<void(uv_udp_t*)>> m_udp_handle;
-    sockaddr_storage m_raw_unix_addr;
+    sockaddr_storage m_raw_unix_addr; // TODO: rename as destination_address
 };
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////

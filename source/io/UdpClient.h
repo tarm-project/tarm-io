@@ -26,6 +26,9 @@ public:
 
     IO_DLL_PUBLIC void set_destination(std::uint32_t host, std::uint16_t port);
 
+    // Return 0 on error
+    IO_DLL_PUBLIC std::uint16_t bound_port() const;
+
     // TODO: implement???
     //void send_data(const DataChunk& data_chunk, std::uint32_t host, std::uint16_t port, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
