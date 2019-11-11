@@ -7,6 +7,8 @@
 #include <functional>
 #include <memory>
 
+// DOC: calling some loop methods and not calling run() will result in memory leak
+
 namespace io {
 
 class EventLoop : public Logger,
