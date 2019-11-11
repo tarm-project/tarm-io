@@ -91,6 +91,9 @@ void UdpServer::Impl::prune_old_peers() {
     for (auto it = m_peers.begin(); it != m_peers.end();) {
         const std::uint64_t time_diff = current_time - it->second->last_packet_time_ns();
         if (time_diff >= std::uint64_t(m_timeout_ms) * 1000000) {
+            if (m_peer_timeout_callback) {
+                m_peer_timeout_callback(*m_parent, *it->second);
+            }
             it = m_peers.erase(it);
         } else {
             ++it;

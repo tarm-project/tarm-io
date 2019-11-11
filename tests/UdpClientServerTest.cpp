@@ -200,6 +200,7 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
     const std::string client_message_3 = "message_3";
 
     std::size_t server_receive_counter = 0;
+    std::size_t server_timeout_counter = 0;
     std::size_t client_send_counter = 0;
 
     auto server = new io::UdpServer(loop);
@@ -227,6 +228,7 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
         ASSERT_TRUE(client.user_data());
         auto& value = *reinterpret_cast<decltype(server_receive_counter)*>(client.user_data());
         EXPECT_EQ(2, value);
+        ++server_timeout_counter;
     });
 
     auto client = new io::UdpClient(loop, 0x7F000001, m_default_port);
@@ -262,11 +264,13 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
 
     EXPECT_EQ(0, client_send_counter);
     EXPECT_EQ(0, server_receive_counter);
+    EXPECT_EQ(0, server_timeout_counter);
 
     ASSERT_EQ(0, loop.run());
 
     ASSERT_EQ(3, client_send_counter);
     ASSERT_EQ(3, server_receive_counter);
+    EXPECT_EQ(1, server_timeout_counter);
 }
 
 TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
