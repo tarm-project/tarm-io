@@ -143,3 +143,5 @@ TEST_F(TimerTest, start_stop_start_stop) {
     EXPECT_FALSE(first_callback_called);
     EXPECT_TRUE(second_callback_called);
 }
+
+// TOOD: double start with different values

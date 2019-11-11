@@ -84,7 +84,18 @@ void UdpServer::Impl::start_receive(DataReceivedCallback receive_callback,
 }
 
 void UdpServer::Impl::prune_old_peers() {
+    const std::uint64_t current_time = uv_hrtime();
 
+    // TODO: detect invalid time???? current_time < it->second->last_packet_time_ns()
+
+    for (auto it = m_peers.begin(); it != m_peers.end();) {
+        const std::uint64_t time_diff = current_time - it->second->last_packet_time_ns();
+        if (time_diff >= std::uint64_t(m_timeout_ms) * 1000000) {
+            it = m_peers.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void UdpServer::Impl::close() {
@@ -138,6 +149,8 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                                    network_to_host(address->sin_port)));
                     }
                     this_.m_data_receive_callback(parent, *peer_ptr, data_chunk, error);
+
+                    peer_ptr->set_last_packet_time_ns(uv_hrtime());
                 } else {
                     UdpPeer peer(*this_.m_loop,
                                  this_.m_udp_handle.get(),

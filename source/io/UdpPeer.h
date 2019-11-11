@@ -29,14 +29,14 @@ public:
     IO_DLL_PUBLIC std::uint32_t address() const;
     IO_DLL_PUBLIC std::uint16_t port() const;
 
-    std::uint64_t last_packet_time_ns() const;
+    IO_DLL_PUBLIC std::uint64_t last_packet_time_ns() const;
 
     IO_DLL_PUBLIC ~UdpPeer();
 
 private:
     IO_DLL_PUBLIC UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port);
 
-    void set_last_packet_time_ns(std::uint64_t time);
+    IO_DLL_PUBLIC void set_last_packet_time_ns(std::uint64_t time);
 
     class Impl;
     std::unique_ptr<Impl> m_impl;

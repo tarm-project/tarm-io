@@ -15,6 +15,7 @@ public:
     std::uint16_t port();
 
     void set_last_packet_time_ns(std::uint64_t time);
+    std::uint64_t last_packet_time_ns() const;
 
 private:
 
@@ -43,6 +44,10 @@ void UdpPeer::Impl::set_last_packet_time_ns(std::uint64_t time) {
     m_last_packet_time_ns = time;
 }
 
+std::uint64_t UdpPeer::Impl::last_packet_time_ns() const {
+    return m_last_packet_time_ns;
+}
+
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 UdpPeer::UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port) :
@@ -55,6 +60,10 @@ UdpPeer::~UdpPeer() {
 
 void UdpPeer::set_last_packet_time_ns(std::uint64_t time) {
     return m_impl->set_last_packet_time_ns(time);
+}
+
+std::uint64_t UdpPeer::last_packet_time_ns() const {
+    return m_impl->last_packet_time_ns();
 }
 
 std::uint32_t UdpPeer::address() const {
