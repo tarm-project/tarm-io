@@ -155,10 +155,16 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
 
                     peer_ptr->set_last_packet_time_ns(uv_hrtime());
                 } else {
+                    //*
                     UdpPeer peer(*this_.m_loop,
                                  this_.m_udp_handle.get(),
                                  network_to_host(address->sin_addr.s_addr),
                                  network_to_host(address->sin_port));
+                                 //*/
+                    /*auto peer = new UdpPeer(*this_.m_loop,
+                                 this_.m_udp_handle.get(),
+                                 network_to_host(address->sin_addr.s_addr),
+                                 network_to_host(address->sin_port));*/
                     this_.m_data_receive_callback(parent, peer, data_chunk, error);
                 }
             }

@@ -431,6 +431,74 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     EXPECT_EQ(1, client_data_send_counter);
 }
 
+TEST_F(UdpClientServerTest, DISABLED_server_reply_with_2_messages) {
+    // Test description: here checking that UdpPeer in a server state without peer timeout enabled
+    // allows to send data correctly and no memory corruption happens
+    io::EventLoop loop;
+
+    const std::string client_message = "Hello from client!";
+    const std::string server_message_1 = "Hello from server 1!";
+    const std::string server_message_2 = "Hello from server 2!";
+
+    std::size_t server_data_receive_counter = 0;
+    std::size_t server_data_send_counter = 0;
+
+    std::size_t client_data_receive_counter = 0;
+    std::size_t client_data_send_counter = 0;
+
+    auto server = new io::UdpServer(loop);
+
+    std::function<void(io::UdpPeer&, const io::Error&)> on_server_send =
+        [&](io::UdpPeer& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            if (server_data_send_counter < 2) {
+                client.send_data(server_message_1, on_server_send);
+                ++server_data_send_counter;
+            } else {
+                server->schedule_removal();
+            }
+        };
+
+    ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
+    server->start_receive([&](io::UdpServer& server, io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+        ++server_data_receive_counter;
+
+        peer.send_data(server_message_1, on_server_send);
+    });
+
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            ++client_data_receive_counter;
+
+            if (client_data_receive_counter == 2) {
+                client.schedule_removal();
+            }
+        }
+    );
+
+    client->send_data(client_message,
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_data_send_counter;
+        }
+    );
+
+    EXPECT_EQ(0, server_data_receive_counter);
+    EXPECT_EQ(0, server_data_send_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+    EXPECT_EQ(0, client_data_send_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_data_receive_counter);
+    EXPECT_EQ(2, server_data_send_counter);
+    EXPECT_EQ(2, client_data_receive_counter);
+    EXPECT_EQ(1, client_data_send_counter);
+}
+
 TEST_F(UdpClientServerTest, client_receive_data_only_from_it_target) {
     io::EventLoop loop;
 
@@ -531,10 +599,59 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::MESSAGE_TOO_LONG, error.code());
             client.schedule_removal();
-        });
+        }
+    );
 
     ASSERT_EQ(0, loop.run());
 }
+
+TEST_F(UdpClientServerTest, DISABLED_client_and_server_exchange_lot_of_data) {
+    io::EventLoop loop;
+
+    std::size_t SIZE = 65000;
+    std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
+
+    std::size_t server_message_counter = 0;
+    std::size_t client_message_counter = 0;
+
+    std::function<void(io::UdpPeer&, const io::Error&)> server_send =
+        [&](io::UdpPeer& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_message_counter;
+            if (server_message_counter < SIZE) {
+                client.send_data(message, SIZE - server_message_counter, server_send);
+            } else {
+
+            }
+        };
+
+    auto server = new io::UdpServer(loop);
+    ASSERT_EQ(io::Error(0), server->bind(m_default_addr, m_default_port));
+    server->start_receive(
+        [&](io::UdpServer& server, io::UdpPeer& client, const io::DataChunk& chunk, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.send_data(message, SIZE - client_message_counter, server_send);
+        }
+    );
+
+    std::function<void(io::UdpClient&, const io::Error&)> client_send =
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_message_counter;
+            if (client_message_counter < SIZE) {
+                client.send_data(message, SIZE - client_message_counter, client_send);
+            } else {
+
+            }
+        };
+
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port);
+    client->send_data(message, SIZE - client_message_counter, client_send);
+
+    ASSERT_EQ(0, loop.run());
+}
+
+// TODO: client and server in threads
 
 // TODO: UDP client sending test with no destination set
 // TODO: check address of UDP peer

@@ -45,6 +45,7 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
     auto req = new SendRequest;
     req->end_send_callback = callback;
     req->buf = buffer;
+    req->data = this;
     // const_cast is a workaround for lack of constness support in uv_buf_t
     req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
 
@@ -69,7 +70,7 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(const std::string& messa
 template<typename ParentType, typename ImplType>
 void UdpClientImplBase<ParentType, ImplType>::on_send(uv_udp_send_t* req, int uv_status) {
     auto& request = *reinterpret_cast<SendRequest*>(req);
-    auto& this_ = *reinterpret_cast<ImplType*>(req->handle->data);
+    auto& this_ = *reinterpret_cast<ImplType*>(req->data);
     auto& parent = *this_.m_parent;
 
     Error error(uv_status);
