@@ -23,7 +23,7 @@ private:
 };
 
 UdpPeer::Impl::Impl(EventLoop& loop, UdpPeer& parent, void* udp_handle, std::uint32_t address, std::uint16_t port) :
-    UdpClientImplBase(loop, parent, reinterpret_cast<uv_udp_t*>(udp_handle)) {
+    UdpClientImplBase(loop, parent, parent, reinterpret_cast<uv_udp_t*>(udp_handle)) {
     auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_raw_unix_addr);
     unix_addr.sin_family = AF_INET;
     unix_addr.sin_port = host_to_network(port);
@@ -51,11 +51,12 @@ std::uint64_t UdpPeer::Impl::last_packet_time_ns() const {
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 UdpPeer::UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port) :
+    Disposable(loop),
+    RefCounted(*static_cast<Disposable*>(this)),
     m_impl(new Impl(loop, *this, udp_handle, address, port)) {
 }
 
 UdpPeer::~UdpPeer() {
-
 }
 
 void UdpPeer::set_last_packet_time_ns(std::uint64_t time) {

@@ -431,7 +431,7 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     EXPECT_EQ(1, client_data_send_counter);
 }
 
-TEST_F(UdpClientServerTest, DISABLED_server_reply_with_2_messages) {
+TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
     // Test description: here checking that UdpPeer in a server state without peer timeout enabled
     // allows to send data correctly and no memory corruption happens
     io::EventLoop loop;
@@ -452,7 +452,7 @@ TEST_F(UdpClientServerTest, DISABLED_server_reply_with_2_messages) {
         [&](io::UdpPeer& client, const io::Error& error) {
             EXPECT_FALSE(error);
             if (server_data_send_counter < 2) {
-                client.send_data(server_message_1, on_server_send);
+                client.send_data(server_message_2, on_server_send);
                 ++server_data_send_counter;
             } else {
                 server->schedule_removal();
@@ -469,6 +469,8 @@ TEST_F(UdpClientServerTest, DISABLED_server_reply_with_2_messages) {
 
     auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
         [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            std::string s(data.buf.get(), data.size);
+            std::cout << s << std::endl;
             EXPECT_FALSE(error);
 
             ++client_data_receive_counter;
@@ -605,14 +607,18 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
     ASSERT_EQ(0, loop.run());
 }
 
-TEST_F(UdpClientServerTest, DISABLED_client_and_server_exchange_lot_of_data) {
+// TODO: this test with parallel send of all data
+// TODO: improve this test and check actual data content received
+TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_data) {
     io::EventLoop loop;
 
-    std::size_t SIZE = 65000;
+    std::size_t SIZE = 5000;
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
+    std::memset(message.get(), 0, SIZE);
 
     std::size_t server_message_counter = 0;
     std::size_t client_message_counter = 0;
+    bool server_send_started = false;
 
     std::function<void(io::UdpPeer&, const io::Error&)> server_send =
         [&](io::UdpPeer& client, const io::Error& error) {
@@ -620,8 +626,6 @@ TEST_F(UdpClientServerTest, DISABLED_client_and_server_exchange_lot_of_data) {
             ++server_message_counter;
             if (server_message_counter < SIZE) {
                 client.send_data(message, SIZE - server_message_counter, server_send);
-            } else {
-
             }
         };
 
@@ -630,7 +634,11 @@ TEST_F(UdpClientServerTest, DISABLED_client_and_server_exchange_lot_of_data) {
     server->start_receive(
         [&](io::UdpServer& server, io::UdpPeer& client, const io::DataChunk& chunk, const io::Error& error) {
             EXPECT_FALSE(error);
-            client.send_data(message, SIZE - client_message_counter, server_send);
+
+            if (!server_send_started) {
+                client.send_data(message, SIZE - client_message_counter, server_send);
+                server_send_started = true;
+            }
         }
     );
 
@@ -640,13 +648,20 @@ TEST_F(UdpClientServerTest, DISABLED_client_and_server_exchange_lot_of_data) {
             ++client_message_counter;
             if (client_message_counter < SIZE) {
                 client.send_data(message, SIZE - client_message_counter, client_send);
-            } else {
-
             }
         };
 
     auto client = new io::UdpClient(loop, 0x7F000001, m_default_port);
     client->send_data(message, SIZE - client_message_counter, client_send);
+
+    io::Timer timer(loop);
+    timer.start(100, 100, [&](io::Timer& timer) {
+        if (client_message_counter == SIZE && server_message_counter == SIZE) {
+            client->schedule_removal();
+            server->schedule_removal();
+            timer.stop();
+        }
+    });
 
     ASSERT_EQ(0, loop.run());
 }

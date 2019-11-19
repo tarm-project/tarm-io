@@ -155,17 +155,22 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
 
                     peer_ptr->set_last_packet_time_ns(uv_hrtime());
                 } else {
-                    //*
+                    /*
                     UdpPeer peer(*this_.m_loop,
                                  this_.m_udp_handle.get(),
                                  network_to_host(address->sin_addr.s_addr),
                                  network_to_host(address->sin_port));
                                  //*/
-                    /*auto peer = new UdpPeer(*this_.m_loop,
+
+                    // Ref/Unref semantics here was added to prolong lifetime of oneshot UdpPeer objects
+                    // and to allow call send data in receive callback for UdpServer without peers tracking.
+                    auto peer = new UdpPeer(*this_.m_loop,
                                  this_.m_udp_handle.get(),
                                  network_to_host(address->sin_addr.s_addr),
-                                 network_to_host(address->sin_port));*/
-                    this_.m_data_receive_callback(parent, peer, data_chunk, error);
+                                 network_to_host(address->sin_port));
+                    peer->ref();
+                    this_.m_data_receive_callback(parent, *peer, data_chunk, error);
+                    peer->unref();
                 }
             }
         } else {

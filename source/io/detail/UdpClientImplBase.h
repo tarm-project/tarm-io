@@ -12,7 +12,7 @@ template<typename ParentType, typename ImplType>
 class UdpClientImplBase : public UdpImplBase<ParentType, ImplType> {
 public:
     UdpClientImplBase(EventLoop& loop, ParentType& parent);
-    UdpClientImplBase(EventLoop& loop, ParentType& parent, uv_udp_t* udp_handle);
+    UdpClientImplBase(EventLoop& loop, ParentType& parent, RefCounted& ref_counted, uv_udp_t* udp_handle);
 
     void send_data(const std::string& message, typename ParentType::EndSendCallback  callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback  callback);
@@ -28,6 +28,8 @@ protected:
 
     // statics
     static void on_send(uv_udp_send_t* req, int status);
+
+    RefCounted* m_ref_counted = nullptr;
 };
 
 template<typename ParentType, typename ImplType>
@@ -36,8 +38,9 @@ UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, Pare
 }
 
 template<typename ParentType, typename ImplType>
-UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, ParentType& parent, uv_udp_t* udp_handle) :
-    UdpImplBase<ParentType, ImplType>(loop, parent, udp_handle) {
+UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, ParentType& parent, RefCounted& ref_counted, uv_udp_t* udp_handle) :
+    UdpImplBase<ParentType, ImplType>(loop, parent, udp_handle),
+    m_ref_counted(&ref_counted) {
 }
 
 template<typename ParentType, typename ImplType>
@@ -57,6 +60,10 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
                                 on_send);
     if (uv_status < 0 && callback) {
         callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(uv_status));
+    } else {
+        if (m_ref_counted) {
+            m_ref_counted->ref();
+        }
     }
 }
 
@@ -78,6 +85,9 @@ void UdpClientImplBase<ParentType, ImplType>::on_send(uv_udp_send_t* req, int uv
         request.end_send_callback(parent, error);
     }
 
+    if (this_.m_ref_counted) {
+        this_.m_ref_counted->unref();
+    }
     delete &request;
 }
 

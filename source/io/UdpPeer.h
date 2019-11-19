@@ -3,7 +3,7 @@
 
 //#include "Export.h"
 //#include "DataChunk.h"
-//#include "Disposable.h"
+#include "Disposable.h"
 
 #include "Error.h"
 #include "EventLoop.h"
@@ -17,7 +17,9 @@
 
 namespace io {
 
-class UdpPeer : public UserDataHolder {
+class UdpPeer : public UserDataHolder,
+                protected Disposable,
+                protected RefCounted {
 public:
     friend class UdpServer;
 
@@ -31,6 +33,7 @@ public:
 
     IO_DLL_PUBLIC std::uint64_t last_packet_time_ns() const;
 
+    // TODO: make protected
     IO_DLL_PUBLIC ~UdpPeer();
 
 private:
