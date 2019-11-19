@@ -12,7 +12,7 @@
 #include <functional>
 
 namespace io {
-
+// TODO: intorduce connection timeout for UDP client??? (like for server)
 class UdpClient : public Disposable,
                   public UserDataHolder {
 public:
