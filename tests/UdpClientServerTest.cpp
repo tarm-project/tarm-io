@@ -687,7 +687,13 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_data) {
         }
     });
 
+    EXPECT_EQ(0, server_receive_message_counter);
+    EXPECT_EQ(0, client_receive_message_counter);
+
     ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(SIZE, server_receive_message_counter);
+    EXPECT_EQ(SIZE, client_receive_message_counter);
 }
 
 // TODO: client and server in threads
