@@ -437,8 +437,10 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
     io::EventLoop loop;
 
     const std::string client_message = "Hello from client!";
-    const std::string server_message_1 = "Hello from server 1!";
-    const std::string server_message_2 = "Hello from server 2!";
+    const std::string server_message[2] = {
+        "Hello from server 1!",
+        "Hello from server 2!"
+    };
 
     std::size_t server_data_receive_counter = 0;
     std::size_t server_data_send_counter = 0;
@@ -452,8 +454,8 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
         [&](io::UdpPeer& client, const io::Error& error) {
             EXPECT_FALSE(error);
             if (server_data_send_counter < 2) {
-                client.send_data(server_message_2, on_server_send);
                 ++server_data_send_counter;
+                client.send_data(server_message[server_data_send_counter], on_server_send);
             } else {
                 server->schedule_removal();
             }
@@ -464,14 +466,15 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
         EXPECT_FALSE(error);
         ++server_data_receive_counter;
 
-        peer.send_data(server_message_1, on_server_send);
+        peer.send_data(server_message[server_data_send_counter], on_server_send);
     });
 
     auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
         [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
-            std::string s(data.buf.get(), data.size);
-            std::cout << s << std::endl;
             EXPECT_FALSE(error);
+
+            std::string s(data.buf.get(), data.size);
+            EXPECT_EQ(server_message[client_data_receive_counter], s);
 
             ++client_data_receive_counter;
 
