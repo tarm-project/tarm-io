@@ -616,7 +616,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_data) {
     // will be received sequentially
     io::EventLoop loop;
 
-    std::size_t SIZE = 5000;
+    std::size_t SIZE = 2000;
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
     ::srand(0);
     for(std::size_t i = 0; i < SIZE; ++i) {
@@ -649,7 +649,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_data) {
             }
 
             if (!server_send_started) {
-                client.send_data(message, SIZE - client_send_message_counter, server_send);
+                client.send_data(message, SIZE - server_receive_message_counter, server_send);
                 server_send_started = true;
             }
 
@@ -669,6 +669,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_data) {
     auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
         [&](io::UdpClient&, const io::DataChunk& chunk, const io::Error& error) {
             EXPECT_FALSE(error);
+            ASSERT_EQ(SIZE - client_receive_message_counter, chunk.size);
             for (std::size_t i = 0; i < SIZE - client_receive_message_counter; ++i) {
                 ASSERT_EQ(message.get()[i], chunk.buf.get()[i]) << "i= " << i;
             }
