@@ -50,8 +50,8 @@ TlsTcpConnectedClient::Impl::Impl(EventLoop& loop,
     m_certificate(reinterpret_cast<::X509*>(certificate)),
     m_private_key(reinterpret_cast<::EVP_PKEY*>(private_key)),
     m_new_connection_callback(new_connection_callback) {
-    m_tcp_client = &tcp_client;
-    m_tcp_client->set_user_data(&parent);
+    m_client = &tcp_client;
+    m_client->set_user_data(&parent);
 }
 
 TlsTcpConnectedClient::Impl::~Impl() {
@@ -62,11 +62,11 @@ void TlsTcpConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback 
 }
 
 void TlsTcpConnectedClient::Impl::close() {
-    m_tcp_client->close();
+    m_client->close();
 }
 
 void TlsTcpConnectedClient::Impl::shutdown() {
-    m_tcp_client->shutdown();
+    m_client->shutdown();
 }
 
 const SSL_METHOD* TlsTcpConnectedClient::Impl::ssl_method() {

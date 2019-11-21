@@ -12,7 +12,7 @@ namespace io {
 
 class TlsTcpClient : public Disposable {
 public:
-    using UnderlyingTcpType = TcpClient;
+    using UnderlyingClientType = TcpClient;
 
     using ConnectCallback = std::function<void(TlsTcpClient&, const Error&)>;
     using CloseCallback = std::function<void(TlsTcpClient&, const Error&)>;

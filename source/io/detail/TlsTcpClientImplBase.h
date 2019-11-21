@@ -41,7 +41,7 @@ protected:
     ParentType* m_parent;
     EventLoop* m_loop;
 
-    typename ParentType::UnderlyingTcpType* m_tcp_client = nullptr;
+    typename ParentType::UnderlyingClientType* m_client = nullptr;
 
     SSL_CTX* m_ssl_ctx = nullptr;
     BIO* m_ssl_read_bio = nullptr;
@@ -73,7 +73,7 @@ TlsTcpClientImplBase<ParentType, ImplType>::~TlsTcpClientImplBase() {
 
 template<typename ParentType, typename ImplType>
 bool TlsTcpClientImplBase<ParentType, ImplType>::is_open() const {
-    return m_tcp_client && m_tcp_client->is_open();
+    return m_client && m_client->is_open();
 }
 
 template<typename ParentType, typename ImplType>
@@ -177,7 +177,7 @@ void TlsTcpClientImplBase<ParentType, ImplType>::handshake_read_from_sll_and_sen
     const auto size = BIO_read(m_ssl_write_bio, buf.get(), BUF_SIZE);
 
     IO_LOG(m_loop, TRACE, m_parent, "Getting data from SSL and sending to server, size:", size);
-    m_tcp_client->send_data(buf, size);
+    m_client->send_data(buf, size);
 }
 
 template<typename ParentType, typename ImplType>
@@ -253,7 +253,7 @@ void TlsTcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const
     }
 
     IO_LOG(m_loop, TRACE, m_parent, "Sending message to client. Original size:", size, "encrypted_size:", actual_size);
-    m_tcp_client->send_data(ptr, actual_size, [callback, this](typename ParentType::UnderlyingTcpType& tcp_client, const Error& error) {
+    m_client->send_data(ptr, actual_size, [callback, this](typename ParentType::UnderlyingClientType& tcp_client, const Error& error) {
         if (callback) {
             callback(*m_parent, error);
         }

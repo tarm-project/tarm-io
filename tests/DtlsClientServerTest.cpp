@@ -19,5 +19,16 @@ protected:
 };
 
 TEST_F(DtlsClientServerTest, default_constructor) {
-    //io::EventLoop loop;
+    io::EventLoop loop;
+    this->log_to_stdout();
+
+    auto client = new io::DtlsClient(loop);
+    client->connect("51.15.68.114", 1234,
+        [](io::DtlsClient& client, const io::Error&) {
+            std::cout << "Connected!!!" << std::endl;
+            client.send_data("bla_bla_bla");
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
 }

@@ -23,6 +23,9 @@ public:
 
     void start_receive();
 
+    std::uint32_t ipv4_addr() const;
+    std::uint16_t port() const;
+
 protected:
     // statics
     static void on_data_received(
@@ -80,6 +83,16 @@ void UdpClient::Impl::start_receive() {
     if (status < 0) {
 
     }
+}
+
+std::uint32_t UdpClient::Impl::ipv4_addr() const {
+    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(&m_raw_unix_addr);
+    return network_to_host(unix_addr.sin_addr.s_addr);
+}
+
+std::uint16_t UdpClient::Impl::port() const {
+    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(&m_raw_unix_addr);
+    return network_to_host(unix_addr.sin_port);
 }
 
 ///////////////////////////////////////////  static  ////////////////////////////////////////////
@@ -169,6 +182,18 @@ void UdpClient::schedule_removal() {
 
 std::uint16_t UdpClient::bound_port() const {
     return m_impl->bound_port();
+}
+
+std::uint32_t UdpClient::ipv4_addr() const {
+    return m_impl->ipv4_addr();
+}
+
+std::uint16_t UdpClient::port() const {
+    return m_impl->port();
+}
+
+bool UdpClient::is_open() const {
+    return true; // TODO: fixme
 }
 
 } // namespace io

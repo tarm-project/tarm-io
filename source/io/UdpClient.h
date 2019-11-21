@@ -26,6 +26,11 @@ public:
 
     IO_DLL_PUBLIC void set_destination(std::uint32_t host, std::uint16_t port);
 
+    IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
+    IO_DLL_PUBLIC std::uint16_t port() const;
+
+    IO_DLL_PUBLIC  bool is_open() const;
+
     // Return 0 on error
     IO_DLL_PUBLIC std::uint16_t bound_port() const;
 

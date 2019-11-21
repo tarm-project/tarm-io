@@ -59,9 +59,9 @@ TlsTcpClient::Impl::Impl(EventLoop& loop, TlsTcpClient& parent) :
 bool TlsTcpClient::Impl::schedule_removal() {
     IO_LOG(m_loop, TRACE, "");
 
-    if (m_tcp_client) {
+    if (m_client) {
         if (!m_ready_schedule_removal) {
-            m_tcp_client->schedule_removal();
+            m_client->schedule_removal();
             m_ready_schedule_removal = true;
             return false; // postpone removal
         }
@@ -71,11 +71,11 @@ bool TlsTcpClient::Impl::schedule_removal() {
 }
 
 std::uint32_t TlsTcpClient::Impl::ipv4_addr() const {
-    return m_tcp_client->ipv4_addr();
+    return m_client->ipv4_addr();
 }
 
 std::uint16_t TlsTcpClient::Impl::port() const {
-    return m_tcp_client->port();
+    return m_client->port();
 }
 
 void TlsTcpClient::Impl::connect(const std::string& address,
@@ -83,7 +83,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback) {
-    m_tcp_client = new TcpClient(*m_loop);
+    m_client = new TcpClient(*m_loop);
 
     bool is_connected = ssl_init();
 
@@ -113,7 +113,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
             }
         };
 
-    m_tcp_client->connect(address, port, on_connect, on_data_receive, on_close);
+    m_client->connect(address, port, on_connect, on_data_receive, on_close);
 }
 
 void TlsTcpClient::Impl::close() {
