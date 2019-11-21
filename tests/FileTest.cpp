@@ -62,6 +62,8 @@ TEST_F(FileTest, default_constructor) {
     auto file = new io::File(loop);
     ASSERT_FALSE(file->is_open());
     file->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
 }
 
 TEST_F(FileTest, open_existing) {

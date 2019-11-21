@@ -11,17 +11,13 @@ struct EventLoopTest : public testing::Test,
 };
 
 TEST_F(EventLoopTest, default_constructor) {
+    EXPECT_NO_THROW(io::EventLoop event_loop);
+}
+
+TEST_F(EventLoopTest, default_constructor_with_run) {
     io::EventLoop event_loop;
     ASSERT_EQ(0, event_loop.run());
 }
-
-// TODO: remove this test????
-//TEST_F(EventLoopTest, work_null) {
-//    io::EventLoop event_loop;
-//    event_loop.add_work(nullptr);
-//
-//    ASSERT_EQ(0, event_loop.run());
-//}
 
 TEST_F(EventLoopTest, work_no_work_done_callback) {
     bool callback_executed = false;
@@ -342,3 +338,4 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     EXPECT_EQ(1, counter_2);
     EXPECT_EQ(1, counter_3);
 }
+

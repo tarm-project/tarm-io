@@ -51,6 +51,7 @@ public:
     void stop_dummy_idle();
 
     // TODO: handle(convert) error codes????
+    void init_async();
     int run();
 
     bool is_running() const;
@@ -83,6 +84,7 @@ private:
     std::mutex m_callbacks_queue_mutex;
 
     bool m_is_running = false;
+    bool m_run_called = false;
 };
 
 namespace {
@@ -95,7 +97,7 @@ void on_async_close(uv_handle_t* handle) {
 
 EventLoop::Impl::Impl(EventLoop& loop) :
     m_loop(&loop),
-    m_async(new uv_async_t, [](uv_async_t* async) {
+    m_async(nullptr, [](uv_async_t* async) {
         uv_close(reinterpret_cast<uv_handle_t*>(async), on_async_close);
     }) {
 
@@ -108,11 +110,6 @@ EventLoop::Impl::Impl(EventLoop& loop) :
         std::lock_guard<std::mutex> guard(loop_init_mutex);
         uv_loop_init(this);
     }
-    m_async->data = this;
-    uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
-
-    // unref is called to make loop exitable if it has no ohter running handles except this async
-    uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
 }
 
 EventLoop::Impl::~Impl() {
@@ -125,15 +122,29 @@ EventLoop::Impl::~Impl() {
     }
 
     int status = uv_loop_close(this);
+
+    if (!m_run_called) {
+        return;
+    }
+
     if (status == UV_EBUSY) {
         IO_LOG(m_loop, DEBUG, "loop returned EBUSY at close, running one more time");
 
-        // Making the last attemt to close everytjing and shut down gracefully
+        // Making the last attemt to close everything and shut down gracefully
         status = uv_run(this, UV_RUN_ONCE);
 
         uv_loop_close(this);
         IO_LOG(m_loop, DEBUG, "Done");
     }
+}
+
+void EventLoop::Impl::init_async() {
+    m_async.reset(new uv_async_t);
+    m_async->data = this;
+    uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
+
+    // unref is called to make loop exitable if it has no ohter running handles except this async
+    uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
 }
 
 namespace {
@@ -200,6 +211,7 @@ void EventLoop::Impl::add_work(WorkCallbackType work_callback, WorkDoneCallbackT
 int EventLoop::Impl::run() {
     bool has_pending_callbacks = false;
 
+    m_run_called = true;
     m_is_running = true;
     int run_status = 0;
 
@@ -283,6 +295,10 @@ void EventLoop::Impl::execute_on_loop_thread(AsyncCallback callback) {
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
         m_callbacks_queue.push_back(callback);
+    }
+
+    if (!m_async) {
+        init_async();
     }
 
     uv_async_send(m_async.get());

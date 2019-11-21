@@ -46,6 +46,8 @@ TEST_F(TcpClientServerTest, invalid_ip4_address) {
     );
     EXPECT_TRUE(listen_error);
     EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, listen_error.code());
+
+    ASSERT_EQ(0, loop.run());
 }
 
 TEST_F(TcpClientServerTest, schedule_removal_not_connected_client) {
@@ -71,6 +73,8 @@ TEST_F(TcpClientServerTest, bind_privileged) {
     );
     EXPECT_TRUE(listen_error);
     EXPECT_EQ(io::StatusCode::PERMISSION_DENIED, listen_error.code());
+
+    ASSERT_EQ(0, loop.run());
 }
 #endif
 

@@ -33,8 +33,7 @@ list(APPEND IO_SOURCE_LIST
         io/TlsTcpConnectedClient.cpp
         io/TlsTcpServer.cpp
         io/UdpClient.cpp
-        io/UdpClient.h
-        io/UdpServer.h
+        io/UdpPeer.cpp
         io/UdpServer.cpp
         io/UserDataHolder.cpp
 )

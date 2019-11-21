@@ -15,4 +15,8 @@ class DtlsServer;
 class DtlsConnectedClient;
 class DtlsClient;
 
+class UdpClient;
+class UdpServer;
+class UdpPeer;
+
 }

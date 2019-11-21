@@ -6,20 +6,19 @@
 #include "Disposable.h"
 #include "Error.h"
 #include "UserDataHolder.h"
+#include "UdpPeer.h"
 
 #include <memory>
 
 namespace io {
 
-// TODO: fwd include
-class UdpClient;
-
 class UdpServer : public Disposable,
                   public UserDataHolder {
 public:
-    using DataReceivedCallback = std::function<void(UdpServer&, std::uint32_t, std::uint16_t, const DataChunk&, const Error&)>;
+    using DataReceivedCallback = std::function<void(UdpServer&, UdpPeer&, const DataChunk&, const Error&)>;
+    using PeerTimeoutCallback = std::function<void(UdpServer&, UdpPeer&)>;
 
-UdpServer(const UdpServer& other) = delete;
+    UdpServer(const UdpServer& other) = delete;
     UdpServer& operator=(const UdpServer& other) = delete;
 
     UdpServer(UdpServer&& other) = default;
@@ -32,6 +31,7 @@ UdpServer(const UdpServer& other) = delete;
     IO_DLL_PUBLIC Error bind(const std::string& ip_addr_str, std::uint16_t port);
 
     IO_DLL_PUBLIC void start_receive(DataReceivedCallback receive_callback);
+    IO_DLL_PUBLIC void start_receive(DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
 
     IO_DLL_PUBLIC void close();
 
