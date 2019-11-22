@@ -23,10 +23,13 @@ TEST_F(DtlsClientServerTest, default_constructor) {
     this->log_to_stdout();
 
     auto client = new io::DtlsClient(loop);
-    client->connect("51.15.68.114", 1234,
+    client->connect("127.0.0.1", 12345,
         [](io::DtlsClient& client, const io::Error&) {
             std::cout << "Connected!!!" << std::endl;
             client.send_data("bla_bla_bla");
+        },
+        [](io::DtlsClient& client, const char* buf, size_t size) {
+            std::cout.write(buf, size);
         }
     );
 
