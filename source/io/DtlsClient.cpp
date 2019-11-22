@@ -135,7 +135,9 @@ void DtlsClient::Impl::close() {
 }
 
 const SSL_METHOD* DtlsClient::Impl::ssl_method() {
-    return /*TLSv1_2_client_method();*/ DTLSv1_client_method();
+    return /*TLSv1_2_client_method();*/ DTLS_client_method();
+    //DTLS_client_method
+    // DTLSv1_2_client_method
 }
 
 bool DtlsClient::Impl::ssl_set_siphers() {
