@@ -83,4 +83,8 @@ void UdpPeer::send_data(const std::string& message, EndSendCallback callback) {
     return m_impl->send_data(message, callback);
 }
 
+bool UdpPeer::is_open() const {
+    return true; // TODO: revise this
+}
+
 } // namespace io

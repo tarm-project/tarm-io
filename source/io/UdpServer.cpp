@@ -154,6 +154,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                                    this_.m_udp_handle.get(),
                                                    network_to_host(address->sin_addr.s_addr),
                                                    network_to_host(address->sin_port)));
+                        peer_ptr->ref(); // Holding extra reference to prevent removal by ref/unref mechanics
 
                         if (this_.m_new_peer_callback) {
                             this_.m_new_peer_callback(parent, *peer_ptr.get(), Error(0));

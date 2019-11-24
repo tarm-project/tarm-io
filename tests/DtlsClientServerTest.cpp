@@ -17,7 +17,7 @@ protected:
     const io::Path m_cert_path = m_test_path / "certificate.pem";
     const io::Path m_key_path = m_test_path / "key.pem";
 };
-
+/*
 TEST_F(DtlsClientServerTest, default_constructor) {
     io::EventLoop loop;
     this->log_to_stdout();
@@ -29,6 +29,25 @@ TEST_F(DtlsClientServerTest, default_constructor) {
             client.send_data("bla_bla_bla");
         },
         [](io::DtlsClient& client, const char* buf, size_t size) {
+            std::cout.write(buf, size);
+        }
+    );
+
+    ASSERT_EQ(0, loop.run());
+}
+*/
+
+TEST_F(DtlsClientServerTest, default_constructor) {
+    io::EventLoop loop;
+    this->log_to_stdout();
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen("0.0.0.0", 1234,
+        [](io::DtlsServer&, io::DtlsConnectedClient& client){
+            std::cout << "On new connection!!!" << std::endl;
+            client.send_data("Hello world!\n");
+        },
+        [](io::DtlsServer&, io::DtlsConnectedClient&, const char* buf, std::size_t size){
             std::cout.write(buf, size);
         }
     );
