@@ -186,6 +186,70 @@ TEST_F(UdpClientServerTest, peer_identity_with_preservation_on_server) {
     ASSERT_EQ(2, server_receive_counter);
 }
 
+TEST_F(UdpClientServerTest, on_new_peer_callback) {
+    io::EventLoop loop;
+
+    std::size_t on_new_peer_counter = 0;
+    std::size_t on_data_receive_counter = 0;
+
+    auto server = new io::UdpServer(loop);
+    server->bind(m_default_addr, m_default_port);
+    server->start_receive(
+        [&](io::UdpServer&, io::UdpPeer&, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            if (!on_new_peer_counter) {
+                EXPECT_EQ(0, on_data_receive_counter);
+            }
+
+            ++on_new_peer_counter;
+        },
+        [&](io::UdpServer&, io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++on_data_receive_counter;
+
+            if (on_data_receive_counter == 4) {
+                server->schedule_removal();
+            }
+        },
+    100,
+    nullptr);
+
+    auto client_1 = new io::UdpClient(loop, 0x7F000001, m_default_port);
+    client_1->send_data("1_1",
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.send_data("1_2",
+                [&](io::UdpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    client.schedule_removal();
+                }
+            );
+        }
+    );
+
+    auto client_2 = new io::UdpClient(loop, 0x7F000001, m_default_port);
+    client_2->send_data("2_1",
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.send_data("2_2",
+                [&](io::UdpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    client.schedule_removal();
+                }
+            );
+        }
+    );
+
+    EXPECT_EQ(0, on_new_peer_counter);
+    EXPECT_EQ(0, on_data_receive_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(2, on_new_peer_counter);
+    EXPECT_EQ(4, on_data_receive_counter);
+}
+
 TEST_F(UdpClientServerTest, client_timeout_for_server) {
     // Note: timings are essential in this test
     // UdpServer timeouts: 0 - - - - 200 - - - - 400 - - - - 600 - - - -
