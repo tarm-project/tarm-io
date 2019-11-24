@@ -18,7 +18,7 @@ public:
 
     Error bind(const std::string& ip_addr_str, std::uint16_t port);
     void start_receive(DataReceivedCallback data_receive_callback);
-    void start_receive(DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
+    void start_receive(NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
 
     void close();
     bool close_with_removal();
@@ -35,6 +35,7 @@ protected:
     //static void on_close_with_removal(uv_handle_t* handle);
 
 private:
+    NewPeerCallback m_new_peer_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
     PeerTimeoutCallback m_peer_timeout_callback = nullptr;
     std::size_t m_timeout_ms = 0;
@@ -64,12 +65,15 @@ void UdpServer::Impl::start_receive(DataReceivedCallback data_receive_callback) 
     }
 }
 
-void UdpServer::Impl::start_receive(DataReceivedCallback receive_callback,
+void UdpServer::Impl::start_receive(NewPeerCallback new_peer_callback,
+                                    DataReceivedCallback receive_callback,
                                     std::size_t timeout_ms,
                                     PeerTimeoutCallback timeout_callback) {
     if (m_timeout_ms == 0) {
         // TODO: error
     }
+
+    m_new_peer_callback = new_peer_callback;
 
     m_timeout_ms = timeout_ms;
     m_peer_timeout_callback = timeout_callback;
@@ -150,6 +154,10 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                                    this_.m_udp_handle.get(),
                                                    network_to_host(address->sin_addr.s_addr),
                                                    network_to_host(address->sin_port)));
+
+                        if (this_.m_new_peer_callback) {
+                            this_.m_new_peer_callback(parent, *peer_ptr.get(), Error(0));
+                        }
                     }
                     this_.m_data_receive_callback(parent, *peer_ptr, data_chunk, error);
 
@@ -205,8 +213,12 @@ void UdpServer::start_receive(DataReceivedCallback data_receive_callback) {
     return m_impl->start_receive(data_receive_callback);
 }
 
+void UdpServer::start_receive(NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback) {
+    return m_impl->start_receive(new_peer_callback, receive_callback, timeout_ms, timeout_callback);
+}
+
 void UdpServer::start_receive(DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback) {
-    return m_impl->start_receive(receive_callback, timeout_ms, timeout_callback);
+    return m_impl->start_receive(nullptr, receive_callback, timeout_ms, timeout_callback);
 }
 
 void UdpServer::close() {
