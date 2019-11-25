@@ -17,6 +17,101 @@ protected:
     const io::Path m_cert_path = m_test_path / "certificate.pem";
     const io::Path m_key_path = m_test_path / "key.pem";
 };
+
+TEST_F(DtlsClientServerTest, client_without_actions) {
+    io::EventLoop loop;
+
+    auto client = new io::DtlsClient(loop);
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(DtlsClientServerTest, server_without_actions) {
+    io::EventLoop loop;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
+        io::EventLoop loop;
+
+    const std::string client_message = "Hello from client!";
+    const std::string server_message = "Hello from server!";
+
+    std::size_t server_new_connection_counter = 0;
+    std::size_t server_data_receive_counter = 0;
+    std::size_t server_data_send_counter = 0;
+
+    std::size_t client_new_connection_counter = 0;
+    std::size_t client_data_receive_counter = 0;
+    std::size_t client_data_send_counter = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen(m_default_addr, m_default_port,
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client){
+            ++server_new_connection_counter;
+        },
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const char* buf, std::size_t size) {
+            //EXPECT_FALSE(error);
+            ++server_data_receive_counter;
+
+            std::string s(buf, size);
+            EXPECT_EQ(client_message, s);
+
+            client.send_data(server_message,
+                [&](io::DtlsConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error.string();
+                    ++server_data_send_counter;
+                }
+            );
+        }
+    );
+
+    auto client = new io::DtlsClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_new_connection_counter;
+
+            client.send_data(client_message,
+                [&](io::DtlsClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    ++client_data_send_counter;
+                }
+            );
+        },
+        [&](io::DtlsClient& client, const char* buf, size_t size) {
+            std::string s(buf, size);
+            EXPECT_EQ(server_message, s);
+            ++client_data_receive_counter;
+
+            // All interaction is done at this point
+            server->schedule_removal();
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_new_connection_counter);
+    EXPECT_EQ(0, server_data_receive_counter);
+    EXPECT_EQ(0, server_data_send_counter);
+    EXPECT_EQ(0, client_new_connection_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+    EXPECT_EQ(0, client_data_send_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_new_connection_counter);
+    EXPECT_EQ(1, server_data_receive_counter);
+    EXPECT_EQ(1, server_data_send_counter);
+    EXPECT_EQ(1, client_new_connection_counter);
+    EXPECT_EQ(1, client_data_receive_counter);
+    EXPECT_EQ(1, client_data_send_counter);
+}
+
 /*
 TEST_F(DtlsClientServerTest, default_constructor) {
     io::EventLoop loop;
@@ -35,7 +130,6 @@ TEST_F(DtlsClientServerTest, default_constructor) {
 
     ASSERT_EQ(0, loop.run());
 }
-*/
 
 TEST_F(DtlsClientServerTest, default_constructor) {
     io::EventLoop loop;
@@ -55,3 +149,4 @@ TEST_F(DtlsClientServerTest, default_constructor) {
 
     ASSERT_EQ(0, loop.run());
 }
+*/

@@ -46,7 +46,7 @@ private:
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
 
-    // Removal is scheduled in 2 steps. First TCP connection is removed, then TLS
+    // Removal is scheduled in 2 steps. First UDP connection is removed, then DTLS
     bool m_ready_schedule_removal = false;
 };
 
@@ -62,6 +62,9 @@ bool DtlsClient::Impl::schedule_removal() {
 
     if (m_client) {
         if (!m_ready_schedule_removal) {
+            m_client->set_on_schedule_removal([this](const Disposable&) {
+                this->m_parent->schedule_removal();
+            });
             m_client->schedule_removal();
             m_ready_schedule_removal = true;
             return false; // postpone removal
