@@ -43,12 +43,13 @@ TEST_F(DtlsClientServerTest, default_constructor) {
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
     server->listen("0.0.0.0", 1234,
-        [](io::DtlsServer&, io::DtlsConnectedClient& client){
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client){
             std::cout << "On new connection!!!" << std::endl;
             client.send_data("Hello world!\n");
         },
-        [](io::DtlsServer&, io::DtlsConnectedClient&, const char* buf, std::size_t size){
+        [&](io::DtlsServer&, io::DtlsConnectedClient&, const char* buf, std::size_t size){
             std::cout.write(buf, size);
+            server->schedule_removal();
         }
     );
 

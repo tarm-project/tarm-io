@@ -12,6 +12,8 @@ public:
 
     void schedule_removal();
 
+    void set_on_schedule_removal(OnScheduleRemovalCallback callback);
+
 protected:
     // statics
     static void on_removal(uv_idle_t* handle);
@@ -19,6 +21,8 @@ protected:
 private:
     EventLoop* m_loop;
     Disposable* m_parent;
+
+    OnScheduleRemovalCallback m_on_remove_callback = nullptr;
 };
 
 namespace {
@@ -43,12 +47,20 @@ void Disposable::Impl::schedule_removal() {
         IO_LOG(m_loop, ERROR, "Scheduling removal after the loop finished run. This may lead to memory leaks or memory corruption.");
     }
 
+    if (m_on_remove_callback) {
+        m_on_remove_callback(*m_parent);
+    }
+
     auto idle_ptr = new uv_idle_t;
     idle_ptr->data = m_parent;
 
     // TODO: error handling
     Error init_error = uv_idle_init(reinterpret_cast<uv_loop_t*>(m_loop->raw_loop()), idle_ptr);
     Error start_error = uv_idle_start(idle_ptr, on_removal);
+}
+
+void Disposable::Impl::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
+    m_on_remove_callback = callback;
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
@@ -69,6 +81,10 @@ Disposable::~Disposable() {
 
 void Disposable::schedule_removal() {
     return m_impl->schedule_removal();
+}
+
+void Disposable::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
+    return m_impl->set_on_schedule_removal(callback);
 }
 
 } // namespace io

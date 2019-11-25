@@ -27,12 +27,16 @@ public:
 
     bool peer_bookkeeping_enabled() const;
 
+    // TODO: move
+    static void free_udp_peer(UdpPeer* peer) {
+        peer->unref();
+    }
+
 protected:
     // statics
     static void on_data_received(
         uv_udp_t* handle, ssize_t nread, const uv_buf_t* uv_buf, const struct sockaddr* addr, unsigned flags);
     static void on_close(uv_handle_t* handle);
-    //static void on_close_with_removal(uv_handle_t* handle);
 
 private:
     NewPeerCallback m_new_peer_callback = nullptr;
@@ -41,7 +45,7 @@ private:
     std::size_t m_timeout_ms = 0;
 
     std::unique_ptr<Timer> m_timer;
-    std::unordered_map<std::uint64_t, std::unique_ptr<UdpPeer>> m_peers;
+    std::unordered_map<std::uint64_t, std::shared_ptr<UdpPeer>> m_peers;
 };
 
 UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
@@ -117,6 +121,8 @@ bool UdpServer::Impl::close_with_removal() {
         return false; // not ready to remove
     }
 
+    m_peers.clear();
+
     return true;
 }
 
@@ -153,7 +159,8 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                         peer_ptr.reset(new UdpPeer(*this_.m_loop,
                                                    this_.m_udp_handle.get(),
                                                    network_to_host(address->sin_addr.s_addr),
-                                                   network_to_host(address->sin_port)));
+                                                   network_to_host(address->sin_port)),
+                                       free_udp_peer);
                         peer_ptr->ref(); // Holding extra reference to prevent removal by ref/unref mechanics
 
                         if (this_.m_new_peer_callback) {

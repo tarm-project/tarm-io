@@ -39,6 +39,8 @@ public:
     // TODO: make protected
     IO_DLL_PUBLIC ~UdpPeer();
 
+    using Disposable::set_on_schedule_removal;
+
 private:
     IO_DLL_PUBLIC UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port);
 

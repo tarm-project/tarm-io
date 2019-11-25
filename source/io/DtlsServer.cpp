@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "UdpServer.h"
+#include "UdpPeer.h"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>
@@ -77,6 +78,11 @@ void DtlsServer::Impl::on_new_peer(UdpServer& server, UdpPeer& udp_client, const
 
     DtlsConnectedClient* dtls_client =
         new DtlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_certificate.get(), m_private_key.get(), udp_client);
+    udp_client.set_on_schedule_removal(
+        [=](const Disposable&) {
+            delete dtls_client;
+        }
+    );
 
     if (dtls_client->init_ssl()) {
         dtls_client->set_data_receive_callback(m_data_receive_callback);
@@ -92,6 +98,8 @@ void DtlsServer::Impl::on_data_receive(UdpServer& server, UdpPeer& udp_client, c
 
 void DtlsServer::Impl::on_timeout(UdpServer& server, UdpPeer& udp_client) {
     IO_LOG(this->m_loop, TRACE, "Removing DTLS client");
+
+    udp_client.set_on_schedule_removal(nullptr);
 
     auto& dtls_client = *reinterpret_cast<DtlsConnectedClient*>(udp_client.user_data());
     delete &dtls_client;

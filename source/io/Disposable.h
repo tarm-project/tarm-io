@@ -4,12 +4,15 @@
 #include "Export.h"
 
 #include <memory>
+#include <functional>
 
 namespace io {
 
 class IO_DLL_PUBLIC_CLASS_UNIX_ONLY Disposable {
 public:
     friend class RefCounted;
+
+    using OnScheduleRemovalCallback = std::function<void(const Disposable&)>;
 
     // TODO: macro for this
     Disposable(const Disposable&) = delete;
@@ -21,8 +24,11 @@ public:
     IO_DLL_PUBLIC Disposable(EventLoop& loop);
     IO_DLL_PUBLIC virtual ~Disposable();
 
-    // TODO: need explanation of approach!
     IO_DLL_PUBLIC virtual void schedule_removal();
+
+    // TODO: test this
+    // TODO: test calling this function inside OnScheduleRemovalCallback callback???
+    IO_DLL_PUBLIC void set_on_schedule_removal(OnScheduleRemovalCallback callback);
 
 private:
     class Impl;
