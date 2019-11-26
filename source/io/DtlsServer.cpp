@@ -140,15 +140,13 @@ Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
         return Error(StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH);
     }
 
-    m_udp_server->bind(ip_addr_str, port);
-
     using namespace std::placeholders;
-    m_udp_server->start_receive(std::bind(&DtlsServer::Impl::on_new_peer, this, _1, _2, _3),
-                                std::bind(&DtlsServer::Impl::on_data_receive, this, _1, _2, _3, _4),
-                                1000000, // TODO: hardcoded value
-                                std::bind(&DtlsServer::Impl::on_timeout, this, _1, _2));
-
-    return Error(0);
+    return m_udp_server->start_receive(ip_addr_str,
+                                       port,
+                                       std::bind(&DtlsServer::Impl::on_new_peer, this, _1, _2, _3),
+                                       std::bind(&DtlsServer::Impl::on_data_receive, this, _1, _2, _3, _4),
+                                       1000000, // TODO: hardcoded value
+                                       std::bind(&DtlsServer::Impl::on_timeout, this, _1, _2));
 }
 
 void DtlsServer::Impl::shutdown() {

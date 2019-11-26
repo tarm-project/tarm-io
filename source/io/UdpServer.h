@@ -29,11 +29,9 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC Error bind(const std::string& ip_addr_str, std::uint16_t port);
-
-    IO_DLL_PUBLIC void start_receive(DataReceivedCallback receive_callback);
-    IO_DLL_PUBLIC void start_receive(NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
-    IO_DLL_PUBLIC void start_receive(DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
+    IO_DLL_PUBLIC Error start_receive(const std::string& ip_addr_str, std::uint16_t port, DataReceivedCallback receive_callback);
+    IO_DLL_PUBLIC Error start_receive(const std::string& ip_addr_str, std::uint16_t port, NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
+    IO_DLL_PUBLIC Error start_receive(const std::string& ip_addr_str, std::uint16_t port, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
 
     IO_DLL_PUBLIC void close();
 
