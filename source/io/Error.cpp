@@ -15,6 +15,11 @@ Error::Error(StatusCode status_code) :
    m_status_code(status_code) {
 }
 
+Error::Error(StatusCode status_code, const std::string& custom_error_message) :
+    m_status_code(status_code),
+    m_custom_error_message(custom_error_message) {
+}
+
 StatusCode Error::code() const {
     return m_status_code;
 }
@@ -35,6 +40,9 @@ std::string Error::string() const {
             return "Private key error. Private key is invalid or corrupted";
         case StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH:
             return "Private key and certificate do not match";
+
+        case StatusCode::OPENSSL_ERROR:
+            return "Openssl error: " + m_custom_error_message;
 
         case StatusCode::UNDEFINED:
             return "Unknow status code from libuv: " + std::to_string(m_libuv_code);

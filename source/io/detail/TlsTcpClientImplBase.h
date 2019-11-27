@@ -7,6 +7,7 @@
 
 //#include <memory>
 //#include <assert.h>
+#include <iostream>
 
 namespace io {
 namespace detail {
@@ -238,7 +239,12 @@ void TlsTcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const
     const auto write_result = SSL_write(m_ssl, buffer.get(), size);
     if (write_result <= 0) {
         IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size", size);
-        // TODO: handle error
+
+        const auto openss_error_code = ERR_get_error();
+        if (callback) {
+            callback(*m_parent, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openss_error_code)));
+        }
+
         return;
     }
 

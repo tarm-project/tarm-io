@@ -37,7 +37,7 @@ TEST_F(DtlsClientServerTest, server_without_actions) {
 }
 
 TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
-        io::EventLoop loop;
+    io::EventLoop loop;
 
     const std::string client_message = "Hello from client!";
     const std::string server_message = "Hello from server!";
@@ -110,6 +110,89 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     EXPECT_EQ(1, client_new_connection_counter);
     EXPECT_EQ(1, client_data_receive_counter);
     EXPECT_EQ(1, client_data_send_counter);
+}
+
+TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
+    // Note: 1 mb cunks are larges than DTLS could handle
+    io::EventLoop loop;
+
+    const std::size_t LARGE_DATA_SIZE = 1024 * 1024;
+    const std::size_t NORMAL_DATA_SIZE = 2 * 1024;
+
+    std::shared_ptr<char> client_buf(new char[LARGE_DATA_SIZE], std::default_delete<char[]>());
+    std::memset(client_buf.get(), 0, LARGE_DATA_SIZE);
+
+    std::size_t client_data_send_counter = 0;
+    std::size_t server_data_send_counter = 0;
+
+    // A bit of callback hell :-)
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen(m_default_addr, m_default_port,
+        nullptr,
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const char* buf, std::size_t size) {
+            EXPECT_EQ(NORMAL_DATA_SIZE, size);
+
+            client.send_data(client_buf, LARGE_DATA_SIZE,
+                [&](io::DtlsConnectedClient& client, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+
+                    client.send_data(client_buf, LARGE_DATA_SIZE,
+                        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+                            EXPECT_TRUE(error);
+                            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+
+                            client.send_data(client_buf, NORMAL_DATA_SIZE,
+                                [&](io::DtlsConnectedClient& client, const io::Error& error) {
+                                    EXPECT_FALSE(error);
+                                    ++server_data_send_counter;
+                                    server->schedule_removal();
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
+
+    auto client = new io::DtlsClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::DtlsClient& client, const io::Error& error) {
+            client.send_data(client_buf, LARGE_DATA_SIZE,
+                [&](io::DtlsClient& client, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+
+                    client.send_data(client_buf, LARGE_DATA_SIZE,
+                        [&](io::DtlsClient& client, const io::Error& error) {
+                            EXPECT_TRUE(error);
+                            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+
+                            client.send_data(client_buf, NORMAL_DATA_SIZE,
+                                [&](io::DtlsClient& client, const io::Error& error) {
+                                    EXPECT_FALSE(error);
+                                    ++client_data_send_counter;
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        },
+        [&](io::DtlsClient& client, const char* buf, size_t size) {
+            EXPECT_EQ(NORMAL_DATA_SIZE, size);
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_data_send_counter);
+    EXPECT_EQ(0, server_data_send_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_data_send_counter);
+    EXPECT_EQ(1, server_data_send_counter);
 }
 
 /*

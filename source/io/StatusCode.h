@@ -19,6 +19,9 @@ enum class StatusCode : uint32_t {
     TLS_PRIVATE_KEY_INVALID,
     TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH,
 
+    // compound error which usually includes custom message string
+    OPENSSL_ERROR,
+
     // libuv codes
     ARGUMENT_LIST_TOO_LONG,
     PERMISSION_DENIED,

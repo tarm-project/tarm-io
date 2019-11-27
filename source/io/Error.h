@@ -11,6 +11,7 @@ class IO_DLL_PUBLIC Error {
 public:
     Error(std::int64_t libuv_code);
     Error(StatusCode status_code);
+    Error(StatusCode status_code, const std::string& custom_error_message);
 
     StatusCode code() const;
     std::string string() const;
@@ -20,6 +21,7 @@ public:
 private:
     std::int64_t m_libuv_code = 0;
     StatusCode m_status_code = StatusCode::OK;
+    std::string m_custom_error_message;
 };
 
 IO_DLL_PUBLIC
