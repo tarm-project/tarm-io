@@ -6,6 +6,8 @@
 
 #include <boost/dll.hpp>
 
+#include <thread>
+
 struct DtlsClientServerTest : public testing::Test,
                               public LogRedirector {
 protected:
@@ -112,8 +114,90 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     EXPECT_EQ(1, client_data_send_counter);
 }
 
+TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_other) {
+    // Note: pretty much the same test as 'client_and_server_send_message_each_other'
+    // but in threads.
+
+    const std::string server_message = "Hello from server!";
+    const std::string client_message = "Hello from client!";
+
+    std::size_t server_new_connection_counter = 0;
+    std::size_t server_data_receive_counter = 0;
+    std::size_t server_data_send_counter = 0;
+
+    std::thread server_thread([&]() {
+        io::EventLoop loop;
+
+        auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+        server->listen(m_default_addr, m_default_port,
+            [&](io::DtlsServer&, io::DtlsConnectedClient& client){
+                ++server_new_connection_counter;
+            },
+            [&](io::DtlsServer&, io::DtlsConnectedClient& client, const char* buf, std::size_t size) {
+                //EXPECT_FALSE(error);
+                ++server_data_receive_counter;
+
+                std::string s(buf, size);
+                EXPECT_EQ(client_message, s);
+
+                client.send_data(server_message,
+                    [&](io::DtlsConnectedClient& client, const io::Error& error) {
+                        EXPECT_FALSE(error) << error.string();
+                        ++server_data_send_counter;
+                        server->schedule_removal();
+                    }
+                );
+            }
+        );
+
+        ASSERT_EQ(0, loop.run());
+    });
+
+    std::size_t client_new_connection_counter = 0;
+    std::size_t client_data_receive_counter = 0;
+    std::size_t client_data_send_counter = 0;
+
+    std::thread client_thread([&]() {
+        io::EventLoop loop;
+
+        auto client = new io::DtlsClient(loop);
+        client->connect(m_default_addr, m_default_port,
+            [&](io::DtlsClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                ++client_new_connection_counter;
+
+                client.send_data(client_message,
+                    [&](io::DtlsClient& client, const io::Error& error) {
+                        EXPECT_FALSE(error);
+                        ++client_data_send_counter;
+                    }
+                );
+            },
+            [&](io::DtlsClient& client, const char* buf, size_t size) {
+                std::string s(buf, size);
+                EXPECT_EQ(server_message, s);
+                ++client_data_receive_counter;
+
+                client.schedule_removal();
+            }
+        );
+
+        ASSERT_EQ(0, loop.run());
+    });
+
+    server_thread.join();
+    client_thread.join();
+
+    EXPECT_EQ(1, server_new_connection_counter);
+    EXPECT_EQ(1, server_data_receive_counter);
+    EXPECT_EQ(1, server_data_send_counter);
+    EXPECT_EQ(1, client_new_connection_counter);
+    EXPECT_EQ(1, client_data_receive_counter);
+    EXPECT_EQ(1, client_data_send_counter);
+}
+
 TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
-    // Note: 1 mb cunks are larges than DTLS could handle
+    // Note: 1 mb cunks are larger than DTLS could handle
     io::EventLoop loop;
 
     const std::size_t LARGE_DATA_SIZE = 1024 * 1024;
@@ -125,7 +209,7 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
     std::size_t client_data_send_counter = 0;
     std::size_t server_data_send_counter = 0;
 
-    // A bit of callback hell :-)
+    // A bit of callback hell here ]:-)
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
     server->listen(m_default_addr, m_default_port,
         nullptr,
