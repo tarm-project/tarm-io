@@ -110,6 +110,8 @@ EventLoop::Impl::Impl(EventLoop& loop) :
         std::lock_guard<std::mutex> guard(loop_init_mutex);
         uv_loop_init(this);
     }
+
+    init_async();
 }
 
 EventLoop::Impl::~Impl() {
@@ -295,10 +297,6 @@ void EventLoop::Impl::execute_on_loop_thread(AsyncCallback callback) {
     {
         std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
         m_callbacks_queue.push_back(callback);
-    }
-
-    if (!m_async) {
-        init_async();
     }
 
     uv_async_send(m_async.get());
