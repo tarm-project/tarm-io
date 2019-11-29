@@ -529,8 +529,9 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
     std::function<void(io::UdpPeer&, const io::Error&)> on_server_send =
         [&](io::UdpPeer& client, const io::Error& error) {
             EXPECT_FALSE(error);
+            ++server_data_send_counter;
+
             if (server_data_send_counter < 2) {
-                ++server_data_send_counter;
                 client.send_data(server_message[server_data_send_counter], on_server_send);
             } else {
                 server->schedule_removal();
@@ -540,8 +541,8 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
     auto listen_error = server->start_receive(m_default_addr, m_default_port,
     [&](io::UdpServer& server, io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
-        ++server_data_receive_counter;
 
+        ++server_data_receive_counter;
         peer.send_data(server_message[server_data_send_counter], on_server_send);
     });
 
