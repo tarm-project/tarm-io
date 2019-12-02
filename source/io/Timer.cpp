@@ -75,7 +75,7 @@ void Timer::Impl::on_timer(uv_timer_t* handle) {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 Timer::Timer(EventLoop& loop) :
-    m_impl(new Impl(loop, *this)) {
+    m_impl(new Impl(loop, *this), [](Impl* p) {delete p;}) {
 }
 
 Timer::~Timer() {

@@ -16,6 +16,7 @@ list(APPEND TESTS_LIST
     PathTest.cpp
     EventLoopTest.cpp
     TimerTest.cpp
+    BacklogWithTimeoutTest.cpp
     FileTest.cpp
     DirTest.cpp
     UdpClientServerTest.cpp
