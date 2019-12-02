@@ -37,7 +37,7 @@ TEST_F(UserDataHolderTest, move_2) {
 
     std::vector<io::UserDataHolder> holders;
     for (std::size_t i = 0; i < COUNT; ++i) {
-        holders.emplace_back(); // TODO: for some reason emplace back does not work (at least for XCode clang)
+        holders.emplace_back();
         holders.back().set_user_data(reinterpret_cast<void*>(i));
     }
 
