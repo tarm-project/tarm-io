@@ -229,3 +229,24 @@ TEST_F(BacklogWithTimeoutTest, 1ms_timeout) {
 
     EXPECT_EQ(0, loop.run());
 }
+
+TEST_F(BacklogWithTimeoutTest, discard_item_from_future) {
+    auto on_expired = [&](const TestItem& item) {
+        EXPECT_TRUE(false); // should not be called
+    };
+
+    auto time_getter = [&](const TestItem& item) -> std::uint64_t {
+        return item.time_getter();
+    };
+
+    io::EventLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<TestItem, FakeTimer> backlog(
+        loop, 1, on_expired, time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    TestItem item_1(0);
+    item_1.time = 100500; // time from the future
+    EXPECT_FALSE(backlog.add_item(&item_1));
+
+    EXPECT_EQ(0, loop.run());
+}

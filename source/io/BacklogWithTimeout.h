@@ -53,7 +53,7 @@ public:
         const std::uint64_t current_time = m_clock_getter();
         //const std::uint64_t item_time = (t->*m_time_getter)();
         const std::uint64_t item_time = m_time_getter(*t);
-        if (current_time < item_time) {
+        if (current_time < item_time) { // item from the future
             return false;
         }
 
