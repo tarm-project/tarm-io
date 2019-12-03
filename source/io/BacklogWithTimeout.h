@@ -22,7 +22,7 @@ public:
     //using TimeGetterType = std::uint64_t(T::*)() const;
     using TimeGetterType = std::function<std::uint64_t(const T&)>;
     using MonothonicClockGetterType = std::uint64_t(*)();
-    using OnItemExpiredCallback = std::function<void(const T& item)>;
+    using OnItemExpiredCallback = std::function<void(BacklogWithTimeout<T, TimerType>&,  const T& item)>;
 
     BacklogWithTimeout(EventLoop& loop, std::size_t entity_timeout, OnItemExpiredCallback expired_callback, TimeGetterType time_getter, MonothonicClockGetterType clock_getter = &uv_hrtime) :
         m_entity_timeout(entity_timeout * std::size_t(1000000)),
@@ -63,7 +63,7 @@ public:
 
         const auto time_diff = current_time - item_time;
         if (time_diff >= m_entity_timeout) {
-            m_expired_callback(*t);
+            m_expired_callback(*this, *t);
             return true;
         }
 
@@ -71,6 +71,16 @@ public:
         m_items[index].push_back(t);
 
         return true;
+    }
+
+    void stop() {
+        m_entity_timeout = 0;
+        m_expired_callback = nullptr;
+        m_time_getter = nullptr;
+        m_clock_getter = nullptr;
+        m_timers.clear();
+        m_timeouts.clear();
+        m_items.clear();
     }
 
 protected:
@@ -88,7 +98,7 @@ protected:
 
             const auto time_diff = current_time - item_time;
             if (time_diff >= m_entity_timeout) {
-                m_expired_callback(*bucket_copy[i]);
+                m_expired_callback(*this, *bucket_copy[i]);
                 continue;
             }
 
