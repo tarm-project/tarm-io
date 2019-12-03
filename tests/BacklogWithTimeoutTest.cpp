@@ -204,3 +204,28 @@ TEST_F(BacklogWithTimeoutTest, multiple_elements_in_distinct_time) {
 
     EXPECT_EQ(0, loop.run());
 }
+
+
+TEST_F(BacklogWithTimeoutTest, 1ms_timeout) {
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](const TestItem& item) {
+        EXPECT_EQ(0, item.id);
+        ++expired_counter;
+    };
+
+    io::EventLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<TestItem, FakeTimer> backlog(
+        loop, 1, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    TestItem item_1(0);
+    EXPECT_TRUE(backlog.add_item(&item_1));
+
+    EXPECT_EQ(0, expired_counter);
+
+    advance_clock(1);
+
+    EXPECT_EQ(1, expired_counter);
+
+    EXPECT_EQ(0, loop.run());
+}
