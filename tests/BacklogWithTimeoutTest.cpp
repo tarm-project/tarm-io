@@ -139,6 +139,8 @@ TEST_F(BacklogWithTimeoutTest, 1_element) {
     advance_clock(250);
 
     EXPECT_EQ(1, expired_counter);
+
+    EXPECT_EQ(0, loop.run());
 }
 
 TEST_F(BacklogWithTimeoutTest, multiple_elements_at_the_same_time) {
@@ -166,6 +168,8 @@ TEST_F(BacklogWithTimeoutTest, multiple_elements_at_the_same_time) {
     advance_clock(250);
 
     EXPECT_EQ(ELEMENTS_COUNT, expired_counter);
+
+    EXPECT_EQ(0, loop.run());
 }
 
 TEST_F(BacklogWithTimeoutTest, multiple_elements_in_distinct_time) {
@@ -197,4 +201,6 @@ TEST_F(BacklogWithTimeoutTest, multiple_elements_in_distinct_time) {
     advance_clock(500);
 
     EXPECT_EQ(ELEMENTS_COUNT, expired_counter);
+
+    EXPECT_EQ(0, loop.run());
 }
