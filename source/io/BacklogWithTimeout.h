@@ -9,6 +9,8 @@
 #include <functional>
 #include <vector>
 
+#include <assert.h>
+
 // TODO: remove
 #include <iostream>
 
