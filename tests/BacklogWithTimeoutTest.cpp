@@ -251,6 +251,61 @@ TEST_F(BacklogWithTimeoutTest, discard_item_from_future) {
     EXPECT_EQ(0, loop.run());
 }
 
+TEST_F(BacklogWithTimeoutTest, stop_on_first_item) {
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](io::BacklogWithTimeout<TestItem, FakeTimer>& backlog, const TestItem& item) {
+        EXPECT_EQ(0, item.id);
+        backlog.stop();
+        ++expired_counter;
+    };
+
+    io::EventLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<TestItem, FakeTimer> backlog(
+        loop, 1, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    TestItem item_1(0);
+    EXPECT_TRUE(backlog.add_item(&item_1));
+
+    TestItem item_2(1);
+    EXPECT_TRUE(backlog.add_item(&item_2));
+
+    EXPECT_EQ(0, expired_counter);
+
+    advance_clock(100);
+
+    EXPECT_EQ(1, expired_counter);
+
+    EXPECT_EQ(0, loop.run());
+}
+
+// --- real timer ---
+
+TEST_F(BacklogWithTimeoutTest, with_real_time_1_item) {
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](io::BacklogWithTimeout<TestItem>& backlog, const TestItem& item) {
+        backlog.stop();
+        ++expired_counter;
+    };
+
+    auto time_getter = [&](const TestItem& item) -> std::uint64_t {
+        return item.time_getter();
+    };
+
+    io::EventLoop loop;
+    io::BacklogWithTimeout<TestItem> backlog(loop, 1, on_expired, time_getter);
+
+    TestItem item_1(0);
+    item_1.time = uv_hrtime();
+    EXPECT_TRUE(backlog.add_item(&item_1));
+
+    EXPECT_EQ(0, expired_counter);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, expired_counter);
+}
+/*
 TEST_F(BacklogWithTimeoutTest, with_real_time) {
     std::size_t expired_counter = 0;
     auto on_expired = [&](io::BacklogWithTimeout<TestItem>& backlog, const TestItem& item) {
@@ -275,3 +330,4 @@ TEST_F(BacklogWithTimeoutTest, with_real_time) {
 
     EXPECT_EQ(1, expired_counter);
 }
+*/

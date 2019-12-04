@@ -64,6 +64,10 @@ public:
         const auto time_diff = current_time - item_time;
         if (time_diff >= m_entity_timeout) {
             m_expired_callback(*this, *t);
+            if (m_timers.size() == 0) { // this container could be stopped in callback
+                return;
+            }
+
             return true;
         }
 
@@ -99,6 +103,10 @@ protected:
             const auto time_diff = current_time - item_time;
             if (time_diff >= m_entity_timeout) {
                 m_expired_callback(*this, *bucket_copy[i]);
+                if (m_timers.size() == 0) { // this container could be stopped in callback
+                    return;
+                }
+
                 continue;
             }
 
