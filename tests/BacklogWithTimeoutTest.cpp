@@ -33,6 +33,10 @@ protected:
         return m_fake_clock;
     }
 
+    void clear_timers() {
+        m_fake_timers.clear();
+    }
+
 private:
     static std::uint64_t m_fake_clock;
     std::vector<FakeTimer*> m_fake_timers;
@@ -87,6 +91,7 @@ public:
     }
 
     void stop() {
+        m_stopped = true;
     }
 
     uint64_t timeout_ms() const {
@@ -94,6 +99,10 @@ public:
     }
 
     void advance(uint64_t time_ms) {
+        if (m_stopped) {
+            return;
+        }
+
         for (uint64_t i = 0; i < time_ms; ++i) {
             ++m_current_time_ms;
             if (m_current_time_ms >= m_timeout_ms) {
@@ -107,6 +116,8 @@ private:
     uint64_t m_timeout_ms = 0;
     Callback m_callback = nullptr;
     uint64_t m_current_time_ms = 0;
+
+    bool m_stopped = false;
 };
 
 void BacklogWithTimeoutTest::advance_clock(std::uint64_t time_ms) {
@@ -305,29 +316,4 @@ TEST_F(BacklogWithTimeoutTest, with_real_time_1_item) {
 
     EXPECT_EQ(1, expired_counter);
 }
-/*
-TEST_F(BacklogWithTimeoutTest, with_real_time) {
-    std::size_t expired_counter = 0;
-    auto on_expired = [&](io::BacklogWithTimeout<TestItem>& backlog, const TestItem& item) {
-        backlog.stop();
-        ++expired_counter;
-    };
 
-    auto time_getter = [&](const TestItem& item) -> std::uint64_t {
-        return item.time_getter();
-    };
-
-    io::EventLoop loop;
-    io::BacklogWithTimeout<TestItem> backlog(loop, 1, on_expired, time_getter);
-
-    TestItem item_1(0);
-    item_1.time = uv_hrtime();
-    EXPECT_TRUE(backlog.add_item(&item_1));
-
-    EXPECT_EQ(0, expired_counter);
-
-    EXPECT_EQ(0, loop.run());
-
-    EXPECT_EQ(1, expired_counter);
-}
-*/

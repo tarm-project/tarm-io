@@ -346,7 +346,7 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
     EXPECT_EQ(1, server_timeout_counter);
 }
 
-TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
+TEST_F(UdpClientServerTest, DISABLED_multiple_clients_timeout_for_server) {
     // Note: timings are essential in this test
     // UdpServer timeouts: 0 - - - - 200 - - - - 400 - - - - 600 | - - - 800 - - - - 1000
     // UdpClient1 send:    0 - 100 - 200 - 300 - 400 - 500 - 600 | - - - -x- - - - -

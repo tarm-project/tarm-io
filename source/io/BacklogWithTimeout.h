@@ -64,8 +64,8 @@ public:
         const auto time_diff = current_time - item_time;
         if (time_diff >= m_entity_timeout) {
             m_expired_callback(*this, *t);
-            if (m_timers.size() == 0) { // this container could be stopped in callback
-                return;
+            if (m_stopped /*m_timers.size() == 0*/) { // this container could be stopped in callback
+                return false;
             }
 
             return true;
@@ -78,6 +78,14 @@ public:
     }
 
     void stop() {
+        // TODO: FIXME: need to add schedule_removal to timers to fix this
+        // TODO: remove m_stopped after this;
+        for (auto& t : m_timers) {
+            t->stop();
+            m_stopped = true;
+        }
+
+        /*
         m_entity_timeout = 0;
         m_expired_callback = nullptr;
         m_time_getter = nullptr;
@@ -85,6 +93,7 @@ public:
         m_timers.clear();
         m_timeouts.clear();
         m_items.clear();
+        */
     }
 
 protected:
@@ -103,7 +112,7 @@ protected:
             const auto time_diff = current_time - item_time;
             if (time_diff >= m_entity_timeout) {
                 m_expired_callback(*this, *bucket_copy[i]);
-                if (m_timers.size() == 0) { // this container could be stopped in callback
+                if (m_stopped /*m_timers.size() == 0*/) { // this container could be stopped in callback
                     return;
                 }
 
@@ -137,6 +146,8 @@ private:
     std::vector<std::unique_ptr<TimerType>> m_timers;
     std::vector<std::size_t> m_timeouts; // TODO: get timeout from timer directly?
     std::vector<std::vector<const T*>> m_items;
+
+    bool m_stopped = false;
 };
 
 } // namespace io
