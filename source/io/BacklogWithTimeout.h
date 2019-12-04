@@ -19,7 +19,6 @@ namespace io {
 template<typename T, typename TimerType = ::io::Timer>
 class BacklogWithTimeout {
 public:
-    //using TimeGetterType = std::uint64_t(T::*)() const;
     using TimeGetterType = std::function<std::uint64_t(const T&)>;
     using MonothonicClockGetterType = std::uint64_t(*)();
     using OnItemExpiredCallback = std::function<void(BacklogWithTimeout<T, TimerType>&,  const T& item)>;
@@ -49,10 +48,10 @@ public:
         m_items.resize(buckets_count);
     };
 
-    bool add_item(const T* t) {
+    bool add_item(T t) {
         const std::uint64_t current_time = m_clock_getter();
         //const std::uint64_t item_time = (t->*m_time_getter)();
-        const std::uint64_t item_time = m_time_getter(*t);
+        const std::uint64_t item_time = m_time_getter(t);
         if (current_time < item_time) { // item from the future
             return false;
         }
@@ -63,7 +62,7 @@ public:
 
         const auto time_diff = current_time - item_time;
         if (time_diff >= m_entity_timeout) {
-            m_expired_callback(*this, *t);
+            m_expired_callback(*this, t);
             if (m_stopped /*m_timers.size() == 0*/) { // this container could be stopped in callback
                 return false;
             }
@@ -102,16 +101,16 @@ protected:
         //std::cout << "called timer index: " << timer_index << std::endl;
 
         // TODO: move???
-        std::vector<const T*> bucket_copy = m_items[timer_index];
+        std::vector<T> bucket_copy = m_items[timer_index];
         m_items[timer_index].clear();
 
         for (std::size_t i = 0; i < bucket_copy.size(); ++i) {
             const std::uint64_t current_time = m_clock_getter();
-            const std::uint64_t item_time = m_time_getter(*bucket_copy[i]);
+            const std::uint64_t item_time = m_time_getter(bucket_copy[i]);
 
             const auto time_diff = current_time - item_time;
             if (time_diff >= m_entity_timeout) {
-                m_expired_callback(*this, *bucket_copy[i]);
+                m_expired_callback(*this, bucket_copy[i]);
                 if (m_stopped /*m_timers.size() == 0*/) { // this container could be stopped in callback
                     return;
                 }
@@ -145,7 +144,7 @@ private:
     MonothonicClockGetterType m_clock_getter = nullptr;
     std::vector<std::unique_ptr<TimerType>> m_timers;
     std::vector<std::size_t> m_timeouts; // TODO: get timeout from timer directly?
-    std::vector<std::vector<const T*>> m_items;
+    std::vector<std::vector<T>> m_items;
 
     bool m_stopped = false;
 };

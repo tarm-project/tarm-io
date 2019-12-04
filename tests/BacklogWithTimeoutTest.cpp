@@ -143,7 +143,7 @@ TEST_F(BacklogWithTimeoutTest, 1_element) {
         loop, 250, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
 
     TestItem item_1(0);
-    EXPECT_TRUE(backlog.add_item(&item_1));
+    EXPECT_TRUE(backlog.add_item(item_1));
 
     EXPECT_EQ(0, expired_counter);
 
@@ -158,15 +158,19 @@ TEST_F(BacklogWithTimeoutTest, multiple_elements_at_the_same_time) {
     const std::size_t ELEMENTS_COUNT = 256;
 
     std::size_t expired_counter = 0;
-    auto on_expired = [&](io::BacklogWithTimeout<TestItem, FakeTimer>&, const TestItem& item) {
-        EXPECT_EQ(expired_counter, item.id);
+    auto on_expired = [&](io::BacklogWithTimeout<TestItem*, FakeTimer>&, TestItem* const& item) {
+        EXPECT_EQ(expired_counter, item->id);
         ++expired_counter;
+    };
+
+    auto time_getter = [&](TestItem* const& item) -> std::uint64_t {
+        return item->time_getter();
     };
 
     io::EventLoop loop;
     loop.set_user_data(this);
-    io::BacklogWithTimeout<TestItem, FakeTimer> backlog(
-        loop, 250, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+    io::BacklogWithTimeout<TestItem*, FakeTimer> backlog(
+        loop, 250, on_expired, time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
 
     std::vector<std::unique_ptr<TestItem>> items;
     for (std::size_t i = 0; i < ELEMENTS_COUNT; ++i) {
@@ -199,11 +203,10 @@ TEST_F(BacklogWithTimeoutTest, multiple_elements_in_distinct_time) {
     io::BacklogWithTimeout<TestItem, FakeTimer> backlog(
         loop, 250, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
 
-    std::vector<std::unique_ptr<TestItem>> items;
     for (std::size_t i = 0; i < ELEMENTS_COUNT; ++i) {
-        items.emplace_back(new TestItem(i));
-        items.back()->time = i * 1000000;
-        ASSERT_TRUE(backlog.add_item(items.back().get())) << i;
+        TestItem item(i);
+        item.time = i * 1000000;
+        ASSERT_TRUE(backlog.add_item(item)) << i;
     }
 
     // Item with index 0 is expired durin adding
@@ -230,7 +233,7 @@ TEST_F(BacklogWithTimeoutTest, 1ms_timeout) {
         loop, 1, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
 
     TestItem item_1(0);
-    EXPECT_TRUE(backlog.add_item(&item_1));
+    EXPECT_TRUE(backlog.add_item(item_1));
 
     EXPECT_EQ(0, expired_counter);
 
@@ -257,29 +260,30 @@ TEST_F(BacklogWithTimeoutTest, discard_item_from_future) {
 
     TestItem item_1(0);
     item_1.time = 100500; // time from the future
-    EXPECT_FALSE(backlog.add_item(&item_1));
+    EXPECT_FALSE(backlog.add_item(item_1));
 
     EXPECT_EQ(0, loop.run());
 }
 
 TEST_F(BacklogWithTimeoutTest, stop_on_first_item) {
     std::size_t expired_counter = 0;
-    auto on_expired = [&](io::BacklogWithTimeout<TestItem, FakeTimer>& backlog, const TestItem& item) {
-        EXPECT_EQ(0, item.id);
+    auto on_expired = [&](io::BacklogWithTimeout<std::shared_ptr<TestItem>, FakeTimer>& backlog, const std::shared_ptr<TestItem>& item) {
+        EXPECT_EQ(0, item->id);
         backlog.stop();
         ++expired_counter;
     };
-
+/*
+    auto time_getter = [&](const std::shared_ptr<TestItem>& item) -> std::uint64_t {
+        return item->time_getter();
+    };
+*/
     io::EventLoop loop;
     loop.set_user_data(this);
-    io::BacklogWithTimeout<TestItem, FakeTimer> backlog(
+    io::BacklogWithTimeout<std::shared_ptr<TestItem>, FakeTimer> backlog(
         loop, 1, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
 
-    TestItem item_1(0);
-    EXPECT_TRUE(backlog.add_item(&item_1));
-
-    TestItem item_2(1);
-    EXPECT_TRUE(backlog.add_item(&item_2));
+    EXPECT_TRUE(backlog.add_item(std::make_shared<TestItem>(0)));
+    EXPECT_TRUE(backlog.add_item(std::make_shared<TestItem>(1)));
 
     EXPECT_EQ(0, expired_counter);
 
@@ -308,7 +312,7 @@ TEST_F(BacklogWithTimeoutTest, with_real_time_1_item) {
 
     TestItem item_1(0);
     item_1.time = uv_hrtime();
-    EXPECT_TRUE(backlog.add_item(&item_1));
+    EXPECT_TRUE(backlog.add_item(item_1));
 
     EXPECT_EQ(0, expired_counter);
 
