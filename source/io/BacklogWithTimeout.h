@@ -16,6 +16,7 @@
 
 namespace io {
 
+// TODO: event loop as default template parameter
 template<typename T, typename TimerType = ::io::Timer>
 class BacklogWithTimeout {
 public:
@@ -34,7 +35,7 @@ public:
         std::size_t buckets_count = 0;
         std::size_t current_timeout = entity_timeout;
         do {
-            std::cout << "Creating timer with timeout: " << current_timeout << std::endl;
+            //std::cout << "Creating timer with timeout: " << current_timeout << std::endl;
             //m_timers.emplace_back(loop);
             //m_timers.push_back(TimerType(loop));
             m_timers.emplace_back(new TimerType(loop));

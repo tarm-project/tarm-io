@@ -1,5 +1,6 @@
 #include "UdpServer.h"
 
+#include "BacklogWithTimeout.h"
 #include "ByteSwap.h"
 #include "Common.h"
 #include "Timer.h"
@@ -23,15 +24,13 @@ public:
     void close();
     bool close_with_removal();
 
-    void prune_old_peers();
-
     bool peer_bookkeeping_enabled() const;
 
     // TODO: move
     static void free_udp_peer(UdpPeer* peer) {
         peer->unref();
     }
-
+// m_peer_timeout_callback(*m_parent, *it->second);
 protected:
     // statics
     static void on_data_received(
@@ -42,10 +41,9 @@ private:
     NewPeerCallback m_new_peer_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
     PeerTimeoutCallback m_peer_timeout_callback = nullptr;
-    std::size_t m_timeout_ms = 0;
 
-    std::unique_ptr<Timer> m_timer;
     std::unordered_map<std::uint64_t, std::shared_ptr<UdpPeer>> m_peers;
+    std::unique_ptr<BacklogWithTimeout<std::shared_ptr<UdpPeer>>> m_peers_backlog;
 };
 
 UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
@@ -82,40 +80,34 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
                                      DataReceivedCallback receive_callback,
                                      std::size_t timeout_ms,
                                      PeerTimeoutCallback timeout_callback) {
-    if (m_timeout_ms == 0) {
+    if (timeout_ms == 0) {
         // TODO: error
     }
 
     m_new_peer_callback = new_peer_callback;
-
-    m_timeout_ms = timeout_ms;
     m_peer_timeout_callback = timeout_callback;
-    m_timer.reset(new Timer(*m_loop));
-    m_timer->start(m_timeout_ms, m_timeout_ms,
-        [this](Timer& timer) {
-            this->prune_old_peers();
+
+    // TODO: bind instead of lambdas
+    auto on_expired = [this](io::BacklogWithTimeout<std::shared_ptr<UdpPeer>>&, const std::shared_ptr<UdpPeer>& item) {
+        m_peer_timeout_callback(*m_parent, *item);
+
+        // TODO: store in peer or make a function for this
+        const std::uint64_t peer_id = std::uint64_t(host_to_network(item->port())) << 16 | std::uint64_t(host_to_network(item->address()));
+        auto it = m_peers.find(peer_id);
+        if (it != m_peers.end()) {
+            m_peers.erase(it);
+        } else {
+            // error handling
         }
-    );
+    };
+
+    auto time_getter = [](const std::shared_ptr<UdpPeer>& item) -> std::uint64_t {
+        return item->last_packet_time_ns();
+    };
+
+    m_peers_backlog.reset(new BacklogWithTimeout<std::shared_ptr<UdpPeer>>(*m_loop, timeout_ms, on_expired, time_getter));
 
     return start_receive(ip_addr_str, port, receive_callback);
-}
-
-void UdpServer::Impl::prune_old_peers() {
-    const std::uint64_t current_time = uv_hrtime();
-
-    // TODO: detect invalid time???? current_time < it->second->last_packet_time_ns()
-
-    for (auto it = m_peers.begin(); it != m_peers.end();) {
-        const std::uint64_t time_diff = current_time - it->second->last_packet_time_ns();
-        if (time_diff >= std::uint64_t(m_timeout_ms) * 1000000) {
-            if (m_peer_timeout_callback) {
-                m_peer_timeout_callback(*m_parent, *it->second);
-            }
-            it = m_peers.erase(it);
-        } else {
-            ++it;
-        }
-    }
 }
 
 void UdpServer::Impl::close() {
@@ -136,7 +128,7 @@ bool UdpServer::Impl::close_with_removal() {
 }
 
 bool UdpServer::Impl::peer_bookkeeping_enabled() const {
-    return m_timeout_ms != 0;
+    return m_peers_backlog.get() != nullptr;
 }
 
 ///////////////////////////////////////////  static  ////////////////////////////////////////////
@@ -171,6 +163,9 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                                    network_to_host(address->sin_port)),
                                        free_udp_peer);
                         peer_ptr->ref(); // Holding extra reference to prevent removal by ref/unref mechanics
+
+                        peer_ptr->set_last_packet_time_ns(uv_hrtime());
+                        this_.m_peers_backlog->add_item(peer_ptr);
 
                         if (this_.m_new_peer_callback) {
                             this_.m_new_peer_callback(parent, *peer_ptr.get(), Error(0));

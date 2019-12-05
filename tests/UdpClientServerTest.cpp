@@ -258,11 +258,11 @@ TEST_F(UdpClientServerTest, on_new_peer_callback) {
 
 TEST_F(UdpClientServerTest, client_timeout_for_server) {
     // Note: timings are essential in this test
-    // UdpServer timeouts: 0 - - - - 200 - - - - 400 - - - - 600 - - - -
+    // Timeout : 200ms
     // UdpClient sends:    0 - 100 - - - - - - - - - - - - - 600
     //                          |-----| <- interval less than timeout. Decision: keep
     //                          |-----------------| <- interval more than timeout. Decision: drop
-    //                                                      | <- register previos client as new one at this point
+    //                                                        | <- register previos client as new one at this point
 
     io::EventLoop loop;
 
@@ -346,12 +346,12 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
     EXPECT_EQ(1, server_timeout_counter);
 }
 
-TEST_F(UdpClientServerTest, DISABLED_multiple_clients_timeout_for_server) {
+TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
     // Note: timings are essential in this test
-    // UdpServer timeouts: 0 - - - - 200 - - - - 400 - - - - 600 | - - - 800 - - - - 1000
+    // Timeout : 210ms
     // UdpClient1 send:    0 - 100 - 200 - 300 - 400 - 500 - 600 | - - - -x- - - - -
     // UdpClient2 send:    0 - - - - 200 - - - - 400 - - - - 600 | - - - -x- - - - -
-    // UdpClient3 send:    0 - - - - -x- - - - - 400 - - - - -x- | - - - - - - - - -
+    // UdpClient3 send:    0 - - - - - x - - - - 400 - - - - - x | - - - - - - - - -
     //                                                           | <- stop sending here
     //                                                                  terminate there -> ...
     // 'x' - is client timeout
@@ -378,7 +378,7 @@ TEST_F(UdpClientServerTest, DISABLED_multiple_clients_timeout_for_server) {
             client.set_user_data(&client_3_message);
         }
     },
-    200, // timeout MS
+    210, // timeout MS
     [&](io::UdpServer& server, io::UdpPeer& client) {
         ASSERT_TRUE(client.user_data());
 
