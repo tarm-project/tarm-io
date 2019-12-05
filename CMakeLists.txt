@@ -61,14 +61,19 @@ elseif (WIN32)
 endif()
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
-# TODO: investigate this for old versions of boost
-#if(NOT TARGET Boost::filesystem)
-#    add_library(Boost::filesystem IMPORTED INTERFACE)
-#    set_property(TARGET Boost::filesystem PROPERTY
-#        INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-#    set_property(TARGET Boost::filesystem PROPERTY
-#        INTERFACE_LINK_LIBRARIES ${Boost_LIBRARIES})
-#endif()
+if(NOT TARGET Boost::headers)
+     add_library(Boost::headers IMPORTED INTERFACE)
+     set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})    
+endif()
+
+# TODO: do we need this????
+# if(NOT TARGET Boost::filesystem)
+#     add_library(Boost::filesystem IMPORTED INTERFACE)
+#     set_property(TARGET Boost::filesystem PROPERTY
+#         INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
+#     set_property(TARGET Boost::filesystem PROPERTY
+#         INTERFACE_LINK_LIBRARIES ${Boost_LIBRARIES})
+# endif()
 
 add_subdirectory("thirdparty")
 add_subdirectory("source")
