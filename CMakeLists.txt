@@ -62,8 +62,8 @@ endif()
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 if(NOT TARGET Boost::headers)
-     add_library(Boost::headers IMPORTED INTERFACE)
-     set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})    
+    add_library(Boost::headers IMPORTED INTERFACE)
+    set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
 endif()
 
 # TODO: do we need this????

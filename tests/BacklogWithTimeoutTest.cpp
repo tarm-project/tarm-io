@@ -294,6 +294,43 @@ TEST_F(BacklogWithTimeoutTest, stop_on_first_item) {
     EXPECT_EQ(0, loop.run());
 }
 
+TEST_F(BacklogWithTimeoutTest, update_item_time) {
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](io::BacklogWithTimeout<std::shared_ptr<TestItem>, FakeTimer>& backlog, const std::shared_ptr<TestItem>& item) {
+        ++expired_counter;
+    };
+
+    io::EventLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<std::shared_ptr<TestItem>, FakeTimer> backlog(
+        loop, 100, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    auto item = std::make_shared<TestItem>(0);
+    EXPECT_TRUE(backlog.add_item(item));
+
+    EXPECT_EQ(0, expired_counter);
+
+    advance_clock(90);
+
+    EXPECT_EQ(0, expired_counter);
+
+    item->time = 90 * 1000000;
+    advance_clock(90);
+
+    EXPECT_EQ(0, expired_counter);
+
+    item->time = 2 * 90 * 1000000;
+    advance_clock(90);
+
+    EXPECT_EQ(0, expired_counter);
+
+    advance_clock(90);
+
+    EXPECT_EQ(1, expired_counter);
+
+    EXPECT_EQ(0, loop.run());
+}
+
 // --- real timer ---
 
 TEST_F(BacklogWithTimeoutTest, with_real_time_1_item) {
