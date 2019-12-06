@@ -114,6 +114,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     EXPECT_EQ(1, client_data_send_counter);
 }
 
+// TODO: FIXME hang under valgrind sometimes
 TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_other) {
     // Note: pretty much the same test as 'client_and_server_send_message_each_other'
     // but in threads.
