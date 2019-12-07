@@ -85,6 +85,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
                  CloseCallback close_callback) {
     m_client = new TcpClient(*m_loop);
 
+    // TODO: check is_connected
     bool is_connected = ssl_init();
 
     m_connect_callback = connect_callback;
@@ -96,9 +97,10 @@ void TlsTcpClient::Impl::connect(const std::string& address,
             do_handshake();
         };
 
-    std::function<void(TcpClient&, const char*, size_t)> on_data_receive =
-        [this](TcpClient& client, const char* buf, size_t size) {
-            this->on_data_receive(buf, size);
+    std::function<void(TcpClient&, const DataChunk& data, const Error& error)> on_data_receive =
+        [this](TcpClient& client, const DataChunk& data, const Error& error) {
+            // TODO: error handling
+            this->on_data_receive(data.buf.get(), data.size);
         };
 
     std::function<void(TcpClient&, const Error&)> on_close =

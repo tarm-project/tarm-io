@@ -46,7 +46,7 @@ protected:
     std::uint16_t m_port = 0;
 
     // TODO: need to ensure that one buffer is enough
-    char* m_read_buf = nullptr;
+    std::shared_ptr<char> m_read_buf;
     std::size_t m_read_buf_size = 0;
 
     bool m_is_open = false;
@@ -74,9 +74,7 @@ template<typename ParentType, typename ImplType>
 TcpClientImplBase<ParentType, ImplType>::~TcpClientImplBase() {
     // TODO: need to revise this. Some read request may be in progress
     //       move to on_close() ???
-    if (m_read_buf) {
-        delete[] m_read_buf;
-    }
+    m_read_buf.reset();
 }
 
 template<typename ParentType, typename ImplType>
@@ -190,10 +188,11 @@ void TcpClientImplBase<ParentType, ImplType>::alloc_read_buffer(uv_handle_t* han
 
     if (this_.m_read_buf == nullptr) {
         io::default_alloc_buffer(handle, suggested_size, buf);
-        this_.m_read_buf = buf->base;
+
+        this_.m_read_buf.reset(buf->base, std::default_delete<char[]>());
         this_.m_read_buf_size = buf->len;
     } else {
-        buf->base = this_.m_read_buf;
+        buf->base = this_.m_read_buf.get();
         buf->len = static_cast<decltype(uv_buf_t::len)>(this_.m_read_buf_size);
     }
 }

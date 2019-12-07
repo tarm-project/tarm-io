@@ -2,6 +2,7 @@
 
 #include "EventLoop.h"
 #include "Export.h"
+#include "DataChunk.h"
 #include "Disposable.h"
 #include "UserDataHolder.h"
 #include "Error.h"
@@ -16,7 +17,7 @@ public:
     using ConnectCallback = std::function<void(TcpClient&, const Error&)>;
     using CloseCallback = std::function<void(TcpClient&, const Error&)>;
     using EndSendCallback = std::function<void(TcpClient&, const Error&)>;
-    using DataReceiveCallback = std::function<void(TcpClient&, const char*, size_t)>;
+    using DataReceiveCallback = std::function<void(TcpClient&, const DataChunk&, const Error&)>;
 
     IO_DLL_PUBLIC TcpClient(EventLoop& loop);
 
