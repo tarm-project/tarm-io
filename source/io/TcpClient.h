@@ -43,6 +43,9 @@ public:
 
     IO_DLL_PUBLIC void shutdown(CloseCallback callback = nullptr);
 
+    IO_DLL_PUBLIC void delay_send(bool enabled);
+    IO_DLL_PUBLIC bool is_delay_send() const;
+
 protected:
     IO_DLL_PUBLIC ~TcpClient();
 

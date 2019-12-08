@@ -287,4 +287,12 @@ void TcpClient::shutdown(CloseCallback callback) {
     return m_impl->shutdown(callback);
 }
 
+void TcpClient::delay_send(bool enabled) {
+    return m_impl->delay_send(enabled);
+}
+
+bool TcpClient::is_delay_send() const {
+    return m_impl->is_delay_send();
+}
+
 } // namespace io

@@ -4,14 +4,12 @@
 #include "EventLoop.h"
 #include "Export.h"
 #include "Error.h"
+#include "Forward.h"
 #include "UserDataHolder.h"
 
 #include <memory>
 
 namespace io {
-
-// TODO: move to fwd header
-class TcpServer;
 
 class TcpConnectedClient : protected Disposable,
                            public UserDataHolder {
@@ -34,6 +32,9 @@ public:
 
     // TODO: rename as pending_send_requesets??? Because name is inconsistent.
     IO_DLL_PUBLIC std::size_t pending_write_requesets() const;
+
+    IO_DLL_PUBLIC void delay_send(bool enabled);
+    IO_DLL_PUBLIC bool is_delay_send() const;
 
 protected:
     IO_DLL_PUBLIC TcpConnectedClient(EventLoop& loop, TcpServer& server, CloseCallback cloase_callback);

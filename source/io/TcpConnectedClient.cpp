@@ -233,4 +233,12 @@ void TcpConnectedClient::set_port(std::uint16_t value) {
     return m_impl->set_port(value);
 }
 
+void TcpConnectedClient::delay_send(bool enabled) {
+    return m_impl->delay_send(enabled);
+}
+
+bool TcpConnectedClient::is_delay_send() const {
+    return m_impl->is_delay_send();
+}
+
 } // namespace io

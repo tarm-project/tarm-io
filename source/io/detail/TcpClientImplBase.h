@@ -29,6 +29,9 @@ public:
 
     bool is_open() const;
 
+    void delay_send(bool enabled);
+    bool is_delay_send() const;
+
 protected:
     // statics
     static void after_write(uv_write_t* req, int status);
@@ -50,6 +53,9 @@ protected:
     std::size_t m_read_buf_size = 0;
 
     bool m_is_open = false;
+
+    // This field added because libuv does not allow to get this property from TCP handle
+    bool m_delay_send = true;
 
     typename ParentType::CloseCallback m_close_callback = nullptr;
 
@@ -159,6 +165,17 @@ void TcpClientImplBase<ParentType, ImplType>::set_port(std::uint16_t value) {
 template<typename ParentType, typename ImplType>
 bool TcpClientImplBase<ParentType, ImplType>::is_open() const {
     return m_is_open;
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::delay_send(bool enabled) {
+    uv_tcp_nodelay(m_tcp_stream, !enabled);
+    m_delay_send = enabled;
+}
+
+template<typename ParentType, typename ImplType>
+bool TcpClientImplBase<ParentType, ImplType>::is_delay_send() const {
+    return m_delay_send;
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
