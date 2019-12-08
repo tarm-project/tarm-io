@@ -1167,6 +1167,74 @@ TEST_F(TcpClientServerTest, client_saves_received_buffer) {
     EXPECT_EQ(2, server_receive_counter);
 }
 
+TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
+    std::size_t client_receive_counter = 0;
+    std::size_t client_close_counter = 0;
+
+    io::EventLoop loop;
+
+    io::TcpServer server(loop);
+    auto listen_error = server.listen(m_default_addr, m_default_port,
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.send_data("go away!",
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    client.close();
+                }
+            );
+        },
+    nullptr,
+    nullptr);
+
+    auto client_on_connect = [&](io::TcpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+
+        client.send_data("Hello!",
+            [&](io::TcpClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+            }
+        );
+    };
+
+    auto client_on_receive = [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+        ++client_receive_counter;
+    };
+
+    std::function<void(io::TcpClient& client, const io::Error& error)> client_on_close = nullptr;
+    client_on_close = [&](io::TcpClient& client, const io::Error& error) {
+        EXPECT_TRUE(error);
+        EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
+
+        if (client_close_counter == 0) {
+            client.connect(m_default_addr, m_default_port,
+                client_on_connect,
+                client_on_receive,
+                client_on_close
+            );
+        } else {
+            client.schedule_removal();
+        }
+
+        ++client_close_counter;
+    };
+
+    auto client = new io::TcpClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        client_on_connect,
+        client_on_receive,
+        client_on_close
+    );
+
+    EXPECT_EQ(0, client_receive_counter);
+    EXPECT_EQ(0, client_close_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(2, client_receive_counter);
+    EXPECT_EQ(2, client_close_counter);
+}
 
 // TODO: disconnect client from server and try to send data (should fail)
 
@@ -1189,3 +1257,6 @@ TEST_F(TcpClientServerTest, client_saves_received_buffer) {
 // TODO: connect->close->connect->close cycle for TcpCLient
 
 // TODO: simultaneous connect attempts (multiple connect calls)
+
+
+
