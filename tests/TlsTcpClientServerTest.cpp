@@ -724,6 +724,8 @@ TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, not_existing_key) {
@@ -755,6 +757,8 @@ TEST_F(TlsTcpClientServerTest, not_existing_key) {
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, invalid_certificate) {
@@ -780,6 +784,8 @@ TEST_F(TlsTcpClientServerTest, invalid_certificate) {
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, invalid_private_key) {
@@ -805,6 +811,8 @@ TEST_F(TlsTcpClientServerTest, invalid_private_key) {
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, not_matching_certificate_and_key) {
@@ -831,6 +839,8 @@ TEST_F(TlsTcpClientServerTest, not_matching_certificate_and_key) {
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, callbacks_order) {

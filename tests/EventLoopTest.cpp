@@ -11,7 +11,9 @@ struct EventLoopTest : public testing::Test,
 };
 
 TEST_F(EventLoopTest, default_constructor) {
-    EXPECT_NO_THROW(io::EventLoop event_loop);
+    std::unique_ptr<io::EventLoop> event_loop;
+    EXPECT_NO_THROW(event_loop.reset(new io::EventLoop));
+    ASSERT_EQ(0, event_loop->run());
 }
 
 TEST_F(EventLoopTest, default_constructor_with_run) {
