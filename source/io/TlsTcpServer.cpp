@@ -34,7 +34,7 @@ public:
 
 protected: // callbacks
     void on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client, const io::Error& error);
-    void on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const char* buf, std::size_t size);
+    void on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const DataChunk&, const Error&);
     void on_close(TcpServer& server, TcpConnectedClient& tcp_client, const Error& error);
 
 private:
@@ -86,9 +86,10 @@ void TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient
     }
 }
 
-void TlsTcpServer::Impl::on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const char* buf, std::size_t size) {
+void TlsTcpServer::Impl::on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const DataChunk& chunk, const Error& error) {
+    // TODO: handle error
     auto& tls_client = *reinterpret_cast<TlsTcpConnectedClient*>(tcp_client.user_data());
-    tls_client.on_data_receive(buf, size);
+    tls_client.on_data_receive(chunk.buf.get(), chunk.size);
 }
 
 void TlsTcpServer::Impl::on_close(TcpServer& server, TcpConnectedClient& tcp_client, const Error& error) {

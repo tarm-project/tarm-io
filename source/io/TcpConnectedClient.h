@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DataChunk.h"
 #include "Disposable.h"
 #include "EventLoop.h"
 #include "Export.h"
@@ -18,7 +19,7 @@ public:
 
     using CloseCallback = std::function<void(TcpConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(TcpConnectedClient&, const Error&)>;
-    using DataReceiveCallback = std::function<void(TcpServer&, TcpConnectedClient&, const char*, std::size_t)>;
+    using DataReceiveCallback = std::function<void(TcpServer&, TcpConnectedClient&, const DataChunk&, const Error&)>;
 
     IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
     IO_DLL_PUBLIC std::uint16_t port() const;

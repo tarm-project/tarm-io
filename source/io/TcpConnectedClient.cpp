@@ -147,7 +147,11 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
     Error error(nread);
     if (!error) {
         if (this_.m_receive_callback) {
-            this_.m_receive_callback(*this_.m_server, *this_.m_parent, buf->base, nread);
+            const auto prev_use_count = this_.m_read_buf.use_count();
+            this_.m_receive_callback(*this_.m_server, *this_.m_parent, {this_.m_read_buf,  std::size_t(nread)}, Error(0));
+            if (prev_use_count != this_.m_read_buf.use_count()) { // user made a copy
+                this_.m_read_buf.reset(); // will reallocate new one on demand
+            }
         }
     } else {
         // TODO: this is common code with TcpCLient. Extract to TcpClientImplBase???

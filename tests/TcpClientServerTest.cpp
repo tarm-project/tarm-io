@@ -41,7 +41,7 @@ TEST_F(TcpClientServerTest, invalid_ip4_address) {
         [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
-        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         },
         nullptr
     );
@@ -69,7 +69,7 @@ TEST_F(TcpClientServerTest, bind_privileged) {
         [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
-        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         },
         nullptr
     );
@@ -92,13 +92,13 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
     },
-    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         EXPECT_TRUE(client.is_open());
 
         data_received = true;
-        std::string received_message(buf, size);
+        std::string received_message(data.buf.get(), data.size);
 
-        EXPECT_EQ(size, message.length());
+        EXPECT_EQ(data.size, message.length());
         EXPECT_EQ(received_message, message);
         server.shutdown();
     },
@@ -140,10 +140,10 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
     },
-    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
-        EXPECT_EQ(size, message.length() + 1);
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_EQ(data.size, message.length() + 1);
 
-        std::string received_message(buf, size);
+        std::string received_message(data.buf.get(), data.size);
 
         if (message + "1" == received_message) {
             data_received_1 = true;
@@ -206,9 +206,9 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
         [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
-        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
-            EXPECT_EQ(size, message.length());
-            EXPECT_EQ(std::string(buf, size), message);
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_EQ(data.size, message.length());
+            EXPECT_EQ(std::string(data.buf.get(), data.size), message);
             receive_called = true;
             server.shutdown();
         },
@@ -260,7 +260,7 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
             data_sent = true;
         });
     },
-    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         server.shutdown(); // receive 'shutdown' message
     },
     nullptr);
@@ -310,9 +310,9 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
         [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
-        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
-            total_bytes_received.insert(total_bytes_received.end(), buf, buf + size);
-            bytes_received += size;
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            total_bytes_received.insert(total_bytes_received.end(), data.buf.get(), data.buf.get() + data.size);
+            bytes_received += data.size;
             if (bytes_received >= TOTAL_BYTES) {
                 server.shutdown();
             }
@@ -403,7 +403,7 @@ TEST_F(TcpClientServerTest, DISABLED_server_disconnect_client_from_new_connectio
         EXPECT_EQ(0, server.connected_clients_count());
         //return false;
     },
-    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         server_receive_callback_called = true;
     },
     nullptr);
@@ -475,7 +475,7 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
                 server.shutdown();
             });
         },
-        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             ++server_receive_callback_count;
         },
         connected_client_close_callback
@@ -518,8 +518,8 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
     },
-    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
-        EXPECT_EQ(std::string(buf, size), client_message);
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_EQ(std::string(data.buf.get(), data.size), client_message);
         client.close();
         EXPECT_EQ(1, server.connected_clients_count()); // not closed yet
 
@@ -575,10 +575,10 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
         EXPECT_FALSE(error);
         ++connections_counter;
     },
-    [&clinets_data_log, &server_reads_counter, NUMBER_OF_CLIENTS](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+    [&clinets_data_log, &server_reads_counter, NUMBER_OF_CLIENTS](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         ++server_reads_counter;
-        ASSERT_EQ(sizeof(std::size_t), size);
-        const auto value = *reinterpret_cast<const std::size_t*>(buf);
+        ASSERT_EQ(sizeof(std::size_t), data.size);
+        const auto value = *reinterpret_cast<const std::size_t*>(data.buf.get());
         ASSERT_LT(value, clinets_data_log.size());
         clinets_data_log[value] = true;
 
@@ -658,7 +658,7 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
         };
 
     io::TcpServer::DataReceivedCallback on_server_receive_data =
-        [](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+        [](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
 
         };
 
@@ -697,7 +697,7 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
         [](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
-        [](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+        [](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             client.send_data("world", [](io::TcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
             });
@@ -749,7 +749,7 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
         [](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
-        [](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+        [](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_EQ(0, client.pending_write_requesets());
             client.send_data("world", [](io::TcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -821,7 +821,7 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
     [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
     },
-    [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+    [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         server_any_data_received = true;
     },
     [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::Error& error) {
@@ -889,7 +889,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
                 }
             );
         },
-        [&](io::TcpServer& /*server*/, io::TcpConnectedClient& client, const char* /*buf*/, std::size_t /*size*/) {
+        [&](io::TcpServer& /*server*/, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             client.close();
         },
         nullptr
@@ -948,7 +948,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
                 }
             );
         },
-        [&](io::TcpServer& /*server*/, io::TcpConnectedClient& client, const char* /*buf*/, std::size_t /*size*/) {
+        [&](io::TcpServer& /*server*/, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         },
         [&](io::TcpServer& /*server*/, io::TcpConnectedClient& /*client*/, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1030,7 +1030,7 @@ TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
             EXPECT_FALSE(error) << error.string();
             send_data(client);
         },
-        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         },
         [&](io::TcpServer& server, io::TcpConnectedClient&, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1095,7 +1095,7 @@ TEST_F(TcpClientServerTest, client_saves_received_buffer) {
             //client.delay_send(false); // disabling Nagle's algorithm
             EXPECT_FALSE(error);
         },
-        [&](io::TcpServer& server, io::TcpConnectedClient& client, const char* buf, std::size_t size) {
+        [&](io::TcpServer& server, io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             if (server_receive_counter == 0) {
                 client.send_data(server_message_1,
                     [&](io::TcpConnectedClient& client, const io::Error& error) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DataChunk.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "TcpConnectedClient.h"
@@ -22,7 +23,7 @@ public:
     static const size_t READ_BUFFER_SIZE = 65536;
 
     using NewConnectionCallback = std::function<void(TcpServer&, TcpConnectedClient&, const Error&)>;
-    using DataReceivedCallback = std::function<void(TcpServer&, TcpConnectedClient&, const char*, std::size_t)>;
+    using DataReceivedCallback = std::function<void(TcpServer&, TcpConnectedClient&, const DataChunk&, const Error&)>;
     using CloseConnectionCallback = std::function<void(TcpServer&, TcpConnectedClient&, const Error&)>;
 
     IO_DLL_PUBLIC TcpServer(EventLoop& loop);
