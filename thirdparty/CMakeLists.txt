@@ -1,3 +1,30 @@
+# TODO: system and filesystem should be required if we are building tests only
+if (APPLE)
+   set(BUILD_SHARED_LIBS ON)
+   set(Boost_USE_STATIC_LIBS OFF)
+elseif (WIN32)
+   set(Boost_USE_STATIC_LIBS ON) # TODO: need to make this optional
+endif()
+find_package(Boost COMPONENTS system filesystem REQUIRED)
+
+if(NOT TARGET Boost::headers)
+    add_library(Boost::headers IMPORTED INTERFACE GLOBAL)
+    set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
+endif()
+
+if(NOT TARGET Boost::system)
+    add_library(Boost::system IMPORTED INTERFACE GLOBAL)
+    set_property(TARGET Boost::system PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
+    set_property(TARGET Boost::system PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_SYSTEM_LIBRARY})
+endif()
+
+if(NOT TARGET Boost::filesystem)
+    add_library(Boost::filesystem IMPORTED INTERFACE GLOBAL)
+    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
+    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_FILESYSTEM_LIBRARY})
+endif()
+
+
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 # Solution from here https://gitlab.kitware.com/cmake/cmake/issues/17645

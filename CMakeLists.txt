@@ -52,41 +52,6 @@ endif()
 #cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_INSTALL_PREFIX=E:\projects\thirdparty\gtest\install ..\googletest-release-1.8.1
 #cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DBOOST_ROOT="E:\projects\thirdparty\boost\install\include\boost-1_70" -DBOOST_LIBRARYDIR="E:\projects\thirdparty\boost\install\lib" -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT=E:\projects\thirdparty\gtest\install ..
 
-# TODO: system and filesystem should be required if we are building tests only
-if (APPLE)
-   set(BUILD_SHARED_LIBS ON)
-   set(Boost_USE_STATIC_LIBS OFF)
-elseif (WIN32)
-   set(Boost_USE_STATIC_LIBS ON) # TODO: need to make this optional
-endif()
-find_package(Boost COMPONENTS system filesystem REQUIRED)
-
-if(NOT TARGET Boost::headers)
-    add_library(Boost::headers IMPORTED INTERFACE)
-    set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-endif()
-
-if(NOT TARGET Boost::system)
-    add_library(Boost::system IMPORTED INTERFACE)
-    set_property(TARGET Boost::system PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-    set_property(TARGET Boost::system PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_SYSTEM_LIBRARY})
-endif()
-
-if(NOT TARGET Boost::filesystem)
-    add_library(Boost::filesystem IMPORTED INTERFACE)
-    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_FILESYSTEM_LIBRARY})
-endif()
-
-# TODO: do we need this????
-# if(NOT TARGET Boost::filesystem)
-#     add_library(Boost::filesystem IMPORTED INTERFACE)
-#     set_property(TARGET Boost::filesystem PROPERTY
-#         INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-#     set_property(TARGET Boost::filesystem PROPERTY
-#         INTERFACE_LINK_LIBRARIES ${Boost_LIBRARIES})
-# endif()
-
 #find_package(PkgConfig REQUIRED)
 #pkg_check_modules(LIBUV REQUIRED libuv)
 
