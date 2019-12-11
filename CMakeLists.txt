@@ -66,6 +66,18 @@ if(NOT TARGET Boost::headers)
     set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
 endif()
 
+if(NOT TARGET Boost::system)
+    add_library(Boost::system IMPORTED INTERFACE)
+    set_property(TARGET Boost::system PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
+    set_property(TARGET Boost::system PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_SYSTEM_LIBRARY})
+endif()
+
+if(NOT TARGET Boost::filesystem)
+    add_library(Boost::filesystem IMPORTED INTERFACE)
+    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
+    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_FILESYSTEM_LIBRARY})
+endif()
+
 # TODO: do we need this????
 # if(NOT TARGET Boost::filesystem)
 #     add_library(Boost::filesystem IMPORTED INTERFACE)
@@ -74,6 +86,9 @@ endif()
 #     set_property(TARGET Boost::filesystem PROPERTY
 #         INTERFACE_LINK_LIBRARIES ${Boost_LIBRARIES})
 # endif()
+
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(LIBUV REQUIRED libuv)
 
 add_subdirectory("thirdparty")
 add_subdirectory("source")
