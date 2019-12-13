@@ -20,6 +20,9 @@ public:
     void start_read(DataReceiveCallback data_receive_callback);
     uv_tcp_t* tcp_client_stream();
 
+    TcpServer& server();
+    const TcpServer& server() const;
+
 protected:
     // statics
     static void on_shutdown(uv_shutdown_t* req, int status);
@@ -96,6 +99,14 @@ void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callb
     set_port(0);
 }
 
+TcpServer& TcpConnectedClient::Impl::server() {
+    return *m_server;
+}
+
+const TcpServer& TcpConnectedClient::Impl::server() const {
+    return *m_server;
+}
+
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 
 void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
@@ -148,7 +159,7 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
     if (!error) {
         if (this_.m_receive_callback) {
             const auto prev_use_count = this_.m_read_buf.use_count();
-            this_.m_receive_callback(*this_.m_server, *this_.m_parent, {this_.m_read_buf,  std::size_t(nread)}, Error(0));
+            this_.m_receive_callback(*this_.m_parent, {this_.m_read_buf,  std::size_t(nread)}, Error(0));
             if (prev_use_count != this_.m_read_buf.use_count()) { // user made a copy
                 this_.m_read_buf.reset(); // will reallocate new one on demand
             }
@@ -243,6 +254,14 @@ void TcpConnectedClient::delay_send(bool enabled) {
 
 bool TcpConnectedClient::is_delay_send() const {
     return m_impl->is_delay_send();
+}
+
+TcpServer& TcpConnectedClient::server() {
+    return m_impl->server();
+}
+
+const TcpServer& TcpConnectedClient::server() const {
+    return m_impl->server();
 }
 
 } // namespace io

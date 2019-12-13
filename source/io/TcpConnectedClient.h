@@ -19,7 +19,7 @@ public:
 
     using CloseCallback = std::function<void(TcpConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(TcpConnectedClient&, const Error&)>;
-    using DataReceiveCallback = std::function<void(TcpServer&, TcpConnectedClient&, const DataChunk&, const Error&)>;
+    using DataReceiveCallback = std::function<void(TcpConnectedClient&, const DataChunk&, const Error&)>;
 
     IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
     IO_DLL_PUBLIC std::uint16_t port() const;
@@ -36,6 +36,9 @@ public:
 
     IO_DLL_PUBLIC void delay_send(bool enabled);
     IO_DLL_PUBLIC bool is_delay_send() const;
+
+    IO_DLL_PUBLIC TcpServer& server();
+    IO_DLL_PUBLIC const TcpServer& server() const;
 
 protected:
     IO_DLL_PUBLIC TcpConnectedClient(EventLoop& loop, TcpServer& server, CloseCallback cloase_callback);

@@ -186,7 +186,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
     auto on_client_close_callback = [&this_](TcpConnectedClient& client, const Error& error) {
         if (this_.m_close_connection_callback) {
-            this_.m_close_connection_callback(*this_.m_parent, client, error);
+            this_.m_close_connection_callback(client, error);
         }
     };
 
@@ -213,7 +213,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
             }
             */
 
-            this_.m_new_connection_callback(*this_.m_parent, *tcp_client, Error(0));
+            this_.m_new_connection_callback(*tcp_client, Error(0));
 
             if (allow_connection) {
                 this_.m_client_connections.insert(tcp_client);
@@ -232,10 +232,10 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
         } else {
             // TODO: call close???
             IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", uv_strerror(getpeername_status));
-            this_.m_new_connection_callback(*this_.m_parent, *tcp_client, Error(getpeername_status));
+            this_.m_new_connection_callback(*tcp_client, Error(getpeername_status));
         }
     } else {
-        this_.m_new_connection_callback(*this_.m_parent, *tcp_client, Error(accept_status));
+        this_.m_new_connection_callback(*tcp_client, Error(accept_status));
         //uv_close(reinterpret_cast<uv_handle_t*>(tcp_client), nullptr/*on_close*/);
         // TODO: schedule TcpConnectedClient removal here
     }

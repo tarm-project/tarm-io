@@ -33,9 +33,9 @@ public:
     bool certificate_and_key_match();
 
 protected: // callbacks
-    void on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client, const io::Error& error);
-    void on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const DataChunk&, const Error&);
-    void on_close(TcpServer& server, TcpConnectedClient& tcp_client, const Error& error);
+    void on_new_connection(TcpConnectedClient& tcp_client, const io::Error& error);
+    void on_data_receive(TcpConnectedClient& tcp_client, const DataChunk&, const Error&);
+    void on_close(TcpConnectedClient& tcp_client, const Error& error);
 
 private:
     using X509Ptr = std::unique_ptr<::X509, decltype(&::X509_free)>;
@@ -69,7 +69,7 @@ TlsTcpServer::Impl::~Impl() {
     delete m_tcp_server; // TODO: schedule removal from TCP server
 }
 
-void TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient& tcp_client, const io::Error& error) {
+void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const io::Error& error) {
     if (error) {
         //m_new_connection_callback(.......);
         // TODO: error handling here
@@ -86,13 +86,13 @@ void TlsTcpServer::Impl::on_new_connection(TcpServer& server, TcpConnectedClient
     }
 }
 
-void TlsTcpServer::Impl::on_data_receive(TcpServer& server, TcpConnectedClient& tcp_client, const DataChunk& chunk, const Error& error) {
+void TlsTcpServer::Impl::on_data_receive(TcpConnectedClient& tcp_client, const DataChunk& chunk, const Error& error) {
     // TODO: handle error
     auto& tls_client = *reinterpret_cast<TlsTcpConnectedClient*>(tcp_client.user_data());
     tls_client.on_data_receive(chunk.buf.get(), chunk.size);
 }
 
-void TlsTcpServer::Impl::on_close(TcpServer& server, TcpConnectedClient& tcp_client, const Error& error) {
+void TlsTcpServer::Impl::on_close(TcpConnectedClient& tcp_client, const Error& error) {
     IO_LOG(this->m_loop, TRACE, "Removing TLS client");
 
     auto& tls_client = *reinterpret_cast<TlsTcpConnectedClient*>(tcp_client.user_data());
@@ -138,9 +138,9 @@ Error TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
     using namespace std::placeholders;
     return m_tcp_server->listen(ip_addr_str,
                                 port,
-                                std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2, _3),
-                                std::bind(&TlsTcpServer::Impl::on_data_receive, this, _1, _2, _3, _4),
-                                std::bind(&TlsTcpServer::Impl::on_close, this, _1, _2, _3));
+                                std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2),
+                                std::bind(&TlsTcpServer::Impl::on_data_receive, this, _1, _2, _3),
+                                std::bind(&TlsTcpServer::Impl::on_close, this, _1, _2));
 }
 
 void TlsTcpServer::Impl::shutdown() {

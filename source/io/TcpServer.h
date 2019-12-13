@@ -22,9 +22,9 @@ public:
 
     static const size_t READ_BUFFER_SIZE = 65536;
 
-    using NewConnectionCallback = std::function<void(TcpServer&, TcpConnectedClient&, const Error&)>;
-    using DataReceivedCallback = std::function<void(TcpServer&, TcpConnectedClient&, const DataChunk&, const Error&)>;
-    using CloseConnectionCallback = std::function<void(TcpServer&, TcpConnectedClient&, const Error&)>;
+    using NewConnectionCallback = std::function<void(TcpConnectedClient&, const Error&)>;
+    using DataReceivedCallback = std::function<void(TcpConnectedClient&, const DataChunk&, const Error&)>;
+    using CloseConnectionCallback = std::function<void(TcpConnectedClient&, const Error&)>;
 
     IO_DLL_PUBLIC TcpServer(EventLoop& loop);
     IO_DLL_PUBLIC ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server
