@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "DataChunk.h"
 #include "Disposable.h"
 #include "EventLoop.h"
 #include "Error.h"
@@ -22,7 +23,7 @@ public:
 
     using UnderlyingClientType = UdpPeer;
 
-    using DataReceiveCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const char*, std::size_t)>;
+    using DataReceiveCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const DataChunk&)>;
     using CloseCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
 

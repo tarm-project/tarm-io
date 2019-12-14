@@ -37,7 +37,7 @@ protected:
     bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
 
-    void on_ssl_read(const char* buf, std::size_t size) override;
+    void on_ssl_read(const DataChunk& data) override;
     void on_handshake_complete() override;
 
 private:
@@ -144,9 +144,9 @@ void TlsTcpClient::Impl::ssl_set_state() {
     SSL_set_connect_state(m_ssl);
 }
 
-void TlsTcpClient::Impl::on_ssl_read(const char* buf, std::size_t size) {
+void TlsTcpClient::Impl::on_ssl_read(const DataChunk& data) {
     if (m_receive_callback) {
-        m_receive_callback(*this->m_parent, buf, size);
+        m_receive_callback(*this->m_parent, data);
     }
 }
 

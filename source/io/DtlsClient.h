@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DataChunk.h"
 #include "Disposable.h"
 #include "EventLoop.h"
 #include "Error.h"
@@ -15,7 +16,7 @@ public:
     using ConnectCallback = std::function<void(DtlsClient&, const Error&)>;
     using CloseCallback = std::function<void(DtlsClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsClient&, const Error&)>;
-    using DataReceiveCallback = std::function<void(DtlsClient&, const char*, size_t)>;
+    using DataReceiveCallback = std::function<void(DtlsClient&, const DataChunk&)>;
 
     IO_DLL_PUBLIC DtlsClient(EventLoop& loop);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Disposable.h"
+#include "DataChunk.h"
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
@@ -17,7 +18,7 @@ class TlsTcpServer : public Disposable,
                      public UserDataHolder {
 public:
     using NewConnectionCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&)>;
-    using DataReceivedCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const char*, std::size_t)>;
+    using DataReceivedCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const DataChunk&)>;
     using CloseConnectionCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const Error&)>;
 
     IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,

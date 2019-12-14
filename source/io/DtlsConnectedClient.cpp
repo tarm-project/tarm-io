@@ -25,7 +25,7 @@ protected:
     bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
 
-    void on_ssl_read(const char* buf, std::size_t size) override;
+    void on_ssl_read(const DataChunk& data) override;
     void on_handshake_complete() override;
 
 private:
@@ -111,9 +111,9 @@ void DtlsConnectedClient::Impl::ssl_set_state() {
     SSL_set_accept_state(m_ssl);
 }
 
-void DtlsConnectedClient::Impl::on_ssl_read(const char* buf, std::size_t size) {
+void DtlsConnectedClient::Impl::on_ssl_read(const DataChunk& data) {
     if (m_data_receive_callback) {
-        m_data_receive_callback(*m_dtls_server, *m_parent, buf, size);
+        m_data_receive_callback(*m_dtls_server, *m_parent, data);
     }
 }
 

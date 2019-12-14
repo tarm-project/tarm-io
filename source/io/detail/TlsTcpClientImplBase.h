@@ -1,5 +1,6 @@
 #pragma once
 
+#include "io/DataChunk.h"
 #include "io/EventLoop.h"
 
 #include <openssl/ssl.h>
@@ -25,7 +26,7 @@ public:
     virtual void ssl_set_state() = 0;
 
     void read_from_ssl();
-    virtual void on_ssl_read(const char* buf, std::size_t size) = 0;
+    virtual void on_ssl_read(const DataChunk&) = 0;
 
     void do_handshake();
     void handshake_read_from_sll_and_send();
@@ -152,12 +153,13 @@ void TlsTcpClientImplBase<ParentType, ImplType>::read_from_ssl() {
     // TODO: investigate if this buffer can be of less size
     // TODO: not create this buffer on every read
     const std::size_t SIZE = 16*1024; // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
-    std::unique_ptr<char[]> decrypted_buf(new char[SIZE]);
+    std::shared_ptr<char> decrypted_buf(new char[SIZE], std::default_delete<char[]>());
+    // TODO: TEST save buffer in callback and check if it is valid
 
     int decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
     while (decrypted_size > 0) {
         IO_LOG(m_loop, TRACE, m_parent, "Decrypted message of size:", decrypted_size);
-        on_ssl_read(decrypted_buf.get(), decrypted_size);
+        on_ssl_read({decrypted_buf, static_cast<std::size_t>(decrypted_size)});
         decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
     }
 

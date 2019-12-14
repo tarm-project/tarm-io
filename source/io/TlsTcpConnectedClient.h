@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Disposable.h"
+#include "DataChunk.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
@@ -22,7 +23,7 @@ public:
 
     using UnderlyingClientType = TcpConnectedClient;
 
-    using DataReceiveCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const char*, std::size_t)>;
+    using DataReceiveCallback = std::function<void(TlsTcpServer&, TlsTcpConnectedClient&, const DataChunk&)>;
     using CloseCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
 
