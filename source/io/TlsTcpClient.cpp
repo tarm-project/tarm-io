@@ -146,7 +146,7 @@ void TlsTcpClient::Impl::ssl_set_state() {
 
 void TlsTcpClient::Impl::on_ssl_read(const DataChunk& data) {
     if (m_receive_callback) {
-        m_receive_callback(*this->m_parent, data);
+        m_receive_callback(*this->m_parent, data, Error(0));
     }
 }
 

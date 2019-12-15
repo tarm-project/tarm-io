@@ -18,7 +18,7 @@ public:
     using ConnectCallback = std::function<void(TlsTcpClient&, const Error&)>;
     using CloseCallback = std::function<void(TlsTcpClient&, const Error&)>;
     using EndSendCallback = std::function<void(TlsTcpClient&, const Error&)>;
-    using DataReceiveCallback = std::function<void(TlsTcpClient&, const DataChunk&)>;
+    using DataReceiveCallback = std::function<void(TlsTcpClient&, const DataChunk&, const Error&)>;
 
     IO_DLL_PUBLIC TlsTcpClient(EventLoop& loop);
 

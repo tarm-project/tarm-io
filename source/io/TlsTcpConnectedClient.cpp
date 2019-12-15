@@ -19,6 +19,9 @@ public:
 
     void set_data_receive_callback(DataReceiveCallback callback);
 
+    TlsTcpServer& server();
+    const TlsTcpServer& server() const;
+
 protected:
     const SSL_METHOD* ssl_method() override;
     bool ssl_set_siphers() override;
@@ -110,14 +113,22 @@ void TlsTcpConnectedClient::Impl::ssl_set_state() {
 
 void TlsTcpConnectedClient::Impl::on_ssl_read(const DataChunk& data) {
     if (m_data_receive_callback) {
-        m_data_receive_callback(*m_tls_server, *m_parent, data);
+        m_data_receive_callback(*m_parent, data, Error(0));
     }
 }
 
 void TlsTcpConnectedClient::Impl::on_handshake_complete() {
     if (m_new_connection_callback) {
-        m_new_connection_callback(*m_tls_server, *m_parent);
+        m_new_connection_callback(*m_parent, Error(0));
     }
+}
+
+TlsTcpServer& TlsTcpConnectedClient::Impl::server() {
+    return *m_tls_server;
+}
+
+const TlsTcpServer& TlsTcpConnectedClient::Impl::server() const {
+    return *m_tls_server;
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
@@ -162,6 +173,13 @@ bool TlsTcpConnectedClient::is_open() const {
     return m_impl->is_open();
 }
 
+TlsTcpServer& TlsTcpConnectedClient::server() {
+    return m_impl->server();
+}
+
+const TlsTcpServer& TlsTcpConnectedClient::server() const {
+    return m_impl->server();
+}
 
 } // namespace io
 
