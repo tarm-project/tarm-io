@@ -93,10 +93,6 @@ void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callb
                       alloc_read_buffer,
                       on_read);
     }
-
-    //TODO: set ip and port
-    set_ipv4_addr(0);
-    set_port(0);
 }
 
 TcpServer& TcpConnectedClient::Impl::server() {
