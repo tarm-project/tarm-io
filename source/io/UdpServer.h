@@ -17,7 +17,7 @@ class UdpServer : public Disposable,
 public:
     using NewPeerCallback = std::function<void(UdpServer&, UdpPeer&, const Error&)>;
     using DataReceivedCallback = std::function<void(UdpServer&, UdpPeer&, const DataChunk&, const Error&)>;
-    using PeerTimeoutCallback = std::function<void(UdpServer&, UdpPeer&)>;
+    using PeerTimeoutCallback = std::function<void(UdpServer&, UdpPeer&, const Error&)>;
 
     UdpServer(const UdpServer& other) = delete;
     UdpServer& operator=(const UdpServer& other) = delete;

@@ -89,7 +89,7 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
 
     // TODO: bind instead of lambdas
     auto on_expired = [this](io::BacklogWithTimeout<std::shared_ptr<UdpPeer>>&, const std::shared_ptr<UdpPeer>& item) {
-        m_peer_timeout_callback(*m_parent, *item);
+        m_peer_timeout_callback(*m_parent, *item, Error(0));
 
         // TODO: store in peer or make a function for this
         const std::uint64_t peer_id = std::uint64_t(host_to_network(item->port())) << 16 | std::uint64_t(host_to_network(item->address()));

@@ -295,7 +295,8 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
         }
     },
     200, // timeout MS
-    [&](io::UdpServer& server, io::UdpPeer& client) {
+    [&](io::UdpServer& server, io::UdpPeer& client, const io::Error& error) {
+        EXPECT_FALSE(error);
         ASSERT_TRUE(client.user_data());
         auto& value = *reinterpret_cast<decltype(server_receive_counter)*>(client.user_data());
         EXPECT_EQ(2, value);
@@ -379,7 +380,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
         }
     },
     210, // timeout MS
-    [&](io::UdpServer& server, io::UdpPeer& client) {
+    [&](io::UdpServer& server, io::UdpPeer& client, const io::Error& error) {
+        EXPECT_FALSE(error);
         ASSERT_TRUE(client.user_data());
 
         const auto& data_str = *reinterpret_cast<std::string*>(client.user_data());
