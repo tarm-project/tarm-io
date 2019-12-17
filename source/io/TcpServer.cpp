@@ -6,7 +6,7 @@
 #include <assert.h>
 
 // TODO: make this optional include
-#include <boost/pool/pool.hpp>
+//#include <boost/pool/pool.hpp>
 
 // TODO: move
 #include <iostream>
@@ -66,14 +66,14 @@ private:
     std::set<TcpConnectedClient*> m_client_connections;
 
     // Made as unique_ptr because boost::pool has no move constructor defined
-    std::unique_ptr<boost::pool<>> m_pool;
+    //std::unique_ptr<boost::pool<>> m_pool;
 };
 
 TcpServer::Impl::Impl(EventLoop& loop, TcpServer& parent) :
     m_parent(&parent),
     m_loop(&loop),
-    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
-    m_pool(new boost::pool<>(TcpServer::READ_BUFFER_SIZE)) {
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop()))/*,
+    m_pool(new boost::pool<>(TcpServer::READ_BUFFER_SIZE))*/ {
 }
 
 TcpServer::Impl::~Impl() {

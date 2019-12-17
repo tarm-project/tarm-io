@@ -17,8 +17,7 @@
 
 #include <cstdlib> // for multi-byte converson routines
 #include <cassert>
-
-#include <boost/limits.hpp>
+#include <limits>
 
 namespace io {
 namespace detail {
