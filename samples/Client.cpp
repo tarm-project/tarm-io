@@ -12,6 +12,11 @@ int main(int argc, char* argv[]) {
 
     client->connect(argv[1], 443,
         [](io::TlsTcpClient& client, const io::Error& error) {
+            if (error) {
+                std::cerr << error.string() << std::endl;
+                return;
+            }
+
             std::cout << "Connected!" << std::endl;
             client.send_data("GET / HTTP/1.0\r\n\r\n");
         },

@@ -80,6 +80,32 @@ TEST_F(TcpClientServerTest, bind_privileged) {
 }
 #endif
 
+TEST_F(TcpClientServerTest, client_connect_to_invalid_address) {
+    io::EventLoop loop;
+
+    std::size_t client_on_connect_count = 0;
+
+    auto client = new io::TcpClient(loop);
+    client->connect("0.0.0" ,m_default_port,
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+            EXPECT_FALSE(client.is_open());
+
+            client.schedule_removal();
+            ++client_on_connect_count;
+        }
+    );
+
+    // TODO: is it OK to call this callback with error before loop run???
+    // Looks like no because we should guarantee that no callbacks are executed before loop run() call
+    EXPECT_EQ(1, client_on_connect_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_count);
+}
+
 TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     io::EventLoop loop;
 

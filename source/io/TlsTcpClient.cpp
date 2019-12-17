@@ -94,6 +94,11 @@ void TlsTcpClient::Impl::connect(const std::string& address,
 
     std::function<void(TcpClient&, const Error&)> on_connect =
         [this](TcpClient& client, const Error& error) {
+            if (error) {
+                m_connect_callback(*this->m_parent, error);
+                return;
+            }
+
             do_handshake();
         };
 

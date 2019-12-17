@@ -122,6 +122,32 @@ TEST_F(TlsTcpClientServerTest, client_send_without_connect_with_callback) {
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
+    io::EventLoop loop;
+
+    std::size_t client_on_connect_count = 0;
+
+    auto client = new io::TlsTcpClient(loop);
+    client->connect("0.0.0" ,m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+            EXPECT_FALSE(client.is_open());
+
+            client.schedule_removal();
+            ++client_on_connect_count;
+        }
+    );
+
+    // TODO: is it OK to call this callback with error before loop run???
+    // Looks like no because we should guarantee that no callbacks are executed before loop run() call
+    EXPECT_EQ(1, client_on_connect_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_count);
+}
+
 TEST_F(TlsTcpClientServerTest, DISABLED_client_send_without_connect_no_callback) {
     io::EventLoop loop;
 

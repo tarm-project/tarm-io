@@ -67,7 +67,11 @@ void TcpClient::Impl::connect(const std::string& address,
                               CloseCallback close_callback) {
     struct sockaddr_in addr;
 
-    uv_ip4_addr(address.c_str(), port, &addr); // TODO: error handling
+    Error address_error = uv_ip4_addr(address.c_str(), port, &addr);
+    if (address_error) {
+        connect_callback(*m_parent, address_error);
+        return;
+    }
 
     if (m_connect_req == nullptr) {
         m_connect_req = new uv_connect_t;
