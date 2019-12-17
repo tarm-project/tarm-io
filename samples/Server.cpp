@@ -20,12 +20,17 @@ int main(int argc, char* argv[]) {
 
     io::TlsTcpServer server(loop, cert_name, key_name);
     auto listen_result = server.listen("0.0.0.0", 12345,
-    [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client) {
+    [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
     },
-    [&](io::TlsTcpServer& server, io::TlsTcpConnectedClient& client, const char* buf, std::size_t size) {
-        std::cout.write(buf, size);
+    [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        if (error) {
+            std::cerr << error.string() << std::endl;
+            return;
+        }
 
-        std::string str(buf);
+        std::cout.write(data.buf.get(), data.size);
+
+        std::string str(data.buf.get());
         if (str.find("GET / HTTP/1.1") == 0) {
             std::cout << "!!!" << std::endl;
 
