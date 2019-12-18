@@ -876,12 +876,11 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
             EXPECT_FALSE(client.is_open());
             client.schedule_removal();
 
-            // TOOD: implement test for sending data after closing (currently result is INVALID_HANDLE
-            /*
+            // sending data after shutdown -> error
             client.send_data("ololo", [](io::TcpClient& client, const io::Error& error) {
                 EXPECT_TRUE(error);
+                EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
             });
-            */
         });
     },
     nullptr);
@@ -1268,8 +1267,6 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
     EXPECT_EQ(2, client_receive_counter);
     EXPECT_EQ(2, client_close_counter);
 }
-
-// TODO: disconnect client from server and try to send data (should fail)
 
 // TODO: server sends lot of data to many connected clients
 
