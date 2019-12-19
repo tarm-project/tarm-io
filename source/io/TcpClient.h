@@ -3,7 +3,7 @@
 #include "EventLoop.h"
 #include "Export.h"
 #include "DataChunk.h"
-#include "Disposable.h"
+#include "Removable.h"
 #include "UserDataHolder.h"
 #include "Error.h"
 
@@ -11,7 +11,7 @@
 
 namespace io {
 
-class TcpClient : public Disposable,
+class TcpClient : public Removable,
                   public UserDataHolder {
 public:
     using ConnectCallback = std::function<void(TcpClient&, const Error&)>;

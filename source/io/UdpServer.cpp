@@ -210,7 +210,7 @@ void UdpServer::Impl::on_close(uv_handle_t* handle) {
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 UdpServer::UdpServer(EventLoop& loop) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new UdpServer::Impl(loop, *this)) {
 }
 
@@ -236,7 +236,7 @@ void UdpServer::close() {
 void UdpServer::schedule_removal() {
     const bool ready_to_remove = m_impl->close_with_removal();
     if (ready_to_remove) {
-        Disposable::schedule_removal();
+        Removable::schedule_removal();
     }
 }
 

@@ -259,7 +259,7 @@ void TcpServer::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 TcpServer::TcpServer(EventLoop& loop) :
-    /* Disposable(loop),*/
+    /* Removable(loop),*/
     m_impl(new Impl(loop, *this)) {
 }
 

@@ -11,7 +11,7 @@ list(APPEND TESTS_LIST
     CommonTest.cpp
     UserDataHolderTest.cpp
     LoggerTest.cpp
-    DisposableTest.cpp
+    RemovableTest.cpp
     ScopeExitGuardTest.cpp
     PathTest.cpp
     EventLoopTest.cpp

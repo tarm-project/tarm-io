@@ -235,7 +235,7 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 TcpClient::TcpClient(EventLoop& loop) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, *this)) {
 }
 
@@ -247,7 +247,7 @@ void TcpClient::schedule_removal() {
 
     const bool ready_to_remove = m_impl->schedule_removal();
     if (ready_to_remove) {
-        Disposable::schedule_removal();
+        Removable::schedule_removal();
     }
 }
 

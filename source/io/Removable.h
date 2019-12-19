@@ -8,21 +8,21 @@
 
 namespace io {
 
-class IO_DLL_PUBLIC_CLASS_UNIX_ONLY Disposable {
+class IO_DLL_PUBLIC_CLASS_UNIX_ONLY Removable {
 public:
     friend class RefCounted;
 
-    using OnScheduleRemovalCallback = std::function<void(const Disposable&)>;
+    using OnScheduleRemovalCallback = std::function<void(const Removable&)>;
 
     // TODO: macro for this
-    Disposable(const Disposable&) = delete;
-    Disposable& operator=(const Disposable&) = delete;
+    Removable(const Removable&) = delete;
+    Removable& operator=(const Removable&) = delete;
 
-    Disposable(Disposable&&) = default;
-    Disposable& operator=(Disposable&&) = default;
+    Removable(Removable&&) = default;
+    Removable& operator=(Removable&&) = default;
 
-    IO_DLL_PUBLIC Disposable(EventLoop& loop);
-    IO_DLL_PUBLIC virtual ~Disposable();
+    IO_DLL_PUBLIC Removable(EventLoop& loop);
+    IO_DLL_PUBLIC virtual ~Removable();
 
     IO_DLL_PUBLIC virtual void schedule_removal();
 
@@ -38,8 +38,8 @@ private:
 // TODO: move
 class IO_DLL_PUBLIC RefCounted {
 public:
-    RefCounted(Disposable& disposable) :
-        m_disposable(&disposable),
+    RefCounted(Removable& Removable) :
+        m_Removable(&Removable),
         m_ref_counter(0) {
     }
 
@@ -55,12 +55,12 @@ public:
         --m_ref_counter;
 
         if (m_ref_counter == 0) {
-            m_disposable->schedule_removal();
+            m_Removable->schedule_removal();
         }
     }
 
 private:
-    Disposable* m_disposable;
+    Removable* m_Removable;
     std::size_t m_ref_counter;
 };
 

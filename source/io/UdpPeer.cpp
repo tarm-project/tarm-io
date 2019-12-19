@@ -51,8 +51,8 @@ std::uint64_t UdpPeer::Impl::last_packet_time_ns() const {
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 UdpPeer::UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port) :
-    Disposable(loop),
-    RefCounted(*static_cast<Disposable*>(this)),
+    Removable(loop),
+    RefCounted(*static_cast<Removable*>(this)),
     m_impl(new Impl(loop, *this, udp_handle, address, port)) {
 }
 

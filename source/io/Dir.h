@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DirectoryEntryType.h"
-#include "Disposable.h"
+#include "Removable.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Path.h"
@@ -14,7 +14,7 @@
 
 namespace io {
 
-class Dir : public Disposable,
+class Dir : public Removable,
             public UserDataHolder {
 public:
     using OpenCallback = std::function<void(Dir&, const Error&)>;

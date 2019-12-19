@@ -3,7 +3,7 @@
 #include "EventLoop.h"
 #include "Export.h"
 #include "DataChunk.h"
-#include "Disposable.h"
+#include "Removable.h"
 #include "Error.h"
 #include "UserDataHolder.h"
 #include "UdpPeer.h"
@@ -12,7 +12,7 @@
 
 namespace io {
 
-class UdpServer : public Disposable,
+class UdpServer : public Removable,
                   public UserDataHolder {
 public:
     using NewPeerCallback = std::function<void(UdpServer&, UdpPeer&, const Error&)>;

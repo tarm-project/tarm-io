@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Disposable.h"
+#include "Removable.h"
 #include "DataChunk.h"
 #include "Error.h"
 #include "EventLoop.h"
@@ -14,7 +14,7 @@
 
 namespace io {
 
-class TlsTcpServer : public Disposable,
+class TlsTcpServer : public Removable,
                      public UserDataHolder {
 public:
     using NewConnectionCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "DataChunk.h"
-#include "Disposable.h"
+#include "Removable.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
@@ -17,7 +17,7 @@ namespace io {
 using X509 = void;
 using EVP_PKEY = void;
 
-class DtlsConnectedClient : protected Disposable {
+class DtlsConnectedClient : protected Removable {
 public:
     friend class DtlsServer;
 

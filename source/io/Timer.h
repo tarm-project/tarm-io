@@ -12,7 +12,7 @@ namespace io {
 // TODO: timer with repeat counter. For example, repeat 5 times with interval a
 // TODO: timer with intervals predefined, like void start({100, 200, 300, 100500}, callback);
 
-// TODO: inherit from Disposable??????
+// TODO: inherit from Removable??????
 class Timer : public UserDataHolder {
 public:
     using Callback = std::function<void(Timer&)>;

@@ -1,13 +1,13 @@
-#include "Disposable.h"
+#include "Removable.h"
 
 #include "Common.h"
 #include "Error.h"
 
 namespace io {
 
-class Disposable::Impl {
+class Removable::Impl {
 public:
-    Impl(EventLoop& loop, Disposable& parent);
+    Impl(EventLoop& loop, Removable& parent);
     ~Impl();
 
     void schedule_removal();
@@ -20,7 +20,7 @@ protected:
 
 private:
     EventLoop* m_loop;
-    Disposable* m_parent;
+    Removable* m_parent;
 
     OnScheduleRemovalCallback m_on_remove_callback = nullptr;
 };
@@ -28,21 +28,21 @@ private:
 namespace {
 
 void on_delete_idle_handle_close(uv_handle_t* handle) {
-    delete reinterpret_cast<Disposable*>(handle->data);
+    delete reinterpret_cast<Removable*>(handle->data);
     delete reinterpret_cast<uv_idle_t*>(handle);
 }
 
 } // namespace
 
-Disposable::Impl::Impl(EventLoop& loop, Disposable& parent) :
+Removable::Impl::Impl(EventLoop& loop, Removable& parent) :
     m_loop(&loop),
     m_parent(&parent) {
 }
 
-Disposable::Impl::~Impl() {
+Removable::Impl::~Impl() {
 }
 
-void Disposable::Impl::schedule_removal() {
+void Removable::Impl::schedule_removal() {
     if (!m_loop->is_running()) {
         IO_LOG(m_loop, ERROR, "Scheduling removal after the loop finished run. This may lead to memory leaks or memory corruption.");
     }
@@ -59,31 +59,31 @@ void Disposable::Impl::schedule_removal() {
     Error start_error = uv_idle_start(idle_ptr, on_removal);
 }
 
-void Disposable::Impl::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
+void Removable::Impl::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
     m_on_remove_callback = callback;
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 
-void Disposable::Impl::on_removal(uv_idle_t* handle) {
+void Removable::Impl::on_removal(uv_idle_t* handle) {
     uv_idle_stop(handle);
     uv_close(reinterpret_cast<uv_handle_t*>(handle), on_delete_idle_handle_close);
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-Disposable::Disposable(EventLoop& loop) :
+Removable::Removable(EventLoop& loop) :
     m_impl(new Impl(loop, *this)) {
 }
 
-Disposable::~Disposable() {
+Removable::~Removable() {
 }
 
-void Disposable::schedule_removal() {
+void Removable::schedule_removal() {
     return m_impl->schedule_removal();
 }
 
-void Disposable::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
+void Removable::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
     return m_impl->set_on_schedule_removal(callback);
 }
 

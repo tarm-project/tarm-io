@@ -13,7 +13,7 @@ list(APPEND IO_SOURCE_LIST
         io/path_impl/Utf8CodecvtFacet.cpp
         io/path_impl/WindowsFileCodecvt.cpp
         io/Common.cpp
-        io/Disposable.cpp
+        io/Removable.cpp
         io/Dir.cpp
         io/DtlsClient.cpp
         io/DtlsConnectedClient.cpp

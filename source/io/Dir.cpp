@@ -185,7 +185,7 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 Dir::Dir(EventLoop& loop) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, *this)) {
 }
 
@@ -215,7 +215,7 @@ const Path& Dir::path() const {
 void Dir::schedule_removal() {
     m_impl->close();
 
-    Disposable::schedule_removal();
+    Removable::schedule_removal();
 }
 
 /////////////////////////////////////////// functions //////////////////////////////////////////////

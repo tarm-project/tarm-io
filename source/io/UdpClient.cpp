@@ -136,17 +136,17 @@ void UdpClient::Impl::on_data_received(uv_udp_t* handle,
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 UdpClient::UdpClient(EventLoop& loop) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new UdpClient::Impl(loop, *this)) {
 }
 
 UdpClient::UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new UdpClient::Impl(loop, dest_host, dest_port, *this)) {
 }
 
 UdpClient::UdpClient(EventLoop& loop, DataReceivedCallback receive_callback) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new UdpClient::Impl(loop, receive_callback, *this)) {
 }
 
@@ -154,7 +154,7 @@ UdpClient::UdpClient(EventLoop& loop,
                      std::uint32_t dest_host,
                      std::uint16_t dest_port,
                      DataReceivedCallback receive_callback) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new UdpClient::Impl(loop, dest_host, dest_port, receive_callback, *this)) {
 }
 
@@ -176,7 +176,7 @@ void UdpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size
 void UdpClient::schedule_removal() {
     const bool ready_to_remove = m_impl->close_with_removal();
     if (ready_to_remove) {
-        Disposable::schedule_removal();
+        Removable::schedule_removal();
     }
 }
 

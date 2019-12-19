@@ -1,12 +1,12 @@
 #include "UTCommon.h"
 
-#include "io/Disposable.h"
+#include "io/Removable.h"
 
 #include <chrono>
 #include <thread>
 
-struct DisposableTest : public testing::Test,
-                        public LogRedirector {
+struct RemovableTest : public testing::Test,
+                       public LogRedirector {
 };
 
 namespace {
@@ -14,15 +14,15 @@ namespace {
 bool g_disposed_1 = false;
 bool g_disposed_2 = false;
 
-class TestDisposable : public io::Disposable {
+class TestRemovable : public io::Removable {
 public:
-    TestDisposable(io::EventLoop& loop, bool& disposed_flag) :
-        Disposable(loop),
+    TestRemovable(io::EventLoop& loop, bool& disposed_flag) :
+        Removable(loop),
         m_disposed_flag(disposed_flag) {
     }
 
 protected:
-    ~TestDisposable() {
+    ~TestRemovable() {
         m_disposed_flag = true;
     }
 
@@ -32,20 +32,20 @@ private:
 
 } // namespace
 
-TEST_F(DisposableTest, DISABLED_disposed_implicitly) {
+TEST_F(RemovableTest, DISABLED_disposed_implicitly) {
     io::EventLoop loop;
 
-    auto td = new TestDisposable(loop, g_disposed_1);
+    auto td = new TestRemovable(loop, g_disposed_1);
 
     ASSERT_EQ(0, loop.run());
 
     ASSERT_TRUE(g_disposed_1);
 }
 
-TEST_F(DisposableTest, disposed_explicitly) {
+TEST_F(RemovableTest, disposed_explicitly) {
     io::EventLoop loop;
 
-    auto td = new TestDisposable(loop, g_disposed_2);
+    auto td = new TestRemovable(loop, g_disposed_2);
     td->schedule_removal();
     loop.add_work([](){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

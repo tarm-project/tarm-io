@@ -185,7 +185,7 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 TcpConnectedClient::TcpConnectedClient(EventLoop& loop, TcpServer& server, CloseCallback cloase_callback) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, server, *this, cloase_callback)) {
 }
 
@@ -193,7 +193,7 @@ TcpConnectedClient::~TcpConnectedClient() {
 }
 
 void TcpConnectedClient::schedule_removal() {
-    Disposable::schedule_removal();
+    Removable::schedule_removal();
 }
 
 std::uint32_t TcpConnectedClient::ipv4_addr() const {

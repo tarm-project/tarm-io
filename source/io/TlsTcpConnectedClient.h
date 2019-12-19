@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Disposable.h"
+#include "Removable.h"
 #include "DataChunk.h"
 #include "EventLoop.h"
 #include "Error.h"
@@ -17,7 +17,7 @@ using EVP_PKEY = void;
 
 // TODO: now we can schedule removal of connected client from any callback
 //       need to revise this. Probably just to use close/shutdown only.
-class TlsTcpConnectedClient : public Disposable {
+class TlsTcpConnectedClient : public Removable {
 public:
     friend class TlsTcpServer;
 

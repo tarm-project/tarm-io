@@ -79,7 +79,7 @@ void DtlsServer::Impl::on_new_peer(UdpServer& server, UdpPeer& udp_client, const
     DtlsConnectedClient* dtls_client =
         new DtlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_certificate.get(), m_private_key.get(), udp_client);
     udp_client.set_on_schedule_removal(
-        [=](const Disposable&) {
+        [=](const Removable&) {
             delete dtls_client;
         }
     );
@@ -184,7 +184,7 @@ bool DtlsServer::Impl::certificate_and_key_match() {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 DtlsServer::DtlsServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, certificate_path, private_key_path, *this)) {
 }
 

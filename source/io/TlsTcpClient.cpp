@@ -164,7 +164,7 @@ void TlsTcpClient::Impl::on_handshake_complete() {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 TlsTcpClient::TlsTcpClient(EventLoop& loop) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, *this)) {
 }
 
@@ -174,7 +174,7 @@ TlsTcpClient::~TlsTcpClient() {
 void TlsTcpClient::schedule_removal() {
     const bool ready_to_remove = m_impl->schedule_removal();
     if (ready_to_remove) {
-        Disposable::schedule_removal();
+        Removable::schedule_removal();
     }
 }
 

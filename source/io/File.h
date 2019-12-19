@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DataChunk.h"
-#include "Disposable.h"
+#include "Removable.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Path.h"
@@ -17,7 +17,7 @@
 
 namespace io {
 
-class File : public Disposable,
+class File : public Removable,
              public UserDataHolder {
 public:
     static constexpr std::size_t READ_BUF_SIZE = 1024 * 4;

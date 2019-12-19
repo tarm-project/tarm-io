@@ -3,7 +3,7 @@
 
 //#include "Export.h"
 //#include "DataChunk.h"
-#include "Disposable.h"
+#include "Removable.h"
 
 #include "Error.h"
 #include "EventLoop.h"
@@ -18,7 +18,7 @@
 namespace io {
 
 class UdpPeer : public UserDataHolder,
-                protected Disposable,
+                protected Removable,
                 protected RefCounted {
 public:
     friend class UdpServer;
@@ -39,7 +39,7 @@ public:
     // TODO: make protected
     IO_DLL_PUBLIC ~UdpPeer();
 
-    using Disposable::set_on_schedule_removal;
+    using Removable::set_on_schedule_removal;
 
 private:
     IO_DLL_PUBLIC UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port);

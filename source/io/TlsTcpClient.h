@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DataChunk.h"
-#include "Disposable.h"
+#include "Removable.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
@@ -11,7 +11,7 @@
 
 namespace io {
 
-class TlsTcpClient : public Disposable {
+class TlsTcpClient : public Removable {
 public:
     using UnderlyingClientType = TcpClient;
 

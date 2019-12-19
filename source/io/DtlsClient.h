@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DataChunk.h"
-#include "Disposable.h"
+#include "Removable.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
@@ -9,7 +9,7 @@
 
 namespace io {
 
-class DtlsClient : public Disposable {
+class DtlsClient : public Removable {
 public:
     using UnderlyingClientType = UdpClient;
 

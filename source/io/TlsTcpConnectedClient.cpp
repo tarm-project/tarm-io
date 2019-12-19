@@ -134,7 +134,7 @@ const TlsTcpServer& TlsTcpConnectedClient::Impl::server() const {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, tls_server, new_connection_callback, certificate, private_key, tcp_client, *this)) {
 }
 

@@ -438,7 +438,7 @@ void File::Impl::on_stat(uv_fs_t* req) {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 File::File(EventLoop& loop) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, *this)) {
 }
 
@@ -480,7 +480,7 @@ void File::stat(StatCallback callback) {
 void File::schedule_removal() {
     const bool ready_to_remove = m_impl->schedule_removal();
     if (ready_to_remove) {
-        Disposable::schedule_removal();
+        Removable::schedule_removal();
     }
 }
 

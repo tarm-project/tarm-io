@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Disposable.h"
+#include "Removable.h"
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
@@ -13,7 +13,7 @@
 
 namespace io {
 
-class DtlsServer : public Disposable,
+class DtlsServer : public Removable,
                    public UserDataHolder {
 public:
     using NewConnectionCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const Error&)>;

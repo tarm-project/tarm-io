@@ -4,7 +4,7 @@
 #include "Export.h"
 #include "Forward.h"
 #include "DataChunk.h"
-#include "Disposable.h"
+#include "Removable.h"
 #include "Error.h"
 #include "UserDataHolder.h"
 
@@ -13,7 +13,7 @@
 
 namespace io {
 // TODO: intorduce connection timeout for UDP client??? (like for server)
-class UdpClient : public Disposable,
+class UdpClient : public Removable,
                   public UserDataHolder {
 public:
     using EndSendCallback = std::function<void(UdpClient&, const Error&)>;

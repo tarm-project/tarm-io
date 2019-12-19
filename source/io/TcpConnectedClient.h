@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DataChunk.h"
-#include "Disposable.h"
+#include "Removable.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Error.h"
@@ -12,7 +12,7 @@
 
 namespace io {
 
-class TcpConnectedClient : protected Disposable,
+class TcpConnectedClient : protected Removable,
                            public UserDataHolder {
 public:
     friend class TcpServer;

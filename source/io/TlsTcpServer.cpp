@@ -215,7 +215,7 @@ bool TlsTcpServer::Impl::certificate_and_key_match() {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 TlsTcpServer::TlsTcpServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, certificate_path, private_key_path, *this)) {
 }
 

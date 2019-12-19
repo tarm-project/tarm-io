@@ -62,7 +62,7 @@ bool DtlsClient::Impl::schedule_removal() {
 
     if (m_client) {
         if (!m_ready_schedule_removal) {
-            m_client->set_on_schedule_removal([this](const Disposable&) {
+            m_client->set_on_schedule_removal([this](const Removable&) {
                 this->m_parent->schedule_removal();
             });
             m_client->schedule_removal();
@@ -176,7 +176,7 @@ void DtlsClient::Impl::on_handshake_complete() {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 DtlsClient::DtlsClient(EventLoop& loop) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, *this)) {
 }
 
@@ -186,7 +186,7 @@ DtlsClient::~DtlsClient() {
 void DtlsClient::schedule_removal() {
     const bool ready_to_remove = m_impl->schedule_removal();
     if (ready_to_remove) {
-        Disposable::schedule_removal();
+        Removable::schedule_removal();
     }
 }
 

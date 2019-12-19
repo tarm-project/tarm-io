@@ -126,7 +126,7 @@ void DtlsConnectedClient::Impl::on_handshake_complete() {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 DtlsConnectedClient::DtlsConnectedClient(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, UdpPeer& udp_client) :
-    Disposable(loop),
+    Removable(loop),
     m_impl(new Impl(loop, dtls_server, new_connection_callback, certificate, private_key, udp_client, *this)) {
 }
 
