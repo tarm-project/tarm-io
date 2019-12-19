@@ -135,6 +135,7 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
                 ++server_new_connection_counter;
             },
             [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::DataChunk& data) {
+                // TODO: error
                 //EXPECT_FALSE(error);
                 ++server_data_receive_counter;
 
@@ -160,6 +161,10 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
 
     std::thread client_thread([&]() {
         io::EventLoop loop;
+
+        // Giving a time to start a server
+        // TODO: de we need some callback to detect that server was started?
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
         auto client = new io::DtlsClient(loop);
         client->connect(m_default_addr, m_default_port,

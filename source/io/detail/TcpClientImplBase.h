@@ -94,7 +94,6 @@ void TcpClientImplBase<ParentType, ImplType>::init_stream() {
 
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
-
     if (!is_open()) {
         // TODO: revise this. User do not need to know about sockets.
         //       Error like NOT_CONNECTED would sound much better.
@@ -104,10 +103,6 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
         return;
     }
 
-    IO_LOG(m_loop, ERROR, m_parent, "size:", size);
-
-    // TODO: check if connection is open.
-    // TODO: Write test first!!!111
     auto req = new WriteRequest;
     req->end_send_callback = callback;
     req->data = this;
@@ -115,13 +110,11 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
     // const_cast is a workaround for lack of constness support in uv_buf_t
     req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
 
-    int uv_code = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write);
-    Error error(uv_code);
-
-    if (error) {
-        IO_LOG(m_loop, ERROR, m_parent, "Error:", uv_strerror(uv_code));
+    const Error write_error = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write);
+    if (write_error) {
+        IO_LOG(m_loop, ERROR, m_parent, "Error:", write_error.string());
         if (callback) {
-            callback(*m_parent, error);
+            callback(*m_parent, write_error);
         }
         delete req;
         return;
