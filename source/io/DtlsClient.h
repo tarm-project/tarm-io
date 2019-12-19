@@ -16,7 +16,7 @@ public:
     using ConnectCallback = std::function<void(DtlsClient&, const Error&)>;
     using CloseCallback = std::function<void(DtlsClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsClient&, const Error&)>;
-    using DataReceiveCallback = std::function<void(DtlsClient&, const DataChunk&)>;
+    using DataReceiveCallback = std::function<void(DtlsClient&, const DataChunk&, const Error&)>;
 
     IO_DLL_PUBLIC DtlsClient(EventLoop& loop);
 

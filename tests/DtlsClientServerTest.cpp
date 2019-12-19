@@ -54,11 +54,12 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
     server->listen(m_default_addr, m_default_port,
-        [&](io::DtlsServer&, io::DtlsConnectedClient& client){
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
             ++server_new_connection_counter;
         },
-        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::DataChunk& data) {
-            //EXPECT_FALSE(error);
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
             ++server_data_receive_counter;
 
             std::string s(data.buf.get(), data.size);
@@ -86,7 +87,9 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
                 }
             );
         },
-        [&](io::DtlsClient& client, const io::DataChunk& data) {
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
             std::string s(data.buf.get(), data.size);
             EXPECT_EQ(server_message, s);
             ++client_data_receive_counter;
@@ -131,12 +134,12 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
 
         auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
         server->listen(m_default_addr, m_default_port,
-            [&](io::DtlsServer&, io::DtlsConnectedClient& client){
+            [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::Error& error){
+                EXPECT_FALSE(error);
                 ++server_new_connection_counter;
             },
-            [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::DataChunk& data) {
-                // TODO: error
-                //EXPECT_FALSE(error);
+            [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error);
                 ++server_data_receive_counter;
 
                 std::string s(data.buf.get(), data.size);
@@ -179,7 +182,9 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
                     }
                 );
             },
-            [&](io::DtlsClient& client, const io::DataChunk& data) {
+            [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error);
+
                 std::string s(data.buf.get(), data.size);
                 EXPECT_EQ(server_message, s);
                 ++client_data_receive_counter;
@@ -219,7 +224,9 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
     server->listen(m_default_addr, m_default_port,
         nullptr,
-        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::DataChunk& data) {
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
             EXPECT_EQ(NORMAL_DATA_SIZE, data.size);
 
             client.send_data(client_buf, LARGE_DATA_SIZE,
@@ -270,7 +277,9 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
                 }
             );
         },
-        [&](io::DtlsClient& client, const io::DataChunk& data) {
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
             EXPECT_EQ(NORMAL_DATA_SIZE, data.size);
             client.schedule_removal();
         }
@@ -293,10 +302,12 @@ TEST_F(DtlsClientServerTest, default_constructor) {
     auto client = new io::DtlsClient(loop);
     client->connect("51.15.68.114", 1234,
         [](io::DtlsClient& client, const io::Error&) {
+            EXPECT_FALSE(error);
             std::cout << "Connected!!!" << std::endl;
             client.send_data("bla_bla_bla");
         },
-        [](io::DtlsClient& client, const io::DataChunk& data) {
+        [](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
             std::cout.write(buf, size);
         }
     );

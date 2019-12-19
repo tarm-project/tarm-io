@@ -23,11 +23,11 @@ public:
 
     using UnderlyingClientType = UdpPeer;
 
-    using DataReceiveCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const DataChunk&)>;
+    using DataReceiveCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const DataChunk&, const Error&)>;
     using CloseCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
 
-    using NewConnectionCallback = std::function<void(DtlsServer&, DtlsConnectedClient&)>;
+    using NewConnectionCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const Error&)>;
 
     IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC void shutdown();

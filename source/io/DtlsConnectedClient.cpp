@@ -113,13 +113,13 @@ void DtlsConnectedClient::Impl::ssl_set_state() {
 
 void DtlsConnectedClient::Impl::on_ssl_read(const DataChunk& data) {
     if (m_data_receive_callback) {
-        m_data_receive_callback(*m_dtls_server, *m_parent, data);
+        m_data_receive_callback(*m_dtls_server, *m_parent, data, Error(0));
     }
 }
 
 void DtlsConnectedClient::Impl::on_handshake_complete() {
     if (m_new_connection_callback) {
-        m_new_connection_callback(*m_dtls_server, *m_parent);
+        m_new_connection_callback(*m_dtls_server, *m_parent, Error(0));
     }
 }
 

@@ -16,9 +16,8 @@ namespace io {
 class DtlsServer : public Disposable,
                    public UserDataHolder {
 public:
-    // TODO: error should be in every callback????
-    using NewConnectionCallback = std::function<void(DtlsServer&, DtlsConnectedClient&)>;
-    using DataReceivedCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const DataChunk&)>;
+    using NewConnectionCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const Error&)>;
+    using DataReceivedCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const DataChunk&, const Error&)>;
     using CloseConnectionCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const Error&)>;
 
     IO_DLL_PUBLIC DtlsServer(EventLoop& loop,
