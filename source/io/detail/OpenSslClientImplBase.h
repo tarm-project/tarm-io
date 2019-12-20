@@ -14,10 +14,10 @@ namespace io {
 namespace detail {
 
 template<typename ParentType, typename ImplType>
-class TlsTcpClientImplBase {
+class OpenSslClientImplBase {
 public:
-    TlsTcpClientImplBase(EventLoop& loop, ParentType& parent);
-    ~TlsTcpClientImplBase();
+    OpenSslClientImplBase(EventLoop& loop, ParentType& parent);
+    ~OpenSslClientImplBase();
 
     bool schedule_removal();
 
@@ -61,13 +61,13 @@ protected:
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 template<typename ParentType, typename ImplType>
-TlsTcpClientImplBase<ParentType, ImplType>::TlsTcpClientImplBase(EventLoop& loop, ParentType& parent) :
+OpenSslClientImplBase<ParentType, ImplType>::OpenSslClientImplBase(EventLoop& loop, ParentType& parent) :
     m_parent(&parent),
     m_loop(&loop) {
 }
 
 template<typename ParentType, typename ImplType>
-TlsTcpClientImplBase<ParentType, ImplType>::~TlsTcpClientImplBase() {
+OpenSslClientImplBase<ParentType, ImplType>::~OpenSslClientImplBase() {
     // TODO: smart pointers???
     if (m_ssl) {
         SSL_free(m_ssl);
@@ -79,12 +79,12 @@ TlsTcpClientImplBase<ParentType, ImplType>::~TlsTcpClientImplBase() {
 }
 
 template<typename ParentType, typename ImplType>
-bool TlsTcpClientImplBase<ParentType, ImplType>::is_open() const {
+bool OpenSslClientImplBase<ParentType, ImplType>::is_open() const {
     return m_client && m_client->is_open();
 }
 
 template<typename ParentType, typename ImplType>
-bool TlsTcpClientImplBase<ParentType, ImplType>::ssl_init() {
+bool OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
     // TOOD: looks like this could be done only once
     ERR_load_crypto_strings();
     SSL_load_error_strings();
@@ -154,7 +154,7 @@ bool TlsTcpClientImplBase<ParentType, ImplType>::ssl_init() {
 }
 
 template<typename ParentType, typename ImplType>
-void TlsTcpClientImplBase<ParentType, ImplType>::read_from_ssl() {
+void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
     // TODO: investigate if this buffer can be of less size
     // TODO: not create this buffer on every read
     const std::size_t SIZE = 16*1024; // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
@@ -179,7 +179,7 @@ void TlsTcpClientImplBase<ParentType, ImplType>::read_from_ssl() {
 }
 
 template<typename ParentType, typename ImplType>
-void TlsTcpClientImplBase<ParentType, ImplType>::handshake_read_from_sll_and_send() {
+void OpenSslClientImplBase<ParentType, ImplType>::handshake_read_from_sll_and_send() {
     const std::size_t BUF_SIZE = 4096;
     std::shared_ptr<char> buf(new char[BUF_SIZE], [](const char* p) { delete[] p; });
     const auto size = BIO_read(m_ssl_write_bio, buf.get(), BUF_SIZE);
@@ -189,7 +189,7 @@ void TlsTcpClientImplBase<ParentType, ImplType>::handshake_read_from_sll_and_sen
 }
 
 template<typename ParentType, typename ImplType>
-void TlsTcpClientImplBase<ParentType, ImplType>::do_handshake() {
+void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
     IO_LOG(m_loop, DEBUG, m_parent, "Doing handshake");
 
     auto handshake_result = SSL_do_handshake(m_ssl);
@@ -236,7 +236,7 @@ void TlsTcpClientImplBase<ParentType, ImplType>::do_handshake() {
 }
 
 template<typename ParentType, typename ImplType>
-void TlsTcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
 
     if (!is_open()) {
         callback(*m_parent, Error(StatusCode::SOCKET_IS_NOT_CONNECTED));
@@ -274,14 +274,14 @@ void TlsTcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const
 }
 
 template<typename ParentType, typename ImplType>
-void TlsTcpClientImplBase<ParentType, ImplType>::send_data(const std::string& message, typename ParentType::EndSendCallback callback) {
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(const std::string& message, typename ParentType::EndSendCallback callback) {
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
     send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
 }
 
 template<typename ParentType, typename ImplType>
-void TlsTcpClientImplBase<ParentType, ImplType>::on_data_receive(const char* buf, std::size_t size) {
+void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* buf, std::size_t size) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
     if (m_ssl_handshake_complete) {
@@ -300,7 +300,7 @@ void TlsTcpClientImplBase<ParentType, ImplType>::on_data_receive(const char* buf
 }
 
 template<typename ParentType, typename ImplType>
-bool TlsTcpClientImplBase<ParentType, ImplType>::schedule_removal() {
+bool OpenSslClientImplBase<ParentType, ImplType>::schedule_removal() {
     IO_LOG(m_loop, TRACE, "");
 
     if (m_client) {

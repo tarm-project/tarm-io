@@ -14,7 +14,7 @@
 
 namespace io {
 
-class DtlsClient::Impl : public detail::TlsTcpClientImplBase<DtlsClient, DtlsClient::Impl> {
+class DtlsClient::Impl : public detail::OpenSslClientImplBase<DtlsClient, DtlsClient::Impl> {
 public:
     Impl(EventLoop& loop, DtlsClient& parent);
     ~Impl();
@@ -48,7 +48,7 @@ DtlsClient::Impl::~Impl() {
 }
 
 DtlsClient::Impl::Impl(EventLoop& loop, DtlsClient& parent) :
-    TlsTcpClientImplBase(loop, parent) {
+    OpenSslClientImplBase(loop, parent) {
 }
 
 std::uint32_t DtlsClient::Impl::ipv4_addr() const {

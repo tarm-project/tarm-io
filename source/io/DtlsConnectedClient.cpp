@@ -9,7 +9,7 @@
 
 namespace io {
 
-class DtlsConnectedClient::Impl : public detail::TlsTcpClientImplBase<DtlsConnectedClient, DtlsConnectedClient::Impl> {
+class DtlsConnectedClient::Impl : public detail::OpenSslClientImplBase<DtlsConnectedClient, DtlsConnectedClient::Impl> {
 public:
     Impl(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, X509* certificate, X509* private_key, UdpPeer& udp_client, DtlsConnectedClient& parent);
     ~Impl();
@@ -45,7 +45,7 @@ DtlsConnectedClient::Impl::Impl(EventLoop& loop,
                                 EVP_PKEY* private_key,
                                 UdpPeer& udp_client,
                                 DtlsConnectedClient& parent) :
-    TlsTcpClientImplBase(loop, parent),
+    OpenSslClientImplBase(loop, parent),
     m_dtls_server(&dtls_server),
     m_certificate(reinterpret_cast<::X509*>(certificate)),
     m_private_key(reinterpret_cast<::EVP_PKEY*>(private_key)),
