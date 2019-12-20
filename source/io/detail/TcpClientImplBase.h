@@ -63,7 +63,7 @@ private:
     struct WriteRequest : public uv_write_t {
         uv_buf_t uv_buf;
         std::shared_ptr<const char> buf;
-        typename ParentType::EndSendCallback end_send_callback = nullptr;
+        typename ParentType::EndSendCallback end_send_callback;
     };
 };
 
