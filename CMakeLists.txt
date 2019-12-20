@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5.0)
 
 option(IO_ENABLE_TESTS "Enable tests" ON)
 
-# TODO: this is needed for executables like Tests, move to corresponding cmake????
+# According to docs this variable should be set before 'project' statement
 if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version")
 endif()
