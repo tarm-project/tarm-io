@@ -20,8 +20,6 @@ public:
     Impl(EventLoop& loop, DtlsClient& parent);
     ~Impl();
 
-    bool schedule_removal();
-
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
 
@@ -45,9 +43,6 @@ private:
     ConnectCallback m_connect_callback;
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
-
-    // Removal is scheduled in 2 steps. First UDP connection is removed, then DTLS
-    bool m_ready_schedule_removal = false;
 };
 
 DtlsClient::Impl::~Impl() {
@@ -55,23 +50,6 @@ DtlsClient::Impl::~Impl() {
 
 DtlsClient::Impl::Impl(EventLoop& loop, DtlsClient& parent) :
     TlsTcpClientImplBase(loop, parent) {
-}
-
-bool DtlsClient::Impl::schedule_removal() {
-    IO_LOG(m_loop, TRACE, "");
-
-    if (m_client) {
-        if (!m_ready_schedule_removal) {
-            m_client->set_on_schedule_removal([this](const Removable&) {
-                this->m_parent->schedule_removal();
-            });
-            m_client->schedule_removal();
-            m_ready_schedule_removal = true;
-            return false; // postpone removal
-        }
-    }
-
-    return true;
 }
 
 std::uint32_t DtlsClient::Impl::ipv4_addr() const {

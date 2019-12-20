@@ -19,6 +19,8 @@ public:
     TlsTcpClientImplBase(EventLoop& loop, ParentType& parent);
     ~TlsTcpClientImplBase();
 
+    bool schedule_removal();
+
     bool ssl_init();
     virtual const SSL_METHOD* ssl_method() = 0;
     virtual bool ssl_set_siphers() = 0;
@@ -51,6 +53,9 @@ protected:
     SSL* m_ssl = nullptr;
 
     bool m_ssl_handshake_complete = false;
+
+    // Removal is scheduled in 2 steps. First underlying connection is removed, then secure one.
+    bool m_ready_schedule_removal = false;
 };
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
@@ -292,6 +297,24 @@ void TlsTcpClientImplBase<ParentType, ImplType>::on_data_receive(const char* buf
         // TODO: error handling
         do_handshake();
     }
+}
+
+template<typename ParentType, typename ImplType>
+bool TlsTcpClientImplBase<ParentType, ImplType>::schedule_removal() {
+    IO_LOG(m_loop, TRACE, "");
+
+    if (m_client) {
+        if (!m_ready_schedule_removal) {
+            m_client->set_on_schedule_removal([this](const Removable&) {
+                this->m_parent->schedule_removal();
+            });
+            m_ready_schedule_removal = true;
+            m_client->schedule_removal();
+            return false; // postpone removal
+        }
+    }
+
+    return true;
 }
 
 } // namespace detail
