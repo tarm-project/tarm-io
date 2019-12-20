@@ -3,8 +3,7 @@
 #include "ByteSwap.h"
 #include "Common.h"
 #include "UdpClient.h"
-//#include "detail/DtlsClientImplBase.h"
-#include "detail/TlsTcpClientImplBase.h"
+#include "detail/OpenSslClientImplBase.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

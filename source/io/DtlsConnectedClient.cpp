@@ -2,7 +2,7 @@
 
 #include "Common.h"
 #include "UdpPeer.h"
-#include "detail/TlsTcpClientImplBase.h"
+#include "detail/OpenSslClientImplBase.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
