@@ -44,7 +44,7 @@ else()
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${IO_SOURCE_LIST})
 endif()
 
-add_library(io SHARED ${IO_SOURCE_LIST})
+add_library(io ${IO_SOURCE_LIST})
 
 if (DEFINED IO_SANITIZER)
     target_link_libraries(io
@@ -56,7 +56,6 @@ else()
                           PUBLIC ${LIBUV_LIB_DEPS})
 endif()
 
-target_include_directories(io PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>>)
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:${LIBUV_INCLUDE_PATH}>)
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 target_include_directories(io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
@@ -75,6 +74,11 @@ add_dependencies(io libuv)
 
 # Openssl
 # TODO: make optional
+
+if (NOT BUILD_SHARED_LIBS)
+    set(OPENSSL_USE_STATIC_LIBS ON)
+endif()
+
 if (Linux)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(SSL REQUIRED libssl)
@@ -103,7 +107,10 @@ install(TARGETS io EXPORT ioTargets
         DESTINATION lib
         COMPONENT Libraries
 #        NAMELINK_COMPONENT Development #TODO: fixme??? Or remove???
-#    PUBLIC_HEADER
+    ARCHIVE
+        DESTINATION lib
+        COMPONENT Libraries
+#   PUBLIC_HEADER
 #        DESTINATION include
 #        COMPONENT Development
 )

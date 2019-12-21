@@ -1,22 +1,3 @@
-# Boost build withoud CMake targets (creating them manually)
-if(NOT TARGET Boost::headers)
-    add_library(Boost::headers IMPORTED INTERFACE GLOBAL)
-    set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-endif()
-
-if(NOT TARGET Boost::system)
-    add_library(Boost::system IMPORTED INTERFACE GLOBAL)
-    set_property(TARGET Boost::system PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-    set_property(TARGET Boost::system PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_SYSTEM_LIBRARY})
-endif()
-
-if(NOT TARGET Boost::filesystem)
-    add_library(Boost::filesystem IMPORTED INTERFACE GLOBAL)
-    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_FILESYSTEM_LIBRARY})
-endif()
-
-
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 # Solution from here https://gitlab.kitware.com/cmake/cmake/issues/17645
@@ -70,6 +51,10 @@ endif()
 
 # Promoting LIBUV_LIB_DEPS to parent scope
 set(LIBUV_LIB_DEPS "${LIBUV_LIB_DEPS}" PARENT_SCOPE)
+
+if (APPLE AND NOT DEFINED CMAKE_INSTALL_LIBDIR)
+    set(CMAKE_INSTALL_LIBDIR "lib")
+endif()
 
 set(LIBUV_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/libuv")
 set(LIBUV_STATIC_LIB_PATH "${LIBUV_PREFIX}/install/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}uv_a${CMAKE_STATIC_LIBRARY_SUFFIX}" PARENT_SCOPE)
