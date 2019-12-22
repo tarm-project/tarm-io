@@ -89,6 +89,26 @@ add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
             ${CMAKE_BINARY_DIR}/tests/$<$<OR:$<PLATFORM_ID:Windows>,$<PLATFORM_ID:Darwin>>:$<CONFIG>>
 )
 
+if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
+    include(CodeCoverage)
+    APPEND_COVERAGE_COMPILER_FLAGS()
+    set(COVERAGE_EXCLUDES
+        '*/include/*/bits/*'
+        '*/include/boost/*'
+        '*/include/*/c++/*'
+        '*/include/c++/*'
+        '*/include/node/*'
+        '*/include/gtest/*'
+        'tests/*'
+        'samples/*'
+    )
+
+    SETUP_TARGET_FOR_COVERAGE(
+        NAME       coverage
+        EXECUTABLE tests
+    )
+endif()
+
 #add_custom_target(printFooKeys
 #  COMMAND ${CMAKE_COMMAND} -E echo $<CONFIG>
 #)

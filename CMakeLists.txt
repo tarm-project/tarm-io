@@ -62,29 +62,8 @@ add_subdirectory("thirdparty")
 add_subdirectory("source")
 add_subdirectory("samples")
 
-# TODO: move to test folder
 if (IO_ENABLE_TESTS)
     add_subdirectory(tests)
-
-    if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
-        include(CodeCoverage)
-        APPEND_COVERAGE_COMPILER_FLAGS()
-        set(COVERAGE_EXCLUDES
-            '*/include/*/bits/*'
-            '*/include/boost/*'
-            '*/include/*/c++/*'
-            '*/include/c++/*'
-            '*/include/node/*'
-            '*/include/gtest/*'
-            'tests/*'
-            'samples/*'
-        )
-
-        SETUP_TARGET_FOR_COVERAGE(
-            NAME       coverage
-            EXECUTABLE tests
-        )
-    endif()
 endif()
 
 #############################################################
