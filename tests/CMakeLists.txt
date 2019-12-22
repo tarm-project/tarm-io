@@ -34,6 +34,7 @@ endif()
 FILE(GLOB TESTS_LIST *.h)
 list(APPEND TESTS_LIST
     Main.cpp
+    ConstexprStringTest.cpp
     UTCommon.cpp
     CommonTest.cpp
     UserDataHolderTest.cpp
