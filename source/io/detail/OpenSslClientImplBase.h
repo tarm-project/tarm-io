@@ -111,20 +111,17 @@ bool OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
     // TODO: remove ???
     //SSL_CTX_set_ecdh_auto(m_ssl_ctx, 1);
 
-    // TODO: remove this
+    // TODO: implement verify?
     SSL_CTX_set_verify(m_ssl_ctx, SSL_VERIFY_NONE, NULL);
+    // SSL_CTX_set_verify_depth
 
     if (!ssl_set_siphers()) {
         return false;
     }
 
-   if (!ssl_init_certificate_and_key()) {
-       return false;
-   }
-
-    // TODO: most likely need to set also
-    // SSL_CTX_set_verify
-    // SSL_CTX_set_verify_depth
+    if (!ssl_init_certificate_and_key()) {
+        return false;
+    }
 
     m_ssl = SSL_new(m_ssl_ctx);
     if (m_ssl == nullptr) {
@@ -255,13 +252,14 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<cons
         return;
     }
 
-    // TODO: fixme
-    const std::size_t SIZE = 1024 + size * 2; // TODO:
+    // TODO: not allocate memory on each write???
+    const std::size_t SIZE = BIO_pending(m_ssl_write_bio);
     std::shared_ptr<char> ptr(new char[SIZE], [](const char* p) { delete[] p;});
 
     const auto actual_size = BIO_read(m_ssl_write_bio, ptr.get(), SIZE);
     if (actual_size < 0) {
         IO_LOG(m_loop, ERROR, m_parent, "BIO_read failed code:", actual_size);
+        // TODO: error handling???
         return;
     }
 
