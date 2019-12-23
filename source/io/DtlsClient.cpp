@@ -82,32 +82,6 @@ void DtlsClient::Impl::connect(const std::string& address,
     m_close_callback = close_callback;
 
     do_handshake();
-
-/*
-    std::function<void(TcpClient&, const Error&)> on_connect =
-        [this](TcpClient& client, const Error& error) {
-            do_handshake();
-        };
-
-    std::function<void(TcpClient&, const char*, size_t)> on_data_receive =
-        [this](TcpClient& client, const char* buf, size_t size) {
-            this->on_data_receive(buf, size);
-        };
-
-    std::function<void(TcpClient&, const Error&)> on_close =
-        [this](TcpClient& client, const Error& error) {
-            IO_LOG(m_loop, TRACE, "Close", error.code());
-            if (m_close_callback) {
-                m_close_callback(*this->m_parent, error);
-            }
-
-            if (m_ready_schedule_removal) {
-                m_parent->schedule_removal();
-            }
-        };
-    // TOOD: fixme!!!
-    //m_tcp_client->connect(address, port, on_connect, on_data_receive, on_close);
-*/
 }
 
 void DtlsClient::Impl::close() {
@@ -115,9 +89,8 @@ void DtlsClient::Impl::close() {
 }
 
 const SSL_METHOD* DtlsClient::Impl::ssl_method() {
+    // TODO: various versions of DTLS support
     return /*TLSv1_2_client_method();*/ DTLS_client_method();
-    //DTLS_client_method
-    // DTLSv1_2_client_method
 }
 
 bool DtlsClient::Impl::ssl_set_siphers() {

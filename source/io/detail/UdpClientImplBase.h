@@ -7,7 +7,6 @@
 namespace io {
 namespace detail {
 
-// TODO: do we need ImplType??? Looks like can replace with 'using ImplType = ParentType::Impl'
 template<typename ParentType, typename ImplType>
 class UdpClientImplBase : public UdpImplBase<ParentType, ImplType> {
 public:

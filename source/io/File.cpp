@@ -73,7 +73,7 @@ private:
     bool m_done_read = false;
     bool m_need_reschedule_remove = false;
 
-    // TODO: it may be not reasonable to store by pointers here because they take to much space (>400b)
+    // TODO: it may be not reasonable to store by value here because they take to much space (>400b)
     //       also memory pool will help a lot
     uv_fs_t* m_open_request = nullptr;
     uv_file m_file_handle = -1;

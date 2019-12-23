@@ -79,10 +79,6 @@
 #include <cwchar>   // for mbstate_t
 #include <cstddef>  // for std::size_t
 
-// TODO: rename MB_LENGTH_MAX to prefix with IO
-// maximum lenght of a multibyte string
-#define MB_LENGTH_MAX 8
-
 namespace io {
 namespace detail {
 
