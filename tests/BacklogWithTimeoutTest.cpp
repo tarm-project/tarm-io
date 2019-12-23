@@ -272,6 +272,8 @@ TEST_F(BacklogWithTimeoutTest, stop_on_first_item) {
         backlog.stop();
         ++expired_counter;
     };
+
+    // TODO: remove this?
 /*
     auto time_getter = [&](const std::shared_ptr<TestItem>& item) -> std::uint64_t {
         return item->time_getter();
@@ -327,6 +329,40 @@ TEST_F(BacklogWithTimeoutTest, update_item_time) {
     advance_clock(90);
 
     EXPECT_EQ(1, expired_counter);
+
+    EXPECT_EQ(0, loop.run());
+}
+
+TEST_F(BacklogWithTimeoutTest, huge_number_of_items) {
+    const std::size_t ELEMENTS_COUNT = 1000000 * 2;
+
+    const std::uint64_t START_TIME = 250 * 1000000;
+    reset_fake_monothonic_clock(START_TIME);
+
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](io::BacklogWithTimeout<TestItem, FakeTimer>&, const TestItem& item) {
+        ++expired_counter;
+    };
+
+    io::EventLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<TestItem, FakeTimer> backlog(
+        loop, 250, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    for (std::size_t i = 0; i < ELEMENTS_COUNT; ++i) {
+        TestItem item(i);
+        item.time = START_TIME - i * 100;
+        ASSERT_TRUE(backlog.add_item(item)) << i;
+    }
+
+    // Item with index 0 is expired durin adding
+    EXPECT_EQ(0, expired_counter);
+
+    for (std::size_t i = 0; i < 500; ++i) {
+        advance_clock(1);
+    }
+
+    EXPECT_EQ(ELEMENTS_COUNT, expired_counter);
 
     EXPECT_EQ(0, loop.run());
 }

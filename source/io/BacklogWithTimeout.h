@@ -91,8 +91,7 @@ protected:
     void on_timer(TimerType& timer) {
         const std::size_t timer_index = reinterpret_cast<std::size_t>(timer.user_data());
 
-        // TODO: move???
-        std::vector<T> bucket_copy = m_items[timer_index];
+        std::vector<T> bucket_copy = std::move(m_items[timer_index]);
         m_items[timer_index].clear();
 
         for (std::size_t i = 0; i < bucket_copy.size(); ++i) {
