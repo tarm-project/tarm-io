@@ -2,7 +2,7 @@
 
 #include "Timer.h"
 #include "EventLoop.h"
-#include "Common.h" // TODO: remove (rplace uv_hrtime with custom function)
+#include "Common.h" // TODO: remove (replace uv_hrtime with custom function)
 
 #include <cmath>
 #include <cstdint>
@@ -40,6 +40,8 @@ public:
 
         m_items.resize(buckets_count);
     };
+
+    // TODO: implement reserve() method as it ads more performance
 
     bool add_item(T t) {
         const std::uint64_t current_time = m_clock_getter();
@@ -90,17 +92,18 @@ public:
 protected:
     void on_timer(TimerType& timer) {
         const std::size_t timer_index = reinterpret_cast<std::size_t>(timer.user_data());
+        const std::vector<T>& current_bucket = m_items[timer_index];
 
-        std::vector<T> bucket_copy = std::move(m_items[timer_index]);
-        m_items[timer_index].clear();
+        std::vector<T> bucket_replacement;
+        bucket_replacement.reserve(current_bucket.size());
 
-        for (std::size_t i = 0; i < bucket_copy.size(); ++i) {
+        for (std::size_t i = 0; i < current_bucket.size(); ++i) {
             const std::uint64_t current_time = m_clock_getter();
-            const std::uint64_t item_time = m_time_getter(bucket_copy[i]);
+            const std::uint64_t item_time = m_time_getter(current_bucket[i]);
 
             const auto time_diff = current_time - item_time;
             if (time_diff >= m_entity_timeout) {
-                m_expired_callback(*this, bucket_copy[i]);
+                m_expired_callback(*this, current_bucket[i]);
                 if (m_stopped) { // BacklogWithTimeout object could be stopped in callback
                     return;
                 }
@@ -109,14 +112,20 @@ protected:
             }
 
             auto index = bucket_index_from_time(time_diff);
-            m_items[index].push_back(bucket_copy[i]);
+            if (index != timer_index) {
+                m_items[index].push_back(current_bucket[i]);
+            } else {
+                bucket_replacement.push_back(current_bucket[i]);
+            }
         }
+
+        m_items[timer_index].swap(bucket_replacement);
     }
 
     std::size_t bucket_index_from_time(std::uint64_t time) const {
         assert(!m_timeouts.empty());
 
-        // Linear search on tiny sets is much more faster than tricks with logarithms of unordered map
+        // Linear search on tiny sets is much more faster than tricks with logarithms or unordered map
         for(std::size_t i = 0; i < m_timers.size(); ++i) {
             if (time >= m_timeouts[i]) {
                 return i;

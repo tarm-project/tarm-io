@@ -333,6 +333,7 @@ TEST_F(BacklogWithTimeoutTest, update_item_time) {
     EXPECT_EQ(0, loop.run());
 }
 
+// Used for performance analysis
 TEST_F(BacklogWithTimeoutTest, huge_number_of_items) {
     const std::size_t ELEMENTS_COUNT = 1000000 * 2;
 
