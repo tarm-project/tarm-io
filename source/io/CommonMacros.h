@@ -10,9 +10,9 @@
     X(const X&&) = delete;            \
     X& operator=(const X&&) = delete;
 
-#define IO_DECLARE_MOVE(X) \
-    X(X&&);                \
-    X& operator=(X&&);
+#define IO_ALLOW_MOVE(X)         \
+    X(X&&) = default;            \
+    X& operator=(X&&) = default;
 
 #define IO_DECLARE_MOVE(X) \
     X(X&&);                \

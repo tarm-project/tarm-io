@@ -13,15 +13,14 @@
 
 namespace io {
 
-// TODO: event loop as default template parameter
-template<typename T, typename TimerType = ::io::Timer>
+template<typename T, typename LoopType = ::io::EventLoop, typename TimerType = ::io::Timer>
 class BacklogWithTimeout {
 public:
     using TimeGetterType = std::function<std::uint64_t(const T&)>;
     using MonothonicClockGetterType = std::uint64_t(*)();
-    using OnItemExpiredCallback = std::function<void(BacklogWithTimeout<T, TimerType>&,  const T& item)>;
+    using OnItemExpiredCallback = std::function<void(BacklogWithTimeout<T, LoopType, TimerType>&,  const T& item)>;
 
-    BacklogWithTimeout(EventLoop& loop, std::size_t entity_timeout, OnItemExpiredCallback expired_callback, TimeGetterType time_getter, MonothonicClockGetterType clock_getter = &uv_hrtime) :
+    BacklogWithTimeout(LoopType& loop, std::size_t entity_timeout, OnItemExpiredCallback expired_callback, TimeGetterType time_getter, MonothonicClockGetterType clock_getter = &uv_hrtime) :
         m_entity_timeout(entity_timeout * std::size_t(1000000)),
         m_expired_callback(expired_callback),
         m_time_getter(time_getter),
