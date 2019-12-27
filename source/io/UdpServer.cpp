@@ -194,7 +194,8 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
             DataChunk data(nullptr, 0);
             // TODO: could address be available here???
             UdpPeer peer(*this_.m_loop, this_.m_udp_handle.get(), 0, 0);
-            // TODO: log here???
+
+            IO_LOG(this_.m_loop, ERROR, &parent, "failed to receive UDP packet", error.string());
             this_.m_data_receive_callback(parent, peer, data, error);
         }
     }
