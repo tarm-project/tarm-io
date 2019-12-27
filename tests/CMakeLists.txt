@@ -78,10 +78,6 @@ target_link_libraries(${TESTS_EXE_NAME}
     Boost::filesystem
 )
 
-if (WIN32)
-    target_compile_definitions(${TESTS_EXE_NAME} PUBLIC IO_TEST_BUILD_FOR_WINDOWS)
-endif()
-
 add_dependencies(${TESTS_EXE_NAME} io)
 
 add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD

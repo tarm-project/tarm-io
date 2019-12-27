@@ -631,8 +631,7 @@ TEST_F(PathTest, iterator) {
     EXPECT_EQ(*--itr, "foo");
     EXPECT_EQ(*--itr, "/");
 
-// TODO: fixme
-#ifdef IO_TEST_IO_TEST_BUILD_FOR_WINDOWS
+#ifdef IO_BUILD_FOR_WINDOWS
         itr_ck = "c:/";
         itr = itr_ck.begin();
         EXPECT_EQ(itr->string(), "c:");
@@ -892,7 +891,6 @@ TEST_F(PathTest, imbue_locale) {
     //  \u2722 and \xE2\x9C\xA2 are UTF-16 and UTF-8 FOUR TEARDROP-SPOKED ASTERISK
 
     std::locale global_loc = std::locale();
-    // TODO: fixme boost::filesystem::detail::utf8_codecvt_facet
     std::locale loc(global_loc, new io::detail::utf8_codecvt_facet);
     std::locale old_loc = Path::imbue(loc);
 
@@ -1100,8 +1098,7 @@ TEST_F(PathTest, non_member) {
     EXPECT_EQ(Path("") / ".", ".");
     EXPECT_EQ(Path("") / "..", "..");
 
-// TODO: fixme
-#ifdef IO_TEST_BUILD_FOR_WINDOWS
+#ifdef IO_BUILD_FOR_WINDOWS
         EXPECT_TRUE(Path("foo\\bar") == "foo/bar");
         EXPECT_TRUE((b / a).native() == Path("b\\a").native());
         EXPECT_TRUE((bs / a).native() == Path("b\\a").native());
@@ -1296,8 +1293,7 @@ TEST_F(PathTest, non_member) {
     EXPECT_TRUE(p101.string() == p103);
     EXPECT_TRUE(p101.string().c_str() == p103);
 
-// TODO: fixme
-#ifdef IO_TEST_BUILD_FOR_WINDOWS
+#ifdef IO_BUILD_FOR_WINDOWS
         Path p10 ("c:\\file");
         Path p11 ("c:/file");
         // check each overload
@@ -1442,8 +1438,8 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(p.has_stem());
     EXPECT_TRUE(!p.has_extension());
     EXPECT_TRUE(!p.has_parent_path());
-// TODO: fixme
-#ifndef IO_TEST_BUILD_FOR_WINDOWS
+
+#ifndef IO_BUILD_FOR_WINDOWS
       EXPECT_TRUE(p.is_absolute());
 #else
       EXPECT_TRUE(!p.is_absolute());
@@ -1487,8 +1483,8 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(p.has_stem());
     EXPECT_TRUE(!p.has_extension());
     EXPECT_TRUE(!p.has_parent_path());
-// TODO: fixme
-#ifndef IO_TEST_BUILD_FOR_WINDOWS
+
+#ifndef IO_BUILD_FOR_WINDOWS
       EXPECT_TRUE(p.is_absolute());
 #else
       EXPECT_TRUE(!p.is_absolute());
@@ -1572,8 +1568,8 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(p.has_stem());
     EXPECT_TRUE(!p.has_extension());
     EXPECT_TRUE(p.has_parent_path());
-// TODO: fixme
-#ifndef IO_TEST_BUILD_FOR_WINDOWS
+
+#ifndef IO_BUILD_FOR_WINDOWS
       EXPECT_TRUE(p.is_absolute());
 #else
       EXPECT_TRUE(!p.is_absolute());
@@ -1597,8 +1593,8 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(p.has_stem());
     EXPECT_TRUE(!p.has_extension());
     EXPECT_TRUE(p.has_parent_path());
-// TODO: fixme
-#ifndef IO_TEST_BUILD_FOR_WINDOWS
+
+#ifndef IO_BUILD_FOR_WINDOWS
       EXPECT_TRUE(p.is_absolute());
 #else
       EXPECT_TRUE(!p.is_absolute());
@@ -1618,8 +1614,8 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(p.has_relative_path());
     EXPECT_TRUE(p.has_filename());
     EXPECT_TRUE(p.has_parent_path());
-// TODO: fixme
-#ifndef IO_TEST_BUILD_FOR_WINDOWS
+
+#ifndef IO_BUILD_FOR_WINDOWS
       EXPECT_TRUE(p.is_absolute());
 #else
       EXPECT_TRUE(!p.is_absolute());
@@ -1691,8 +1687,8 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(p.has_relative_path());
     EXPECT_TRUE(p.has_filename());
     EXPECT_TRUE(p.has_parent_path());
-// TODO: fixme
-#ifndef IO_TEST_BUILD_FOR_WINDOWS
+
+#ifndef IO_BUILD_FOR_WINDOWS
       EXPECT_TRUE(p.is_absolute());
 #else
       EXPECT_TRUE(!p.is_absolute());
@@ -1790,8 +1786,7 @@ TEST_F(PathTest, query_and_decomposition) {
     EXPECT_TRUE(p.has_filename());
 
     //  Windows specific tests
-// TODO: fixme
-#ifdef IO_TEST_BUILD_FOR_WINDOWS
+#ifdef IO_BUILD_FOR_WINDOWS
       p = q = Path("c:");
       EXPECT_TRUE(p.relative_path().string() == "");
       EXPECT_TRUE(p.parent_path().string() == "");
@@ -1967,8 +1962,7 @@ TEST_F(PathTest, construction) {
     EXPECT_EQ(Path("\\/foo\\/bar\\/"), "\\/foo\\/bar\\/");
     EXPECT_EQ(Path("\\//foo\\//bar\\//"), "\\//foo\\//bar\\//");
 
-// TODO: fixme
-#ifdef IO_TEST_BUILD_FOR_WINDOWS
+#ifdef IO_BUILD_FOR_WINDOWS
       EXPECT_EQ(Path("c:") / "foo", "c:foo");
       EXPECT_EQ(Path("c:") / "/foo", "c:/foo");
 
@@ -2125,9 +2119,7 @@ TEST_F(PathTest, append) {
     EXPECT_EQ(Path("foo/") / "bar", "foo/bar");
     append_test_aux("foo/", "bar", "foo/bar");
 
-
-// TODO: fixme
-#ifdef IO_TEST_BUILD_FOR_WINDOWS
+#ifdef IO_BUILD_FOR_WINDOWS
       EXPECT_EQ(Path("foo") / "bar", "foo\\bar");
       append_test_aux("foo", "bar", "foo\\bar");
 
@@ -2225,8 +2217,7 @@ TEST_F(PathTest, replace_extension) {
   }
 
 TEST_F(PathTest, make_preferred) {
-// TODO: fixme
-#ifdef IO_TEST_BUILD_FOR_WINDOWS
+#ifdef IO_BUILD_FOR_WINDOWS
     EXPECT_TRUE(Path("//abc\\def/ghi").make_preferred().native() == Path("\\\\abc\\def\\ghi").native());
 #else
     EXPECT_TRUE(Path("//abc\\def/ghi").make_preferred().native() == Path("//abc\\def/ghi").native());
@@ -2308,8 +2299,7 @@ TEST_F(PathTest, lexically_normal) {
     EXPECT_EQ(Path("///net///foo///..").lexically_normal().generic_path(), "/net");
     EXPECT_EQ(Path("///net///foo///..///").lexically_normal().generic_path(), "/net/.");
 
-// TODO: fixme
-#ifdef IO_TEST_BUILD_FOR_WINDOWS
+#ifdef IO_BUILD_FOR_WINDOWS
       EXPECT_EQ(Path("c:..").lexically_normal().generic_path(), "c:..");
       EXPECT_EQ(Path("c:foo/..").lexically_normal().generic_path(), "c:");
 
