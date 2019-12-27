@@ -74,8 +74,10 @@ void Timer::Impl::on_timer(uv_timer_t* handle) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
+IO_DEFINE_DEFAULT_MOVE(Timer);
+
 Timer::Timer(EventLoop& loop) :
-    m_impl(new Impl(loop, *this), [](Impl* p) {delete p;}) {
+    m_impl(new Impl(loop, *this)) {
 }
 
 Timer::~Timer() {
