@@ -62,7 +62,7 @@ target_include_directories(io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PR
 target_compile_definitions(io PRIVATE IO_BUILDING_DLL)
 
 if (WIN32)
-    target_compile_definitions(io PUBLIC IO_WINDOWS_API)
+    target_compile_definitions(io PUBLIC IO_BUILD_FOR_WINDOWS)
 endif()
 
 # TODO: no exceptions even in regular builds????

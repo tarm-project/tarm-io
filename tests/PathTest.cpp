@@ -21,8 +21,7 @@ void PrintTo(const io::Path& path, std::ostream* os) {
 
 } // namespace io
 
-// TODO: fixme
-#ifdef IO_WINDOWS_API
+#ifdef IO_BUILD_FOR_WINDOWS
 # define IO_TEST_DIR_SEP "\\"
 #else
 # define IO_TEST_DIR_SEP "/"
@@ -201,8 +200,7 @@ TEST_F(PathTest, move_construction_and_assignment) {
 }
 
 TEST_F(PathTest, appends) {
-// TODO: fixme
-# ifdef IO_WINDOWS_API
+# ifdef IO_BUILD_FOR_WINDOWS
 #   define IO_TEST_FS_FOO L"/foo\\"
 # else   // POSIX paths
 #   define IO_TEST_FS_FOO L"/foo/"
@@ -337,8 +335,7 @@ TEST_F(PathTest, observers) {
     EXPECT_TRUE(p0.native().size() == 0);
     EXPECT_TRUE(p0.size() == 0);
 
-// TODO: fixme
-# ifdef IO_WINDOWS_API
+# ifdef IO_BUILD_FOR_WINDOWS
     Path p("abc\\def/ghi");
 
     EXPECT_TRUE(std::wstring(p.c_str()) == L"abc\\def/ghi");
@@ -374,7 +371,7 @@ TEST_F(PathTest, observers) {
 TEST_F(PathTest, relationals) {
     std::hash<Path> hash;
 
-# ifdef IO_WINDOWS_API
+# ifdef IO_BUILD_FOR_WINDOWS
     // this is a critical use case to meet user expectations
     EXPECT_TRUE(Path("c:\\abc") == Path("c:/abc"));
     EXPECT_TRUE(hash(Path("c:\\abc")) == hash(Path("c:/abc")));
@@ -486,8 +483,8 @@ TEST_F(PathTest, other_non_members) {
     EXPECT_TRUE(Path("foo/").filename_is_dot());
     EXPECT_TRUE(Path("/").filename() == Path("/"));
     EXPECT_TRUE(!Path("/").filename_is_dot());
-// TODO: fixme
-# ifdef IO_WINDOWS_API
+
+# ifdef IO_BUILD_FOR_WINDOWS
     EXPECT_TRUE(Path("c:.").filename() == Path("."));
     EXPECT_TRUE(Path("c:.").filename_is_dot());
     EXPECT_TRUE(Path("c:/").filename() == Path("/"));
@@ -833,8 +830,7 @@ TEST_F(PathTest, decompositions) {
     EXPECT_TRUE(Path("//netname").root_path().string() == "//netname");
     EXPECT_TRUE(Path("//netname/foo").root_path().string() == "//netname/");
 
-    // TODO: fixme
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
     EXPECT_TRUE(Path("c:/foo").root_path().string() == "c:/");
 #   endif
 
@@ -976,8 +972,7 @@ virtual std::codecvt_base::result do_out(std::mbstate_t&,
     virtual int do_max_length() const throw () { return 0; }
 };
 
-// TODO: fixme
-# ifdef IO_WINDOWS_API
+# ifdef IO_BUILD_FOR_WINDOWS
   void check_native(const Path& p,
     const std::string&, const std::wstring& expected)
 # else
@@ -2392,8 +2387,7 @@ TEST_F(PathTest, lexically_relative) {
     EXPECT_TRUE(Path("/a/d").lexically_relative("/a/b/c") == "../../d");
     EXPECT_TRUE(Path("/a/b/c").lexically_relative("/a/d") == "../b/c");
 
-// TODO: fixme
-  #ifdef IO_WINDOWS_API
+  #ifdef IO_BUILD_FOR_WINDOWS
     EXPECT_TRUE(Path("c:\\y").lexically_relative("c:\\x") == "../y");
   #else
     EXPECT_TRUE(Path("c:\\y").lexically_relative("c:\\x") == "");
@@ -2520,8 +2514,8 @@ TEST_F(PathTest, error_handling) {
     //  These tests rely on a Path constructor that fails in the locale conversion.
     //  Thus construction has to call codecvt. Force that by using a narrow string
     //  for Windows, and a wide string for POSIX.
-// TODO: FIXME
-#   ifdef IO_WINDOWS_API
+
+#   ifdef IO_BUILD_FOR_WINDOWS
 #     define STRING_FOO_ "foo"
 #   else
 #     define STRING_FOO_ L"foo"

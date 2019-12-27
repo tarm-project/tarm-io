@@ -56,7 +56,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
   //------------------------------------------------------------------------------------//
 
   class Path : public path_detail::PathConstants<
-#ifdef IO_WINDOWS_API
+#ifdef IO_BUILD_FOR_WINDOWS
       wchar_t, L'/', L'\\', L'.'
 #else
       char, '/', '/', '.'
@@ -335,7 +335,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  -----  modifiers  -----
 
     void clear() noexcept { m_pathname.clear(); }
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
     IO_DLL_PUBLIC Path& make_preferred();  // change slashes to backslashes
 #   else // IO_POSIX_API
     Path& make_preferred() { return *this; }  // POSIX no effect
@@ -376,7 +376,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     template <class String>
     String string(const codecvt_type& cvt) const;
 
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
     const std::string string() const
     {
       std::string tmp;
@@ -424,7 +424,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  Experimental generic function returning generic formatted path (i.e. separators
     //  are forward slashes). Motivation: simpler than a family of generic_*string
     //  functions.
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
     IO_DLL_PUBLIC Path generic_path() const;
 #   else
     Path generic_path() const { return Path(*this); }
@@ -436,7 +436,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     template <class String>
     String generic_string(const codecvt_type& cvt) const;
 
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
     const std::string   generic_string() const { return generic_path().string(); }
     const std::string   generic_string(const codecvt_type& cvt) const { return generic_path().string(cvt); }
     const std::wstring  generic_wstring() const { return generic_path().wstring(); }
@@ -484,7 +484,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     bool is_absolute() const
     {
       // Windows CE has no root name (aka drive letters)
-#     if defined(IO_WINDOWS_API) && !defined(UNDER_CE)
+#     if defined(IO_BUILD_FOR_WINDOWS) && !defined(UNDER_CE)
       return has_root_name() && has_root_directory();
 #     else
       return has_root_directory();
@@ -733,7 +733,7 @@ private:
 
   inline std::size_t hash_value(const Path& x) noexcept
   {
-# ifdef IO_WINDOWS_API
+# ifdef IO_BUILD_FOR_WINDOWS
     std::size_t seed = 0;
     for(const Path::value_type* it = x.c_str(); *it; ++it)
       hash_combine(seed, *it == L'/' ? L'\\' : *it);
@@ -797,7 +797,7 @@ private:
     inline bool is_directory_separator(Path::value_type c) noexcept
     {
       return c == Path::separator
-#     ifdef IO_WINDOWS_API
+#     ifdef IO_BUILD_FOR_WINDOWS
         || c == Path::preferred_separator
 #     endif
       ;
@@ -805,7 +805,7 @@ private:
     inline bool is_element_separator(Path::value_type c) noexcept
     {
       return c == Path::separator
-#     ifdef IO_WINDOWS_API
+#     ifdef IO_BUILD_FOR_WINDOWS
         || c == Path::preferred_separator || c == L':'
 #     endif
       ;

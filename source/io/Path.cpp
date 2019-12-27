@@ -11,7 +11,7 @@
 #include <cstring>
 #include <cassert>
 
-#ifdef IO_WINDOWS_API
+#ifdef IO_BUILD_FOR_WINDOWS
     #include "path_impl/WindowsFileCodecvt.h"
     #include <windows.h>
 #elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__) \
@@ -40,7 +40,7 @@ namespace
   typedef Path::string_type       string_type;
   typedef string_type::size_type  size_type;
 
-# ifdef IO_WINDOWS_API
+# ifdef IO_BUILD_FOR_WINDOWS
 
   const wchar_t* const separators = L"/\\";
   const wchar_t* separator_string = L"/";
@@ -130,7 +130,7 @@ namespace io
     return *this;
   }
 
-# ifdef IO_WINDOWS_API
+# ifdef IO_BUILD_FOR_WINDOWS
 
   IO_DLL_PUBLIC Path Path::generic_path() const
   {
@@ -139,7 +139,7 @@ namespace io
     return tmp;
   }
 
-# endif  // IO_WINDOWS_API
+# endif  // IO_BUILD_FOR_WINDOWS
 
   IO_DLL_PUBLIC int Path::compare(const Path& p) const noexcept
   {
@@ -151,7 +151,7 @@ namespace io
   IO_DLL_PUBLIC Path::string_type::size_type Path::m_append_separator_if_needed()
   {
     if (!m_pathname.empty() &&
-#     ifdef IO_WINDOWS_API
+#     ifdef IO_BUILD_FOR_WINDOWS
       *(m_pathname.end()-1) != colon &&
 #     endif
       !detail::is_directory_separator(*(m_pathname.end()-1)))
@@ -170,7 +170,7 @@ namespace io
     if (sep_pos                         // a separator was added
       && sep_pos < m_pathname.size()         // and something was appended
       && (m_pathname[sep_pos+1] == separator // and it was also separator
-#      ifdef IO_WINDOWS_API
+#      ifdef IO_BUILD_FOR_WINDOWS
        || m_pathname[sep_pos+1] == preferred_separator  // or preferred_separator
 #      endif
 )) { m_pathname.erase(sep_pos, 1); } // erase the added separator
@@ -178,7 +178,7 @@ namespace io
 
   //  modifiers  -----------------------------------------------------------------------//
 
-# ifdef IO_WINDOWS_API
+# ifdef IO_BUILD_FOR_WINDOWS
   IO_DLL_PUBLIC Path& Path::make_preferred()
   {
     std::replace(m_pathname.begin(), m_pathname.end(), L'/', L'\\');
@@ -234,7 +234,7 @@ namespace io
           (itr.m_element.m_pathname.size() > 1
             && detail::is_directory_separator(itr.m_element.m_pathname[0])
             && detail::is_directory_separator(itr.m_element.m_pathname[1]))
-#       ifdef IO_WINDOWS_API
+#       ifdef IO_BUILD_FOR_WINDOWS
           || itr.m_element.m_pathname[itr.m_element.m_pathname.size()-1] == colon
 #       endif
       ))
@@ -257,7 +257,7 @@ namespace io
 
     for (; itr.m_pos != m_pathname.size()
       && (detail::is_directory_separator(itr.m_element.m_pathname[0])
-#     ifdef IO_WINDOWS_API
+#     ifdef IO_BUILD_FOR_WINDOWS
       || itr.m_element.m_pathname[itr.m_element.m_pathname.size()-1] == colon
 #     endif
     ); ++itr) {}
@@ -393,7 +393,7 @@ namespace io
           && (lf.size() != 2
             || (lf[0] != dot
               && lf[1] != dot
-#             ifdef IO_WINDOWS_API
+#             ifdef IO_BUILD_FOR_WINDOWS
               && lf[1] != colon
 #             endif
                )
@@ -459,7 +459,7 @@ namespace
     if (pos == 0)
       return true;
 
-# ifdef IO_WINDOWS_API
+# ifdef IO_BUILD_FOR_WINDOWS
     //  "c:/" [...]
     if (pos == 2 && is_letter(str[0]) && str[1] == colon)
       return true;
@@ -491,7 +491,7 @@ namespace
     // set pos to start of last element
     size_type pos(str.find_last_of(separators, end_pos-1));
 
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
     if (pos == string_type::npos && end_pos > 1)
       pos = str.find_last_of(colon, end_pos-2);
 #   endif
@@ -508,7 +508,7 @@ namespace
   // return npos if no root_directory found
   {
 
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
     // case "c:/"
     if (size > 2
       && path[1] == colon
@@ -520,7 +520,7 @@ namespace
       && io::detail::is_directory_separator(path[0])
       && io::detail::is_directory_separator(path[1])) return string_type::npos;
 
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
     // case "\\?\"
     if (size > 4
       && io::detail::is_directory_separator(path[0])
@@ -596,7 +596,7 @@ namespace
 
     // find the end
     while (cur < size
-#     ifdef IO_WINDOWS_API
+#     ifdef IO_BUILD_FOR_WINDOWS
       && src[cur] != colon
 #     endif
       && !io::detail::is_directory_separator(src[cur]))
@@ -605,7 +605,7 @@ namespace
       ++element_size;
     }
 
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
     if (cur == size) return;
     // include device delimiter
     if (src[cur] == colon)
@@ -642,7 +642,7 @@ namespace io
     IO_DLL_PUBLIC
     const Path&  dot_path()
     {
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
       static const io::Path dot_pth(L".");
 #   else
       static const io::Path dot_pth(".");
@@ -653,7 +653,7 @@ namespace io
     IO_DLL_PUBLIC
     const Path&  dot_dot_path()
     {
-#   ifdef IO_WINDOWS_API
+#   ifdef IO_BUILD_FOR_WINDOWS
       static const io::Path dot_dot(L"..");
 #   else
       static const io::Path dot_dot("..");
@@ -714,7 +714,7 @@ namespace io
     {
       // detect root directory
       if (was_net
-#       ifdef IO_WINDOWS_API
+#       ifdef IO_BUILD_FOR_WINDOWS
         // case "c:/"
         || it.m_element.m_pathname[it.m_element.m_pathname.size()-1] == colon
 #       endif
@@ -808,7 +808,7 @@ namespace
 
   std::locale default_locale()
   {
-# if defined(IO_WINDOWS_API)
+# if defined(IO_BUILD_FOR_WINDOWS)
     std::locale global_loc = std::locale();
     return std::locale(global_loc, new windows_file_codecvt);
 # elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__) \

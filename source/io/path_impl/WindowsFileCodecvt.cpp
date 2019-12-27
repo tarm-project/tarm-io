@@ -11,7 +11,7 @@
 
 #include <cwchar>  // for mbstate_t
 
-#ifdef IO_WINDOWS_API
+#ifdef IO_BUILD_FOR_WINDOWS
 
 #include "WindowsFileCodecvt.h"
 
@@ -62,5 +62,5 @@
     return ok;
   }
 
-# endif  // IO_WINDOWS_API
+# endif  // IO_BUILD_FOR_WINDOWS
 
