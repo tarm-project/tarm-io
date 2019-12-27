@@ -26,16 +26,13 @@ public:
 
     bool peer_bookkeeping_enabled() const;
 
-    // TODO: move
-    static void free_udp_peer(UdpPeer* peer) {
-        peer->unref();
-    }
-// m_peer_timeout_callback(*m_parent, *it->second);
 protected:
     // statics
     static void on_data_received(
         uv_udp_t* handle, ssize_t nread, const uv_buf_t* uv_buf, const struct sockaddr* addr, unsigned flags);
     static void on_close(uv_handle_t* handle);
+
+    static void free_udp_peer(UdpPeer* peer);
 
 private:
     NewPeerCallback m_new_peer_callback = nullptr;
@@ -205,6 +202,10 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
 
 void UdpServer::Impl::on_close(uv_handle_t* handle) {
     // do nothing
+}
+
+void UdpServer::Impl::free_udp_peer(UdpPeer* peer) {
+    peer->unref();
 }
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
