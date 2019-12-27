@@ -2,6 +2,9 @@
 
 #include "Common.h"
 
+#include <assert.h>
+#include <ostream>
+
 namespace io {
 
 StatusCode convert_from_uv(std::int64_t libuv_code) {
@@ -161,6 +164,18 @@ StatusCode convert_from_uv(std::int64_t libuv_code) {
     }
 
     return StatusCode::UNDEFINED;
+}
+
+std::ostream& operator<<(std::ostream& out, StatusCode code) {
+    switch(code) {
+        #define X(PARAM) case StatusCode::PARAM: out << #PARAM; break;
+        IO_LIST_OF_STATUS_CODES
+        #undef X
+        default:
+            assert(false);
+    };
+
+    return out;
 }
 
 } // namespace io
