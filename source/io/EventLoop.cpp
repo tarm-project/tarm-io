@@ -46,12 +46,10 @@ public:
     std::size_t schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback);
     void stop_call_on_each_loop_cycle(std::size_t handle);
 
-    // TODO: explain this
     void start_dummy_idle();
     void stop_dummy_idle();
 
-    // TODO: handle(convert) error codes????
-    void init_async();
+    Error init_async();
     int run();
 
     bool is_running() const;
@@ -111,7 +109,10 @@ EventLoop::Impl::Impl(EventLoop& loop) :
         uv_loop_init(this);
     }
 
-    init_async();
+    const auto async_init_error = init_async();
+    if (async_init_error) {
+        IO_LOG(m_loop, ERROR, "uv's async init failed: ", async_init_error.string());
+    }
 }
 
 EventLoop::Impl::~Impl() {
@@ -140,13 +141,20 @@ EventLoop::Impl::~Impl() {
     }
 }
 
-void EventLoop::Impl::init_async() {
+Error EventLoop::Impl::init_async() {
     m_async.reset(new uv_async_t);
+    Error async_init_error = uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
+    if (async_init_error) {
+        m_async.reset();
+        return async_init_error;
+    }
+
     m_async->data = this;
-    uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
 
     // unref is called to make loop exitable if it has no ohter running handles except this async
     uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
+
+    return StatusCode::OK;
 }
 
 namespace {
