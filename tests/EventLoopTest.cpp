@@ -94,7 +94,7 @@ TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
     io::EventLoop loop;
 
     size_t counter = 0;
-    size_t handle = 0;
+    size_t handle = io::EventLoop::INVALID_HANDLE;
 
     handle = loop.schedule_call_on_each_loop_cycle([&handle, &counter, &loop]() {
         ++counter;
@@ -109,8 +109,10 @@ TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
 }
 
 TEST_F(EventLoopTest, stop_call_on_each_loop_cycle_with_invalid_data) {
+    // Crash test
     io::EventLoop loop;
     loop.stop_call_on_each_loop_cycle(100500);
+    loop.stop_call_on_each_loop_cycle(io::EventLoop::INVALID_HANDLE);
     ASSERT_EQ(0, loop.run());
 }
 
@@ -118,11 +120,11 @@ TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
     io::EventLoop loop;
 
     size_t counter_1 = 0;
-    size_t handle_1 = 0;
+    size_t handle_1 = io::EventLoop::INVALID_HANDLE;
     size_t counter_2 = 0;
-    size_t handle_2 = 0;
+    size_t handle_2 = io::EventLoop::INVALID_HANDLE;
     size_t counter_3 = 0;
-    size_t handle_3 = 0;
+    size_t handle_3 = io::EventLoop::INVALID_HANDLE;
 
     handle_1 = loop.schedule_call_on_each_loop_cycle([&handle_1, &counter_1, &loop]() {
         ++counter_1;
@@ -157,15 +159,20 @@ TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
 TEST_F(EventLoopTest, is_running) {
     io::EventLoop event_loop;
 
-    std::size_t handle = 0; // TODO: make some value as invalid handle
+    std::size_t callback_call_count = 0;
+
+    std::size_t handle = io::EventLoop::INVALID_HANDLE;
     handle = event_loop.schedule_call_on_each_loop_cycle([&]() {
         EXPECT_TRUE(event_loop.is_running());
         event_loop.stop_call_on_each_loop_cycle(handle);
+        ++callback_call_count;
     });
 
+    EXPECT_EQ(0, callback_call_count);
     EXPECT_FALSE(event_loop.is_running());
     ASSERT_EQ(0, event_loop.run());
     EXPECT_FALSE(event_loop.is_running());
+    EXPECT_EQ(1, callback_call_count);
 }
 
 TEST_F(EventLoopTest, loop_in_thread) {
@@ -176,7 +183,7 @@ TEST_F(EventLoopTest, loop_in_thread) {
         io::EventLoop loop;
         size_t counter = 0;
 
-        size_t handle = loop.schedule_call_on_each_loop_cycle([&counter, &loop, &handle]() {
+        const size_t handle = loop.schedule_call_on_each_loop_cycle([&counter, &loop, &handle]() {
             ++counter;
 
             if (counter == 200) {

@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <memory>
+#include <limits>
 
 // DOC: calling some loop methods and not calling run() will result in memory leak
 
@@ -21,6 +22,8 @@ public:
     using WorkDoneCallback = std::function<void()>;
     using WorkCallbackWithUserData = std::function<void*()>;
     using WorkDoneCallbackWithUserData = std::function<void(void*)>;
+
+    static const std::size_t INVALID_HANDLE = std::numeric_limits<std::size_t>::max();
 
     IO_DLL_PUBLIC EventLoop();
     IO_DLL_PUBLIC ~EventLoop();
