@@ -144,4 +144,31 @@ TEST_F(TimerTest, start_stop_start_stop) {
     EXPECT_TRUE(second_callback_called);
 }
 
+TEST_F(TimerTest, multiple_intervals) {
+    io::EventLoop loop;
+
+    const std::deque<std::uint64_t> intervals = {100, 200, 300};
+
+    using ElapsedDuration = std::chrono::duration<float, std::milli>;
+    std::deque<ElapsedDuration> durations;
+
+    const auto start_time = std::chrono::system_clock::now();
+
+    io::Timer timer(loop);
+    timer.start(intervals,
+        [&](io::Timer& timer) {
+            durations.push_back(std::chrono::system_clock::now() - start_time);
+        }
+    );
+
+    ASSERT_EQ(0, durations.size());
+
+    ASSERT_EQ(0, loop.run());
+
+    ASSERT_EQ(3, durations.size());
+    for (std::size_t i = 0 ; i < durations.size(); ++i) {
+        EXPECT_NEAR(durations[i].count(), intervals[i], 10);
+    }
+}
+
 // TOOD: double start with different values
