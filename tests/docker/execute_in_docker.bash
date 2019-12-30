@@ -20,6 +20,7 @@ echo "Running image ${IMAGE_TO_EXECUTE}"
 DOCKER_TERMINAL_OPTIONS="-it"
 
 # '--privileged' is required for leak sanitizer to work.
+# /var/run/somesocket is created for tests
 docker run ${DOCKER_TERMINAL_OPTIONS} \
            --privileged \
            --cap-add=ALL \
@@ -28,6 +29,7 @@ docker run ${DOCKER_TERMINAL_OPTIONS} \
            --network=host \
            "${IMAGE_TO_EXECUTE}" \
            bash -c "echo 'You are in docker now!' && \
+                    python -c 'import socket as s; sock = s.socket(s.AF_UNIX); sock.bind(\"/var/run/somesocket\")' && \
                     groupadd -g ${GROUP_ID} ${USER} && \
                     useradd -u ${USER_ID} -g ${USER} ${USER} && \
                     echo '${USER}   ALL = NOPASSWD : ALL' | sudo EDITOR='tee -a' visudo > /dev/null && \
