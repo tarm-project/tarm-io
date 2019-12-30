@@ -1,0 +1,14 @@
+FROM tarmio/builders:centos7.6.1810-gcc4.8.5-boost1.70
+
+LABEL maintainer="av@tcloud.pro"
+
+RUN mkdir -p ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6.tar.gz && \
+    tar -xf cmake* && \
+    cd cmake* && \
+    ./configure --parallel=$(nproc) && \
+    make -j $(nporc) && \
+    make install && \
+    rm -rf ${BUILD_DIR} && \
+    ldconfig

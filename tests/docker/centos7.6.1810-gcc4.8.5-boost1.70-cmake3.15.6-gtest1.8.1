@@ -1,0 +1,16 @@
+FROM tarmio/builders:centos7.6.1810-gcc4.8.5-boost1.70-cmake3.15.6
+
+LABEL maintainer="av@tcloud.pro"
+
+RUN mkdir ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget https://github.com/google/googletest/archive/release-1.8.1.tar.gz && \
+    tar -xf release* && \
+    cd goog* && \
+    mkdir build && \
+    cd build && \
+    cmake -DBUILD_SHARED_LIBS=ON .. && \
+    make -j $(nproc) && \
+    make install && \
+    rm -rf ${BUILD_DIR} && \
+    ldconfig

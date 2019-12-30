@@ -1,0 +1,23 @@
+FROM tarmio/builders:centos7.6.1810-gcc4.8.5
+
+LABEL maintainer="av@tcloud.pro"
+
+ENV BUILD_DIR=/build
+
+RUN yum -y install python-devel
+
+RUN g++ --version && \
+    mkdir ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz && \
+    tar -xf boost_1_70_0.tar.gz && \
+    cd boost* && \
+    ./bootstrap.sh && \
+    echo "using gcc : 4.8 : /usr/bin/g++ : <cxxflags>-std=c++11 ;" > ./tools/build/src/user-config.jam && \
+    ./b2 -j $(nproc) && \
+    ./b2 install && \
+    rm -rf ${BUILD_DIR}
+
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/local.conf && \
+    echo '/usr/local/lib64' >> /etc/ld.so.conf.d/local.conf && \
+    ldconfig
