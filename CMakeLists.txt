@@ -58,6 +58,9 @@ endif()
 #find_package(PkgConfig REQUIRED)
 #pkg_check_modules(LIBUV REQUIRED libuv)
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 add_subdirectory("thirdparty")
 add_subdirectory("source")
 add_subdirectory("samples")

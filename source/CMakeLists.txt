@@ -115,8 +115,6 @@ install(TARGETS io EXPORT ioTargets
 #        COMPONENT Development
 )
 
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
 set(cmake_package_name io)
 set(targets_export_name ${cmake_package_name}Targets CACHE INTERNAL "")
 set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated" CACHE INTERNAL "")

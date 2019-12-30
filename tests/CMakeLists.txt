@@ -8,7 +8,7 @@ message("-- Found GTest target config in ${GTest_DIR}.")
 if (WIN32)
    set(Boost_USE_STATIC_LIBS ON) # TODO: need to make this optional
 endif()
-set(Boost_DEBUG ON)
+#set(Boost_DEBUG ON)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 # Boost build withoud CMake targets (creating them manually)
