@@ -14,10 +14,7 @@ RUN yum -y install \
     rpm-build \
     sudo
 
-# Domain socket (needed for tests)
-#RUN python -c "import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/var/run/somesocket')"
-
 # Block device (needed for tests)
 RUN dd if=/dev/zero of=/loopbackfile.img bs=10M count=1
 
-#ENTRYPOINT losetup -fP /loopbackfile.img && /bin/bash
+WORKDIR /source

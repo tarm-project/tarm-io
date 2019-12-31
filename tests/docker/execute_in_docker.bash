@@ -19,17 +19,21 @@ echo "Running image ${IMAGE_TO_EXECUTE}"
 
 DOCKER_TERMINAL_OPTIONS="-it"
 
+# Domain socket (needed for tests)
+CREATE_DOMAIN_SOCKET_COMMAND="python -c \"import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/var/run/somesocket')\""
+
+#WORK_DIR=/source
+
 # '--privileged' is required for leak sanitizer to work.
-# /var/run/somesocket is created for tests
 docker run ${DOCKER_TERMINAL_OPTIONS} \
            --privileged \
            --cap-add=ALL \
            --rm \
-           -v "${SCRIPT_DIR}/..":"/source" \
+           -v "${SCRIPT_DIR}/../..":"/source" \
            --network=host \
            "${IMAGE_TO_EXECUTE}" \
            bash -c "echo 'You are in docker now!' && \
-                    python -c 'import socket as s; sock = s.socket(s.AF_UNIX); sock.bind(\"/var/run/somesocket\")' && \
+                    ${CREATE_DOMAIN_SOCKET_COMMAND} && \
                     groupadd -g ${GROUP_ID} ${USER} && \
                     useradd -u ${USER_ID} -g ${USER} ${USER} && \
                     echo '${USER}   ALL = NOPASSWD : ALL' | sudo EDITOR='tee -a' visudo > /dev/null && \
