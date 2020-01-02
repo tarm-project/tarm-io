@@ -5,14 +5,6 @@
 
 #include <assert.h>
 
-// TODO: make this optional include
-//#include <boost/pool/pool.hpp>
-
-// TODO: move
-#include <iostream>
-#include <string>
-#include <iomanip>
-
 namespace io {
 
 const size_t TcpServer::READ_BUFFER_SIZE;
@@ -96,6 +88,7 @@ Error TcpServer::Impl::listen(const std::string& ip_addr_str,
     m_server_handle->data = this;
 
     if (init_status < 0) {
+        IO_LOG(m_loop, ERROR, m_parent, uv_strerror(init_status));
         return init_status;
     }
 
@@ -110,13 +103,16 @@ Error TcpServer::Impl::listen(const std::string& ip_addr_str,
     setsockopt(handle, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
     */
 
+    // TODO: unit test invalid address
     const int ip4_status = uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
     if (ip4_status < 0) {
+        IO_LOG(m_loop, ERROR, m_parent, uv_strerror(ip4_status));
         return ip4_status;
     }
 
     const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
     if (bind_status < 0) {
+        IO_LOG(m_loop, ERROR, m_parent, "Bind failed:", uv_strerror(bind_status));
         return bind_status;
     }
 
@@ -124,10 +120,8 @@ Error TcpServer::Impl::listen(const std::string& ip_addr_str,
     m_data_receive_callback = data_receive_callback;
     m_close_connection_callback = close_connection_callback;
     const int listen_status = uv_listen(reinterpret_cast<uv_stream_t*>(m_server_handle), backlog_size, on_new_connection);
-
     if (listen_status < 0) {
-        // TODO: remove this????
-        std::cout << uv_strerror(listen_status) << std::endl;
+        IO_LOG(m_loop, ERROR, m_parent, "Listen failed:", uv_strerror(listen_status));
     }
 
     return listen_status;
