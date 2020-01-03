@@ -77,7 +77,7 @@ const SSL_METHOD* DtlsConnectedClient::Impl::ssl_method() {
 
 bool DtlsConnectedClient::Impl::ssl_set_siphers() {
     // TODO: hardcoded ciphers list. Need to extract
-    auto result = SSL_CTX_set_cipher_list(m_ssl_ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
+    auto result = SSL_CTX_set_cipher_list(this->ssl_ctx(), "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
     if (result == 0) {
         IO_LOG(m_loop, ERROR, "Failed to set siphers list");
         return false;
@@ -86,19 +86,19 @@ bool DtlsConnectedClient::Impl::ssl_set_siphers() {
 }
 
 bool DtlsConnectedClient::Impl::ssl_init_certificate_and_key() {
-    auto result = SSL_CTX_use_certificate(m_ssl_ctx, m_certificate);
+    auto result = SSL_CTX_use_certificate(this->ssl_ctx(), m_certificate);
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to load certificate");
         return false;
     }
 
-    result = SSL_CTX_use_PrivateKey(m_ssl_ctx, m_private_key);
+    result = SSL_CTX_use_PrivateKey(this->ssl_ctx(), m_private_key);
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to load private key");
         return false;
     }
 
-    result = SSL_CTX_check_private_key(m_ssl_ctx);
+    result = SSL_CTX_check_private_key(this->ssl_ctx());
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to check private key");
         return false;
@@ -108,7 +108,7 @@ bool DtlsConnectedClient::Impl::ssl_init_certificate_and_key() {
 }
 
 void DtlsConnectedClient::Impl::ssl_set_state() {
-    SSL_set_accept_state(m_ssl);
+    SSL_set_accept_state(this->ssl());
 }
 
 void DtlsConnectedClient::Impl::on_ssl_read(const DataChunk& data) {

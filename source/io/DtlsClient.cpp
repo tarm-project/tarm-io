@@ -94,7 +94,7 @@ const SSL_METHOD* DtlsClient::Impl::ssl_method() {
 }
 
 bool DtlsClient::Impl::ssl_set_siphers() {
-    auto result = SSL_CTX_set_cipher_list(m_ssl_ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
+    auto result = SSL_CTX_set_cipher_list(this->ssl_ctx(), "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
     if (result == 0) {
         IO_LOG(m_loop, ERROR, "Failed to set siphers list");
         return false;
@@ -108,7 +108,7 @@ bool DtlsClient::Impl::ssl_init_certificate_and_key() {
 }
 
 void DtlsClient::Impl::ssl_set_state() {
-    SSL_set_connect_state(m_ssl);
+    SSL_set_connect_state(this->ssl());
 }
 
 void DtlsClient::Impl::on_ssl_read(const DataChunk& data) {

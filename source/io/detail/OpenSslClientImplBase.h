@@ -47,15 +47,23 @@ protected:
 
     typename ParentType::UnderlyingClientType* m_client = nullptr;
 
-    SSL_CTX* m_ssl_ctx = nullptr;
+    using SSLPtr = std::unique_ptr<::SSL, decltype(&::SSL_free)>;
+    using SSL_CTXPtr = std::unique_ptr<::SSL_CTX, decltype(&::SSL_CTX_free)>;
+
+    ::SSL* ssl();
+    ::SSL_CTX* ssl_ctx();
+
     BIO* m_ssl_read_bio = nullptr;
     BIO* m_ssl_write_bio = nullptr;
-    SSL* m_ssl = nullptr;
 
     bool m_ssl_handshake_complete = false;
 
     // Removal is scheduled in 2 steps. First underlying connection is removed, then secure one.
     bool m_ready_schedule_removal = false;
+
+private:
+    SSLPtr m_ssl;
+    SSL_CTXPtr m_ssl_ctx;
 };
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
@@ -63,19 +71,24 @@ protected:
 template<typename ParentType, typename ImplType>
 OpenSslClientImplBase<ParentType, ImplType>::OpenSslClientImplBase(EventLoop& loop, ParentType& parent) :
     m_parent(&parent),
-    m_loop(&loop) {
+    m_loop(&loop),
+    m_ssl(nullptr, &::SSL_free),
+    m_ssl_ctx(nullptr, &::SSL_CTX_free) {
 }
 
 template<typename ParentType, typename ImplType>
 OpenSslClientImplBase<ParentType, ImplType>::~OpenSslClientImplBase() {
-    // TODO: smart pointers???
-    if (m_ssl) {
-        SSL_free(m_ssl);
-    }
+}
 
-    if (m_ssl_ctx) {
-        SSL_CTX_free(m_ssl_ctx);
-    }
+
+template<typename ParentType, typename ImplType>
+::SSL* OpenSslClientImplBase<ParentType, ImplType>::ssl() {
+    return m_ssl.get();
+}
+
+template<typename ParentType, typename ImplType>
+::SSL_CTX* OpenSslClientImplBase<ParentType, ImplType>::ssl_ctx() {
+    return m_ssl_ctx.get();
 }
 
 template<typename ParentType, typename ImplType>
@@ -102,7 +115,7 @@ bool OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
     //OpenSSL_add_all_digests();
 
     // TODO: support different versions of TLS
-    m_ssl_ctx = SSL_CTX_new(ssl_method()/*TLSv1_2_server_method()*/);
+    m_ssl_ctx.reset(SSL_CTX_new(ssl_method()/*TLSv1_2_server_method()*/));
     if (m_ssl_ctx == nullptr) {
         IO_LOG(m_loop, ERROR, m_parent, "Failed to init SSL context");
         return false;
@@ -112,7 +125,7 @@ bool OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
     //SSL_CTX_set_ecdh_auto(m_ssl_ctx, 1);
 
     // TODO: implement verify?
-    SSL_CTX_set_verify(m_ssl_ctx, SSL_VERIFY_NONE, NULL);
+    SSL_CTX_set_verify(m_ssl_ctx.get(), SSL_VERIFY_NONE, NULL);
     // SSL_CTX_set_verify_depth
 
     if (!ssl_set_siphers()) {
@@ -123,7 +136,7 @@ bool OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
         return false;
     }
 
-    m_ssl = SSL_new(m_ssl_ctx);
+    m_ssl.reset(SSL_new(m_ssl_ctx.get()));
     if (m_ssl == nullptr) {
         IO_LOG(m_loop, ERROR, m_parent, "Failed to create SSL");
         return false;
@@ -141,7 +154,7 @@ bool OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
         return false;
     }
 
-    SSL_set_bio(m_ssl, m_ssl_read_bio, m_ssl_write_bio);
+    SSL_set_bio(m_ssl.get(), m_ssl_read_bio, m_ssl_write_bio);
 
     ssl_set_state();
 
@@ -158,15 +171,15 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
     std::shared_ptr<char> decrypted_buf(new char[SIZE], std::default_delete<char[]>());
     // TODO: TEST save buffer in callback and check if it is valid
 
-    int decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
+    int decrypted_size = SSL_read(m_ssl.get(), decrypted_buf.get(), SIZE);
     while (decrypted_size > 0) {
         IO_LOG(m_loop, TRACE, m_parent, "Decrypted message of size:", decrypted_size);
         on_ssl_read({decrypted_buf, static_cast<std::size_t>(decrypted_size)});
-        decrypted_size = SSL_read(m_ssl, decrypted_buf.get(), SIZE);
+        decrypted_size = SSL_read(m_ssl.get(), decrypted_buf.get(), SIZE);
     }
 
     if (decrypted_size < 0) {
-        int code = SSL_get_error(m_ssl, decrypted_size);
+        int code = SSL_get_error(m_ssl.get(), decrypted_size);
         if (code != SSL_ERROR_WANT_READ) {
             IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size", code);
             // TODO: handle error
@@ -189,7 +202,7 @@ template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
     IO_LOG(m_loop, DEBUG, m_parent, "Doing handshake");
 
-    auto handshake_result = SSL_do_handshake(m_ssl);
+    auto handshake_result = SSL_do_handshake(m_ssl.get());
 
     int write_pending = BIO_pending(m_ssl_write_bio);
     int read_pending = BIO_pending(m_ssl_read_bio);
@@ -197,7 +210,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
     IO_LOG(m_loop, TRACE, m_parent, "read_pending:", read_pending);
 
     if (handshake_result < 0) {
-        auto error = SSL_get_error(m_ssl, handshake_result);
+        auto error = SSL_get_error(m_ssl.get(), handshake_result);
 
         if (error == SSL_ERROR_WANT_READ) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_READ");
@@ -240,7 +253,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<cons
         return;
     }
 
-    const auto write_result = SSL_write(m_ssl, buffer.get(), size);
+    const auto write_result = SSL_write(m_ssl.get(), buffer.get(), size);
     if (write_result <= 0) {
         IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size", size);
 
