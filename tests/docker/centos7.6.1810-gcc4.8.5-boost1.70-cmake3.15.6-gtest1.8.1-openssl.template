@@ -1,0 +1,21 @@
+FROM tarmio/builders:centos7.6.1810-gcc4.8.5-boost1.70-cmake3.15.6-gtest1.8.1
+
+RUN yum -y install libtool perl-core zlib-devel nasm
+
+#RUN cd https://www.openssl.org/source/openssl-1.0.2u.tar.gz
+
+ENV OPENSSL_URL=https://www.openssl.org/source/openssl-1.0.2u.tar.gz
+
+RUN mkdir ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget ${OPENSSL_URL} && \
+    tar -xf openssl* && \
+    cd openssl* && \
+    ./config --prefix=/usr/local --openssldir=/usr/local shared zlib && \
+    make -j $(nproc) && \
+    make install && \
+    rm -rf ${BUILD_DIR} && \
+    ldconfig
+
+
+WORKDIR /source
