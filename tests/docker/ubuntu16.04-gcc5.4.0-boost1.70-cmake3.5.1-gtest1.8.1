@@ -1,0 +1,16 @@
+FROM tarmio/builders:ubuntu16.04-gcc5.4.0-boost1.70-cmake3.5.1
+
+LABEL maintainer="av@tcloud.pro"
+
+RUN mkdir ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget https://github.com/google/googletest/archive/release-1.8.1.tar.gz && \
+    tar -xf release* && \
+    cd goog* && \
+    mkdir build && \
+    cd build && \
+    cmake -DBUILD_SHARED_LIBS=ON .. && \
+    make -j $(nproc) && \
+    make install && \
+    ldconfig && \
+    rm -rf ${BUILD_DIR}

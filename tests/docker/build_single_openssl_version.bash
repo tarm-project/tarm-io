@@ -3,11 +3,11 @@
 set -u
 
 SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+source "${SCRIPT_DIR}/env.bash"
 
 PLACEHOLDER_FILE=${1}
 VERSION_TO_SUBSTITUTE=${2}
 
-DOCKER_REGISTRY_PREFIX="tarmio/builders"
 RESULTING_IMAGE_TAG=$(echo "${PLACEHOLDER_FILE}" | sed "s|.template|${VERSION_TO_SUBSTITUTE}|")
 
 echo "Building image: ${RESULTING_IMAGE_TAG}"

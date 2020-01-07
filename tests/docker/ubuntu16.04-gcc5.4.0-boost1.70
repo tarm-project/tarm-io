@@ -1,0 +1,20 @@
+FROM tarmio/builders:ubuntu16.04-gcc5.4.0
+
+LABEL maintainer="av@tcloud.pro"
+
+ENV BUILD_DIR=/build
+
+RUN apt -y install python-dev
+
+RUN g++ --version && \
+    mkdir ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz && \
+    tar -xf boost_1_70_0.tar.gz && \
+    cd boost* && \
+    ./bootstrap.sh && \
+    echo "using gcc : 5.4 : /usr/bin/g++ : <cxxflags>-std=c++11 ;" > ./tools/build/src/user-config.jam && \
+    ./b2 -j $(nproc) && \
+    ./b2 install && \
+    ldconfig && \
+    rm -rf ${BUILD_DIR}
