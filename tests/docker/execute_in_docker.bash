@@ -22,8 +22,6 @@ DOCKER_TERMINAL_OPTIONS="-it"
 # Domain socket (needed for tests)
 CREATE_DOMAIN_SOCKET_COMMAND="python -c \"import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/var/run/somesocket')\""
 
-#WORK_DIR=/source
-
 # '--privileged' is required for leak sanitizer to work.
 docker run ${DOCKER_TERMINAL_OPTIONS} \
            --privileged \
@@ -34,8 +32,9 @@ docker run ${DOCKER_TERMINAL_OPTIONS} \
            "${IMAGE_TO_EXECUTE}" \
            bash -c "echo 'You are in docker now!' && \
                     ${CREATE_DOMAIN_SOCKET_COMMAND} && \
+                    export HOME=/home/${USER} && \
                     groupadd -g ${GROUP_ID} ${USER} && \
-                    useradd -u ${USER_ID} -g ${USER} ${USER} && \
+                    useradd -u ${USER_ID} -g ${USER} --create-home -s /bin/bash ${USER} && \
                     echo '${USER}   ALL = NOPASSWD : ALL' | sudo EDITOR='tee -a' visudo > /dev/null && \
                     sudo PATH=\$PATH -E -u ${USER} bash -c \"${COMMAND_TO_EXECUTE}\""
 
