@@ -45,6 +45,12 @@ This module uses the following cache variables:
 
 The cache variables should not be used by project code.
 They may be set by end users to point at libuv components.
+
+Hints
+^^^^^
+
+Set ``LIBUV_ROOT_DIR`` to the root directory of an libuv installation.
+
 #]=======================================================================]
 
 #=============================================================================
@@ -63,12 +69,22 @@ They may be set by end users to point at libuv components.
 #-----------------------------------------------------------------------------
 find_library(LibUV_LIBRARY
   NAMES uv
-  )
+  HINTS ${LIBUV_ROOT_DIR}/lib $ENV{LIBUV_ROOT_DIR}/lib ${LIBUV_ROOT_DIR}/lib64 $ENV{LIBUV_ROOT_DIR}/lib64
+  NO_DEFAULT_PATH
+)
+find_library(LibUV_LIBRARY
+   NAMES uv
+)
 mark_as_advanced(LibUV_LIBRARY)
 
 find_path(LibUV_INCLUDE_DIR
   NAMES uv.h
-  )
+  HINTS ${LIBUV_ROOT_DIR}/include $ENV{LIBUV_ROOT_DIR}/include
+  NO_DEFAULT_PATH
+)
+find_path(LibUV_INCLUDE_DIR
+  NAMES uv.h
+)
 mark_as_advanced(LibUV_INCLUDE_DIR)
 
 #-----------------------------------------------------------------------------
