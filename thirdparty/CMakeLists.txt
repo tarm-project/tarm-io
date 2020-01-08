@@ -52,6 +52,10 @@ endif()
 # Promoting LIBUV_LIB_DEPS to parent scope
 set(LIBUV_LIB_DEPS "${LIBUV_LIB_DEPS}" PARENT_SCOPE)
 
+if (IO_USE_EXTERNAL_LIBUV)
+    return()
+endif()
+
 if (NOT DEFINED CMAKE_INSTALL_LIBDIR)
     set(CMAKE_INSTALL_LIBDIR "lib")
 endif()

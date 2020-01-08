@@ -46,17 +46,22 @@ endif()
 
 add_library(io ${IO_SOURCE_LIST})
 
-if (DEFINED IO_SANITIZER)
-    target_link_libraries(io
-                          PRIVATE ${LIBUV_DYNAMIC_LIB_PATH}
-                          PUBLIC ${LIBUV_LIB_DEPS})
+target_link_libraries(io PUBLIC ${LIBUV_LIB_DEPS})
+
+if (IO_USE_EXTERNAL_LIBUV)
+    target_link_libraries(io PUBLIC LibUV::LibUV)
 else()
-    target_link_libraries(io
-                          PRIVATE ${LIBUV_STATIC_LIB_PATH}
-                          PUBLIC ${LIBUV_LIB_DEPS})
+    if (DEFINED IO_SANITIZER)
+        target_link_libraries(io PRIVATE ${LIBUV_DYNAMIC_LIB_PATH})
+    else()
+        target_link_libraries(io PRIVATE ${LIBUV_STATIC_LIB_PATH})
+    endif()
+
+    target_include_directories(io PUBLIC $<BUILD_INTERFACE:${LIBUV_INCLUDE_PATH}>)
+
+    add_dependencies(io libuv)
 endif()
 
-target_include_directories(io PUBLIC $<BUILD_INTERFACE:${LIBUV_INCLUDE_PATH}>)
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 target_include_directories(io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 target_compile_definitions(io PRIVATE IO_BUILDING_DLL)
@@ -70,11 +75,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
 #    target_compile_options(io PRIVATE -fno-exceptions)
 endif()
 
-add_dependencies(io libuv)
-
 # Openssl
 # TODO: make optional
-
 if (NOT BUILD_SHARED_LIBS)
     set(OPENSSL_USE_STATIC_LIBS ON)
 endif()

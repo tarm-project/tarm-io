@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.5.0)
 
-option(IO_ENABLE_TESTS "Enable tests" ON)
 option(BUILD_SHARED_LIBS "Build IO as shared library" ON)
+option(IO_ENABLE_TESTS "Enable tests" ON)
+option(IO_USE_EXTERNAL_LIBUV "Use system libuv instead of the bundled one" OFF)
 
 # According to docs this variable should be set before 'project' statement
 if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
@@ -60,6 +61,10 @@ endif()
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+
+if (IO_USE_EXTERNAL_LIBUV)
+    find_package(LibUV REQUIRED)
+endif()
 
 add_subdirectory("thirdparty")
 add_subdirectory("source")
