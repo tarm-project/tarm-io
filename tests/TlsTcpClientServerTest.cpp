@@ -4,9 +4,6 @@
 #include "io/TlsTcpClient.h"
 #include "io/TlsTcpServer.h"
 
-
-#include <boost/dll.hpp>
-
 #include <vector>
 // TODO: if win32
 //#include <openssl/applink.c>
@@ -18,7 +15,7 @@ protected:
     std::uint16_t m_default_port = 32541;
     std::string m_default_addr = "127.0.0.1";
 
-    const io::Path m_test_path = boost::dll::program_location().parent_path().string();
+    const io::Path m_test_path = exe_path().string();
 
     const io::Path m_cert_path = m_test_path / "certificate.pem";
     const io::Path m_key_path = m_test_path / "key.pem";

@@ -1,8 +1,9 @@
 #include "LogRedirector.h"
 
+#include "UTCommon.h"
+
 #include <gtest/gtest.h>
 
-#include <boost/dll.hpp>
 #include <boost/filesystem.hpp>
 
 #include <assert.h>
@@ -11,7 +12,7 @@ const char* const TEST_OUTPUT_PATH_RELATIVE = "../testlogs";
 const char* const LOG_EXTENSION = ".log";
 
 LogRedirector::LogRedirector(const std::string& log_path) noexcept {
-    const auto exec_dir =  boost::dll::program_location().parent_path();
+    const auto exec_dir = exe_path();
     m_logs_directory = exec_dir / log_path;
 
     if (!boost::filesystem::exists(m_logs_directory)) {
