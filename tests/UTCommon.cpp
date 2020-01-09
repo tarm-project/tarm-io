@@ -16,12 +16,15 @@ std::string create_temp_test_directory() {
 }
 
 #ifdef _WIN32
-#include <windows.h>    //GetModuleFileNameW
-#else
-//#include <limits.h>
-#include <linux/limits.h>
-//#include <sys/syslimits.h>
-#include <unistd.h>     //readlink
+    #include <windows.h>    //GetModuleFileNameW
+#else // assuming Unix
+    #include <unistd.h>     //readlink
+
+    #ifdef __APPLE__
+        #include <sys/syslimits.h>
+    #else
+        #include <linux/limits.h>
+    #endif
 #endif
 
 boost::filesystem::path exe_path() {
