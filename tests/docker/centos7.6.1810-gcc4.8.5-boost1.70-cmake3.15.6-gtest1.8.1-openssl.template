@@ -1,7 +1,6 @@
 FROM tarmio/builders:centos7.6.1810-gcc4.8.5-boost1.70-cmake3.15.6-gtest1.8.1
 
 RUN yum -y install libtool zlib-devel nasm
-#perl-core
 
 ENV OPENSSL_URL=https://www.openssl.org/source/openssl-__OPENSSL_VERSION__.tar.gz
 

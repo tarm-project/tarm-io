@@ -1,0 +1,19 @@
+FROM tarmio/builders:ubuntu16.04-gcc5.4.0-boost1.70-cmake3.5.1-gtest1.8.1-openssl1.0.2g
+
+RUN apt -y install autoconf automake libtool
+
+ENV LIBUV_URL=https://github.com/libuv/libuv/archive/v__LIBUV_VERSION__.tar.gz
+
+RUN mkdir ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget ${LIBUV_URL} && \
+    tar -xf v* && \
+    cd libuv* && \
+    ./autogen.sh && \
+    ./configure && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    rm -rf ${BUILD_DIR}
+
+WORKDIR /source

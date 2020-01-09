@@ -18,6 +18,6 @@ for i in "${openssl_major_versions[@]}" ; do
     var=$i_transfromed[@] # extracted as separate var for substitution with {!} construct
     for k in "${!var}" ; do
        echo $i$k
-       ${SCRIPT_DIR}/build_single_openssl_versions.bash "${TEMPLATE_FILENAME}" "$i$k"
+       ${SCRIPT_DIR}/build_single_openssl_version.bash "${TEMPLATE_FILENAME}" "$i$k"
     done
 done
