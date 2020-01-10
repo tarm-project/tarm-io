@@ -1,0 +1,5 @@
+FROM tarmio/builders:ubuntu14.04-gcc4.8.4
+
+LABEL maintainer="av@tcloud.pro"
+
+RUN apt -y install libboost1.55-all-dev

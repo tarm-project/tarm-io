@@ -1,0 +1,26 @@
+FROM ubuntu:14.04
+
+LABEL maintainer="av@tcloud.pro"
+
+RUN apt -y update && \
+    apt -y upgrade && \
+    apt -y install \
+        autoconf \
+        automake \
+        g++ \
+        gcc \
+        less \
+        libc6-dev \
+        libtool \
+        make \
+        nano \
+        python \
+        sudo \
+        wget
+
+ENV BUILD_DIR=/build
+
+# Block device stub (needed for tests)
+RUN dd if=/dev/zero of=/loopbackfile.img bs=10M count=1
+
+WORKDIR /source
