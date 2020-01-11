@@ -72,7 +72,12 @@ void DtlsConnectedClient::Impl::shutdown() {
 }
 
 const SSL_METHOD* DtlsConnectedClient::Impl::ssl_method() {
+// OpenSSL before version 1.0.2 had no generic method for DTLS and only supported DTLS 1.0
+#if OPENSSL_VERSION_NUMBER < 0x1000200fL
+    return DTLSv1_server_method();
+#else
     return DTLS_server_method();
+#endif
 }
 
 bool DtlsConnectedClient::Impl::ssl_set_siphers() {

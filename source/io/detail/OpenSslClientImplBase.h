@@ -121,6 +121,9 @@ bool OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
         return false;
     }
 
+    SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
+    SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv3);
+
     // TODO: remove ???
     //SSL_CTX_set_ecdh_auto(m_ssl_ctx, 1);
 
