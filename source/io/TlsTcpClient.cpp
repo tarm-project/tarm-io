@@ -105,7 +105,7 @@ void TlsTcpClient::Impl::close() {
 }
 
 const SSL_METHOD* TlsTcpClient::Impl::ssl_method() {
-    return TLSv1_2_client_method();
+    return SSLv23_client_method(); // This call includes also TLS versions
 }
 
 bool TlsTcpClient::Impl::ssl_set_siphers() {

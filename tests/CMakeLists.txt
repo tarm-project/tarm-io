@@ -42,6 +42,7 @@ list(APPEND TESTS_LIST
     LoggerTest.cpp
     RemovableTest.cpp
     ScopeExitGuardTest.cpp
+    VersionTest.cpp
     PathTest.cpp
     EventLoopTest.cpp
     TimerTest.cpp

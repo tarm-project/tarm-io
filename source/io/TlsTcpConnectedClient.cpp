@@ -73,7 +73,7 @@ void TlsTcpConnectedClient::Impl::shutdown() {
 }
 
 const SSL_METHOD* TlsTcpConnectedClient::Impl::ssl_method() {
-    return TLSv1_2_server_method();
+    return SSLv23_server_method(); // This call includes also TLS versions
 }
 
 bool TlsTcpConnectedClient::Impl::ssl_set_siphers() {
