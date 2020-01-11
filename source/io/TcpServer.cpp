@@ -103,7 +103,6 @@ Error TcpServer::Impl::listen(const std::string& ip_addr_str,
     setsockopt(handle, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
     */
 
-    // TODO: unit test invalid address
     const int ip4_status = uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
     if (ip4_status < 0) {
         IO_LOG(m_loop, ERROR, m_parent, uv_strerror(ip4_status));

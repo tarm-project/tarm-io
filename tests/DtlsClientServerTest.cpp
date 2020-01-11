@@ -331,3 +331,5 @@ TEST_F(DtlsClientServerTest, default_constructor) {
     ASSERT_EQ(0, loop.run());
 }
 */
+
+// TODO: unit test invalid address
