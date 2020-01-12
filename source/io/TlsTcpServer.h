@@ -50,6 +50,8 @@ public:
 
     IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 
+    //IO_DLL_PUBLIC Error set_tls_version(TlsVersion version_min, TlsVersion version_max);
+
     // TODO: remove
     IO_DLL_PUBLIC ~TlsTcpServer();
 protected:

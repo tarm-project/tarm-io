@@ -46,7 +46,7 @@ private:
     TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client);
     void set_data_receive_callback(DataReceiveCallback callback);
     void on_data_receive(const char* buf, std::size_t size);
-    bool init_ssl();
+    Error init_ssl();
 
     class Impl;
     std::unique_ptr<Impl> m_impl;

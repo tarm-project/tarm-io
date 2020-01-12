@@ -988,6 +988,62 @@ TEST_F(TlsTcpClientServerTest, callbacks_order) {
     EXPECT_EQ(1, client_data_receive_callback_count);
 }
 
+// TODO: need rewrite this test to support TLS versions checking
+TEST_F(TlsTcpClientServerTest, DISABLED_tls_versions) {
+    const std::string message = "Hello!";
+    std::size_t client_on_connect_callback_count = 0;
+    std::size_t client_on_send_callback_count = 0;
+    std::size_t server_on_connect_callback_count = 0;
+    std::size_t server_on_receive_callback_count = 0;
+
+    io::EventLoop loop;
+
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
+    auto listen_error = server.listen(m_default_addr, m_default_port,
+        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_connect_callback_count;
+        },
+        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_callback_count;
+
+            EXPECT_EQ(message.size(), data.size);
+            std::string received_message(data.buf.get(), data.size);
+            EXPECT_EQ(message, received_message);
+
+            server.shutdown();
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TlsTcpClient(loop, {io::TlsVersion::V1_0, io::TlsVersion::V1_2});
+
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_connect_callback_count;
+            client.send_data(message, [&](io::TlsTcpClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+                ++client_on_send_callback_count;
+                client.schedule_removal();
+            });
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_callback_count);
+    EXPECT_EQ(0, client_on_send_callback_count);
+    EXPECT_EQ(0, server_on_connect_callback_count);
+    EXPECT_EQ(0, server_on_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_callback_count);
+    EXPECT_EQ(1, client_on_send_callback_count);
+    EXPECT_EQ(1, server_on_connect_callback_count);
+    EXPECT_EQ(1, server_on_receive_callback_count);
+}
+
 // TODO: not matching certificate and key
 // TODO: connect as TCP and send invalid data on various stages
 // TODO: listen on invalid address

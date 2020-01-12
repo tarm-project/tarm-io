@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <tuple>
 
 namespace io {
 
@@ -15,5 +16,9 @@ enum class TlsVersion : std::uint8_t {
     MAX = V1_3
 };
 
-} // namespace io
+// Min and max version
+using TlsVersionRange = std::tuple<TlsVersion, TlsVersion>;
 
+const TlsVersionRange DEFAULT_TLS_VERSION_RANGE = {TlsVersion::MIN, TlsVersion::MAX};
+
+} // namespace io

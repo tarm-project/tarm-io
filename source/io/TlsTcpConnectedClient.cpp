@@ -25,6 +25,7 @@ public:
 protected:
     const SSL_METHOD* ssl_method() override;
     bool ssl_set_siphers() override;
+    void ssl_set_versions() override;
     bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
 
@@ -83,6 +84,10 @@ bool TlsTcpConnectedClient::Impl::ssl_set_siphers() {
         return false;
     }
     return true;
+}
+
+void TlsTcpConnectedClient::Impl::ssl_set_versions() {
+    // Do nothing for now
 }
 
 bool TlsTcpConnectedClient::Impl::ssl_init_certificate_and_key() {
@@ -149,7 +154,7 @@ void TlsTcpConnectedClient::on_data_receive(const char* buf, std::size_t size) {
     return m_impl->on_data_receive(buf, size);
 }
 
-bool TlsTcpConnectedClient::init_ssl() {
+Error TlsTcpConnectedClient::init_ssl() {
     return m_impl->ssl_init();
 }
 

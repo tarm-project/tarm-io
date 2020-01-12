@@ -79,10 +79,10 @@ void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const
     TlsTcpConnectedClient* tls_client =
         new TlsTcpConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_certificate.get(), m_private_key.get(), tcp_client);
 
-    if (tls_client->init_ssl()) {
+    // TODO: error
+    Error tls_init_error = tls_client->init_ssl();
+    if (!tls_init_error) {
         tls_client->set_data_receive_callback(m_data_receive_callback);
-    } else {
-        // TODO: error
     }
 }
 

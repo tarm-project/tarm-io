@@ -6,6 +6,7 @@
 #include "Error.h"
 #include "Export.h"
 #include "Forward.h"
+#include "TlsVersion.h"
 
 #include <memory>
 
@@ -20,7 +21,7 @@ public:
     using EndSendCallback = std::function<void(TlsTcpClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(TlsTcpClient&, const DataChunk&, const Error&)>;
 
-    IO_DLL_PUBLIC TlsTcpClient(EventLoop& loop);
+    IO_DLL_PUBLIC TlsTcpClient(EventLoop& loop, TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
     IO_DLL_PUBLIC void schedule_removal() override;
 

@@ -84,7 +84,8 @@ void DtlsServer::Impl::on_new_peer(UdpServer& server, UdpPeer& udp_client, const
         }
     );
 
-    if (dtls_client->init_ssl()) {
+    Error init_error = dtls_client->init_ssl();
+    if (!init_error) {
         dtls_client->set_data_receive_callback(m_data_receive_callback);
     } else {
         // TODO: error

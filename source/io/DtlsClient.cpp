@@ -32,6 +32,7 @@ public:
 protected:
     const SSL_METHOD* ssl_method() override;
     bool ssl_set_siphers() override;
+    void ssl_set_versions() override;
     bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
 
@@ -75,7 +76,10 @@ void DtlsClient::Impl::connect(const std::string& address,
         this->on_data_receive(chunk.buf.get(), chunk.size);
     });
 
-    bool is_connected = ssl_init();
+    if (!is_ssl_inited()) {
+        // TODO: error handling
+        Error ssl_init_error = ssl_init();
+    }
 
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;
@@ -104,6 +108,10 @@ bool DtlsClient::Impl::ssl_set_siphers() {
         return false;
     }
     return true;
+}
+
+void DtlsClient::Impl::ssl_set_versions() {
+    // Do nothing for now
 }
 
 bool DtlsClient::Impl::ssl_init_certificate_and_key() {

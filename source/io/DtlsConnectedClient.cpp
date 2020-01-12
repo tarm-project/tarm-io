@@ -22,6 +22,7 @@ public:
 protected:
     const SSL_METHOD* ssl_method() override;
     bool ssl_set_siphers() override;
+    void ssl_set_versions() override;
     bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
 
@@ -90,6 +91,10 @@ bool DtlsConnectedClient::Impl::ssl_set_siphers() {
     return true;
 }
 
+void DtlsConnectedClient::Impl::ssl_set_versions() {
+    // Do nothing for now
+}
+
 bool DtlsConnectedClient::Impl::ssl_init_certificate_and_key() {
     auto result = SSL_CTX_use_certificate(this->ssl_ctx(), m_certificate);
     if (!result) {
@@ -146,7 +151,7 @@ void DtlsConnectedClient::on_data_receive(const char* buf, std::size_t size) {
     return m_impl->on_data_receive(buf, size);
 }
 
-bool DtlsConnectedClient::init_ssl() {
+Error DtlsConnectedClient::init_ssl() {
     return m_impl->ssl_init();
 }
 

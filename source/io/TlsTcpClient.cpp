@@ -16,7 +16,7 @@ namespace io {
 
 class TlsTcpClient::Impl : public detail::OpenSslClientImplBase<TlsTcpClient, TlsTcpClient::Impl> {
 public:
-    Impl(EventLoop& loop, TlsTcpClient& parent);
+    Impl(EventLoop& loop, TlsVersionRange version_range, TlsTcpClient& parent);
     ~Impl();
 
     std::uint32_t ipv4_addr() const;
@@ -32,6 +32,7 @@ public:
 protected:
     const SSL_METHOD* ssl_method() override;
     bool ssl_set_siphers() override;
+    void ssl_set_versions() override;
     bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
 
@@ -42,13 +43,15 @@ private:
     ConnectCallback m_connect_callback;
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
+    TlsVersionRange m_version_range;
 };
 
 TlsTcpClient::Impl::~Impl() {
 }
 
-TlsTcpClient::Impl::Impl(EventLoop& loop, TlsTcpClient& parent) :
-    OpenSslClientImplBase(loop, parent) {
+TlsTcpClient::Impl::Impl(EventLoop& loop, TlsVersionRange version_range, TlsTcpClient& parent) :
+    OpenSslClientImplBase(loop, parent),
+    m_version_range(version_range) {
 }
 
 std::uint32_t TlsTcpClient::Impl::ipv4_addr() const {
@@ -66,8 +69,10 @@ void TlsTcpClient::Impl::connect(const std::string& address,
                  CloseCallback close_callback) {
     m_client = new TcpClient(*m_loop);
 
-    // TODO: check is_connected
-    bool is_connected = ssl_init();
+    if (!is_ssl_inited()) {
+        // TODO: error handling
+        Error ssl_init_error = ssl_init();
+    }
 
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;
@@ -117,6 +122,10 @@ bool TlsTcpClient::Impl::ssl_set_siphers() {
     return true;
 }
 
+void TlsTcpClient::Impl::ssl_set_versions() {
+    this->set_tls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
+}
+
 bool TlsTcpClient::Impl::ssl_init_certificate_and_key() {
     // Do nothing
     return true;
@@ -140,9 +149,9 @@ void TlsTcpClient::Impl::on_handshake_complete() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TlsTcpClient::TlsTcpClient(EventLoop& loop) :
+TlsTcpClient::TlsTcpClient(EventLoop& loop, TlsVersionRange version_range) :
     Removable(loop),
-    m_impl(new Impl(loop, *this)) {
+    m_impl(new Impl(loop, version_range, *this)) {
 }
 
 TlsTcpClient::~TlsTcpClient() {
