@@ -7,7 +7,8 @@ namespace io {
 
 // List all known versions of TLS. Some of them may be not available for some setups.
 enum class TlsVersion : std::uint8_t {
-    V1_0 = 0,
+    UNKNOWN = 0,
+    V1_0,
     V1_1,
     V1_2,
     V1_3,

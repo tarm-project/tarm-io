@@ -196,4 +196,8 @@ void TlsTcpClient::send_data(const std::string& message, EndSendCallback callbac
     return m_impl->send_data(message, callback);
 }
 
+TlsVersion TlsTcpClient::negotiated_tls_version() const {
+    return m_impl->negotiated_tls_version();
+}
+
 } // namespace io

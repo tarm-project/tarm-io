@@ -186,5 +186,9 @@ const TlsTcpServer& TlsTcpConnectedClient::server() const {
     return m_impl->server();
 }
 
+TlsVersion TlsTcpConnectedClient::negotiated_tls_version() const {
+    return m_impl->negotiated_tls_version();
+}
+
 } // namespace io
 

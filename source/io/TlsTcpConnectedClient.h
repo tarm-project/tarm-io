@@ -6,6 +6,7 @@
 #include "Error.h"
 #include "Export.h"
 #include "Forward.h"
+#include "TlsVersion.h"
 
 #include <memory>
 
@@ -38,6 +39,8 @@ public:
 
     IO_DLL_PUBLIC TlsTcpServer& server();
     IO_DLL_PUBLIC const TlsTcpServer& server() const;
+
+    IO_DLL_PUBLIC TlsVersion negotiated_tls_version() const;
 
 protected:
     ~TlsTcpConnectedClient();

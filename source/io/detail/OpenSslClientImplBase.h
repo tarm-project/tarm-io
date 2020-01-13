@@ -47,6 +47,8 @@ public:
 
     bool is_open() const;
 
+    TlsVersion negotiated_tls_version() const;
+
 protected:
     void enable_tls_version(TlsVersion version);
     void disable_tls_version(TlsVersion version);
@@ -173,6 +175,39 @@ void OpenSslClientImplBase<ParentType, ImplType>::disable_tls_version(TlsVersion
         default:
             // do nothing
             break;
+    }
+}
+
+template<typename ParentType, typename ImplType>
+TlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_tls_version() const {
+    if (!is_open()) {
+        return TlsVersion::UNKNOWN;
+    }
+
+    SSL_SESSION* session = SSL_get_session(m_ssl.get());
+    if (session == nullptr) {
+        return TlsVersion::UNKNOWN;
+    }
+
+    switch (session->ssl_version) {
+#ifdef TLS1_VERSION
+        case TLS1_VERSION:
+            return TlsVersion::V1_0;
+#endif
+#ifdef TLS1_1_VERSION
+        case TLS1_1_VERSION:
+            return TlsVersion::V1_1;
+#endif
+#ifdef TLS1_2_VERSION
+        case TLS1_2_VERSION:
+            return TlsVersion::V1_2;
+#endif
+#ifdef TLS1_3_VERSION
+        case TLS1_3_VERSION:
+            return TlsVersion::V1_3;
+#endif
+        default:
+            return TlsVersion::UNKNOWN;
     }
 }
 

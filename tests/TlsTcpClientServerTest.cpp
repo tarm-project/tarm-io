@@ -3,6 +3,7 @@
 #include "io/Path.h"
 #include "io/TlsTcpClient.h"
 #include "io/TlsTcpServer.h"
+#include "io/global/Version.h"
 
 #include <vector>
 // TODO: if win32
@@ -986,6 +987,41 @@ TEST_F(TlsTcpClientServerTest, callbacks_order) {
 
     EXPECT_EQ(1, client_new_connection_callback_count);
     EXPECT_EQ(1, client_data_receive_callback_count);
+}
+
+TEST_F(TlsTcpClientServerTest, tls_version) {
+    std::size_t client_on_connect_callback_count = 0;
+
+    io::EventLoop loop;
+
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path);
+    auto listen_error = server.listen(m_default_addr, m_default_port,
+        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            EXPECT_EQ(io::global::max_supported_tls_version(), client.negotiated_tls_version());
+            server.shutdown();
+        },
+        nullptr
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TlsTcpClient(loop);
+
+    EXPECT_EQ(io::TlsVersion::UNKNOWN, client->negotiated_tls_version());
+
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            EXPECT_EQ(io::global::max_supported_tls_version(), client.negotiated_tls_version());
+            ++client_on_connect_callback_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_callback_count);
 }
 
 // TODO: need rewrite this test to support TLS versions checking
