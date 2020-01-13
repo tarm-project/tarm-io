@@ -3,6 +3,7 @@
 #pragma once
 
 #include "DataChunk.h"
+#include "DtlsVersion.h"
 #include "Removable.h"
 #include "EventLoop.h"
 #include "Error.h"
@@ -35,6 +36,8 @@ public:
 
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
+
+    IO_DLL_PUBLIC DtlsVersion negotiated_dtls_version() const;
 
 protected:
     ~DtlsConnectedClient();

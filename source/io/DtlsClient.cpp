@@ -184,4 +184,8 @@ void DtlsClient::send_data(const std::string& message, EndSendCallback callback)
     return m_impl->send_data(message, callback);
 }
 
+DtlsVersion DtlsClient::negotiated_dtls_version() const {
+    return m_impl->negotiated_dtls_version();
+}
+
 } // namespace io

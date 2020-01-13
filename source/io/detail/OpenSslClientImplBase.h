@@ -1,6 +1,7 @@
 #pragma once
 
 #include "io/DataChunk.h"
+#include "io/DtlsVersion.h"
 #include "io/EventLoop.h"
 #include "io/TlsVersion.h"
 
@@ -48,6 +49,7 @@ public:
     bool is_open() const;
 
     TlsVersion negotiated_tls_version() const;
+    DtlsVersion negotiated_dtls_version() const;
 
 protected:
     void enable_tls_version(TlsVersion version);
@@ -208,6 +210,31 @@ TlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_tls_version()
 #endif
         default:
             return TlsVersion::UNKNOWN;
+    }
+}
+
+template<typename ParentType, typename ImplType>
+DtlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_dtls_version() const {
+    if (!is_open()) {
+        return DtlsVersion::UNKNOWN;
+    }
+
+    SSL_SESSION* session = SSL_get_session(m_ssl.get());
+    if (session == nullptr) {
+        return DtlsVersion::UNKNOWN;
+    }
+
+    switch (session->ssl_version) {
+#ifdef DTLS1_VERSION
+        case DTLS1_VERSION:
+            return DtlsVersion::V1_0;
+#endif
+#ifdef DTLS1_2_VERSION
+        case DTLS1_2_VERSION:
+            return DtlsVersion::V1_2;
+#endif
+        default:
+            return DtlsVersion::UNKNOWN;
     }
 }
 

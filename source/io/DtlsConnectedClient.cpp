@@ -175,5 +175,8 @@ bool DtlsConnectedClient::is_open() const {
     return m_impl->is_open();
 }
 
+DtlsVersion DtlsConnectedClient::negotiated_dtls_version() const {
+    return m_impl->negotiated_dtls_version();
+}
 
 } // namespace io

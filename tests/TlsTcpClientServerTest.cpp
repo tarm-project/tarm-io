@@ -989,7 +989,7 @@ TEST_F(TlsTcpClientServerTest, callbacks_order) {
     EXPECT_EQ(1, client_data_receive_callback_count);
 }
 
-TEST_F(TlsTcpClientServerTest, tls_version) {
+TEST_F(TlsTcpClientServerTest, tls_negotiated_version) {
     std::size_t client_on_connect_callback_count = 0;
 
     io::EventLoop loop;

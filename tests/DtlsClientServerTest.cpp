@@ -3,6 +3,7 @@
 #include "io/Path.h"
 #include "io/DtlsClient.h"
 #include "io/DtlsServer.h"
+#include "io/global/Version.h"
 
 #include <thread>
 
@@ -289,6 +290,41 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
 
     EXPECT_EQ(1, client_data_send_counter);
     EXPECT_EQ(1, server_data_send_counter);
+}
+
+TEST_F(DtlsClientServerTest, dtls_negotiated_version) {
+    io::EventLoop loop;
+
+    std::size_t client_new_connection_counter = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen(m_default_addr, m_default_port,
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            EXPECT_EQ(io::global::max_supported_dtls_version(), client.negotiated_dtls_version());
+            server->schedule_removal();
+        },
+        nullptr
+    );
+
+    auto client = new io::DtlsClient(loop);
+    EXPECT_EQ(io::DtlsVersion::UNKNOWN, client->negotiated_dtls_version());
+    client->connect(m_default_addr, m_default_port,
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_new_connection_counter;
+            EXPECT_EQ(io::global::max_supported_dtls_version(), client.negotiated_dtls_version());
+            client.schedule_removal();
+        },
+        nullptr
+    );
+
+    EXPECT_EQ(0, client_new_connection_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_new_connection_counter);
+
 }
 
 /*
