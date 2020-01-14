@@ -23,7 +23,8 @@ public:
 
     IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,
                                const Path& certificate_path,
-                               const Path& private_key_path);
+                               const Path& private_key_path,
+                               TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
     // TODO: some sort of macro here???
     TlsTcpServer(const TlsTcpServer& other) = delete;

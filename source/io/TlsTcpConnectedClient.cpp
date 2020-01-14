@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "TcpConnectedClient.h"
 #include "detail/OpenSslClientImplBase.h"
+#include "detail/TlsContext.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -11,7 +12,12 @@ namespace io {
 
 class TlsTcpConnectedClient::Impl : public detail::OpenSslClientImplBase<TlsTcpConnectedClient, TlsTcpConnectedClient::Impl> {
 public:
-    Impl(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, X509* private_key, TcpConnectedClient& tcp_client, TlsTcpConnectedClient& parent);
+    Impl(EventLoop& loop,
+         TlsTcpServer& tls_server,
+         NewConnectionCallback new_connection_callback,
+         TcpConnectedClient& tcp_client,
+         TlsContext& context,
+         TlsTcpConnectedClient& parent);
     ~Impl();
 
     void close();
@@ -33,10 +39,9 @@ protected:
     void on_handshake_complete() override;
 
 private:
-    TlsTcpServer* m_tls_server;
+    TlsTcpServer* m_tls_server = nullptr;;
 
-    ::X509* m_certificate;
-    ::EVP_PKEY* m_private_key;
+    TlsContext m_tls_context;
 
     DataReceiveCallback m_data_receive_callback = nullptr;
     NewConnectionCallback m_new_connection_callback = nullptr;
@@ -45,14 +50,12 @@ private:
 TlsTcpConnectedClient::Impl::Impl(EventLoop& loop,
                                   TlsTcpServer& tls_server,
                                   NewConnectionCallback new_connection_callback,
-                                  X509* certificate,
-                                  EVP_PKEY* private_key,
                                   TcpConnectedClient& tcp_client,
+                                  TlsContext& context,
                                   TlsTcpConnectedClient& parent) :
     OpenSslClientImplBase(loop, parent),
     m_tls_server(&tls_server),
-    m_certificate(reinterpret_cast<::X509*>(certificate)),
-    m_private_key(reinterpret_cast<::EVP_PKEY*>(private_key)),
+    m_tls_context(context),
     m_new_connection_callback(new_connection_callback) {
     m_client = &tcp_client;
     m_client->set_user_data(&parent);
@@ -87,17 +90,17 @@ bool TlsTcpConnectedClient::Impl::ssl_set_siphers() {
 }
 
 void TlsTcpConnectedClient::Impl::ssl_set_versions() {
-    // Do nothing for now
+    this->set_tls_version(std::get<0>(m_tls_context.tls_version_range), std::get<1>(m_tls_context.tls_version_range));
 }
 
 bool TlsTcpConnectedClient::Impl::ssl_init_certificate_and_key() {
-    auto result = SSL_CTX_use_certificate(this->ssl_ctx(), m_certificate);
+    auto result = SSL_CTX_use_certificate(this->ssl_ctx(), m_tls_context.certificate);
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to load certificate");
         return false;
     }
 
-    result = SSL_CTX_use_PrivateKey(this->ssl_ctx(), m_private_key);
+    result = SSL_CTX_use_PrivateKey(this->ssl_ctx(), m_tls_context.private_key);
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to load private key");
         return false;
@@ -138,9 +141,13 @@ const TlsTcpServer& TlsTcpConnectedClient::Impl::server() const {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client) :
+TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop,
+                                             TlsTcpServer& tls_server,
+                                             NewConnectionCallback new_connection_callback,
+                                             TcpConnectedClient& tcp_client,
+                                             void* context) :
     Removable(loop),
-    m_impl(new Impl(loop, tls_server, new_connection_callback, certificate, private_key, tcp_client, *this)) {
+    m_impl(new Impl(loop, tls_server, new_connection_callback, tcp_client, *reinterpret_cast<TlsContext*>(context), *this)) {
 }
 
 TlsTcpConnectedClient::~TlsTcpConnectedClient() {

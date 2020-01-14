@@ -10,11 +10,7 @@
 
 #include <memory>
 
-// TODO: revise this
 namespace io {
-
-using X509 = void;
-using EVP_PKEY = void;
 
 // TODO: now we can schedule removal of connected client from any callback
 //       need to revise this. Probably just to use close/shutdown only.
@@ -46,7 +42,12 @@ protected:
     ~TlsTcpConnectedClient();
 
 private:
-    TlsTcpConnectedClient(EventLoop& loop, TlsTcpServer& tls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, TcpConnectedClient& tcp_client);
+    TlsTcpConnectedClient(EventLoop& loop,
+                          TlsTcpServer& tls_server,
+                          NewConnectionCallback new_connection_callback,
+                          TcpConnectedClient& tcp_client,
+                          void* context);
+
     void set_data_receive_callback(DataReceiveCallback callback);
     void on_data_receive(const char* buf, std::size_t size);
     Error init_ssl();

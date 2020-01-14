@@ -1,5 +1,7 @@
 #include "TlsTcpServer.h"
 
+#include "detail/TlsContext.h"
+
 #include "Common.h"
 #include "TcpServer.h"
 
@@ -16,7 +18,7 @@ namespace io {
 
 class TlsTcpServer::Impl {
 public:
-    Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsTcpServer& parent);
+    Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsVersionRange version_range, TlsTcpServer& parent);
     ~Impl();
 
     Error listen(const std::string& ip_addr_str,
@@ -50,19 +52,25 @@ private:
 
     X509Ptr m_certificate;
     EvpPkeyPtr m_private_key;
+    TlsVersionRange m_version_range;
 
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
 };
 
-TlsTcpServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsTcpServer& parent) :
+TlsTcpServer::Impl::Impl(EventLoop& loop,
+                         const Path& certificate_path,
+                         const Path& private_key_path,
+                         TlsVersionRange version_range,
+                         TlsTcpServer& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_tcp_server(new TcpServer(loop)),
     m_certificate_path(certificate_path),
     m_private_key_path(private_key_path),
     m_certificate(nullptr, ::X509_free),
-    m_private_key(nullptr, ::EVP_PKEY_free) {
+    m_private_key(nullptr, ::EVP_PKEY_free),
+    m_version_range(version_range) {
 }
 
 TlsTcpServer::Impl::~Impl() {
@@ -76,8 +84,14 @@ void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const
         return;
     }
 
+    TlsContext context {
+        m_certificate.get(),
+        m_private_key.get(),
+        m_version_range
+    };
+
     TlsTcpConnectedClient* tls_client =
-        new TlsTcpConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_certificate.get(), m_private_key.get(), tcp_client);
+        new TlsTcpConnectedClient(*m_loop, *m_parent, m_new_connection_callback, tcp_client, &context);
 
     // TODO: error
     Error tls_init_error = tls_client->init_ssl();
@@ -214,9 +228,9 @@ bool TlsTcpServer::Impl::certificate_and_key_match() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TlsTcpServer::TlsTcpServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path) :
+TlsTcpServer::TlsTcpServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsVersionRange version_range) :
     Removable(loop),
-    m_impl(new Impl(loop, certificate_path, private_key_path, *this)) {
+    m_impl(new Impl(loop, certificate_path, private_key_path, version_range, *this)) {
 }
 
 TlsTcpServer::~TlsTcpServer() {
