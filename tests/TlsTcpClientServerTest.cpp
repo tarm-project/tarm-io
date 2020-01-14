@@ -1135,7 +1135,9 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
     EXPECT_EQ(1, server_on_receive_callback_count);
 }
 
-// TODO: not matching certificate and key
+
+// TODO: TLS version mismatch test
+
 // TODO: connect as TCP and send invalid data on various stages
 // TODO: listen on invalid address
 // TODO: listen on privileged port
