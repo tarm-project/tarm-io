@@ -368,4 +368,64 @@ TEST_F(DtlsClientServerTest, default_constructor) {
 }
 */
 
+// TODO: finish the test
+TEST_F(DtlsClientServerTest, DISABLED_client_with_restricted_dtls_version) {
+    const std::string message = "Hello!";
+    std::size_t client_on_connect_callback_count = 0;
+    std::size_t client_on_send_callback_count = 0;
+    std::size_t server_on_connect_callback_count = 0;
+    std::size_t server_on_receive_callback_count = 0;
+
+    io::EventLoop loop;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen(m_default_addr, m_default_port,
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_connect_callback_count;
+        },
+        [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_callback_count;
+
+            EXPECT_EQ(message.size(), data.size);
+            std::string received_message(data.buf.get(), data.size);
+            EXPECT_EQ(message, received_message);
+
+            server->schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::DtlsClient(loop, {io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
+
+    client->connect(m_default_addr, m_default_port,
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_connect_callback_count;
+            client.send_data(message, [&](io::DtlsClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+                ++client_on_send_callback_count;
+                client.schedule_removal();
+            });
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_callback_count);
+    EXPECT_EQ(0, client_on_send_callback_count);
+    EXPECT_EQ(0, server_on_connect_callback_count);
+    EXPECT_EQ(0, server_on_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_callback_count);
+    EXPECT_EQ(1, client_on_send_callback_count);
+    EXPECT_EQ(1, server_on_connect_callback_count);
+    EXPECT_EQ(1, server_on_receive_callback_count);
+}
+
+
+// TODO: DTLS version lower is bigger than higher error
+// TODO: DTLS version mismatch test
+
 // TODO: unit test invalid address

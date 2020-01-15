@@ -16,7 +16,7 @@ namespace io {
 
 class DtlsClient::Impl : public detail::OpenSslClientImplBase<DtlsClient, DtlsClient::Impl> {
 public:
-    Impl(EventLoop& loop, DtlsClient& parent);
+    Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClient& parent);
     ~Impl();
 
     std::uint32_t ipv4_addr() const;
@@ -43,13 +43,15 @@ private:
     ConnectCallback m_connect_callback;
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
+    DtlsVersionRange m_version_range;
 };
 
 DtlsClient::Impl::~Impl() {
 }
 
-DtlsClient::Impl::Impl(EventLoop& loop, DtlsClient& parent) :
-    OpenSslClientImplBase(loop, parent) {
+DtlsClient::Impl::Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClient& parent) :
+    OpenSslClientImplBase(loop, parent),
+    m_version_range(version_range) {
 }
 
 std::uint32_t DtlsClient::Impl::ipv4_addr() const {
@@ -111,7 +113,7 @@ bool DtlsClient::Impl::ssl_set_siphers() {
 }
 
 void DtlsClient::Impl::ssl_set_versions() {
-    // Do nothing for now
+    this->set_dtls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
 }
 
 bool DtlsClient::Impl::ssl_init_certificate_and_key() {
@@ -137,9 +139,9 @@ void DtlsClient::Impl::on_handshake_complete() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-DtlsClient::DtlsClient(EventLoop& loop) :
+DtlsClient::DtlsClient(EventLoop& loop, DtlsVersionRange version_range) :
     Removable(loop),
-    m_impl(new Impl(loop, *this)) {
+    m_impl(new Impl(loop, version_range, *this)) {
 }
 
 DtlsClient::~DtlsClient() {

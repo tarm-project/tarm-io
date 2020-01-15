@@ -14,4 +14,9 @@ enum class DtlsVersion : std::uint8_t {
     MAX = V1_2
 };
 
+// Min and max version
+using DtlsVersionRange = std::tuple<DtlsVersion, DtlsVersion>;
+
+const DtlsVersionRange DEFAULT_DTLS_VERSION_RANGE = {DtlsVersion::MIN, DtlsVersion::MAX};
+
 } // namespace io

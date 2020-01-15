@@ -1138,6 +1138,7 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
 
 
 // TODO: TLS version mismatch test
+// TODO: TLS version lower is bigger than higher error
 
 // TODO: connect as TCP and send invalid data on various stages
 // TODO: listen on invalid address

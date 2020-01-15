@@ -33,6 +33,7 @@ public:
     virtual void ssl_set_state() = 0;
 
     Error set_tls_version(TlsVersion version_min, TlsVersion version_max);
+    Error set_dtls_version(DtlsVersion version_min, DtlsVersion version_max);
 
     void read_from_ssl();
     virtual void on_ssl_read(const DataChunk&) = 0;
@@ -52,8 +53,15 @@ public:
     DtlsVersion negotiated_dtls_version() const;
 
 protected:
+    template<typename VersionType,
+             void(OpenSslClientImplBase<ParentType, ImplType>::*EnableMethod)(VersionType),
+             void(OpenSslClientImplBase<ParentType, ImplType>::*DisableMethod)(VersionType)>
+    Error set_tls_dtls_version(VersionType version_min, VersionType version_max);
+
     void enable_tls_version(TlsVersion version);
     void disable_tls_version(TlsVersion version);
+    void enable_dtls_version(DtlsVersion version);
+    void disable_dtls_version(DtlsVersion version);
 
     ParentType* m_parent;
     EventLoop* m_loop;
@@ -95,6 +103,7 @@ template<typename ParentType, typename ImplType>
 OpenSslClientImplBase<ParentType, ImplType>::~OpenSslClientImplBase() {
 }
 
+/*
 template<typename ParentType, typename ImplType>
 Error OpenSslClientImplBase<ParentType, ImplType>::set_tls_version(TlsVersion version_min, TlsVersion version_max) {
     if (version_min > version_max) {
@@ -119,28 +128,74 @@ Error OpenSslClientImplBase<ParentType, ImplType>::set_tls_version(TlsVersion ve
 
     return Error(StatusCode::OK);
 }
+*/
+
+template<typename ParentType, typename ImplType>
+template<typename VersionType,
+         void(OpenSslClientImplBase<ParentType, ImplType>::*EnableMethod)(VersionType),
+         void(OpenSslClientImplBase<ParentType, ImplType>::*DisableMethod)(VersionType)>
+Error OpenSslClientImplBase<ParentType, ImplType>::set_tls_dtls_version(VersionType version_min, VersionType version_max) {
+    if (version_min > version_max) {
+        // TODO: return error
+    }
+
+    if (version_min != VersionType::MIN) {
+        for (std::size_t v = static_cast<std::size_t>(TlsVersion::MIN); v < static_cast<std::size_t>(version_min); ++v) {
+            (this->*DisableMethod)(static_cast<VersionType>(v));
+        }
+    }
+
+    if (version_max != VersionType::MAX) {
+        for (std::size_t v = static_cast<std::size_t>(version_max) + 1; v <= static_cast<std::size_t>(VersionType::MAX); ++v) {
+            (this->*DisableMethod)(static_cast<VersionType>(v));
+        }
+    }
+
+    for (std::size_t v = static_cast<std::size_t>(version_min); v <= static_cast<std::size_t>(version_max); ++v) {
+        (this->*EnableMethod)(static_cast<VersionType>(v));
+    }
+
+    return Error(StatusCode::OK);
+}
+
+template<typename ParentType, typename ImplType>
+Error OpenSslClientImplBase<ParentType, ImplType>::set_tls_version(TlsVersion version_min, TlsVersion version_max) {
+    return this->set_tls_dtls_version<TlsVersion,
+                                      &OpenSslClientImplBase<ParentType, ImplType>::enable_tls_version,
+                                      &OpenSslClientImplBase<ParentType, ImplType>::disable_tls_version>
+        (version_min, version_max);
+}
+
+
+template<typename ParentType, typename ImplType>
+Error OpenSslClientImplBase<ParentType, ImplType>::set_dtls_version(DtlsVersion version_min, DtlsVersion version_max) {
+    return this->set_tls_dtls_version<DtlsVersion,
+                                      &OpenSslClientImplBase<ParentType, ImplType>::enable_dtls_version,
+                                      &OpenSslClientImplBase<ParentType, ImplType>::disable_dtls_version>
+    (version_min, version_max);
+}
 
 // Note could not generalize 'enable_tls_version' and 'disable_tls_version' because in earlier versions of OpenSSl
 // SSL_CTX_clear_options and SSL_CTX_set_options were macros and in modern versions they are functions
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::enable_tls_version(TlsVersion version) {
     switch (version) {
-#ifdef SSL_OP_NO_TLSv1
+#ifdef TLS1_VERSION
         case TlsVersion::V1_0:
             SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1);
             break;
 #endif
-#ifdef SSL_OP_NO_TLSv1_1
+#ifdef TLS1_1_VERSION
         case TlsVersion::V1_1:
             SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_1);
             break;
 #endif
-#ifdef SSL_OP_NO_TLSv1_2
+#ifdef TLS1_2_VERSION
         case TlsVersion::V1_2:
             SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_2);
             break;
 #endif
-#ifdef SSL_OP_NO_TLSv1_3
+#ifdef TLS1_3_VERSION
         case TlsVersion::V1_3:
             SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_3);
             break;
@@ -154,24 +209,62 @@ void OpenSslClientImplBase<ParentType, ImplType>::enable_tls_version(TlsVersion 
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::disable_tls_version(TlsVersion version) {
     switch (version) {
-#ifdef SSL_OP_NO_TLSv1
+#ifdef TLS1_VERSION
         case TlsVersion::V1_0:
             SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1);
             break;
 #endif
-#ifdef SSL_OP_NO_TLSv1_1
+#ifdef TLS1_1_VERSION
         case TlsVersion::V1_1:
             SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_1);
             break;
 #endif
-#ifdef SSL_OP_NO_TLSv1_2
+#ifdef TLS1_2_VERSION
         case TlsVersion::V1_2:
             SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_2);
             break;
 #endif
-#ifdef SSL_OP_NO_TLSv1_3
+#ifdef TLS1_3_VERSION
         case TlsVersion::V1_3:
             SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_3);
+            break;
+#endif
+        default:
+            // do nothing
+            break;
+    }
+}
+
+template<typename ParentType, typename ImplType>
+void OpenSslClientImplBase<ParentType, ImplType>::enable_dtls_version(DtlsVersion version) {
+    switch (version) {
+#ifdef DTLS1_VERSION
+        case DtlsVersion::V1_0:
+            SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1);
+            break;
+#endif
+#ifdef DTLS1_2_VERSION
+        case DtlsVersion::V1_2:
+            SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_1);
+            break;
+#endif
+        default:
+            // do nothing
+            break;
+    }
+}
+
+template<typename ParentType, typename ImplType>
+void OpenSslClientImplBase<ParentType, ImplType>::disable_dtls_version(DtlsVersion version) {
+    switch (version) {
+#ifdef DTLS1_VERSION
+        case DtlsVersion::V1_0:
+            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1);
+            break;
+#endif
+#ifdef DTLS1_2_VERSION
+        case DtlsVersion::V1_2:
+            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_1);
             break;
 #endif
         default:
