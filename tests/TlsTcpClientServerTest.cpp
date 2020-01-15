@@ -1014,6 +1014,7 @@ TEST_F(TlsTcpClientServerTest, tls_negotiated_version) {
             EXPECT_FALSE(error);
             EXPECT_EQ(io::global::max_supported_tls_version(), client.negotiated_tls_version());
             ++client_on_connect_callback_count;
+            client.schedule_removal();
         }
     );
 
