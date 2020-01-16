@@ -240,12 +240,12 @@ void OpenSslClientImplBase<ParentType, ImplType>::enable_dtls_version(DtlsVersio
     switch (version) {
 #ifdef DTLS1_VERSION
         case DtlsVersion::V1_0:
-            SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1);
+            SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_DTLSv1);
             break;
 #endif
 #ifdef DTLS1_2_VERSION
         case DtlsVersion::V1_2:
-            SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_1);
+            SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_DTLSv1_2);
             break;
 #endif
         default:
@@ -259,12 +259,12 @@ void OpenSslClientImplBase<ParentType, ImplType>::disable_dtls_version(DtlsVersi
     switch (version) {
 #ifdef DTLS1_VERSION
         case DtlsVersion::V1_0:
-            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1);
+            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_DTLSv1);
             break;
 #endif
 #ifdef DTLS1_2_VERSION
         case DtlsVersion::V1_2:
-            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_1);
+            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_DTLSv1_2);
             break;
 #endif
         default:

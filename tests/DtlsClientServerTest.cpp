@@ -368,8 +368,7 @@ TEST_F(DtlsClientServerTest, default_constructor) {
 }
 */
 
-// TODO: finish the test
-TEST_F(DtlsClientServerTest, DISABLED_client_with_restricted_dtls_version) {
+TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
     const std::string message = "Hello!";
     std::size_t client_on_connect_callback_count = 0;
     std::size_t client_on_send_callback_count = 0;
@@ -383,6 +382,7 @@ TEST_F(DtlsClientServerTest, DISABLED_client_with_restricted_dtls_version) {
         [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
+            EXPECT_EQ(io::global::min_supported_dtls_version(), client.negotiated_dtls_version());
         },
         [&](io::DtlsServer&, io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -402,6 +402,7 @@ TEST_F(DtlsClientServerTest, DISABLED_client_with_restricted_dtls_version) {
     client->connect(m_default_addr, m_default_port,
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
+            EXPECT_EQ(io::global::min_supported_dtls_version(), client.negotiated_dtls_version());
             ++client_on_connect_callback_count;
             client.send_data(message, [&](io::DtlsClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
