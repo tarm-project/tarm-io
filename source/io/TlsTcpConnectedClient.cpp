@@ -16,7 +16,7 @@ public:
          TlsTcpServer& tls_server,
          NewConnectionCallback new_connection_callback,
          TcpConnectedClient& tcp_client,
-         TlsContext& context,
+         const detail::TlsContext& context,
          TlsTcpConnectedClient& parent);
     ~Impl();
 
@@ -41,7 +41,7 @@ protected:
 private:
     TlsTcpServer* m_tls_server = nullptr;;
 
-    TlsContext m_tls_context;
+    detail::TlsContext m_tls_context;
 
     DataReceiveCallback m_data_receive_callback = nullptr;
     NewConnectionCallback m_new_connection_callback = nullptr;
@@ -51,7 +51,7 @@ TlsTcpConnectedClient::Impl::Impl(EventLoop& loop,
                                   TlsTcpServer& tls_server,
                                   NewConnectionCallback new_connection_callback,
                                   TcpConnectedClient& tcp_client,
-                                  TlsContext& context,
+                                  const detail::TlsContext& context,
                                   TlsTcpConnectedClient& parent) :
     OpenSslClientImplBase(loop, parent),
     m_tls_server(&tls_server),
@@ -147,7 +147,7 @@ TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop,
                                              TcpConnectedClient& tcp_client,
                                              void* context) :
     Removable(loop),
-    m_impl(new Impl(loop, tls_server, new_connection_callback, tcp_client, *reinterpret_cast<TlsContext*>(context), *this)) {
+    m_impl(new Impl(loop, tls_server, new_connection_callback, tcp_client, *reinterpret_cast<detail::TlsContext*>(context), *this)) {
 }
 
 TlsTcpConnectedClient::~TlsTcpConnectedClient() {

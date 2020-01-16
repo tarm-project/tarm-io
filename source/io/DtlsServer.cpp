@@ -1,6 +1,7 @@
 #include "DtlsServer.h"
 
 #include "Common.h"
+#include "detail/DtlsContext.h"
 #include "UdpServer.h"
 #include "UdpPeer.h"
 
@@ -17,7 +18,7 @@ namespace io {
 
 class DtlsServer::Impl {
 public:
-    Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsServer& parent);
+    Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent);
     ~Impl();
 
     Error listen(const std::string& ip_addr_str,
@@ -50,19 +51,21 @@ private:
 
     X509Ptr m_certificate;
     EvpPkeyPtr m_private_key;
+    DtlsVersionRange m_version_range;
 
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
 };
 
-DtlsServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsServer& parent) :
+DtlsServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_udp_server(new UdpServer(loop)),
     m_certificate_path(certificate_path),
     m_private_key_path(private_key_path),
     m_certificate(nullptr, ::X509_free),
-    m_private_key(nullptr, ::EVP_PKEY_free) {
+    m_private_key(nullptr, ::EVP_PKEY_free),
+    m_version_range(version_range) {
 }
 
 DtlsServer::Impl::~Impl() {
@@ -76,8 +79,14 @@ void DtlsServer::Impl::on_new_peer(UdpServer& server, UdpPeer& udp_client, const
         return;
     }
 
+    detail::DtlsContext context {
+        m_certificate.get(),
+        m_private_key.get(),
+        m_version_range
+    };
+
     DtlsConnectedClient* dtls_client =
-        new DtlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_certificate.get(), m_private_key.get(), udp_client);
+        new DtlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, udp_client, &context);
     udp_client.set_on_schedule_removal(
         [=](const Removable&) {
             delete dtls_client;
@@ -184,9 +193,9 @@ bool DtlsServer::Impl::certificate_and_key_match() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-DtlsServer::DtlsServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path) :
+DtlsServer::DtlsServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range) :
     Removable(loop),
-    m_impl(new Impl(loop, certificate_path, private_key_path, *this)) {
+    m_impl(new Impl(loop, certificate_path, private_key_path, version_range, *this)) {
 }
 
 DtlsServer::~DtlsServer() {

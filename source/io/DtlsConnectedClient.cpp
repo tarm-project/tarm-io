@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "UdpPeer.h"
+#include "detail/DtlsContext.h"
 #include "detail/OpenSslClientImplBase.h"
 
 #include <openssl/ssl.h>
@@ -11,7 +12,7 @@ namespace io {
 
 class DtlsConnectedClient::Impl : public detail::OpenSslClientImplBase<DtlsConnectedClient, DtlsConnectedClient::Impl> {
 public:
-    Impl(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, X509* certificate, X509* private_key, UdpPeer& udp_client, DtlsConnectedClient& parent);
+    Impl(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, UdpPeer& udp_client, const detail::DtlsContext& context, DtlsConnectedClient& parent);
     ~Impl();
 
     void close();
@@ -32,8 +33,7 @@ protected:
 private:
     DtlsServer* m_dtls_server;
 
-    ::X509* m_certificate;
-    ::EVP_PKEY* m_private_key;
+    detail::DtlsContext m_dtls_context;
 
     DataReceiveCallback m_data_receive_callback = nullptr;
     NewConnectionCallback m_new_connection_callback = nullptr;
@@ -42,14 +42,12 @@ private:
 DtlsConnectedClient::Impl::Impl(EventLoop& loop,
                                 DtlsServer& dtls_server,
                                 NewConnectionCallback new_connection_callback,
-                                X509* certificate,
-                                EVP_PKEY* private_key,
                                 UdpPeer& udp_client,
+                                const detail::DtlsContext& context,
                                 DtlsConnectedClient& parent) :
     OpenSslClientImplBase(loop, parent),
     m_dtls_server(&dtls_server),
-    m_certificate(reinterpret_cast<::X509*>(certificate)),
-    m_private_key(reinterpret_cast<::EVP_PKEY*>(private_key)),
+    m_dtls_context(context),
     m_new_connection_callback(new_connection_callback) {
     m_client = &udp_client;
     m_client->set_user_data(&parent);
@@ -96,13 +94,13 @@ void DtlsConnectedClient::Impl::ssl_set_versions() {
 }
 
 bool DtlsConnectedClient::Impl::ssl_init_certificate_and_key() {
-    auto result = SSL_CTX_use_certificate(this->ssl_ctx(), m_certificate);
+    auto result = SSL_CTX_use_certificate(this->ssl_ctx(), m_dtls_context.certificate);
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to load certificate");
         return false;
     }
 
-    result = SSL_CTX_use_PrivateKey(this->ssl_ctx(), m_private_key);
+    result = SSL_CTX_use_PrivateKey(this->ssl_ctx(), m_dtls_context.private_key);
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to load private key");
         return false;
@@ -135,9 +133,9 @@ void DtlsConnectedClient::Impl::on_handshake_complete() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-DtlsConnectedClient::DtlsConnectedClient(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, UdpPeer& udp_client) :
+DtlsConnectedClient::DtlsConnectedClient(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, UdpPeer& udp_client, void* context) :
     Removable(loop),
-    m_impl(new Impl(loop, dtls_server, new_connection_callback, certificate, private_key, udp_client, *this)) {
+    m_impl(new Impl(loop, dtls_server, new_connection_callback, udp_client, *reinterpret_cast<detail::DtlsContext*>(context), *this)) {
 }
 
 DtlsConnectedClient::~DtlsConnectedClient() {

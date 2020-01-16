@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Removable.h"
+#include "DtlsConnectedClient.h"
+#include "DtlsVersion.h"
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Path.h"
-#include "DtlsConnectedClient.h"
+#include "Removable.h"
 
 #include <memory>
 #include <functional>
@@ -23,7 +24,8 @@ public:
 
     IO_DLL_PUBLIC DtlsServer(EventLoop& loop,
                              const Path& certificate_path,
-                             const Path& private_key_path);
+                             const Path& private_key_path,
+                             DtlsVersionRange version_range = DEFAULT_DTLS_VERSION_RANGE);
 
     // TODO: some sort of macro here???
     DtlsServer(const DtlsServer& other) = delete;

@@ -12,11 +12,7 @@
 
 #include <memory>
 
-// TODO: revise this
 namespace io {
-
-using X509 = void;
-using EVP_PKEY = void;
 
 class DtlsConnectedClient : protected Removable {
 public:
@@ -43,7 +39,11 @@ protected:
     ~DtlsConnectedClient();
 
 private:
-    DtlsConnectedClient(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, X509* certificate, EVP_PKEY* private_key, UdpPeer& udp_peer);
+    DtlsConnectedClient(EventLoop& loop,
+                        DtlsServer& dtls_server,
+                        NewConnectionCallback new_connection_callback,
+                        UdpPeer& udp_peer,
+                        void* context);
     void set_data_receive_callback(DataReceiveCallback callback);
     void on_data_receive(const char* buf, std::size_t size);
     Error init_ssl();

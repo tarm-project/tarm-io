@@ -5,12 +5,13 @@
 #include <openssl/ssl.h>
 
 namespace io {
+namespace detail {
 
 struct DtlsContext {
-    DtlsContext(::X509* c, ::EVP_PKEY* k, TlsVersionRange v) :
+    DtlsContext(::X509* c, ::EVP_PKEY* k, DtlsVersionRange v) :
         certificate(c),
         private_key(k),
-        tls_version_range(v) {
+        dtls_version_range(v) {
     }
 
     ::X509* certificate = nullptr;
@@ -18,4 +19,5 @@ struct DtlsContext {
     DtlsVersionRange dtls_version_range = DEFAULT_DTLS_VERSION_RANGE;
 };
 
+} // namespace detail
 } // namespace io

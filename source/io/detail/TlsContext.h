@@ -5,6 +5,7 @@
 #include <openssl/ssl.h>
 
 namespace io {
+namespace detail {
 
 struct TlsContext {
     TlsContext(::X509* c, ::EVP_PKEY* k, TlsVersionRange v) :
@@ -18,4 +19,5 @@ struct TlsContext {
     TlsVersionRange tls_version_range = DEFAULT_TLS_VERSION_RANGE;
 };
 
+} // namespace detail
 } // namespace io

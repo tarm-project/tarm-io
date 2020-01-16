@@ -84,7 +84,7 @@ void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const
         return;
     }
 
-    TlsContext context {
+    detail::TlsContext context {
         m_certificate.get(),
         m_private_key.get(),
         m_version_range
