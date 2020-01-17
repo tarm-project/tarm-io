@@ -160,6 +160,9 @@ Error OpenSslClientImplBase<ParentType, ImplType>::set_tls_dtls_version(VersionT
 
 template<typename ParentType, typename ImplType>
 Error OpenSslClientImplBase<ParentType, ImplType>::set_tls_version(TlsVersion version_min, TlsVersion version_max) {
+    SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
+    SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv3);
+
     return this->set_tls_dtls_version<TlsVersion,
                                       &OpenSslClientImplBase<ParentType, ImplType>::enable_tls_version,
                                       &OpenSslClientImplBase<ParentType, ImplType>::disable_tls_version>
@@ -317,7 +320,7 @@ DtlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_dtls_version
         return DtlsVersion::UNKNOWN;
     }
 
-    switch (session->ssl_version) {
+    switch (m_ssl.get()->version) {
 #ifdef DTLS1_VERSION
         case DTLS1_VERSION:
             return DtlsVersion::V1_0;
@@ -370,8 +373,6 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
         return Error(StatusCode::OPENSSL_ERROR, "Failed to init SSL context");
     }
 
-    SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
-    SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv3);
     ssl_set_versions();
     //SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_2);
     //set_tls_version(io::TlsVersion::V1_0, io::TlsVersion::V1_2);

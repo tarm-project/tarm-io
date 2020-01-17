@@ -90,7 +90,7 @@ bool DtlsConnectedClient::Impl::ssl_set_siphers() {
 }
 
 void DtlsConnectedClient::Impl::ssl_set_versions() {
-    // Do nothing for now
+    this->set_dtls_version(std::get<0>(m_dtls_context.dtls_version_range), std::get<1>(m_dtls_context.dtls_version_range));
 }
 
 bool DtlsConnectedClient::Impl::ssl_init_certificate_and_key() {
