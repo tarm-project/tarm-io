@@ -38,6 +38,14 @@ public:
                  std::uint16_t port,
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback,
+                 CloseConnectionCallback close_connection_callback,
+                 int backlog_size = 128);
+
+    IO_DLL_PUBLIC
+    Error listen(const std::string& ip_addr_str,
+                 std::uint16_t port,
+                 NewConnectionCallback new_connection_callback,
+                 DataReceivedCallback data_receive_callback,
                  int backlog_size = 128);
 
     IO_DLL_PUBLIC
