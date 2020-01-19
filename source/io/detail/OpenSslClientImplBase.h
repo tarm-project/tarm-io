@@ -19,7 +19,7 @@ template<typename ParentType, typename ImplType>
 class OpenSslClientImplBase {
 public:
     OpenSslClientImplBase(EventLoop& loop, ParentType& parent);
-    ~OpenSslClientImplBase();
+    virtual ~OpenSslClientImplBase();
 
     bool schedule_removal();
 
