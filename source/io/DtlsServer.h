@@ -17,10 +17,9 @@ namespace io {
 class DtlsServer : public Removable,
                    public UserDataHolder {
 public:
-    // TODO: remove DtlsServer from callbacks
-    using NewConnectionCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const Error&)>;
-    using DataReceivedCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const DataChunk&, const Error&)>;
-    using CloseConnectionCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const Error&)>;
+    using NewConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
+    using DataReceivedCallback = std::function<void(DtlsConnectedClient&, const DataChunk&, const Error&)>;
+    using CloseConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
 
     IO_DLL_PUBLIC DtlsServer(EventLoop& loop,
                              const Path& certificate_path,

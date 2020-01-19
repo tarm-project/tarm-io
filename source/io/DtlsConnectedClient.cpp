@@ -20,6 +20,9 @@ public:
 
     void set_data_receive_callback(DataReceiveCallback callback);
 
+    DtlsServer& server();
+    const DtlsServer& server() const;
+
 protected:
     const SSL_METHOD* ssl_method() override;
     bool ssl_set_siphers() override;
@@ -68,6 +71,14 @@ void DtlsConnectedClient::Impl::close() {
 void DtlsConnectedClient::Impl::shutdown() {
     // TODO: fixme
     //m_client->shutdown();
+}
+
+DtlsServer& DtlsConnectedClient::Impl::server() {
+    return *m_dtls_server;
+}
+
+const DtlsServer& DtlsConnectedClient::Impl::server() const {
+    return *m_dtls_server;
 }
 
 const SSL_METHOD* DtlsConnectedClient::Impl::ssl_method() {
@@ -121,13 +132,13 @@ void DtlsConnectedClient::Impl::ssl_set_state() {
 
 void DtlsConnectedClient::Impl::on_ssl_read(const DataChunk& data) {
     if (m_data_receive_callback) {
-        m_data_receive_callback(*m_dtls_server, *m_parent, data, Error(0));
+        m_data_receive_callback(*m_parent, data, Error(0));
     }
 }
 
 void DtlsConnectedClient::Impl::on_handshake_complete() {
     if (m_new_connection_callback) {
-        m_new_connection_callback(*m_dtls_server, *m_parent, Error(0));
+        m_new_connection_callback(*m_parent, Error(0));
     }
 }
 
@@ -175,6 +186,14 @@ bool DtlsConnectedClient::is_open() const {
 
 DtlsVersion DtlsConnectedClient::negotiated_dtls_version() const {
     return m_impl->negotiated_dtls_version();
+}
+
+DtlsServer& DtlsConnectedClient::server() {
+    return m_impl->server();
+}
+
+const DtlsServer& DtlsConnectedClient::server() const {
+    return m_impl->server();
 }
 
 } // namespace io

@@ -20,11 +20,10 @@ public:
 
     using UnderlyingClientType = UdpPeer;
 
-    using DataReceiveCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const DataChunk&, const Error&)>;
+    using NewConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
+    using DataReceiveCallback = std::function<void(DtlsConnectedClient&, const DataChunk&, const Error&)>;
     using CloseCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
-
-    using NewConnectionCallback = std::function<void(DtlsServer&, DtlsConnectedClient&, const Error&)>;
 
     IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC void shutdown();
@@ -34,6 +33,9 @@ public:
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
 
     IO_DLL_PUBLIC DtlsVersion negotiated_dtls_version() const;
+
+    IO_DLL_PUBLIC DtlsServer& server();
+    IO_DLL_PUBLIC const DtlsServer& server() const;
 
 protected:
     ~DtlsConnectedClient();
