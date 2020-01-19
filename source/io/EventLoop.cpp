@@ -1,6 +1,7 @@
 #include "EventLoop.h"
 
 #include "Common.h"
+#include "CommonMacros.h"
 #include "Logger.h"
 #include "ScopeExitGuard.h"
 #include "Error.h"
@@ -31,11 +32,8 @@ public:
     Impl(EventLoop& loop);
     ~Impl();
 
-    Impl(const Impl& other) = delete;
-    Impl& operator=(const Impl& other) = delete;
-
-    Impl(Impl&& other) = default;
-    Impl& operator=(Impl&& other) = default;
+    IO_FORBID_COPY(Impl)
+    IO_FORBID_MOVE(Impl);
 
     template<typename WorkCallbackType, typename WorkDoneCallbackType>
     void add_work(WorkCallbackType work_callback, WorkDoneCallbackType work_done_callback);
