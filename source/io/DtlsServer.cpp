@@ -24,7 +24,9 @@ public:
     Error listen(const std::string& ip_addr_str,
                  std::uint16_t port,
                  NewConnectionCallback new_connection_callback,
-                 DataReceivedCallback data_receive_callback);
+                 DataReceivedCallback data_receive_callback,
+                 std::size_t timeout_ms,
+                 ConnectionTimeoutCallback timeout_callback);
 
     void shutdown();
     void close();
@@ -36,7 +38,7 @@ public:
 protected: // callbacks
     void on_new_peer(UdpPeer& udp_client, const io::Error& error);
     void on_data_receive(UdpPeer& udp_client, const DataChunk& data, const Error& error);
-    void on_timeout(UdpPeer& udp_client);
+    void on_timeout(UdpPeer& udp_client, const Error& error);
 
 private:
     using X509Ptr = std::unique_ptr<::X509, decltype(&::X509_free)>;
@@ -55,6 +57,7 @@ private:
 
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
+    ConnectionTimeoutCallback m_connection_timeout_callback = nullptr;
 };
 
 DtlsServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent) :
@@ -106,21 +109,28 @@ void DtlsServer::Impl::on_data_receive(UdpPeer& udp_client, const DataChunk& dat
     dtls_client.on_data_receive(data.buf.get(), data.size);
 }
 
-void DtlsServer::Impl::on_timeout(UdpPeer& udp_client) {
+void DtlsServer::Impl::on_timeout(UdpPeer& udp_client, const Error& error) {
     IO_LOG(this->m_loop, TRACE, "Removing DTLS client");
 
     udp_client.set_on_schedule_removal(nullptr);
 
     auto& dtls_client = *reinterpret_cast<DtlsConnectedClient*>(udp_client.user_data());
+    if (m_connection_timeout_callback) {
+        m_connection_timeout_callback(dtls_client, error);
+    }
+
     delete &dtls_client;
 }
 
 Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
                                std::uint16_t port,
                                NewConnectionCallback new_connection_callback,
-                               DataReceivedCallback data_receive_callback) {
+                               DataReceivedCallback data_receive_callback,
+                               std::size_t timeout_ms,
+                               ConnectionTimeoutCallback timeout_callback) {
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
+    m_connection_timeout_callback = timeout_callback;
 
     using FilePtr = std::unique_ptr<FILE, decltype(&std::fclose)>;
 
@@ -155,8 +165,8 @@ Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
                                        port,
                                        std::bind(&DtlsServer::Impl::on_new_peer, this, _1, _2),
                                        std::bind(&DtlsServer::Impl::on_data_receive, this, _1, _2, _3),
-                                       1000000, // TODO: hardcoded value
-                                       std::bind(&DtlsServer::Impl::on_timeout, this, _1));
+                                       timeout_ms,
+                                       std::bind(&DtlsServer::Impl::on_timeout, this, _1, _2));
 }
 
 void DtlsServer::Impl::shutdown() {
@@ -206,14 +216,23 @@ DtlsServer::~DtlsServer() {
 Error DtlsServer::listen(const std::string& ip_addr_str,
                            std::uint16_t port,
                            DataReceivedCallback data_receive_callback) {
-    return m_impl->listen(ip_addr_str, port, nullptr, data_receive_callback);
+    return m_impl->listen(ip_addr_str, port, nullptr, data_receive_callback, DEFAULT_TIMEOUT_MS, nullptr);
 }
 
 Error DtlsServer::listen(const std::string& ip_addr_str,
                            std::uint16_t port,
                            NewConnectionCallback new_connection_callback,
                            DataReceivedCallback data_receive_callback) {
-    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback);
+    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, DEFAULT_TIMEOUT_MS, nullptr);
+}
+
+Error DtlsServer::listen(const std::string& ip_addr_str,
+                           std::uint16_t port,
+                           NewConnectionCallback new_connection_callback,
+                           DataReceivedCallback data_receive_callback,
+                           std::size_t timeout_ms,
+                           ConnectionTimeoutCallback timeout_callback) {
+    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, timeout_ms, timeout_callback);
 }
 
 void DtlsServer::shutdown() {

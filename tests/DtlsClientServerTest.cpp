@@ -117,6 +117,82 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     EXPECT_EQ(1, client_data_send_counter);
 }
 
+TEST_F(DtlsClientServerTest, connected_peer_timeout) {
+    io::EventLoop loop;
+
+    const std::size_t TIMEOUT_MS = 100;
+    const std::string client_message = "Hello from client!";
+
+    std::size_t server_new_connection_counter = 0;
+    std::size_t server_data_receive_counter = 0;
+    std::size_t server_peer_timeout_counter = 0;
+
+    std::size_t client_new_connection_counter = 0;
+    std::size_t client_data_receive_counter = 0;
+    std::size_t client_data_send_counter = 0;
+
+    std::chrono::high_resolution_clock::time_point t1;
+    std::chrono::high_resolution_clock::time_point t2;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen(m_default_addr, m_default_port,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_new_connection_counter;
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_data_receive_counter;
+            t1 = std::chrono::high_resolution_clock::now();
+        },
+        TIMEOUT_MS,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_peer_timeout_counter;
+            server->schedule_removal();
+
+            t2 = std::chrono::high_resolution_clock::now();
+            EXPECT_LE(TIMEOUT_MS - 5, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+        }
+    );
+
+    auto client = new io::DtlsClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_new_connection_counter;
+
+            client.send_data(client_message,
+                [&](io::DtlsClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    ++client_data_send_counter;
+                    client.schedule_removal();
+                }
+            );
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_data_receive_counter;
+        }
+    );
+
+    EXPECT_EQ(0, server_new_connection_counter);
+    EXPECT_EQ(0, server_data_receive_counter);
+    EXPECT_EQ(0, server_peer_timeout_counter);
+    EXPECT_EQ(0, client_new_connection_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+    EXPECT_EQ(0, client_data_send_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_new_connection_counter);
+    EXPECT_EQ(1, server_data_receive_counter);
+    EXPECT_EQ(1, server_peer_timeout_counter);
+    EXPECT_EQ(1, client_new_connection_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+    EXPECT_EQ(1, client_data_send_counter);
+}
+
 TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_other) {
     // Note: pretty much the same test as 'client_and_server_send_message_each_other'
     // but in threads.

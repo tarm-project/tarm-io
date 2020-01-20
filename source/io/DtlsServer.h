@@ -20,7 +20,9 @@ class DtlsServer : public Removable,
 public:
     using NewConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(DtlsConnectedClient&, const DataChunk&, const Error&)>;
-    using CloseConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
+    using ConnectionTimeoutCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
+
+    static const std::size_t DEFAULT_TIMEOUT_MS = 1000;
 
     IO_FORBID_COPY(DtlsServer);
     IO_DECLARE_DLL_PUBLIC_MOVE(DtlsServer);
@@ -33,13 +35,22 @@ public:
     IO_DLL_PUBLIC
     Error listen(const std::string& ip_addr_str,
                  std::uint16_t port,
-                 NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback);
 
     IO_DLL_PUBLIC
     Error listen(const std::string& ip_addr_str,
                  std::uint16_t port,
+                 NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback);
+
+   IO_DLL_PUBLIC
+   Error listen(const std::string& ip_addr_str,
+                std::uint16_t port,
+                NewConnectionCallback new_connection_callback,
+                DataReceivedCallback data_receive_callback,
+                std::size_t timeout_ms,
+                ConnectionTimeoutCallback timeout_callback);
+
 
     IO_DLL_PUBLIC void shutdown();
     IO_DLL_PUBLIC void close();

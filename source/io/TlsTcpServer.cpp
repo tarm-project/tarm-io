@@ -76,7 +76,7 @@ TlsTcpServer::Impl::Impl(EventLoop& loop,
 }
 
 TlsTcpServer::Impl::~Impl() {
-    delete m_tcp_server; // TODO: schedule removal from TCP server
+    delete m_tcp_server; // TODO: schedule removal for TCP server
 }
 
 void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const io::Error& error) {
