@@ -46,10 +46,8 @@ public:
 
     IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 
-    // TODO: remove
-    IO_DLL_PUBLIC ~DtlsServer();
 protected:
-    //~DtlsServer(); // TODO: fixme
+    IO_DLL_PUBLIC ~DtlsServer();
 
 private:
     class Impl;
