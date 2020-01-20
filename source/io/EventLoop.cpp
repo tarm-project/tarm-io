@@ -385,6 +385,8 @@ void EventLoop::Impl::on_dummy_idle_close(uv_handle_t* handle) {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
+IO_DEFINE_DEFAULT_MOVE(EventLoop);
+
 namespace {
 // TODO: handle wrap around
 std::atomic<std::size_t> m_loop_id_counter(0);

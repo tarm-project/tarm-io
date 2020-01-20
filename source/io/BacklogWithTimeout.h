@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "Timer.h"
 #include "EventLoop.h"
 #include "Common.h" // TODO: remove (replace uv_hrtime with custom function)
@@ -19,6 +20,8 @@ public:
     using TimeGetterType = std::function<std::uint64_t(const T&)>;
     using MonothonicClockGetterType = std::uint64_t(*)();
     using OnItemExpiredCallback = std::function<void(BacklogWithTimeout<T, LoopType, TimerType>&,  const T& item)>;
+
+    // TODO: copy and move constuctors
 
     BacklogWithTimeout(LoopType& loop, std::size_t entity_timeout, OnItemExpiredCallback expired_callback, TimeGetterType time_getter, MonothonicClockGetterType clock_getter = &uv_hrtime) :
         m_entity_timeout(entity_timeout * std::size_t(1000000)),

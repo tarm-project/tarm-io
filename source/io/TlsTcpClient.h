@@ -1,11 +1,12 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "DataChunk.h"
-#include "Removable.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
 #include "Forward.h"
+#include "Removable.h"
 #include "TlsVersion.h"
 
 #include <memory>
@@ -20,6 +21,9 @@ public:
     using CloseCallback = std::function<void(TlsTcpClient&, const Error&)>;
     using EndSendCallback = std::function<void(TlsTcpClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(TlsTcpClient&, const DataChunk&, const Error&)>;
+
+    IO_FORBID_COPY(TlsTcpClient);
+    IO_DECLARE_DLL_PUBLIC_MOVE(TlsTcpClient);
 
     IO_DLL_PUBLIC TlsTcpClient(EventLoop& loop, TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 

@@ -28,6 +28,8 @@ public:
 
     using Callback = std::function<void(const std::string& message)>;
 
+    // TODO: move and copy constructor???
+
     IO_DLL_PUBLIC Logger();
     IO_DLL_PUBLIC Logger(const std::string& prefix);
 

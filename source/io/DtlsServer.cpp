@@ -193,6 +193,8 @@ bool DtlsServer::Impl::certificate_and_key_match() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
+IO_DEFINE_DEFAULT_MOVE(DtlsServer);
+
 DtlsServer::DtlsServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range) :
     Removable(loop),
     m_impl(new Impl(loop, certificate_path, private_key_path, version_range, *this)) {

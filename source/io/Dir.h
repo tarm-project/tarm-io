@@ -1,11 +1,12 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "DirectoryEntryType.h"
-#include "Removable.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Path.h"
 #include "Error.h"
+#include "Removable.h"
 #include "UserDataHolder.h"
 
 #include <functional>
@@ -21,6 +22,9 @@ public:
     using ReadCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
     using CloseCallback = std::function<void(Dir&)>;
     using EndReadCallback = std::function<void(Dir&)>;
+
+    IO_FORBID_COPY(Dir);
+    IO_DECLARE_DLL_PUBLIC_MOVE(Dir);
 
     IO_DLL_PUBLIC Dir(EventLoop& loop);
 

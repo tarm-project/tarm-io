@@ -139,6 +139,8 @@ void DtlsClient::Impl::on_handshake_complete() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
+IO_DEFINE_DEFAULT_MOVE(DtlsClient);
+
 DtlsClient::DtlsClient(EventLoop& loop, DtlsVersionRange version_range) :
     Removable(loop),
     m_impl(new Impl(loop, version_range, *this)) {

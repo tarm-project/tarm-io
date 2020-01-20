@@ -1,12 +1,13 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "DataChunk.h"
 #include "DtlsVersion.h"
-#include "Removable.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
 #include "Forward.h"
+#include "Removable.h"
 
 namespace io {
 
@@ -18,6 +19,9 @@ public:
     using CloseCallback = std::function<void(DtlsClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(DtlsClient&, const DataChunk&, const Error&)>;
+
+    IO_FORBID_COPY(DtlsClient);
+    IO_DECLARE_DLL_PUBLIC_MOVE(DtlsClient);
 
     IO_DLL_PUBLIC DtlsClient(EventLoop& loop, DtlsVersionRange version_range = DEFAULT_DTLS_VERSION_RANGE);
 

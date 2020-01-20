@@ -1,14 +1,12 @@
 #pragma once
 
-
-//#include "Export.h"
-//#include "DataChunk.h"
-#include "Removable.h"
-
+#include "CommonMacros.h"
 #include "Error.h"
 #include "EventLoop.h"
+#include "Export.h"
 #include "Forward.h"
 #include "UserDataHolder.h"
+#include "Removable.h"
 
 #include <cstdint>
 #include <functional>
@@ -24,6 +22,9 @@ public:
     friend class UdpServer;
 
     using EndSendCallback = std::function<void(UdpPeer&, const Error&)>;
+
+    IO_FORBID_COPY(UdpPeer);
+    IO_FORBID_MOVE(UdpPeer);
 
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);

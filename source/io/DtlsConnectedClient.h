@@ -1,14 +1,13 @@
 #pragma once
 
-#pragma once
-
+#include "CommonMacros.h"
 #include "DataChunk.h"
 #include "DtlsVersion.h"
-#include "Removable.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
 #include "Forward.h"
+#include "Removable.h"
 
 #include <memory>
 
@@ -24,6 +23,9 @@ public:
     using DataReceiveCallback = std::function<void(DtlsConnectedClient&, const DataChunk&, const Error&)>;
     using CloseCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
+
+    IO_FORBID_COPY(DtlsConnectedClient);
+    IO_FORBID_MOVE(DtlsConnectedClient);
 
     IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC void shutdown();

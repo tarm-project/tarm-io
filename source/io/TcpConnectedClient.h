@@ -1,11 +1,12 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "DataChunk.h"
-#include "Removable.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Error.h"
 #include "Forward.h"
+#include "Removable.h"
 #include "UserDataHolder.h"
 
 #include <memory>
@@ -20,6 +21,9 @@ public:
     using CloseCallback = std::function<void(TcpConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(TcpConnectedClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(TcpConnectedClient&, const DataChunk&, const Error&)>;
+
+    IO_FORBID_COPY(TcpConnectedClient);
+    IO_FORBID_MOVE(TcpConnectedClient);
 
     IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
     IO_DLL_PUBLIC std::uint16_t port() const;

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Removable.h"
+#include "CommonMacros.h"
 #include "DataChunk.h"
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Path.h"
+#include "Removable.h"
 #include "TlsTcpConnectedClient.h"
 
 #include <memory>
@@ -21,17 +22,13 @@ public:
     using DataReceivedCallback = std::function<void(TlsTcpConnectedClient&, const DataChunk&, const Error&)>;
     using CloseConnectionCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
 
+    IO_FORBID_COPY(TlsTcpServer);
+    IO_DECLARE_DLL_PUBLIC_MOVE(TlsTcpServer);
+
     IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,
                                const Path& certificate_path,
                                const Path& private_key_path,
                                TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
-
-    // TODO: some sort of macro here???
-    TlsTcpServer(const TlsTcpServer& other) = delete;
-    TlsTcpServer& operator=(const TlsTcpServer& other) = delete;
-
-    TlsTcpServer(TlsTcpServer&& other) = default;
-    TlsTcpServer& operator=(TlsTcpServer&& other) = delete; // default
 
     IO_DLL_PUBLIC
     Error listen(const std::string& ip_addr_str,

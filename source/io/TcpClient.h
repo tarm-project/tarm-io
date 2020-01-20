@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "DataChunk.h"
@@ -18,6 +19,9 @@ public:
     using CloseCallback = std::function<void(TcpClient&, const Error&)>;
     using EndSendCallback = std::function<void(TcpClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(TcpClient&, const DataChunk&, const Error&)>;
+
+    IO_FORBID_COPY(TcpClient);
+    IO_DECLARE_DLL_PUBLIC_MOVE(TcpClient);
 
     IO_DLL_PUBLIC TcpClient(EventLoop& loop);
 

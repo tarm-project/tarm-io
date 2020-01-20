@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Removable.h"
+#include "CommonMacros.h"
 #include "DataChunk.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
 #include "Forward.h"
+#include "Removable.h"
 #include "TlsVersion.h"
 
 #include <memory>
@@ -25,6 +26,9 @@ public:
     using EndSendCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
 
     using NewConnectionCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
+
+    IO_FORBID_COPY(TlsTcpConnectedClient);
+    IO_FORBID_MOVE(TlsTcpConnectedClient);
 
     IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC void shutdown();

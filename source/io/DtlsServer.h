@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "DtlsConnectedClient.h"
 #include "DtlsVersion.h"
 #include "Error.h"
@@ -21,17 +22,13 @@ public:
     using DataReceivedCallback = std::function<void(DtlsConnectedClient&, const DataChunk&, const Error&)>;
     using CloseConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
 
+    IO_FORBID_COPY(DtlsServer);
+    IO_DECLARE_DLL_PUBLIC_MOVE(DtlsServer);
+
     IO_DLL_PUBLIC DtlsServer(EventLoop& loop,
                              const Path& certificate_path,
                              const Path& private_key_path,
                              DtlsVersionRange version_range = DEFAULT_DTLS_VERSION_RANGE);
-
-    // TODO: some sort of macro here???
-    DtlsServer(const DtlsServer& other) = delete;
-    DtlsServer& operator=(const DtlsServer& other) = delete;
-
-    DtlsServer(DtlsServer&& other) = default;
-    DtlsServer& operator=(DtlsServer&& other) = delete; // default
 
     IO_DLL_PUBLIC
     Error listen(const std::string& ip_addr_str,

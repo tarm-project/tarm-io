@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "DataChunk.h"
@@ -19,11 +20,8 @@ public:
     using DataReceivedCallback = std::function<void(UdpServer&, UdpPeer&, const DataChunk&, const Error&)>;
     using PeerTimeoutCallback = std::function<void(UdpServer&, UdpPeer&, const Error&)>;
 
-    UdpServer(const UdpServer& other) = delete;
-    UdpServer& operator=(const UdpServer& other) = delete;
-
-    UdpServer(UdpServer&& other) = default;
-    UdpServer& operator=(UdpServer&& other) = default;
+    IO_FORBID_COPY(UdpServer);
+    IO_DECLARE_DLL_PUBLIC_MOVE(UdpServer);
 
     IO_DLL_PUBLIC UdpServer(EventLoop& loop);
 

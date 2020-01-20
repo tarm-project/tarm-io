@@ -1,11 +1,12 @@
 #pragma once
 
+#include "CommonMacros.h"
+#include "DataChunk.h"
+#include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Forward.h"
-#include "DataChunk.h"
 #include "Removable.h"
-#include "Error.h"
 #include "UserDataHolder.h"
 
 #include <memory>
@@ -18,6 +19,9 @@ class UdpClient : public Removable,
 public:
     using EndSendCallback = std::function<void(UdpClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(UdpClient&, const DataChunk&, const Error&)>;
+
+    IO_FORBID_COPY(UdpClient);
+    IO_DECLARE_DLL_PUBLIC_MOVE(UdpClient);
 
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
     IO_DLL_PUBLIC UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port);

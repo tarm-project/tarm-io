@@ -149,6 +149,8 @@ void TlsTcpClient::Impl::on_handshake_complete() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
+IO_DEFINE_DEFAULT_MOVE(TlsTcpClient);
+
 TlsTcpClient::TlsTcpClient(EventLoop& loop, TlsVersionRange version_range) :
     Removable(loop),
     m_impl(new Impl(loop, version_range, *this)) {

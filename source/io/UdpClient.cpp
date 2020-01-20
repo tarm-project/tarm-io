@@ -135,6 +135,8 @@ void UdpClient::Impl::on_data_received(uv_udp_t* handle,
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
+IO_DEFINE_DEFAULT_MOVE(UdpClient);
+
 UdpClient::UdpClient(EventLoop& loop) :
     Removable(loop),
     m_impl(new UdpClient::Impl(loop, *this)) {

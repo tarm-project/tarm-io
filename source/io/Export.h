@@ -1,6 +1,6 @@
 #pragma once
 
-// Code from here https://gcc.gnu.org/wiki/Visibility
+// Based on code from here https://gcc.gnu.org/wiki/Visibility
 
 #if defined _WIN32 || defined __CYGWIN__
     #ifdef IO_BUILDING_DLL

@@ -15,6 +15,7 @@ enum class DirectoryEntryType {
     BLOCK
 };
 
+// TODO: reuse X macro like for error types
 inline
 std::ostream& operator<< (std::ostream& os, DirectoryEntryType type) {
     switch (type) {

@@ -437,6 +437,8 @@ void File::Impl::on_stat(uv_fs_t* req) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
+IO_DEFINE_DEFAULT_MOVE(File);
+
 File::File(EventLoop& loop) :
     Removable(loop),
     m_impl(new Impl(loop, *this)) {

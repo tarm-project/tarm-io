@@ -1,11 +1,12 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "DataChunk.h"
-#include "Removable.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Path.h"
 #include "Error.h"
+#include "Removable.h"
 #include "StatData.h"
 #include "UserDataHolder.h"
 
@@ -27,6 +28,9 @@ public:
     using ReadCallback = std::function<void(File&, const io::DataChunk&, const Error&)>;
     using EndReadCallback = std::function<void(File&)>;
     using StatCallback = std::function<void(File&, const StatData&)>;
+
+    IO_FORBID_COPY(File);
+    IO_DECLARE_DLL_PUBLIC_MOVE(File);
 
     IO_DLL_PUBLIC File(EventLoop& loop);
 
