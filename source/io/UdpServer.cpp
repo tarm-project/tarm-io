@@ -86,7 +86,7 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
 
     // TODO: bind instead of lambdas
     auto on_expired = [this](io::BacklogWithTimeout<std::shared_ptr<UdpPeer>>&, const std::shared_ptr<UdpPeer>& item) {
-        m_peer_timeout_callback(*m_parent, *item, Error(0));
+        m_peer_timeout_callback(*item, Error(0));
 
         // TODO: store in peer or make a function for this
         const std::uint64_t peer_id = std::uint64_t(host_to_network(item->port())) << 16 | std::uint64_t(host_to_network(item->address()));
@@ -155,6 +155,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                     auto& peer_ptr = this_.m_peers[peer_id];
                     if (!peer_ptr.get()) {
                         peer_ptr.reset(new UdpPeer(*this_.m_loop,
+                                                   *this_.m_parent,
                                                    this_.m_udp_handle.get(),
                                                    network_to_host(address->sin_addr.s_addr),
                                                    network_to_host(address->sin_port)),
@@ -165,38 +166,32 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                         this_.m_peers_backlog->add_item(peer_ptr);
 
                         if (this_.m_new_peer_callback) {
-                            this_.m_new_peer_callback(parent, *peer_ptr.get(), Error(0));
+                            this_.m_new_peer_callback(*peer_ptr.get(), Error(0));
                         }
                     }
-                    this_.m_data_receive_callback(parent, *peer_ptr, data_chunk, error);
+                    this_.m_data_receive_callback(*peer_ptr, data_chunk, error);
 
                     peer_ptr->set_last_packet_time_ns(uv_hrtime());
                 } else {
-                    /*
-                    UdpPeer peer(*this_.m_loop,
-                                 this_.m_udp_handle.get(),
-                                 network_to_host(address->sin_addr.s_addr),
-                                 network_to_host(address->sin_port));
-                                 //*/
-
                     // Ref/Unref semantics here was added to prolong lifetime of oneshot UdpPeer objects
                     // and to allow call send data in receive callback for UdpServer without peers tracking.
                     auto peer = new UdpPeer(*this_.m_loop,
+                                 *this_.m_parent,
                                  this_.m_udp_handle.get(),
                                  network_to_host(address->sin_addr.s_addr),
                                  network_to_host(address->sin_port));
                     peer->ref();
-                    this_.m_data_receive_callback(parent, *peer, data_chunk, error);
+                    this_.m_data_receive_callback(*peer, data_chunk, error);
                     peer->unref();
                 }
             }
         } else {
             DataChunk data(nullptr, 0);
             // TODO: could address be available here???
-            UdpPeer peer(*this_.m_loop, this_.m_udp_handle.get(), 0, 0);
+            UdpPeer peer(*this_.m_loop, *this_.m_parent, this_.m_udp_handle.get(), 0, 0);
 
             IO_LOG(this_.m_loop, ERROR, &parent, "failed to receive UDP packet", error.string());
-            this_.m_data_receive_callback(parent, peer, data, error);
+            this_.m_data_receive_callback(peer, data, error);
         }
     }
 }

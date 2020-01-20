@@ -9,7 +9,7 @@ namespace io {
 
 class UdpPeer::Impl : public detail::UdpClientImplBase<UdpPeer, UdpPeer::Impl> {
 public:
-    Impl(EventLoop& loop, UdpPeer& parent, void* udp_handle, std::uint32_t address, std::uint16_t port);
+    Impl(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port, UdpPeer& parent);
 
     std::uint32_t address();
     std::uint16_t port();
@@ -17,13 +17,17 @@ public:
     void set_last_packet_time_ns(std::uint64_t time);
     std::uint64_t last_packet_time_ns() const;
 
-private:
+    UdpServer& server();
+    const UdpServer& server() const;
 
+private:
+    UdpServer* m_server = nullptr;
     std::uint64_t m_last_packet_time_ns = 0;
 };
 
-UdpPeer::Impl::Impl(EventLoop& loop, UdpPeer& parent, void* udp_handle, std::uint32_t address, std::uint16_t port) :
-    UdpClientImplBase(loop, parent, parent, reinterpret_cast<uv_udp_t*>(udp_handle)) {
+UdpPeer::Impl::Impl(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port, UdpPeer& parent) :
+    UdpClientImplBase(loop, parent, parent, reinterpret_cast<uv_udp_t*>(udp_handle)),
+    m_server(&server) {
     auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_raw_unix_addr);
     unix_addr.sin_family = AF_INET;
     unix_addr.sin_port = host_to_network(port);
@@ -48,12 +52,20 @@ std::uint64_t UdpPeer::Impl::last_packet_time_ns() const {
     return m_last_packet_time_ns;
 }
 
+UdpServer& UdpPeer::Impl::server() {
+    return *m_server;
+}
+
+const UdpServer& UdpPeer::Impl::server() const {
+    return *m_server;
+}
+
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-UdpPeer::UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port) :
+UdpPeer::UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port) :
     Removable(loop),
     RefCounted(*static_cast<Removable*>(this)),
-    m_impl(new Impl(loop, *this, udp_handle, address, port)) {
+    m_impl(new Impl(loop, server, udp_handle, address, port, *this)) {
 }
 
 UdpPeer::~UdpPeer() {
@@ -85,6 +97,14 @@ void UdpPeer::send_data(const std::string& message, EndSendCallback callback) {
 
 bool UdpPeer::is_open() const {
     return true; // TODO: revise this
+}
+
+UdpServer& UdpPeer::server() {
+    return m_impl->server();
+}
+
+const UdpServer& UdpPeer::server() const {
+    return m_impl->server();
 }
 
 } // namespace io

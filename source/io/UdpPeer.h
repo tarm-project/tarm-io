@@ -37,13 +37,16 @@ public:
     // TODO: do we need this????
     IO_DLL_PUBLIC bool is_open() const;
 
-    // TODO: make protected
-    IO_DLL_PUBLIC ~UdpPeer();
-
     using Removable::set_on_schedule_removal;
 
+    IO_DLL_PUBLIC UdpServer& server();
+    IO_DLL_PUBLIC const UdpServer& server() const;
+
+protected:
+    IO_DLL_PUBLIC ~UdpPeer();
+
 private:
-    IO_DLL_PUBLIC UdpPeer(EventLoop& loop, void* udp_handle, std::uint32_t address, std::uint16_t port);
+    IO_DLL_PUBLIC UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port);
 
     IO_DLL_PUBLIC void set_last_packet_time_ns(std::uint64_t time);
 

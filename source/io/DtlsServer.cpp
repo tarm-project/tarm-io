@@ -34,9 +34,9 @@ public:
     bool certificate_and_key_match();
 
 protected: // callbacks
-    void on_new_peer(UdpServer& server, UdpPeer& udp_client, const io::Error& error);
-    void on_data_receive(UdpServer& server, UdpPeer& udp_client, const DataChunk& data, const Error& error);
-    void on_timeout(UdpServer& server, UdpPeer& udp_client);
+    void on_new_peer(UdpPeer& udp_client, const io::Error& error);
+    void on_data_receive(UdpPeer& udp_client, const DataChunk& data, const Error& error);
+    void on_timeout(UdpPeer& udp_client);
 
 private:
     using X509Ptr = std::unique_ptr<::X509, decltype(&::X509_free)>;
@@ -72,7 +72,7 @@ DtlsServer::Impl::~Impl() {
     m_udp_server->schedule_removal();
 }
 
-void DtlsServer::Impl::on_new_peer(UdpServer& server, UdpPeer& udp_client, const io::Error& error) {
+void DtlsServer::Impl::on_new_peer(UdpPeer& udp_client, const io::Error& error) {
     if (error) {
         //m_new_connection_callback(.......);
         // TODO: error handling here
@@ -101,12 +101,12 @@ void DtlsServer::Impl::on_new_peer(UdpServer& server, UdpPeer& udp_client, const
     }
 }
 
-void DtlsServer::Impl::on_data_receive(UdpServer& server, UdpPeer& udp_client, const DataChunk& data, const Error& error) {
+void DtlsServer::Impl::on_data_receive(UdpPeer& udp_client, const DataChunk& data, const Error& error) {
     auto& dtls_client = *reinterpret_cast<DtlsConnectedClient*>(udp_client.user_data());
     dtls_client.on_data_receive(data.buf.get(), data.size);
 }
 
-void DtlsServer::Impl::on_timeout(UdpServer& server, UdpPeer& udp_client) {
+void DtlsServer::Impl::on_timeout(UdpPeer& udp_client) {
     IO_LOG(this->m_loop, TRACE, "Removing DTLS client");
 
     udp_client.set_on_schedule_removal(nullptr);
@@ -153,10 +153,10 @@ Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
     using namespace std::placeholders;
     return m_udp_server->start_receive(ip_addr_str,
                                        port,
-                                       std::bind(&DtlsServer::Impl::on_new_peer, this, _1, _2, _3),
-                                       std::bind(&DtlsServer::Impl::on_data_receive, this, _1, _2, _3, _4),
+                                       std::bind(&DtlsServer::Impl::on_new_peer, this, _1, _2),
+                                       std::bind(&DtlsServer::Impl::on_data_receive, this, _1, _2, _3),
                                        1000000, // TODO: hardcoded value
-                                       std::bind(&DtlsServer::Impl::on_timeout, this, _1, _2));
+                                       std::bind(&DtlsServer::Impl::on_timeout, this, _1));
 }
 
 void DtlsServer::Impl::shutdown() {
