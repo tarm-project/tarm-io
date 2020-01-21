@@ -1165,6 +1165,7 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
     auto listen_error = server.listen(m_default_addr, m_default_port,
         [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
+            EXPECT_EQ(io::global::min_supported_tls_version(), client.negotiated_tls_version());
             ++server_on_connect_callback_count;
         },
         [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
@@ -1185,6 +1186,7 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
     client->connect(m_default_addr, m_default_port,
         [&](io::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
+            EXPECT_EQ(io::global::min_supported_tls_version(), client.negotiated_tls_version());
             ++client_on_connect_callback_count;
             client.send_data(message, [&](io::TlsTcpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
