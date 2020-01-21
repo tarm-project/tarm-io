@@ -17,6 +17,8 @@ enum class TlsVersion : std::uint8_t {
     MAX = V1_3
 };
 
+static_assert(static_cast<int>(TlsVersion::V1_0) == 1, "Enum values are used in code logic");
+
 // Min and max version
 using TlsVersionRange = std::tuple<TlsVersion, TlsVersion>;
 

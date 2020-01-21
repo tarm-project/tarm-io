@@ -35,6 +35,8 @@ public:
 
     bool certificate_and_key_match();
 
+    TlsVersionRange version_range() const;
+
 protected: // callbacks
     void on_new_connection(TcpConnectedClient& tcp_client, const io::Error& error);
     void on_data_receive(TcpConnectedClient& tcp_client, const DataChunk&, const Error&);
@@ -77,6 +79,10 @@ TlsTcpServer::Impl::Impl(EventLoop& loop,
 
 TlsTcpServer::Impl::~Impl() {
     delete m_tcp_server; // TODO: schedule removal for TCP server
+}
+
+TlsVersionRange TlsTcpServer::Impl::version_range() const {
+    return m_version_range;
 }
 
 void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const io::Error& error) {
@@ -280,6 +286,10 @@ void TlsTcpServer::close() {
 
 std::size_t TlsTcpServer::connected_clients_count() const {
     return m_impl->connected_clients_count();
+}
+
+TlsVersionRange TlsTcpServer::version_range() const {
+    return m_impl->version_range();
 }
 
 } // namespace io

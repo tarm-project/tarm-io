@@ -576,6 +576,7 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            EXPECT_EQ(io::DtlsVersion::UNKNOWN, client.negotiated_dtls_version());
             ++server_on_connect_callback_count;
             server->schedule_removal();
         },
@@ -591,6 +592,7 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            EXPECT_EQ(io::DtlsVersion::UNKNOWN, client.negotiated_dtls_version());
             ++client_on_connect_callback_count;
             client.schedule_removal();
         },

@@ -38,7 +38,7 @@ protected:
 
     void on_ssl_read(const DataChunk& data) override;
     void on_handshake_complete() override;
-    void on_handshake_failed(const Error& error) override;
+    void on_handshake_failed(long openssl_error_code, const Error& error) override;
 
 private:
     ConnectCallback m_connect_callback;
@@ -98,6 +98,22 @@ void TlsTcpClient::Impl::connect(const std::string& address,
     std::function<void(TcpClient&, const Error&)> on_close =
         [this](TcpClient& client, const Error& error) {
             IO_LOG(m_loop, TRACE, "Close", error.code());
+
+            if (!this->m_ssl_handshake_complete) {
+                return;
+            }
+
+            /*
+            // TODO: need to revise this. Is it possible to indicate version mismatch error by sending TLS fragment or so.
+            if (!this->m_ssl_handshake_complete) {
+                IO_LOG(m_loop, ERROR, this->m_parent, "Handshake failed");
+                if (this->m_connect_callback) {
+                    this->m_connect_callback(*this->m_parent, Error(StatusCode::OPENSSL_ERROR, "Handshake error"));
+                }
+                return;
+            }
+            */
+
             if (m_close_callback) {
                 m_close_callback(*this->m_parent, error);
             }
@@ -148,7 +164,7 @@ void TlsTcpClient::Impl::on_handshake_complete() {
     }
 }
 
-void TlsTcpClient::Impl::on_handshake_failed(const Error& error) {
+void TlsTcpClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const Error& error) {
     if (m_connect_callback) {
         m_connect_callback(*this->m_parent, error);
     }

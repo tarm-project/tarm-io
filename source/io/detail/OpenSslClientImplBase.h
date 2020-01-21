@@ -41,7 +41,7 @@ public:
     void do_handshake();
     void handshake_read_from_sll_and_send();
     virtual void on_handshake_complete() = 0;
-    virtual void on_handshake_failed(const Error& error) = 0;
+    virtual void on_handshake_failed(long openssl_error_code, const Error& error) = 0;
 
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
@@ -283,6 +283,10 @@ TlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_tls_version()
         return TlsVersion::UNKNOWN;
     }
 
+    if (!m_ssl_handshake_complete) {
+        return TlsVersion::UNKNOWN;
+    }
+
     SSL_SESSION* session = SSL_get_session(m_ssl.get());
     if (session == nullptr) {
         return TlsVersion::UNKNOWN;
@@ -315,6 +319,11 @@ DtlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_dtls_version
     if (!is_open()) {
         return DtlsVersion::UNKNOWN;
     }
+
+    if (!m_ssl_handshake_complete) {
+        return DtlsVersion::UNKNOWN;
+    }
+
 
     SSL_SESSION* session = SSL_get_session(m_ssl.get());
     if (session == nullptr) {
@@ -444,7 +453,8 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
     if (decrypted_size < 0) {
         int code = SSL_get_error(m_ssl.get(), decrypted_size);
         if (code != SSL_ERROR_WANT_READ) {
-            IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size", code);
+            const auto openssl_error_code = ERR_get_error();
+            IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size. Error code:", openssl_error_code, "message:", ERR_reason_error_string(openssl_error_code));
             // TODO: handle error
             return;
         }
@@ -488,7 +498,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
                 handshake_read_from_sll_and_send();
             }
 
-            on_handshake_failed(Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
+            on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
         }
     } else if (handshake_result == 1) {
         IO_LOG(m_loop, DEBUG, m_parent, "Connected!");
@@ -507,7 +517,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
     } else {
         const auto openssl_error_code = ERR_get_error();
         IO_LOG(m_loop, ERROR, m_parent, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol. Error code:", openssl_error_code, "message:", ERR_reason_error_string(openssl_error_code));
-        on_handshake_failed(Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
+        on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
     }
 }
 

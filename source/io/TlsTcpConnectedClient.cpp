@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "TcpConnectedClient.h"
+#include "TlsTcpServer.h"
 #include "detail/OpenSslClientImplBase.h"
 #include "detail/TlsContext.h"
 
@@ -37,7 +38,7 @@ protected:
 
     void on_ssl_read(const DataChunk& data) override;
     void on_handshake_complete() override;
-    void on_handshake_failed(const Error& error) override;
+    void on_handshake_failed(long openssl_error_code, const Error& error) override;
 
 private:
     TlsTcpServer* m_tls_server = nullptr;;
@@ -132,10 +133,32 @@ void TlsTcpConnectedClient::Impl::on_handshake_complete() {
     }
 }
 
-void TlsTcpConnectedClient::Impl::on_handshake_failed(const Error& error) {
+void TlsTcpConnectedClient::Impl::on_handshake_failed(long openssl_error_code, const Error& error) {
+    if ((openssl_error_code & 0xFFF) == SSL_R_UNKNOWN_PROTOCOL) {
+        // Sending version failed alert manually because OpensSSL does not do it.
+        const std::size_t BUF_SIZE = 7;
+        std::shared_ptr<char> buf_ptr(new char[BUF_SIZE], std::default_delete<char[]>());
+        buf_ptr.get()[0] = 0x15;
+        buf_ptr.get()[1] = 0x03;
+        buf_ptr.get()[2] = 0x01; // TLS 1.0 by default
+        buf_ptr.get()[3] = 0x00;
+        buf_ptr.get()[4] = 0x02;
+        buf_ptr.get()[5] = 0x02;
+        buf_ptr.get()[6] = 0x46;
+
+        //char buf[] = {0x15, 0x03, 0x01, 0x00, 0x02, 0x02, 0x46};
+        if (std::get<1>(m_tls_server->version_range()) != TlsVersion::UNKNOWN) {
+            buf_ptr.get()[2] = static_cast<unsigned char>(std::get<1>(m_tls_server->version_range()));
+        }
+
+        m_client->send_data(buf_ptr, BUF_SIZE);
+    }
+
     if (m_new_connection_callback) {
         m_new_connection_callback(*this->m_parent, error);
     }
+
+    m_client->close();
 }
 
 TlsTcpServer& TlsTcpConnectedClient::Impl::server() {

@@ -38,7 +38,7 @@ protected:
 
     void on_ssl_read(const DataChunk& data) override;
     void on_handshake_complete() override;
-    void on_handshake_failed(const Error& error) override;
+    void on_handshake_failed(long openssl_error_code, const Error& error) override;
 
 private:
     ConnectCallback m_connect_callback;
@@ -138,7 +138,7 @@ void DtlsClient::Impl::on_handshake_complete() {
     }
 }
 
-void DtlsClient::Impl::on_handshake_failed(const Error& error) {
+void DtlsClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const Error& error) {
     if (m_connect_callback) {
         m_connect_callback(*this->m_parent, error);
     }

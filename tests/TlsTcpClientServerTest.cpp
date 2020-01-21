@@ -1207,6 +1207,69 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
     EXPECT_EQ(1, server_on_receive_callback_count);
 }
 
+TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
+    //this->log_to_stdout();
+    if (io::global::min_supported_tls_version() == io::global::max_supported_tls_version()) {
+        return;
+    }
+
+    std::size_t client_on_connect_callback_count = 0;
+    std::size_t client_on_receive_callback_count = 0;
+    std::size_t client_on_close_callback_count = 0;
+    std::size_t server_on_connect_callback_count = 0;
+    std::size_t server_on_receive_callback_count = 0;
+
+    io::EventLoop loop;
+
+    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path, {io::global::max_supported_tls_version(), io::global::max_supported_tls_version()});
+    auto listen_error = server->listen(m_default_addr, m_default_port,
+        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            EXPECT_EQ(io::TlsVersion::UNKNOWN, client.negotiated_tls_version());
+            ++server_on_connect_callback_count;
+            server->schedule_removal();
+        },
+        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_callback_count;
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TlsTcpClient(loop, {io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            EXPECT_EQ(io::TlsVersion::UNKNOWN, client.negotiated_tls_version());
+            ++client_on_connect_callback_count;
+            client.schedule_removal();
+        },
+        [&](io::TlsTcpClient&, const io::DataChunk&, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_receive_callback_count;
+        },
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_close_callback_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_callback_count);
+    EXPECT_EQ(0, client_on_receive_callback_count);
+    EXPECT_EQ(0, client_on_close_callback_count);
+    EXPECT_EQ(0, server_on_connect_callback_count);
+    EXPECT_EQ(0, server_on_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_callback_count);
+    EXPECT_EQ(0, client_on_receive_callback_count);
+    EXPECT_EQ(0, client_on_close_callback_count);
+    EXPECT_EQ(1, server_on_connect_callback_count);
+    EXPECT_EQ(0, server_on_receive_callback_count);
+}
 
 // TODO: TLS version mismatch test
 // TODO: TLS version lower is bigger than higher error
