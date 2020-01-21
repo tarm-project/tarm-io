@@ -37,6 +37,7 @@ protected:
 
     void on_ssl_read(const DataChunk& data) override;
     void on_handshake_complete() override;
+    void on_handshake_failed(const Error& error) override;
 
 private:
     TlsTcpServer* m_tls_server = nullptr;;
@@ -128,6 +129,12 @@ void TlsTcpConnectedClient::Impl::on_ssl_read(const DataChunk& data) {
 void TlsTcpConnectedClient::Impl::on_handshake_complete() {
     if (m_new_connection_callback) {
         m_new_connection_callback(*m_parent, Error(0));
+    }
+}
+
+void TlsTcpConnectedClient::Impl::on_handshake_failed(const Error& error) {
+    if (m_new_connection_callback) {
+        m_new_connection_callback(*this->m_parent, error);
     }
 }
 

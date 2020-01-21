@@ -16,9 +16,11 @@ public:
     using UnderlyingClientType = UdpClient;
 
     using ConnectCallback = std::function<void(DtlsClient&, const Error&)>;
-    using CloseCallback = std::function<void(DtlsClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(DtlsClient&, const DataChunk&, const Error&)>;
+
+    // TODO: this callback is unused
+    using CloseCallback = std::function<void(DtlsClient&, const Error&)>;
 
     IO_FORBID_COPY(DtlsClient);
     IO_DECLARE_DLL_PUBLIC_MOVE(DtlsClient);

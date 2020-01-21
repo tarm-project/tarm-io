@@ -559,6 +559,60 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
     EXPECT_EQ(1, server_on_receive_callback_count);
 }
 
+TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
+    if (io::global::min_supported_dtls_version() == io::global::max_supported_dtls_version()) {
+        return;
+    }
+
+    std::size_t client_on_connect_callback_count = 0;
+    std::size_t client_on_receive_callback_count = 0;
+    std::size_t server_on_connect_callback_count = 0;
+    std::size_t server_on_receive_callback_count = 0;
+
+    io::EventLoop loop;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path, {io::global::max_supported_dtls_version(), io::global::max_supported_dtls_version()});
+    auto listen_error = server->listen(m_default_addr, m_default_port,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            ++server_on_connect_callback_count;
+            server->schedule_removal();
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_callback_count;
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::DtlsClient(loop, {io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
+    client->connect(m_default_addr, m_default_port,
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            ++client_on_connect_callback_count;
+            client.schedule_removal();
+        },
+        [&](io::DtlsClient&, const io::DataChunk&, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_receive_callback_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_callback_count);
+    EXPECT_EQ(0, client_on_receive_callback_count);
+    EXPECT_EQ(0, server_on_connect_callback_count);
+    EXPECT_EQ(0, server_on_receive_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_callback_count);
+    EXPECT_EQ(0, client_on_receive_callback_count);
+    EXPECT_EQ(1, server_on_connect_callback_count);
+    EXPECT_EQ(0, server_on_receive_callback_count);
+}
+
 // TODO: DTLS version lower is bigger than higher error
 // TODO: DTLS version mismatch test
 

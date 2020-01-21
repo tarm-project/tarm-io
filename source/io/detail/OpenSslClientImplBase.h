@@ -41,6 +41,7 @@ public:
     void do_handshake();
     void handshake_read_from_sll_and_send();
     virtual void on_handshake_complete() = 0;
+    virtual void on_handshake_failed(const Error& error) = 0;
 
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
@@ -481,11 +482,13 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
         } else if (error == SSL_ERROR_WANT_WRITE) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_WRITE");
         } else {
-            char msg[1024];
-            ERR_error_string_n(ERR_get_error(), msg, sizeof(msg));
-            printf("%s %s %s %s\n", msg, ERR_lib_error_string(0), ERR_func_error_string(0), ERR_reason_error_string(0));
+            const auto openssl_error_code = ERR_get_error();
+            IO_LOG(m_loop, ERROR, m_parent, "Handshake error:", openssl_error_code);
+            if (write_pending) {
+                handshake_read_from_sll_and_send();
+            }
 
-            // TODO: error handling here
+            on_handshake_failed(Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
         }
     } else if (handshake_result == 1) {
         IO_LOG(m_loop, DEBUG, m_parent, "Connected!");
@@ -502,8 +505,9 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
             read_from_ssl();
         }
     } else {
-        IO_LOG(m_loop, ERROR, m_parent, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol.");
-        // TODO: error handling
+        const auto openssl_error_code = ERR_get_error();
+        IO_LOG(m_loop, ERROR, m_parent, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol. Error code:", openssl_error_code, "message:", ERR_reason_error_string(openssl_error_code));
+        on_handshake_failed(Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
     }
 }
 
@@ -519,9 +523,9 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<cons
     if (write_result <= 0) {
         IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size", size);
 
-        const auto openss_error_code = ERR_get_error();
+        const auto openssl_error_code = ERR_get_error();
         if (callback) {
-            callback(*m_parent, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openss_error_code)));
+            callback(*m_parent, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
         }
 
         return;

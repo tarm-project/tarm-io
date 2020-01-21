@@ -38,6 +38,7 @@ protected:
 
     void on_ssl_read(const DataChunk& data) override;
     void on_handshake_complete() override;
+    void on_handshake_failed(const Error& error) override;
 
 private:
     ConnectCallback m_connect_callback;
@@ -144,6 +145,12 @@ void TlsTcpClient::Impl::on_ssl_read(const DataChunk& data) {
 void TlsTcpClient::Impl::on_handshake_complete() {
     if (m_connect_callback) {
         m_connect_callback(*this->m_parent, Error(0));
+    }
+}
+
+void TlsTcpClient::Impl::on_handshake_failed(const Error& error) {
+    if (m_connect_callback) {
+        m_connect_callback(*this->m_parent, error);
     }
 }
 
