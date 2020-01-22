@@ -104,33 +104,6 @@ template<typename ParentType, typename ImplType>
 OpenSslClientImplBase<ParentType, ImplType>::~OpenSslClientImplBase() {
 }
 
-/*
-template<typename ParentType, typename ImplType>
-Error OpenSslClientImplBase<ParentType, ImplType>::set_tls_version(TlsVersion version_min, TlsVersion version_max) {
-    if (version_min > version_max) {
-        // TODO: return error
-    }
-
-    if (version_min != TlsVersion::MIN) {
-        for (std::size_t v = static_cast<std::size_t>(TlsVersion::MIN); v < static_cast<std::size_t>(version_min); ++v) {
-            disable_tls_version(static_cast<TlsVersion>(v));
-        }
-    }
-
-    if (version_max != TlsVersion::MAX) {
-        for (std::size_t v = static_cast<std::size_t>(version_max) + 1; v <= static_cast<std::size_t>(TlsVersion::MAX); ++v) {
-            disable_tls_version(static_cast<TlsVersion>(v));
-        }
-    }
-
-    for (std::size_t v = static_cast<std::size_t>(version_min); v <= static_cast<std::size_t>(version_max); ++v) {
-        enable_tls_version(static_cast<TlsVersion>(v));
-    }
-
-    return Error(StatusCode::OK);
-}
-*/
-
 template<typename ParentType, typename ImplType>
 template<typename VersionType,
          void(OpenSslClientImplBase<ParentType, ImplType>::*EnableMethod)(VersionType),
