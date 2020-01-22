@@ -157,8 +157,6 @@ Error TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
         return Error(StatusCode::TLS_PRIVATE_KEY_INVALID);
     }
 
-    // TODO: check unsigned long err = ERR_get_error(); ?????
-
     if (!certificate_and_key_match()) {
         return Error(StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH);
     }
@@ -197,47 +195,6 @@ bool TlsTcpServer::Impl::certificate_and_key_match() {
     assert(m_private_key);
 
     return X509_verify(m_certificate.get(), m_private_key.get()) != 0;
-    //err = ERR_get_error();
-
-    // verify that key is well-encoded
-    // TOOD: do we need that code????
-
-    /*
-    auto type = ssl_key_type(m_private_key.get());
-    switch (type) {
-        case EVP_PKEY_RSA:
-        case EVP_PKEY_RSA2: {
-            std::unique_ptr<::RSA, decltype(&::RSA_free)> rsa_ptr(EVP_PKEY_get1_RSA(m_private_key.get()), &::RSA_free);
-            return RSA_check_key(rsa_ptr.get()) == 1;
-        }
-        // TODO: verify these key types
-
-
-        //case EVP_PKEY_DSA:
-        //case EVP_PKEY_DSA1:
-        //case EVP_PKEY_DSA2:
-        //case EVP_PKEY_DSA3:
-        //case EVP_PKEY_DSA4: {
-        //    std::unique_ptr<::DSA, decltype(&::DSA_free)> dsa_ptr(EVP_PKEY_get1_DSA(m_private_key.get()), &::DSA_free);
-        //    return DSA_check_key(dsa_ptr.get()) == 1;
-        //}
-
-        //case EVP_PKEY_DH: {
-        //    std::unique_ptr<::DH, decltype(&::DH_free)> dh_ptr(EVP_PKEY_get1_DH(m_private_key.get()), &::DH_free);
-        //    return DH_check_key(dh_ptr.get()) == 1;
-        //}
-
-        case EVP_PKEY_EC: {
-            std::unique_ptr<::EC_KEY, decltype(&::EC_KEY_free)> ec_ptr(EVP_PKEY_get1_EC_KEY(m_private_key.get()), &::EC_KEY_free);
-            return EC_KEY_check_key(ec_ptr.get()) == 1;
-        }
-
-        default:
-            return false; // TODO: return unknown status??????
-    }
-
-    return false;
-    */
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
