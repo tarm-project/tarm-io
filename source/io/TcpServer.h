@@ -4,6 +4,7 @@
 #include "DataChunk.h"
 #include "EventLoop.h"
 #include "Export.h"
+#include "Removable.h"
 #include "TcpConnectedClient.h"
 #include "UserDataHolder.h"
 
@@ -17,7 +18,8 @@ namespace io {
 
 class TcpConnectedClient;
 
-class TcpServer : public UserDataHolder {
+class TcpServer : public Removable,
+                  public UserDataHolder {
 public:
     friend class TcpConnectedClient;
 

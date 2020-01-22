@@ -78,7 +78,7 @@ TlsTcpServer::Impl::Impl(EventLoop& loop,
 }
 
 TlsTcpServer::Impl::~Impl() {
-    delete m_tcp_server; // TODO: schedule removal for TCP server
+    m_tcp_server->schedule_removal();
 }
 
 TlsVersionRange TlsTcpServer::Impl::version_range() const {
