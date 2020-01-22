@@ -287,12 +287,7 @@ TlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_tls_version()
         return TlsVersion::UNKNOWN;
     }
 
-    SSL_SESSION* session = SSL_get_session(m_ssl.get());
-    if (session == nullptr) {
-        return TlsVersion::UNKNOWN;
-    }
-
-    switch (session->ssl_version) {
+    switch (m_ssl.get()->version) {
 #ifdef TLS1_VERSION
         case TLS1_VERSION:
             return TlsVersion::V1_0;
@@ -321,12 +316,6 @@ DtlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_dtls_version
     }
 
     if (!m_ssl_handshake_complete) {
-        return DtlsVersion::UNKNOWN;
-    }
-
-
-    SSL_SESSION* session = SSL_get_session(m_ssl.get());
-    if (session == nullptr) {
         return DtlsVersion::UNKNOWN;
     }
 
