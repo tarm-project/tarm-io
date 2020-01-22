@@ -96,10 +96,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
         '*/include/boost/*'
         '*/include/*/c++/*'
         '*/include/c++/*'
-        '*/include/node/*'
         '*/include/gtest/*'
-        'tests/*'
-        'samples/*'
+        '*/samples/*'
+        '*/tests/*'
     )
 
     SETUP_TARGET_FOR_COVERAGE(
