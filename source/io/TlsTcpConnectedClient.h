@@ -13,9 +13,8 @@
 
 namespace io {
 
-// TODO: now we can schedule removal of connected client from any callback
-//       need to revise this. Probably just to use close/shutdown only.
-class TlsTcpConnectedClient : public Removable {
+class TlsTcpConnectedClient : protected Removable,
+                              public UserDataHolder {
 public:
     friend class TlsTcpServer;
 

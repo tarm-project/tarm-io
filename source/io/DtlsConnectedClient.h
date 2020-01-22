@@ -13,7 +13,8 @@
 
 namespace io {
 
-class DtlsConnectedClient : protected Removable {
+class DtlsConnectedClient : protected Removable,
+                            public UserDataHolder {
 public:
     friend class DtlsServer;
 
