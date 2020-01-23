@@ -1273,7 +1273,6 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
     EXPECT_EQ(0, server_on_receive_callback_count);
 }
 
-// TODO: TLS version mismatch test
 // TODO: TLS version lower is bigger than higher error
 
 // TODO: connect as TCP and send invalid data on various stages

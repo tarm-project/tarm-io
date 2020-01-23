@@ -698,6 +698,5 @@ TEST_F(DtlsClientServerTest, save_received_buffer) {
 }
 
 // TODO: DTLS version lower is bigger than higher error
-// TODO: DTLS version mismatch test
 
 // TODO: unit test invalid address
