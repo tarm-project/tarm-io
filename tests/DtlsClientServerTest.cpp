@@ -615,6 +615,88 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
     EXPECT_EQ(0, server_on_receive_callback_count);
 }
 
+TEST_F(DtlsClientServerTest, save_received_buffer) {
+    io::EventLoop loop;
+
+    const std::string client_message_1 = "1: Hello from client!";
+    const std::string client_message_2 = "2: Hello from client!";
+    const std::string server_message_1 = "1: Hello from server!";
+    const std::string server_message_2 = "2: Hello from server!";
+
+    //std::size_t server_new_connection_counter = 0;
+    std::size_t server_data_receive_counter = 0;
+    //std::size_t server_data_send_counter = 0;
+
+    //std::size_t client_new_connection_counter = 0;
+    std::size_t client_data_receive_counter = 0;
+    //std::size_t client_data_send_counter = 0;
+
+    std::shared_ptr<const char> client_saved_buf;
+    std::shared_ptr<const char> server_saved_buf;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen(m_default_addr, m_default_port,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_data_receive_counter;
+
+            std::string s(data.buf.get(), data.size);
+            if (server_data_receive_counter == 1) {
+                EXPECT_EQ(client_message_1, s);
+                server_saved_buf = data.buf;
+            } else {
+                EXPECT_EQ(client_message_2, s);
+            }
+
+            client.send_data((server_data_receive_counter == 1 ?
+                              server_message_1 :
+                              server_message_2));
+        }
+    );
+
+    auto client = new io::DtlsClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+
+            client.send_data(client_message_1);
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            ++client_data_receive_counter;
+
+            std::string s(data.buf.get(), data.size);
+            if (server_data_receive_counter == 1) {
+                EXPECT_EQ(server_message_1, s);
+                client_saved_buf = data.buf;
+                client.send_data(client_message_2);
+            } else {
+                EXPECT_EQ(server_message_2, s);
+
+                // All interaction is done at this point
+                server->schedule_removal();
+                client.schedule_removal();
+            }
+        }
+    );
+
+    EXPECT_EQ(0, server_data_receive_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(2, server_data_receive_counter);
+    EXPECT_EQ(2, client_data_receive_counter);
+
+    // As we do not save size, reuse it from initial messages constants
+    EXPECT_EQ(server_message_1, std::string(client_saved_buf.get(), server_message_1.size()));
+    EXPECT_EQ(client_message_1, std::string(server_saved_buf.get(), client_message_1.size()));
+}
+
 // TODO: DTLS version lower is bigger than higher error
 // TODO: DTLS version mismatch test
 

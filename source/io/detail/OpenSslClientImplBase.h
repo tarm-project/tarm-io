@@ -88,6 +88,11 @@ protected:
 private:
     SSLPtr m_ssl;
     SSL_CTXPtr m_ssl_ctx;
+
+    // TODO: investigate if this buffer can be of less size
+    // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
+    const std::size_t DECRYPT_BUF_SIZE = 16 * 1024;
+    std::shared_ptr<char> m_decrypt_buf;
 };
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
@@ -97,7 +102,8 @@ OpenSslClientImplBase<ParentType, ImplType>::OpenSslClientImplBase(EventLoop& lo
     m_parent(&parent),
     m_loop(&loop),
     m_ssl(nullptr, &::SSL_free),
-    m_ssl_ctx(nullptr, &::SSL_CTX_free) {
+    m_ssl_ctx(nullptr, &::SSL_CTX_free),
+    m_decrypt_buf(new char[DECRYPT_BUF_SIZE], std::default_delete<char[]>()) {
 }
 
 template<typename ParentType, typename ImplType>
@@ -399,17 +405,15 @@ bool OpenSslClientImplBase<ParentType, ImplType>::is_ssl_inited() const {
 
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
-    // TODO: investigate if this buffer can be of less size
-    // TODO: not create this buffer on every read
-    const std::size_t SIZE = 16*1024; // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
-    std::shared_ptr<char> decrypted_buf(new char[SIZE], std::default_delete<char[]>());
-    // TODO: TEST save buffer in callback and check if it is valid
-
-    int decrypted_size = SSL_read(m_ssl.get(), decrypted_buf.get(), SIZE);
+    int decrypted_size = SSL_read(m_ssl.get(), m_decrypt_buf.get(), DECRYPT_BUF_SIZE);
     while (decrypted_size > 0) {
         IO_LOG(m_loop, TRACE, m_parent, "Decrypted message of size:", decrypted_size);
-        on_ssl_read({decrypted_buf, static_cast<std::size_t>(decrypted_size)});
-        decrypted_size = SSL_read(m_ssl.get(), decrypted_buf.get(), SIZE);
+        const auto prev_use_count = m_decrypt_buf.use_count();
+        on_ssl_read({m_decrypt_buf, static_cast<std::size_t>(decrypted_size)});
+        if (prev_use_count != m_decrypt_buf.use_count()) { // user made a copy
+            m_decrypt_buf.reset(new char[DECRYPT_BUF_SIZE], std::default_delete<char[]>());
+        }
+        decrypted_size = SSL_read(m_ssl.get(), m_decrypt_buf.get(), DECRYPT_BUF_SIZE);
     }
 
     if (decrypted_size < 0) {
