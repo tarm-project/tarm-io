@@ -159,8 +159,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                                    this_.m_udp_handle.get(),
                                                    network_to_host(address->sin_addr.s_addr),
                                                    network_to_host(address->sin_port)),
-                                       free_udp_peer);
-                        peer_ptr->ref(); // Holding extra reference to prevent removal by ref/unref mechanics
+                                       free_udp_peer); // Ref count is == 1 here
 
                         peer_ptr->set_last_packet_time_ns(uv_hrtime());
                         this_.m_peers_backlog->add_item(peer_ptr);
@@ -179,8 +178,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                  *this_.m_parent,
                                  this_.m_udp_handle.get(),
                                  network_to_host(address->sin_addr.s_addr),
-                                 network_to_host(address->sin_port));
-                    peer->ref();
+                                 network_to_host(address->sin_port)); // Ref count is == 1 here
                     this_.m_data_receive_callback(*peer, data_chunk, error);
                     peer->unref();
                 }

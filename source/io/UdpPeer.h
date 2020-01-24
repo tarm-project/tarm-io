@@ -6,6 +6,7 @@
 #include "Export.h"
 #include "Forward.h"
 #include "UserDataHolder.h"
+#include "RefCounted.h"
 #include "Removable.h"
 
 #include <cstdint>

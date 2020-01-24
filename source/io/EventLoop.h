@@ -16,6 +16,7 @@ namespace io {
 class EventLoop : public Logger,
                   public UserDataHolder {
 public:
+    // TODO: pass loop as reference parameter in callbacks
     using AsyncCallback = std::function<void()>; // TODO find better name than AsyncCallback
     using EachLoopCycleCallback = std::function<void()>;
 

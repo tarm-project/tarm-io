@@ -32,16 +32,6 @@ private:
 
 } // namespace
 
-TEST_F(RemovableTest, DISABLED_disposed_implicitly) {
-    io::EventLoop loop;
-
-    auto td = new TestRemovable(loop, g_disposed_1);
-
-    ASSERT_EQ(0, loop.run());
-
-    ASSERT_TRUE(g_disposed_1);
-}
-
 TEST_F(RemovableTest, disposed_explicitly) {
     io::EventLoop loop;
 

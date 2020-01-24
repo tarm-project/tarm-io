@@ -1,5 +1,7 @@
 #pragma once
 
+#include "io/RefCounted.h"
+
 #include "UdpImplBase.h"
 
 #include <iostream>

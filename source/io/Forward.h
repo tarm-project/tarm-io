@@ -19,4 +19,7 @@ class UdpClient;
 class UdpServer;
 class UdpPeer;
 
+class RefCounted;
+class Removable;
+
 }

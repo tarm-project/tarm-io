@@ -31,33 +31,4 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
-// TODO: move
-class IO_DLL_PUBLIC RefCounted {
-public:
-    RefCounted(Removable& Removable) :
-        m_Removable(&Removable),
-        m_ref_counter(0) {
-    }
-
-    void ref() {
-        ++m_ref_counter;
-    }
-
-    void unref() {
-        if (!m_ref_counter) {
-            return; // TODO: review this
-        }
-
-        --m_ref_counter;
-
-        if (m_ref_counter == 0) {
-            m_Removable->schedule_removal();
-        }
-    }
-
-private:
-    Removable* m_Removable;
-    std::size_t m_ref_counter;
-};
-
 } // namespace io

@@ -41,6 +41,7 @@ list(APPEND TESTS_LIST
     UserDataHolderTest.cpp
     LoggerTest.cpp
     RemovableTest.cpp
+    RefCountedTest.cpp
     ScopeExitGuardTest.cpp
     VersionTest.cpp
     PathTest.cpp
