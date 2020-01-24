@@ -180,6 +180,51 @@ TEST_F(TimerTest, schedule_with_repeat) {
     EXPECT_GE(timer_duration_2, REPEAT_MS - 10);
 }
 
+TEST_F(TimerTest, schedule_removal_after_start) {
+    io::EventLoop loop;
+
+    const uint64_t TIMEOUT_MS = 100;
+    const uint64_t REPEAT_MS = 300;
+
+    size_t call_counter = 0;
+
+    auto timer = new io::Timer(loop);
+    timer->start(TIMEOUT_MS, REPEAT_MS, [&](io::Timer& timer) {
+        ++call_counter;
+    });
+
+    timer->schedule_removal();
+
+    EXPECT_EQ(0, call_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, call_counter);
+}
+
+TEST_F(TimerTest, schedule_removal_from_callback) {
+    io::EventLoop loop;
+
+    const uint64_t TIMEOUT_MS = 100;
+    const uint64_t REPEAT_MS = 300;
+
+    size_t call_counter = 0;
+
+    auto timer = new io::Timer(loop);
+    timer->start(TIMEOUT_MS, REPEAT_MS,
+        [&](io::Timer& timer) {
+            ++call_counter;
+            timer.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, call_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, call_counter);
+}
+
 TEST_F(TimerTest, multiple_intervals) {
     io::EventLoop loop;
 

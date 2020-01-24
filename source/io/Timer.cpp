@@ -117,6 +117,7 @@ void Timer::Impl::on_timer(uv_timer_t* handle) {
 IO_DEFINE_DEFAULT_MOVE(Timer);
 
 Timer::Timer(EventLoop& loop) :
+    Removable(loop),
     m_impl(new Impl(loop, *this)) {
 }
 
@@ -137,6 +138,11 @@ void Timer::start(const std::deque<std::uint64_t>& timeouts_ms, Callback callbac
 
 void Timer::stop() {
     return m_impl->stop();
+}
+
+void Timer::schedule_removal() {
+    m_impl->stop();
+    return Removable::schedule_removal();
 }
 
 } // namespace io

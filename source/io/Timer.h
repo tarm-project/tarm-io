@@ -4,6 +4,7 @@
 #include "Export.h"
 #include "Error.h"
 #include "UserDataHolder.h"
+#include "Removable.h"
 
 #include <cstdint>
 #include <deque>
@@ -12,13 +13,12 @@
 
 namespace io {
 
-// TODO: inherit from Removable??????
-class Timer : public UserDataHolder {
+class Timer : public Removable,
+              public UserDataHolder {
 public:
     using Callback = std::function<void(Timer&)>;
 
     IO_DLL_PUBLIC Timer(EventLoop& loop);
-    IO_DLL_PUBLIC ~Timer();
 
     IO_FORBID_COPY(Timer);
     IO_DECLARE_DLL_PUBLIC_MOVE(Timer);
@@ -35,6 +35,11 @@ public:
     IO_DLL_PUBLIC void start(const std::deque<std::uint64_t>& timeouts_ms, Callback callback);
 
     IO_DLL_PUBLIC void stop();
+
+    IO_DLL_PUBLIC void schedule_removal() override;
+
+//protected: // TODO: make protected
+    IO_DLL_PUBLIC ~Timer();
 
 private:
     class Impl;
