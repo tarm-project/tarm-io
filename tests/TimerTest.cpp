@@ -17,7 +17,7 @@ TEST_F(TimerTest, default_constructor) {
     ASSERT_EQ(0, loop.run());
 }
 
-TEST_F(TimerTest, no_repeat) {
+TEST_F(TimerTest, schedule_with_no_repeat) {
     io::EventLoop loop;
 
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -144,6 +144,42 @@ TEST_F(TimerTest, start_stop_start_stop) {
     EXPECT_TRUE(second_callback_called);
 }
 
+TEST_F(TimerTest, schedule_with_repeat) {
+    io::EventLoop loop;
+
+    const uint64_t TIMEOUT_MS = 100;
+    const uint64_t REPEAT_MS = 300;
+    size_t call_counter = 0;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto end_time_1 = start_time;
+    auto end_time_2 = start_time;
+
+    io::Timer timer(loop);
+    timer.start(TIMEOUT_MS, REPEAT_MS, [&](io::Timer& timer) {
+        if (call_counter == 0) {
+            end_time_1 = std::chrono::high_resolution_clock::now();
+        } else {
+            end_time_2 = std::chrono::high_resolution_clock::now();
+            timer.stop();
+        }
+
+        ++call_counter;
+    });
+
+    EXPECT_EQ(0, call_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(2, call_counter);
+
+    const auto timer_duration_1 = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_1 - start_time).count();
+    EXPECT_GE(timer_duration_1, TIMEOUT_MS - 10); // -10 because sometime timer may wake up earlier
+
+    const auto timer_duration_2 = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_2 - end_time_1).count();
+    EXPECT_GE(timer_duration_2, REPEAT_MS - 10);
+}
+
 TEST_F(TimerTest, multiple_intervals) {
     io::EventLoop loop;
 
@@ -171,4 +207,4 @@ TEST_F(TimerTest, multiple_intervals) {
     }
 }
 
-// TOOD: double start with different values
+// TOOD: multiple start with different values
