@@ -11,42 +11,41 @@ TEST_F(RefCountedTest, all_in_one_test) {
 
     std::size_t on_schedule_removal_call_count = 0;
 
-    auto removable = new io::Removable(loop);
-    removable->set_on_schedule_removal([&on_schedule_removal_call_count](const io::Removable&) {
+    auto ref_counted = new io::RefCounted(loop);
+    ref_counted->set_on_schedule_removal([&on_schedule_removal_call_count](const io::Removable&) {
         ++on_schedule_removal_call_count;
     });
 
-    io::RefCounted ref_counted(*removable);
-    EXPECT_EQ(1, ref_counted.ref_count());
+    EXPECT_EQ(1, ref_counted->ref_count());
 
     int idle_counter = 0;
     std::size_t handle = loop.schedule_call_on_each_loop_cycle([&](){
         switch (idle_counter) {
             case 0: {
-                EXPECT_EQ(1, ref_counted.ref_count());
+                EXPECT_EQ(1, ref_counted->ref_count());
                 EXPECT_EQ(0, on_schedule_removal_call_count);
-                ref_counted.ref();
-                EXPECT_EQ(2, ref_counted.ref_count());
+                ref_counted->ref();
+                EXPECT_EQ(2, ref_counted->ref_count());
             }
             break;
 
             case 1: {
                 EXPECT_EQ(0, on_schedule_removal_call_count);
-                EXPECT_EQ(2, ref_counted.ref_count());
-                ref_counted.unref();
-                EXPECT_EQ(1, ref_counted.ref_count());
+                EXPECT_EQ(2, ref_counted->ref_count());
+                ref_counted->unref();
+                EXPECT_EQ(1, ref_counted->ref_count());
             }
             break;
 
             case 2: {
                 EXPECT_EQ(0, on_schedule_removal_call_count);
-                EXPECT_EQ(1, ref_counted.ref_count());
-                ref_counted.unref();
-                EXPECT_EQ(0, ref_counted.ref_count());
-                ref_counted.unref();
-                EXPECT_EQ(0, ref_counted.ref_count());
-                ref_counted.unref();
-                EXPECT_EQ(0, ref_counted.ref_count());
+                EXPECT_EQ(1, ref_counted->ref_count());
+                ref_counted->unref();
+                EXPECT_EQ(0, ref_counted->ref_count());
+                ref_counted->unref();
+                EXPECT_EQ(0, ref_counted->ref_count());
+                ref_counted->unref();
+                EXPECT_EQ(0, ref_counted->ref_count());
             }
             break;
 

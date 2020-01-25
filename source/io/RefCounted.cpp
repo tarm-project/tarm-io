@@ -2,8 +2,8 @@
 
 namespace io {
 
-RefCounted::RefCounted(Removable& Removable) :
-    m_Removable(&Removable),
+RefCounted::RefCounted(EventLoop& loop) :
+    Removable(loop),
     m_ref_counter(0) {
     ref();
 }
@@ -20,7 +20,7 @@ void RefCounted::unref() {
     --m_ref_counter;
 
     if (m_ref_counter == 0) {
-        m_Removable->schedule_removal();
+        this->schedule_removal();
     }
 }
 

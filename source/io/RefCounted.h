@@ -6,13 +6,13 @@
 
 namespace io {
 
-class RefCounted {
+class RefCounted : public Removable {
 public:
     IO_FORBID_COPY(RefCounted);
     IO_ALLOW_MOVE(RefCounted);
 
     IO_DLL_PUBLIC
-    RefCounted(Removable& Removable);
+    RefCounted(EventLoop& loop);
 
     IO_DLL_PUBLIC
     void ref();
@@ -24,7 +24,6 @@ public:
     std::size_t ref_count();
 
 private:
-    Removable* m_Removable;
     std::size_t m_ref_counter;
 };
 

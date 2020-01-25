@@ -17,7 +17,6 @@
 namespace io {
 
 class UdpPeer : public UserDataHolder,
-                protected Removable,
                 protected RefCounted {
 public:
     friend class UdpServer;

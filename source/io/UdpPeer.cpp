@@ -63,8 +63,7 @@ const UdpServer& UdpPeer::Impl::server() const {
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 UdpPeer::UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port) :
-    Removable(loop),
-    RefCounted(*static_cast<Removable*>(this)),
+    RefCounted(loop),
     m_impl(new Impl(loop, server, udp_handle, address, port, *this)) {
 }
 
