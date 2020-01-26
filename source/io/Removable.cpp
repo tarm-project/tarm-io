@@ -28,6 +28,7 @@ private:
     OnScheduleRemovalCallback m_on_remove_callback = nullptr;
 
     bool m_removal_scheduled = false;
+    bool m_about_to_remove = false;
 };
 
 Removable::Impl::Impl(EventLoop& loop, Removable& parent) :
@@ -58,7 +59,7 @@ void Removable::Impl::schedule_removal() {
 }
 
 void Removable::Impl::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
-    if (m_removal_scheduled) {
+    if (m_about_to_remove) {
         return;
     }
 
@@ -76,6 +77,8 @@ void Removable::Impl::on_delete_idle_handle_close(uv_handle_t* handle) {
 
 void Removable::Impl::on_removal(uv_idle_t* handle) {
     auto& this_ = *reinterpret_cast<Removable::Impl*>(handle->data);
+
+    this_.m_about_to_remove = true;
 
     if (this_.m_on_remove_callback) {
         this_.m_on_remove_callback(*this_.m_parent);

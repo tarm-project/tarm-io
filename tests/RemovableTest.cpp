@@ -77,3 +77,31 @@ TEST_F(RemovableTest, callback) {
     EXPECT_EQ(1, callback_1_counter);
     EXPECT_EQ(0, callback_2_counter);
 }
+
+TEST_F(RemovableTest, change_callback_after_schedule_removal) {
+    io::EventLoop loop;
+
+    std::size_t callback_1_counter = 0;
+    std::size_t callback_2_counter = 0;
+
+    auto callback_1 = [&](const io::Removable& r) {
+        ++callback_1_counter;
+    };
+
+    auto callback_2 = [&](const io::Removable& r) {
+        ++callback_2_counter;
+    };
+
+    auto removalbe = new io::Removable(loop);
+    removalbe->set_on_schedule_removal(callback_1);
+    removalbe->schedule_removal();
+    removalbe->set_on_schedule_removal(callback_2);
+
+    EXPECT_EQ(0, callback_1_counter);
+    EXPECT_EQ(0, callback_2_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, callback_1_counter);
+    EXPECT_EQ(1, callback_2_counter);
+}
