@@ -22,9 +22,10 @@ public:
 
     IO_DLL_PUBLIC virtual void schedule_removal();
 
-    // TODO: test this
-    // TODO: test calling this function inside OnScheduleRemovalCallback callback???
+    // Does nothing if removal was scheduled
     IO_DLL_PUBLIC void set_on_schedule_removal(OnScheduleRemovalCallback callback);
+
+    IO_DLL_PUBLIC bool is_removal_scheduled() const;
 
 private:
     class Impl;
