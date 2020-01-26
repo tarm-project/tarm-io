@@ -10,6 +10,7 @@
 
 //#include <memory>
 //#include <assert.h>
+// TODO: remove
 #include <iostream>
 
 namespace io {
@@ -86,6 +87,15 @@ protected:
     bool m_ssl_inited = false;
 
 private:
+    /*
+    static void ssl_state_callback(const SSL* ssl, int where, int ret) {
+        auto& this_ = *reinterpret_cast<OpenSslClientImplBase*>(SSL_get_ex_data(ssl, 0));
+        if (where & SSL_CB_ALERT) {
+            std::cout << "ALERT!!! " << ret << std::endl;
+        }
+    }
+    */
+
     SSLPtr m_ssl;
     SSL_CTXPtr m_ssl_ctx;
 
@@ -375,6 +385,9 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
         IO_LOG(m_loop, ERROR, m_parent, "Failed to create SSL");
         return Error(StatusCode::OPENSSL_ERROR, "Failed to create SSL");
     }
+
+    SSL_set_ex_data(m_ssl.get(), 0, this);
+    //SSL_set_info_callback(m_ssl.get(), &OpenSslClientImplBase<ParentType, ImplType>::ssl_state_callback);
 
     m_ssl_read_bio = BIO_new(BIO_s_mem());
     if (m_ssl_read_bio == nullptr) {
