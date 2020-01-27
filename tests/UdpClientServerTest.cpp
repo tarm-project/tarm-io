@@ -314,8 +314,8 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
         }
     );
 
-    io::Timer timer_1(loop);
-    timer_1.start(100, [&](io::Timer& timer) {
+    auto timer_1 = new io::Timer(loop);
+    timer_1->start(100, [&](io::Timer& timer) {
         EXPECT_EQ(1, client_send_counter);
         client->send_data(client_message_2,
             [&](io::UdpClient& client, const io::Error& error) {
@@ -323,16 +323,18 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
                 ++client_send_counter;
             }
         );
+        timer.schedule_removal();
     });
 
-    io::Timer timer_2(loop);
-    timer_2.start(600, [&](io::Timer& timer) {
+    auto timer_2 = new io::Timer(loop);
+    timer_2->start(600, [&](io::Timer& timer) {
         EXPECT_EQ(2, client_send_counter);
         client->send_data(client_message_3,
             [&](io::UdpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
                 ++client_send_counter;
                 client.schedule_removal();
+                timer.schedule_removal();
             }
         );
     });
@@ -390,8 +392,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
     });
 
     auto client_1 = new io::UdpClient(loop, 0x7F000001, m_default_port);
-    io::Timer timer_1(loop);
-    timer_1.start(0, 100, [&](io::Timer& timer) {
+    auto timer_1 = new io::Timer(loop);
+    timer_1->start(0, 100, [&](io::Timer& timer) {
         client_1->send_data(client_1_message,
             [&](io::UdpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -402,8 +404,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
     EXPECT_FALSE(listen_error);
 
     auto client_2 = new io::UdpClient(loop, 0x7F000001, m_default_port);
-    io::Timer timer_2(loop);
-    timer_2.start(0, 200, [&](io::Timer& timer) {
+    auto timer_2 = new io::Timer(loop);
+    timer_2->start(0, 200, [&](io::Timer& timer) {
         client_2->send_data(client_2_message,
             [&](io::UdpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -412,8 +414,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
     });
 
     auto client_3 = new io::UdpClient(loop, 0x7F000001, m_default_port);
-    io::Timer timer_3(loop);
-    timer_3.start(0, 400, [&](io::Timer& timer) {
+    auto timer_3 = new io::Timer(loop);
+    timer_3->start(0, 400, [&](io::Timer& timer) {
         client_3->send_data(client_3_message,
             [&](io::UdpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -421,19 +423,25 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
         );
     });
 
-    io::Timer timer_stop_all(loop);
-    timer_stop_all.start(650, [&](io::Timer& timer) {
-        timer_1.stop();
-        timer_2.stop();
-        timer_3.stop();
+    auto timer_stop_all = new io::Timer(loop);
+    timer_stop_all->start(650, [&](io::Timer& timer) {
+        timer_1->stop();
+        timer_2->stop();
+        timer_3->stop();
+        timer.schedule_removal();
     });
 
-    io::Timer timer_remove(loop);
-    timer_remove.start(1000, [&](io::Timer& timer) {
+    auto timer_remove = new io::Timer(loop);
+    timer_remove->start(1000, [&](io::Timer& timer) {
         client_1->schedule_removal();
         client_2->schedule_removal();
         client_3->schedule_removal();
         server->schedule_removal();
+
+        timer_1->schedule_removal();
+        timer_2->schedule_removal();
+        timer_3->schedule_removal();
+        timer.schedule_removal();
     });
 
     EXPECT_EQ(0, peer_to_close_count.size());
@@ -617,11 +625,14 @@ TEST_F(UdpClientServerTest, client_receive_data_only_from_it_target) {
         }
     );
 
-    io::Timer timer(loop);
-    timer.start(100, [&](io::Timer&) {
-        client_1->schedule_removal();
-        client_2->schedule_removal();
-    });
+    auto timer = new io::Timer(loop);
+    timer->start(100,
+        [&](io::Timer& timer) {
+            client_1->schedule_removal();
+            client_2->schedule_removal();
+            timer.schedule_removal();
+        }
+    );
 
     EXPECT_EQ(0, receive_callback_call_count);
 
@@ -764,14 +775,16 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_data) {
     );
     client->send_data(message, SIZE - client_send_message_counter, client_send);
 
-    io::Timer timer(loop);
-    timer.start(100, 100, [&](io::Timer& timer) {
-        if (client_send_message_counter == SIZE && server_send_message_counter == SIZE) {
-            client->schedule_removal();
-            server->schedule_removal();
-            timer.stop();
+    auto timer = new io::Timer(loop);
+    timer->start(100, 100,
+        [&](io::Timer& timer) {
+            if (client_send_message_counter == SIZE && server_send_message_counter == SIZE) {
+                client->schedule_removal();
+                server->schedule_removal();
+                timer.schedule_removal();
+            }
         }
-    });
+    );
 
     EXPECT_EQ(0, server_receive_message_counter);
     EXPECT_EQ(0, client_receive_message_counter);

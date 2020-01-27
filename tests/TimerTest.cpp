@@ -9,7 +9,8 @@ struct TimerTest : public testing::Test,
 
 };
 
-// Note:
+// Note: in some tests there are double loop.run() calls. This is made
+//       to ensure that timer stopping will exit the loop.
 
 TEST_F(TimerTest, constructor) {
     io::EventLoop loop;

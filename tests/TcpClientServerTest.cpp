@@ -458,13 +458,14 @@ TEST_F(TcpClientServerTest, DISABLED_server_disconnect_client_from_new_connectio
         }
     );
 
-    io::Timer timer(loop);
-    timer.start(500, [&](io::Timer& timer) {
+    auto timer = new io::Timer(loop);
+    timer->start(500, [&](io::Timer& timer) {
         // Disconnect should be called before timer callback
         EXPECT_TRUE(client_close_callback_called);
 
         client->schedule_removal();
         server.shutdown();
+        timer.schedule_removal();
     });
 
     EXPECT_EQ(0, loop.run());
@@ -580,13 +581,14 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
             disconnect_called = true;
         });
 
-    io::Timer timer(loop);
-    timer.start(500, [&](io::Timer& timer) {
+    auto timer = new io::Timer(loop);
+    timer->start(500, [&](io::Timer& timer) {
         // Disconnect should be called before timer callback
         EXPECT_TRUE(disconnect_called);
 
         client->schedule_removal();
         server.shutdown();
+        timer.schedule_removal();
     });
 
     EXPECT_EQ(0, loop.run());
@@ -705,13 +707,14 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
     auto client = new io::TcpClient(loop);
     client->connect(m_default_addr, m_default_port, connect_callback, nullptr);
 
-    io::Timer timer(loop);
-    timer.start(500, [&](io::Timer& timer) {
+    auto timer = new io::Timer(loop);
+    timer->start(500, [&](io::Timer& timer) {
         // Disconnect should be called before timer callback
         EXPECT_TRUE(client_close_called);
 
         client->schedule_removal();
         server.shutdown();
+        timer.schedule_removal();
     });
 
     ASSERT_EQ(0, loop.run());
