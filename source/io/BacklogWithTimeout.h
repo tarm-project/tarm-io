@@ -75,12 +75,10 @@ public:
     void stop() {
         // TODO: FIXME: need to add schedule_removal to timers to fix this
         // TODO: remove m_stopped after this;
-        for (auto& t : m_timers) {
-            t->stop();
-            m_stopped = true;
-        }
+        //for (auto& t : m_timers) {
+        //    t->stop();
+        //}
 
-        /*
         m_entity_timeout = 0;
         m_expired_callback = nullptr;
         m_time_getter = nullptr;
@@ -88,7 +86,8 @@ public:
         m_timers.clear();
         m_timeouts.clear();
         m_items.clear();
-        */
+
+        m_stopped = true;
     }
 
 protected:

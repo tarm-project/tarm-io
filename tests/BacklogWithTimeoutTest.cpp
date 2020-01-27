@@ -33,9 +33,7 @@ protected:
         return m_fake_clock;
     }
 
-    void clear_timers() {
-        m_fake_timers.clear();
-    }
+    ~BacklogWithTimeoutTest();
 
 private:
     static std::uint64_t m_fake_clock;
@@ -71,7 +69,8 @@ public:
 
     static DefaultDelete default_delete() {
         return [](FakeTimer* ft) {
-            delete ft;
+            // Do nothing. Fake timers lifetime is managed by test suite
+            ft->m_stopped = true;
         };
     }
 
@@ -114,6 +113,10 @@ public:
 
         for (uint64_t i = 0; i < time_ms; ++i) {
             ++m_current_time_ms;
+            if (m_stopped) {
+                break;
+            }
+
             if (m_current_time_ms >= m_timeout_ms) {
                 m_callback(*this);
                 m_current_time_ms = 0;
@@ -136,6 +139,12 @@ void BacklogWithTimeoutTest::advance_clock(std::uint64_t time_ms) {
         for(auto& timer : m_fake_timers) {
             timer->advance(1);
         }
+    }
+}
+
+BacklogWithTimeoutTest::~BacklogWithTimeoutTest() {
+    for (auto& t : m_fake_timers) {
+        delete t;
     }
 }
 
