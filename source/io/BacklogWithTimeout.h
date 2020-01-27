@@ -32,7 +32,7 @@ public:
         std::size_t buckets_count = 0;
         std::size_t current_timeout = entity_timeout;
         do {
-            m_timers.emplace_back(new TimerType(loop));
+            m_timers.emplace_back(new TimerType(loop), TimerType::default_delete());
             m_timers.back().get()->start(current_timeout, current_timeout, std::bind(&BacklogWithTimeout::on_timer, this, std::placeholders::_1));
             m_timeouts.push_back(current_timeout * 1000000);
             m_timers.back().get()->set_user_data(reinterpret_cast<void*>(m_timers.size() - 1)); // index of the timer
@@ -142,7 +142,7 @@ private:
     OnItemExpiredCallback m_expired_callback;
     TimeGetterType m_time_getter = nullptr;
     MonothonicClockGetterType m_clock_getter = nullptr;
-    std::vector<std::unique_ptr<TimerType>> m_timers;
+    std::vector<std::unique_ptr<TimerType, typename TimerType::DefaultDelete>> m_timers;
     std::vector<std::size_t> m_timeouts; // TODO: get timeout from timer directly?
     std::vector<std::vector<T>> m_items;
 

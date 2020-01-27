@@ -16,6 +16,8 @@ public:
 
     bool is_removal_scheduled() const;
 
+    static DefaultDelete default_delete();
+
 protected:
     // statics
     static void on_removal(uv_idle_t* handle);
@@ -29,6 +31,12 @@ private:
 
     bool m_removal_scheduled = false;
     bool m_about_to_remove = false;
+
+    static Removable::DefaultDelete m_default_deleter;
+};
+
+Removable::DefaultDelete Removable::Impl::m_default_deleter = [](Removable* r) {
+    r->schedule_removal();
 };
 
 Removable::Impl::Impl(EventLoop& loop, Removable& parent) :
@@ -88,6 +96,10 @@ void Removable::Impl::on_removal(uv_idle_t* handle) {
     uv_close(reinterpret_cast<uv_handle_t*>(handle), on_delete_idle_handle_close);
 }
 
+Removable::DefaultDelete Removable::Impl::default_delete() {
+    return m_default_deleter;
+}
+
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 IO_DEFINE_DEFAULT_MOVE(Removable);
@@ -109,6 +121,10 @@ void Removable::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
 
 bool Removable::is_removal_scheduled() const {
     return m_impl->is_removal_scheduled();
+}
+
+Removable::DefaultDelete Removable::default_delete() {
+    return Impl::default_delete();
 }
 
 } // namespace io

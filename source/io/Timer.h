@@ -38,7 +38,7 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
-//protected: // TODO: make protected
+protected:
     IO_DLL_PUBLIC ~Timer();
 
 private:

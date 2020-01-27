@@ -67,6 +67,14 @@ public:
 
 class FakeTimer : public ::io::UserDataHolder {
 public:
+    using DefaultDelete = std::function<void(FakeTimer*)>;
+
+    static DefaultDelete default_delete() {
+        return [](FakeTimer* ft) {
+            delete ft;
+        };
+    }
+
     using Callback = std::function<void(FakeTimer&)>;
 
     IO_FORBID_COPY(FakeTimer);

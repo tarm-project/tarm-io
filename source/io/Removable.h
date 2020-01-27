@@ -12,6 +12,9 @@ class IO_DLL_PUBLIC_CLASS_UNIX_ONLY Removable {
 public:
     friend class RefCounted;
 
+    // Used for smart pointers
+    using DefaultDelete = std::function<void(Removable*)>;
+
     using OnScheduleRemovalCallback = std::function<void(const Removable&)>;
 
     IO_FORBID_COPY(Removable);
@@ -26,6 +29,8 @@ public:
     IO_DLL_PUBLIC void set_on_schedule_removal(OnScheduleRemovalCallback callback);
 
     IO_DLL_PUBLIC bool is_removal_scheduled() const;
+
+    IO_DLL_PUBLIC static DefaultDelete default_delete();
 
 private:
     class Impl;
