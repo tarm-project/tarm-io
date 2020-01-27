@@ -281,4 +281,26 @@ TEST_F(TimerTest, multiple_intervals) {
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(TimerTest, 100k_timers) {
+    io::EventLoop loop;
+
+    std::size_t callback_counter = 0;
+    auto common_callback = [&](io::Timer& timer) {
+        ++callback_counter;
+        timer.schedule_removal();
+    };
+
+    const std::size_t COUNT = 100000;
+    for (std::size_t i = 0; i < COUNT; ++i) {
+        auto timer = new io::Timer(loop);
+        timer->start(i % 500 + 1, common_callback);
+    }
+
+    EXPECT_EQ(0, callback_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(COUNT, callback_counter);
+}
+
 // TOOD: multiple start with different values
