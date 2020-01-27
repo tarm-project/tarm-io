@@ -303,4 +303,38 @@ TEST_F(TimerTest, 100k_timers) {
     EXPECT_EQ(COUNT, callback_counter);
 }
 
-// TOOD: multiple start with different values
+TEST_F(TimerTest, multiple_starts) {
+    io::EventLoop loop;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto end_time = start_time;
+
+    const uint64_t TIMEOUT_1_MS = 100;
+    size_t call_counter_1 = 0;
+
+    const uint64_t TIMEOUT_2_MS = 200;
+    size_t call_counter_2 = 0;
+
+    auto timer = new io::Timer(loop);
+    timer->start(TIMEOUT_1_MS, 0, [&](io::Timer& timer) {
+        ++call_counter_1;
+        timer.schedule_removal();
+    });
+
+    timer->start(TIMEOUT_2_MS, 0, [&](io::Timer& timer) {
+        end_time = std::chrono::high_resolution_clock::now();
+        ++call_counter_2;
+        timer.schedule_removal();
+    });
+
+    EXPECT_EQ(0, call_counter_1);
+    EXPECT_EQ(0, call_counter_2);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, call_counter_1);
+    EXPECT_EQ(1, call_counter_2);
+
+    const auto timer_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    EXPECT_GE(timer_duration, TIMEOUT_2_MS - 10); // -10 because sometime timer may wake up a bit earlier
+}
