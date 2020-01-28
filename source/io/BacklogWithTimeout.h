@@ -42,8 +42,6 @@ public:
         m_items.resize(buckets_count);
     };
 
-    // TODO: implement reserve() method as it ads more performance
-
     bool add_item(T t) {
         const std::uint64_t current_time = m_clock_getter();
         const std::uint64_t item_time = m_time_getter(t);
