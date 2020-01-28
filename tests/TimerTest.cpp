@@ -3,6 +3,7 @@
 #include "io/Timer.h"
 
 #include <chrono>
+#include <unordered_map>
 
 struct TimerTest : public testing::Test,
                    public LogRedirector {
@@ -301,6 +302,40 @@ TEST_F(TimerTest, 100k_timers) {
     ASSERT_EQ(0, loop.run());
 
     EXPECT_EQ(COUNT, callback_counter);
+}
+
+TEST_F(TimerTest, 1k_timers_1k_timeouts) {
+    io::EventLoop loop;
+
+    std::size_t callback_counter = 0;
+    std::unordered_map<std::size_t, std::size_t> callbacks_stats;
+
+    const std::size_t COUNT = 1000;
+
+    auto common_callback = [&](io::Timer& timer) {
+        std::size_t timer_id = reinterpret_cast<std::size_t>(timer.user_data());
+        callbacks_stats[timer_id]++;
+        ++callback_counter;
+        if (callbacks_stats[timer_id] == COUNT) {
+            timer.schedule_removal();
+        }
+    };
+
+    for (std::size_t i = 0; i < COUNT; ++i) {
+        auto timer = new io::Timer(loop);
+        timer->set_user_data(reinterpret_cast<void*>(i));
+        timer->start(1, 1, common_callback);
+    }
+
+    EXPECT_EQ(0, callback_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(COUNT * COUNT, callback_counter);
+
+    for(auto& k_v : callbacks_stats) {
+        ASSERT_EQ(COUNT, k_v.second) << k_v.first;
+    }
 }
 
 TEST_F(TimerTest, multiple_starts) {
