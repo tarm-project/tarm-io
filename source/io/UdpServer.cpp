@@ -94,7 +94,7 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
         if (it != m_peers.end()) {
             m_peers.erase(it);
         } else {
-            // error handling
+            // TODO: error handling
         }
     };
 
@@ -102,7 +102,7 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
         return item->last_packet_time_ns();
     };
 
-    m_peers_backlog.reset(new BacklogWithTimeout<std::shared_ptr<UdpPeer>>(*m_loop, timeout_ms, on_expired, time_getter));
+    m_peers_backlog.reset(new BacklogWithTimeout<std::shared_ptr<UdpPeer>>(*m_loop, timeout_ms, on_expired, time_getter, &uv_hrtime));
 
     return start_receive(ip_addr_str, port, receive_callback);
 }

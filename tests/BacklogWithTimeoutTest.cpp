@@ -2,13 +2,11 @@
 
 #include "UTCommon.h"
 
+#include <uv.h>
+
 #include <memory>
 
-
-//namespace {
 class FakeTimer;
-//} // namespace
-
 
 struct BacklogWithTimeoutTest : public testing::Test,
                                 public LogRedirector {
@@ -379,7 +377,7 @@ TEST_F(BacklogWithTimeoutTest, with_real_time_1_item) {
     };
 
     io::EventLoop loop;
-    io::BacklogWithTimeout<TestItem> backlog(loop, 1, on_expired, time_getter);
+    io::BacklogWithTimeout<TestItem> backlog(loop, 1, on_expired, time_getter, &uv_hrtime);
 
     TestItem item_1(0);
     item_1.time = uv_hrtime();

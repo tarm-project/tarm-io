@@ -3,7 +3,6 @@
 #include "CommonMacros.h"
 #include "Timer.h"
 #include "EventLoop.h"
-#include "Common.h" // TODO: remove (replace uv_hrtime with custom function)
 
 #include <cmath>
 #include <cstdint>
@@ -17,13 +16,13 @@ namespace io {
 template<typename T, typename LoopType = ::io::EventLoop, typename TimerType = ::io::Timer>
 class BacklogWithTimeout {
 public:
-    using TimeGetterType = std::function<std::uint64_t(const T&)>;
+    using ItemTimeGetter = std::function<std::uint64_t(const T&)>;
     using MonothonicClockGetterType = std::uint64_t(*)();
     using OnItemExpiredCallback = std::function<void(BacklogWithTimeout<T, LoopType, TimerType>&,  const T& item)>;
 
     // TODO: copy and move constuctors
 
-    BacklogWithTimeout(LoopType& loop, std::size_t entity_timeout, OnItemExpiredCallback expired_callback, TimeGetterType time_getter, MonothonicClockGetterType clock_getter = &uv_hrtime) :
+    BacklogWithTimeout(LoopType& loop, std::size_t entity_timeout, OnItemExpiredCallback expired_callback, ItemTimeGetter time_getter, MonothonicClockGetterType clock_getter) :
         m_entity_timeout(entity_timeout * std::size_t(1000000)),
         m_expired_callback(expired_callback),
         m_time_getter(time_getter),
@@ -131,7 +130,7 @@ protected:
 private:
     std::size_t m_entity_timeout = 0;
     OnItemExpiredCallback m_expired_callback;
-    TimeGetterType m_time_getter = nullptr;
+    ItemTimeGetter m_time_getter = nullptr;
     MonothonicClockGetterType m_clock_getter = nullptr;
     std::vector<std::unique_ptr<TimerType, typename TimerType::DefaultDelete>> m_timers;
     std::vector<std::size_t> m_timeouts; // TODO: get timeout from timer directly?
