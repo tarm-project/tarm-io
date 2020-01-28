@@ -59,7 +59,7 @@ public:
         const auto time_diff = current_time - item_time;
         if (time_diff >= m_entity_timeout) {
             m_expired_callback(*this, t);
-            if (m_stopped) { // BacklogWithTimeout object could be stopped in callback
+            if (m_timers.empty()) { // BacklogWithTimeout object could be stopped in callback
                 return false;
             }
 
@@ -73,12 +73,6 @@ public:
     }
 
     void stop() {
-        // TODO: FIXME: need to add schedule_removal to timers to fix this
-        // TODO: remove m_stopped after this;
-        //for (auto& t : m_timers) {
-        //    t->stop();
-        //}
-
         m_entity_timeout = 0;
         m_expired_callback = nullptr;
         m_time_getter = nullptr;
@@ -86,8 +80,6 @@ public:
         m_timers.clear();
         m_timeouts.clear();
         m_items.clear();
-
-        m_stopped = true;
     }
 
 protected:
@@ -105,7 +97,7 @@ protected:
             const auto time_diff = current_time - item_time;
             if (time_diff >= m_entity_timeout) {
                 m_expired_callback(*this, current_bucket[i]);
-                if (m_stopped) { // BacklogWithTimeout object could be stopped in callback
+                if (m_timers.empty()) { // BacklogWithTimeout object could be stopped in callback
                     return;
                 }
 
@@ -144,8 +136,6 @@ private:
     std::vector<std::unique_ptr<TimerType, typename TimerType::DefaultDelete>> m_timers;
     std::vector<std::size_t> m_timeouts; // TODO: get timeout from timer directly?
     std::vector<std::vector<T>> m_items;
-
-    bool m_stopped = false;
 };
 
 } // namespace io
