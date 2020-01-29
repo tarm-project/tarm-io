@@ -1,6 +1,6 @@
 #include "UTCommon.h"
 
-#include "io/Common.h"
+#include "io/Convert.h"
 
 struct CommonTest : public testing::Test,
                     public LogRedirector {

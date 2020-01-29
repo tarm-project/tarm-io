@@ -14,6 +14,7 @@ list(APPEND IO_SOURCE_LIST
         io/path_impl/Utf8CodecvtFacet.cpp
         io/path_impl/WindowsFileCodecvt.cpp
         io/Common.cpp
+        io/Convert.cpp
         io/RefCounted.cpp
         io/Removable.cpp
         io/Dir.cpp
