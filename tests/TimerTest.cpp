@@ -180,7 +180,12 @@ TEST_F(TimerTest, schedule_with_repeat) {
     auto end_time_2 = start_time;
 
     auto timer = new io::Timer(loop);
+    EXPECT_EQ(0, timer->timeout_ms());
+    EXPECT_EQ(0, timer->repeat_ms());
     timer->start(TIMEOUT_MS, REPEAT_MS, [&](io::Timer& timer) {
+        EXPECT_EQ(TIMEOUT_MS, timer.timeout_ms());
+        EXPECT_EQ(REPEAT_MS, timer.repeat_ms());
+
         if (call_counter == 0) {
             end_time_1 = std::chrono::high_resolution_clock::now();
         } else {
@@ -190,6 +195,8 @@ TEST_F(TimerTest, schedule_with_repeat) {
 
         ++call_counter;
     });
+    EXPECT_EQ(TIMEOUT_MS, timer->timeout_ms());
+    EXPECT_EQ(REPEAT_MS, timer->repeat_ms());
 
     EXPECT_EQ(0, call_counter);
 
@@ -260,14 +267,20 @@ TEST_F(TimerTest, multiple_intervals) {
     using ElapsedDuration = std::chrono::duration<float, std::milli>;
     std::deque<ElapsedDuration> durations;
 
-    const auto start_time = std::chrono::system_clock::now();
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     auto timer = new io::Timer(loop);
     timer->start(intervals,
         [&](io::Timer& timer) {
-            durations.push_back(std::chrono::system_clock::now() - start_time);
+            EXPECT_EQ(intervals[durations.size()], timer.timeout_ms());
+            EXPECT_EQ(0, timer.repeat_ms());
+            const auto now = std::chrono::high_resolution_clock::now();
+            durations.push_back(now - start_time);
+            start_time = now;
         }
     );
+    EXPECT_EQ(intervals[0], timer->timeout_ms());
+    EXPECT_EQ(0, timer->repeat_ms());
 
     ASSERT_EQ(0, durations.size());
 

@@ -31,6 +31,7 @@ private:
     Callback m_callback = nullptr;
 
     std::deque<std::uint64_t> m_timeouts_ms;
+    uint64_t m_current_timeout_ms = 0;
     uint64_t m_repeat_ms = 0;
 };
 
@@ -92,19 +93,20 @@ void Timer::Impl::start_impl() {
         uv_timer_start(m_uv_timer, on_timer, m_timeouts_ms.front(), 0);
     }
 
-    m_timeouts_ms.pop_back();
+    m_current_timeout_ms = m_timeouts_ms.front();
+    m_timeouts_ms.pop_front();
 }
 
 void Timer::Impl::stop() {
-    uv_timer_stop(m_uv_timer);
+    uv_timer_stop(m_uv_timer); // TODO: error handling
 }
 
 std::uint64_t Timer::Impl::timeout_ms() const {
-    return m_uv_timer ? m_uv_timer->timeout : 0;
+    return m_uv_timer ? m_current_timeout_ms : 0;
 }
 
 std::uint64_t Timer::Impl::repeat_ms() const {
-    return m_uv_timer ? m_uv_timer->repeat : 0;
+    return m_uv_timer ? uv_timer_get_repeat(m_uv_timer) : 0;
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
