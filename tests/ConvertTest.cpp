@@ -2,15 +2,15 @@
 
 #include "io/Convert.h"
 
-struct CommonTest : public testing::Test,
-                    public LogRedirector {
+struct ConvertTest : public testing::Test,
+                     public LogRedirector {
 };
 
-TEST_F(CommonTest, ip4_addr_single_conversion) {
+TEST_F(ConvertTest, ip4_addr_single_conversion) {
     EXPECT_EQ("255.127.7.1", io::ip4_addr_to_string(0xFF7F0701));
 }
 
-TEST_F(CommonTest, ip4_addr_batch_conversion) {
+TEST_F(ConvertTest, ip4_addr_batch_conversion) {
     // Test description: just more complicated test to cover more values and cases
     const std::size_t SIZE = 2000;
 
