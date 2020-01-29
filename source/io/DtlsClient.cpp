@@ -1,8 +1,9 @@
 #include "DtlsClient.h"
 
 #include "ByteSwap.h"
-#include "Common.h"
+#include "Convert.h"
 #include "UdpClient.h"
+#include "detail/ConstexprString.h"
 #include "detail/OpenSslClientImplBase.h"
 
 #include <openssl/ssl.h>
@@ -68,12 +69,8 @@ void DtlsClient::Impl::connect(const std::string& address,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback) {
-
-    struct sockaddr_in addr;
-    uv_ip4_addr(address.c_str(), port, &addr); // TODO: error handling
-
     m_client = new UdpClient(*m_loop,
-                             network_to_host(addr.sin_addr.s_addr),
+                             string_to_ip4_addr(address),
                              port,
                              [this](UdpClient&, const DataChunk& chunk, const Error&) {
         this->on_data_receive(chunk.buf.get(), chunk.size);

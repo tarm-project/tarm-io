@@ -1,8 +1,9 @@
 #include "DtlsConnectedClient.h"
 
-#include "Common.h"
+#include "Convert.h"
 #include "UdpPeer.h"
 #include "detail/DtlsContext.h"
+#include "detail/ConstexprString.h"
 #include "detail/OpenSslClientImplBase.h"
 
 #include <openssl/ssl.h>
