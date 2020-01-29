@@ -18,6 +18,9 @@ public:
     void start_impl();
     void stop();
 
+    std::uint64_t timeout_ms() const;
+    std::uint64_t repeat_ms() const;
+
     // statics
     static void on_timer(uv_timer_t* handle);
 
@@ -96,6 +99,14 @@ void Timer::Impl::stop() {
     uv_timer_stop(m_uv_timer);
 }
 
+std::uint64_t Timer::Impl::timeout_ms() const {
+    return m_uv_timer ? m_uv_timer->timeout : 0;
+}
+
+std::uint64_t Timer::Impl::repeat_ms() const {
+    return m_uv_timer ? m_uv_timer->repeat : 0;
+}
+
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 void Timer::Impl::on_timer(uv_timer_t* handle) {
     assert(handle->data);
@@ -141,8 +152,16 @@ void Timer::stop() {
 }
 
 void Timer::schedule_removal() {
-    m_impl->stop();
+    stop();
     return Removable::schedule_removal();
+}
+
+std::uint64_t Timer::timeout_ms() const {
+    return m_impl->timeout_ms();
+}
+
+std::uint64_t Timer::repeat_ms() const {
+    return m_impl->repeat_ms();
 }
 
 } // namespace io

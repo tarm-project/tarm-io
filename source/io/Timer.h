@@ -38,6 +38,9 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
+    IO_DLL_PUBLIC std::uint64_t timeout_ms() const;
+    IO_DLL_PUBLIC std::uint64_t repeat_ms() const;
+
 protected:
     IO_DLL_PUBLIC ~Timer();
 
