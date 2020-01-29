@@ -37,7 +37,7 @@ list(APPEND TESTS_LIST
     LogRedirector.cpp
     ConstexprStringTest.cpp
     UTCommon.cpp
-    CommonTest.cpp
+    ConvertTest.cpp
     UserDataHolderTest.cpp
     LoggerTest.cpp
     RemovableTest.cpp
