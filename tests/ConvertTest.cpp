@@ -6,11 +6,11 @@ struct ConvertTest : public testing::Test,
                      public LogRedirector {
 };
 
-TEST_F(ConvertTest, ip4_addr_single_conversion) {
+TEST_F(ConvertTest, ip4_addr_to_string_single_conversion) {
     EXPECT_EQ("255.127.7.1", io::ip4_addr_to_string(0xFF7F0701));
 }
 
-TEST_F(ConvertTest, ip4_addr_batch_conversion) {
+TEST_F(ConvertTest, ip4_addr_to_string_batch_conversion) {
     // Test description: just more complicated test to cover more values and cases
     const std::size_t SIZE = 2000;
 
@@ -34,4 +34,16 @@ TEST_F(ConvertTest, ip4_addr_batch_conversion) {
         std::string actual = io::ip4_addr_to_string(addr);
         ASSERT_EQ(expected, actual) << " i= " << i;
     }
+}
+
+TEST_F(ConvertTest, string_to_ip4_addr) {
+    EXPECT_EQ(0x7F000001, io::string_to_ip4_addr("127.0.0.1"));
+}
+
+TEST_F(ConvertTest, string_to_ip4_addr_invalid_value) {
+    EXPECT_EQ(0, io::string_to_ip4_addr("127.0."));
+}
+
+TEST_F(ConvertTest, string_to_ip4_addr_empty) {
+    EXPECT_EQ(0, io::string_to_ip4_addr(""));
 }

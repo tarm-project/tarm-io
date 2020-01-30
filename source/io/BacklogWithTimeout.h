@@ -33,7 +33,6 @@ public:
         do {
             m_timers.emplace_back(new TimerType(loop), TimerType::default_delete());
             m_timers.back().get()->start(current_timeout, current_timeout, std::bind(&BacklogWithTimeout::on_timer, this, std::placeholders::_1));
-            m_timeouts.push_back(current_timeout * 1000000);
             m_timers.back().get()->set_user_data(reinterpret_cast<void*>(m_timers.size() - 1)); // index of the timer
             current_timeout /= 2;
             ++buckets_count;
@@ -75,7 +74,6 @@ public:
         m_time_getter = nullptr;
         m_clock_getter = nullptr;
         m_timers.clear();
-        m_timeouts.clear();
         m_items.clear();
     }
 
@@ -113,11 +111,11 @@ protected:
     }
 
     std::size_t bucket_index_from_time(std::uint64_t time) const {
-        assert(!m_timeouts.empty());
+        assert(!m_timers.empty());
 
         // Linear search on tiny sets is much more faster than tricks with logarithms or unordered map
         for(std::size_t i = 0; i < m_timers.size(); ++i) {
-            if (time >= m_timeouts[i]) {
+            if (time >= m_timers[i]->timeout_ms() * 1000000) {
                 return i;
             }
         }
@@ -131,7 +129,6 @@ private:
     ItemTimeGetter m_time_getter = nullptr;
     MonothonicClockGetterType m_clock_getter = nullptr;
     std::vector<std::unique_ptr<TimerType, typename TimerType::DefaultDelete>> m_timers;
-    std::vector<std::size_t> m_timeouts; // TODO: get timeout from timer directly?
     std::vector<std::vector<T>> m_items;
 };
 

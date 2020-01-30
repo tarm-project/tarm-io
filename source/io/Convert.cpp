@@ -44,7 +44,7 @@ std::string ip4_addr_to_string(std::uint32_t addr) {
 
 std::uint32_t string_to_ip4_addr(const std::string& address) {
     struct sockaddr_in addr;
-    uv_ip4_addr(address.c_str(), 0, &addr); // TODO: error handling
+    uv_ip4_addr(address.c_str(), 0, &addr); // TODO: error handling (not return 0 on error because it is valid address)
     return network_to_host(addr.sin_addr.s_addr);
 }
 
