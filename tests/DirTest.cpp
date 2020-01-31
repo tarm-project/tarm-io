@@ -146,7 +146,7 @@ TEST_F(DirTest, empty_dir) {
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
 
-    // TODO: rename???? to "list"
+    // TODO: rename???? "read -> list"
     bool read_called = false;
     bool end_read_called = false;
 
@@ -175,7 +175,7 @@ TEST_F(DirTest, no_read_callback) {
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
 
-    // TODO: rename???? to "list"
+    // TODO: rename???? to "read -> list"
     bool end_read_called = false;
 
     dir->open(m_tmp_test_dir.string(), [&](io::Dir& dir, const io::Error&) {

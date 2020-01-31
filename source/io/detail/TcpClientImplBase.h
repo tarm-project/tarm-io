@@ -78,8 +78,6 @@ TcpClientImplBase<ParentType, ImplType>::TcpClientImplBase(EventLoop& loop, Pare
 
 template<typename ParentType, typename ImplType>
 TcpClientImplBase<ParentType, ImplType>::~TcpClientImplBase() {
-    // TODO: need to revise this. Some read request may be in progress
-    //       move to on_close() ???
     m_read_buf.reset();
 }
 

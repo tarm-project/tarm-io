@@ -57,7 +57,7 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
                                 UdpImplBase<ParentType, ImplType>::m_udp_handle.get(),
                                 &req->uv_buf,
                                 1,
-                                reinterpret_cast<const sockaddr*>(&(UdpImplBase<ParentType, ImplType>::m_raw_unix_addr)),
+                                reinterpret_cast<const sockaddr*>(&(UdpImplBase<ParentType, ImplType>::m_destination_address)),
                                 on_send);
     if (uv_status < 0 && callback) {
         callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(uv_status));

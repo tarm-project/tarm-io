@@ -234,8 +234,6 @@ int EventLoop::Impl::run() {
         }
 
         execute_pending_callbacks();
-
-        // TODO: is it possible to detect here that loop has new running handles and uv_run should be called or not again?
     } while(run_status == 0 && has_pending_callbacks);
 
     m_is_running = false;
@@ -338,7 +336,6 @@ void EventLoop::Impl::on_after_work(uv_work_t* req, int status) {
     auto& work = *reinterpret_cast<Work<WorkCallbackType, WorkDoneCallbackType>*>(req);
     work.call_work_done_callback();
 
-    // TODO: memory pool for Work????
     delete &work;
 }
 

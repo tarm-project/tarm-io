@@ -38,7 +38,7 @@ private:
 Timer::Impl::Impl(EventLoop& loop, Timer& parent) :
     m_parent(&parent),
     m_loop(&loop),
-    m_uv_timer(new uv_timer_t) { // TODO: new may throw, use memory pool for UV types???
+    m_uv_timer(new uv_timer_t) {
     // TODO: check return value
     uv_timer_init(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), m_uv_timer);
     m_uv_timer->data = this;

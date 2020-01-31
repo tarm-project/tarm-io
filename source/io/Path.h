@@ -99,9 +99,6 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  using a conversion object modeled on std::wstring_convert.
     //
     //  See m_pathname comments for further important rationale.
-
-    //  TODO: rules needed for operating systems that use / or .
-    //  differently, or format directory paths differently from file paths.
     //
     //  **********************************************************************************
     //

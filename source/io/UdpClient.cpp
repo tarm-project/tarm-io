@@ -59,7 +59,7 @@ UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, D
 }
 
 void UdpClient::Impl::set_destination(std::uint32_t host, std::uint16_t port) {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_raw_unix_addr);
+    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_destination_address);
     unix_addr.sin_family = AF_INET;
     unix_addr.sin_port = host_to_network(port);
     unix_addr.sin_addr.s_addr = host_to_network(host);
@@ -87,12 +87,12 @@ void UdpClient::Impl::start_receive() {
 }
 
 std::uint32_t UdpClient::Impl::ipv4_addr() const {
-    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(&m_raw_unix_addr);
+    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(&m_destination_address);
     return network_to_host(unix_addr.sin_addr.s_addr);
 }
 
 std::uint16_t UdpClient::Impl::port() const {
-    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(&m_raw_unix_addr);
+    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(&m_destination_address);
     return network_to_host(unix_addr.sin_port);
 }
 
@@ -119,7 +119,7 @@ void UdpClient::Impl::on_data_received(uv_udp_t* handle,
     if (!error) {
         if (addr && nread) {
             const auto& address_in_from = *reinterpret_cast<const struct sockaddr_in*>(addr);
-            const auto& address_in_expect = *reinterpret_cast<sockaddr_in*>(&this_.m_raw_unix_addr);
+            const auto& address_in_expect = *reinterpret_cast<sockaddr_in*>(&this_.m_destination_address);
 
             if (address_in_from.sin_addr.s_addr == address_in_expect.sin_addr.s_addr &&
                 address_in_from.sin_port == address_in_expect.sin_port) {

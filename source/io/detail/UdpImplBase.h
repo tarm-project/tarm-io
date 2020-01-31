@@ -2,7 +2,6 @@
 
 #include "io/EventLoop.h"
 
-// TODO: remove???
 #include <uv.h>
 
 #include <cstring>
@@ -27,7 +26,7 @@ protected:
     ParentType* m_parent = nullptr;
 
     std::unique_ptr<uv_udp_t, std::function<void(uv_udp_t*)>> m_udp_handle;
-    sockaddr_storage m_raw_unix_addr; // TODO: rename as destination_address
+    sockaddr_storage m_destination_address;
 };
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
@@ -38,7 +37,7 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
     m_parent(&parent),
     m_udp_handle(new uv_udp_t, std::default_delete<uv_udp_t>()) {
-    std::memset(&m_raw_unix_addr, 0, sizeof(m_raw_unix_addr));
+    std::memset(&m_destination_address, 0, sizeof(m_destination_address));
 
     auto status = uv_udp_init(m_uv_loop, m_udp_handle.get());
     if (status < 0) {
@@ -54,7 +53,7 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
     m_parent(&parent),
     m_udp_handle(udp_handle, [](uv_udp_t*){}) {
-        std::memset(&m_raw_unix_addr, 0, sizeof(m_raw_unix_addr));
+        std::memset(&m_destination_address, 0, sizeof(m_destination_address));
         m_udp_handle->data = udp_handle->data;
 }
 

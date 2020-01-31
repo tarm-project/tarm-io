@@ -3,9 +3,6 @@
 #include "Common.h"
 #include "ScopeExitGuard.h"
 
-// TODO: remove
-#include <assert.h>
-
 namespace io {
 
 struct ReadRequest : public uv_fs_t {
@@ -238,8 +235,6 @@ const Path& File::Impl::path() const {
 }
 
 void File::Impl::schedule_read() {
-    //assert(m_used_read_bufs <= READ_BUFS_NUM);
-
     if (!is_open()) {
         return;
     }
@@ -334,7 +329,7 @@ void File::Impl::on_open(uv_fs_t* req) {
 
     auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
 
-    Error error(req->result > 0 ? 0 : req->result); // TODO: fixme
+    Error error(req->result > 0 ? 0 : req->result);
     if (!error) {
         this_.m_file_handle = static_cast<uv_file>(req->result);
     }

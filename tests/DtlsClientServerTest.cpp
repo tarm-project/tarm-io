@@ -444,7 +444,7 @@ TEST_F(DtlsClientServerTest, default_constructor) {
     ASSERT_EQ(0, loop.run());
 }
 */
-// TODO: FIXME
+
 TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
     const std::string message = "Hello!";
     std::size_t client_on_connect_callback_count = 0;

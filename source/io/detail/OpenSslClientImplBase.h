@@ -99,7 +99,6 @@ private:
     SSLPtr m_ssl;
     SSL_CTXPtr m_ssl_ctx;
 
-    // TODO: investigate if this buffer can be of less size
     // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
     const std::size_t DECRYPT_BUF_SIZE = 16 * 1024;
     std::shared_ptr<char> m_decrypt_buf;
@@ -362,11 +361,6 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
     }
 
     ssl_set_versions();
-    //SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_TLSv1_2);
-    //set_tls_version(io::TlsVersion::V1_0, io::TlsVersion::V1_2);
-
-    // TODO: remove ???
-    //SSL_CTX_set_ecdh_auto(m_ssl_ctx, 1);
 
     // TODO: implement verify?
     SSL_CTX_set_verify(m_ssl_ctx.get(), SSL_VERIFY_NONE, NULL);
@@ -442,6 +436,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
 
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::handshake_read_from_sll_and_send() {
+    // TODO: investigate this size.
     const std::size_t BUF_SIZE = 4096;
     std::shared_ptr<char> buf(new char[BUF_SIZE], [](const char* p) { delete[] p; });
     const auto size = BIO_read(m_ssl_write_bio, buf.get(), BUF_SIZE);

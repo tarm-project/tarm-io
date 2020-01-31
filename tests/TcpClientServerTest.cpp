@@ -1184,8 +1184,7 @@ TEST_F(TcpClientServerTest, client_saves_received_buffer) {
 
                 std::string s_2(data.buf.get(), data.size);
                 EXPECT_EQ(server_message_2, s_2);
-                // TODO: this test will not hang if not call client.schedule_removal(); Need investigation
-                // See client_and_server_in_threads as reference
+
                 client.schedule_removal();
             }
 

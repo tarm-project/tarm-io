@@ -28,19 +28,19 @@ private:
 UdpPeer::Impl::Impl(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port, UdpPeer& parent) :
     UdpClientImplBase(loop, parent, parent, reinterpret_cast<uv_udp_t*>(udp_handle)),
     m_server(&server) {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_raw_unix_addr);
+    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_destination_address);
     unix_addr.sin_family = AF_INET;
     unix_addr.sin_port = host_to_network(port);
     unix_addr.sin_addr.s_addr = host_to_network(address);
 }
 
 std::uint32_t UdpPeer::Impl::address() {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_raw_unix_addr);
+    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_destination_address);
     return network_to_host(unix_addr.sin_addr.s_addr);
 }
 
 std::uint16_t UdpPeer::Impl::port() {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_raw_unix_addr);
+    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_destination_address);
     return network_to_host(unix_addr.sin_port);
 }
 
@@ -95,7 +95,7 @@ void UdpPeer::send_data(const std::string& message, EndSendCallback callback) {
 }
 
 bool UdpPeer::is_open() const {
-    return true; // TODO: revise this
+    return true;
 }
 
 UdpServer& UdpPeer::server() {

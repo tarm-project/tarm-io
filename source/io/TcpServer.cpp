@@ -45,9 +45,6 @@ private:
 
     uv_tcp_t* m_server_handle = nullptr;
 
-    // TODO: most likely this data member is not need to be data member but some var on stack
-    struct sockaddr_in m_unix_addr;
-
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
     CloseConnectionCallback m_close_connection_callback = nullptr;
@@ -103,13 +100,14 @@ Error TcpServer::Impl::listen(const std::string& ip_addr_str,
     setsockopt(handle, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
     */
 
-    const int ip4_status = uv_ip4_addr(ip_addr_str.c_str(), port, &m_unix_addr);
+    struct sockaddr_in unix_addr;
+    const int ip4_status = uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
     if (ip4_status < 0) {
         IO_LOG(m_loop, ERROR, m_parent, uv_strerror(ip4_status));
         return ip4_status;
     }
 
-    const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(&m_unix_addr), 0);
+    const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(&unix_addr), 0);
     if (bind_status < 0) {
         IO_LOG(m_loop, ERROR, m_parent, "Bind failed:", uv_strerror(bind_status));
         return bind_status;
@@ -170,10 +168,10 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
     IO_LOG(this_.m_loop, TRACE, "_");
 
     if (status < 0) {
+        // TODO: error handling
         // TODO: need to find better error reporting solution in case when TOO_MANY_OPEN_FILES_ERROR
         //       because it spams log. For example, could record last error and log only when last error != current one
         IO_LOG(this_.m_loop, ERROR, "error:", uv_strerror(status));
-        // TODO: error handling
         return;
     }
 
