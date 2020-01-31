@@ -277,8 +277,8 @@ TEST_F(BacklogWithTimeoutTest, stop_on_first_item) {
     std::size_t expired_counter = 0;
     auto on_expired = [&](io::BacklogWithTimeout<std::shared_ptr<TestItem>, FakeLoop, FakeTimer>& backlog, const std::shared_ptr<TestItem>& item) {
         EXPECT_EQ(0, item->id);
-        backlog.stop();
         ++expired_counter;
+        backlog.stop();
     };
 
     FakeLoop loop;
@@ -368,8 +368,8 @@ TEST_F(BacklogWithTimeoutTest, huge_number_of_items) {
 TEST_F(BacklogWithTimeoutTest, with_real_time_1_item) {
     std::size_t expired_counter = 0;
     auto on_expired = [&](io::BacklogWithTimeout<TestItem>& backlog, const TestItem& item) {
-        backlog.stop();
         ++expired_counter;
+        backlog.stop();
     };
 
     auto time_getter = [&](const TestItem& item) -> std::uint64_t {
