@@ -7,7 +7,7 @@ set -u
 SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 SCRIPT_NAME=$(basename "${BASH_SOURCE[0]}")
 
-IMAGE_TO_EXECUTE="tarmio/builders:${1}"
+IMAGE_TO_EXECUTE="tarmio/builders:$(echo ${1} | sed 's|tarmio/builders:||')"
 COMMAND_TO_EXECUTE="${2:-bash}"
 
 USER_ID=$(id -u $USER)
