@@ -7,6 +7,7 @@
 
 #include <cstring>
 #include <cstddef>
+#include <assert.h>
 
 namespace io {
 
