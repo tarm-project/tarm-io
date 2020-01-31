@@ -1106,7 +1106,7 @@ TEST_F(TlsTcpClientServerTest, server_with_restricted_tls_version) {
     io::EventLoop loop;
 
     io::TlsTcpServer server(loop, m_cert_path, m_key_path,
-        {io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+        io::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
     auto listen_error = server.listen(m_default_addr, m_default_port,
         [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1181,7 +1181,8 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop, {io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+    auto client = new io::TlsTcpClient(loop,
+        io::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
 
     client->connect(m_default_addr, m_default_port,
         [&](io::TlsTcpClient& client, const io::Error& error) {
@@ -1223,7 +1224,8 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path, {io::global::max_supported_tls_version(), io::global::max_supported_tls_version()});
+    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path,
+        io::TlsVersionRange{io::global::max_supported_tls_version(), io::global::max_supported_tls_version()});
     auto listen_error = server->listen(m_default_addr, m_default_port,
         [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1239,7 +1241,8 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop, {io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+    auto client = new io::TlsTcpClient(loop,
+        io::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
     client->connect(m_default_addr, m_default_port,
         [&](io::TlsTcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);

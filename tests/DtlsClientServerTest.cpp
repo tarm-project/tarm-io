@@ -474,7 +474,8 @@ TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::DtlsClient(loop, {io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
+    auto client = new io::DtlsClient(loop,
+        io::DtlsVersionRange{io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
 
     client->connect(m_default_addr, m_default_port,
         [&](io::DtlsClient& client, const io::Error& error) {
@@ -511,7 +512,8 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
 
     io::EventLoop loop;
 
-    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path, {io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path,
+        io::DtlsVersionRange{io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
     auto listen_error = server->listen(m_default_addr, m_default_port,
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -571,7 +573,8 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
 
     io::EventLoop loop;
 
-    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path, {io::global::max_supported_dtls_version(), io::global::max_supported_dtls_version()});
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path,
+        io::DtlsVersionRange{io::global::max_supported_dtls_version(), io::global::max_supported_dtls_version()});
     auto listen_error = server->listen(m_default_addr, m_default_port,
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -587,7 +590,8 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::DtlsClient(loop, {io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
+    auto client = new io::DtlsClient(loop,
+        io::DtlsVersionRange{io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
     client->connect(m_default_addr, m_default_port,
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);

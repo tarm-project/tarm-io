@@ -231,7 +231,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::disable_tls_version(TlsVersion
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::enable_dtls_version(DtlsVersion version) {
     switch (version) {
-#ifdef DTLS1_VERSION
+#ifdef SSL_OP_NO_DTLSv1
         case DtlsVersion::V1_0:
             SSL_CTX_clear_options(m_ssl_ctx.get(), SSL_OP_NO_DTLSv1);
             break;
@@ -250,7 +250,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::enable_dtls_version(DtlsVersio
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::disable_dtls_version(DtlsVersion version) {
     switch (version) {
-#ifdef DTLS1_VERSION
+#ifdef SSL_OP_NO_DTLSv1
         case DtlsVersion::V1_0:
             SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_DTLSv1);
             break;
