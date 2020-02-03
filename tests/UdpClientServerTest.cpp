@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <unordered_map>
+#include <thread>
 
 struct UdpClientServerTest : public testing::Test,
                              public LogRedirector {
@@ -705,8 +706,7 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
     ASSERT_EQ(0, loop.run());
 }
 
-// TODO: this test with parallel send of all data
-TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_data) {
+TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
     // Note: as we perform this test on local host on the same event loop, we expect that data
     // will be received sequentially
     io::EventLoop loop;
@@ -795,7 +795,100 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_data) {
     EXPECT_EQ(SIZE, client_receive_message_counter);
 }
 
-// TODO: client and server in threads
+TEST_F(UdpClientServerTest, DISABLED_client_and_server_exchange_lot_of_packets_in_threads) {
+    std::size_t SIZE = 200;
+    std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
+    ::srand(0);
+    for(std::size_t i = 0; i < SIZE; ++i) {
+        message.get()[i] = ::rand() & 0xFF;
+    }
+
+    std::size_t server_send_message_counter = 0;
+    std::size_t server_receive_message_counter = 0;
+    std::size_t client_send_message_counter = 0;
+    std::size_t client_receive_message_counter = 0;
+
+    std::function<void(io::UdpPeer&, const io::Error&)> server_send =
+        [&](io::UdpPeer& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_send_message_counter;
+            if (server_send_message_counter < SIZE) {
+                client.send_data(message, SIZE - server_send_message_counter, server_send);
+            }
+        };
+
+    std::thread server_thread([&]() {
+        bool server_send_started = false;
+
+        io::EventLoop server_loop;
+
+        auto server = new io::UdpServer(server_loop);
+        auto listen_error = server->start_receive(m_default_addr, m_default_port,
+            [&](io::UdpPeer& client, const io::DataChunk& chunk, const io::Error& error) {
+                EXPECT_FALSE(error);
+                std::cout << chunk.size << std::endl;
+
+                for (std::size_t i = 0; i < chunk.size; ++i) {
+                    ASSERT_EQ(message.get()[i], chunk.buf.get()[i]) << "i= " << i;
+                }
+
+                if (!server_send_started) {
+                    client.send_data(message, SIZE - chunk.size, server_send);
+                    server_send_started = true;
+                }
+
+                ++server_receive_message_counter;
+
+                if (server_receive_message_counter == SIZE) {
+                    client.server().schedule_removal();
+                }
+            }
+        );
+
+        EXPECT_FALSE(listen_error);
+
+        ASSERT_EQ(0, server_loop.run());
+    });
+
+    std::function<void(io::UdpClient&, const io::Error&)> client_send =
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_send_message_counter;
+            if (client_send_message_counter < SIZE) {
+                client.send_data(message, SIZE - client_send_message_counter, client_send);
+            }
+        };
+
+    std::thread client_thread([&]() {
+        io::EventLoop client_loop;
+
+        auto client = new io::UdpClient(client_loop, 0x7F000001, m_default_port,
+            [&](io::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
+                EXPECT_FALSE(error);
+                for (std::size_t i = 0; i < chunk.size; ++i) {
+                    ASSERT_EQ(message.get()[i], chunk.buf.get()[i]) << "i= " << i;
+                }
+
+                ++client_receive_message_counter;
+                if (client_receive_message_counter == SIZE) {
+                    client.schedule_removal();
+                }
+            }
+        );
+        client->send_data(message, SIZE, client_send);
+
+        ASSERT_EQ(0, client_loop.run());
+    });
+
+    EXPECT_EQ(0, server_receive_message_counter);
+    EXPECT_EQ(0, client_receive_message_counter);
+
+    server_thread.join();
+    client_thread.join();
+
+    EXPECT_EQ(SIZE, server_receive_message_counter);
+    EXPECT_EQ(SIZE, client_receive_message_counter);
+}
 
 // TODO: UDP client sending test with no destination set
 // TODO: check address of UDP peer

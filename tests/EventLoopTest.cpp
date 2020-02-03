@@ -348,3 +348,4 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     EXPECT_EQ(1, counter_3);
 }
 
+// TODO: create event loop in one thread and run in another
