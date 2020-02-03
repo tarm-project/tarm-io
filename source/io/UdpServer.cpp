@@ -114,7 +114,7 @@ void UdpServer::Impl::close() {
 
 bool UdpServer::Impl::close_with_removal() {
     if (m_udp_handle->data) {
-        uv_udp_recv_stop(m_udp_handle.get());
+        Error error = uv_udp_recv_stop(m_udp_handle.get());
         uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), on_close_with_removal);
         return false; // not ready to remove
     }
