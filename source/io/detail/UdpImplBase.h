@@ -17,6 +17,8 @@ public:
     UdpImplBase(EventLoop& loop, ParentType& parent);
     UdpImplBase(EventLoop& loop, ParentType& parent, uv_udp_t* udp_handle);
 
+    bool is_open() const;
+
 protected:
     // statics
     static void on_close_with_removal(uv_handle_t* handle);
@@ -64,6 +66,11 @@ void UdpImplBase<ParentType, ImplType>::on_close_with_removal(uv_handle_t* handl
 
     handle->data = nullptr;
     parent.schedule_removal();
+}
+
+template<typename ParentType, typename ImplType>
+bool UdpImplBase<ParentType, ImplType>::is_open() const {
+    return m_udp_handle ? !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_udp_handle.get())) : false;
 }
 
 } // namespace detail

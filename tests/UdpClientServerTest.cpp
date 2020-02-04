@@ -855,7 +855,11 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
             }
         );
 
+        EXPECT_EQ(0, server_receive_message_counter);
+
         ASSERT_EQ(0, server_loop.run());
+
+        EXPECT_EQ(SIZE, server_receive_message_counter);
     });
 
     std::thread client_thread([&]() {
@@ -897,18 +901,51 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
             }
         );
 
-        ASSERT_EQ(0, client_loop.run());
-    });
+        EXPECT_EQ(0, client_receive_message_counter);
 
-    // TODO: data race here
-    EXPECT_EQ(0, server_receive_message_counter);
-    EXPECT_EQ(0, client_receive_message_counter);
+        ASSERT_EQ(0, client_loop.run());
+
+        EXPECT_EQ(SIZE, client_receive_message_counter);
+    });
 
     server_thread.join();
     client_thread.join();
+}
 
-    EXPECT_EQ(SIZE, server_receive_message_counter);
-    EXPECT_EQ(SIZE, client_receive_message_counter);
+TEST_F(UdpClientServerTest, send_after_schedule_removal) {
+    this->log_to_stdout();
+    io::EventLoop loop;
+
+    std::size_t server_receive_counter = 0;
+    std::size_t client_send_counter = 0;
+
+    auto server = new io::UdpServer(loop);
+    io::Error listen_error = server->start_receive(m_default_addr, m_default_port,
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_receive_counter;
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port);
+    client->schedule_removal();
+    client->send_data("Hello",
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
+            ++client_send_counter;
+            server->schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_receive_counter);
+    EXPECT_EQ(1, client_send_counter); // TODO: FIXME execution before loop run
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, server_receive_counter);
+    EXPECT_EQ(1, client_send_counter);
 }
 
 // TODO: UDP client sending test with no destination set
@@ -917,4 +954,3 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
 // TODO: unit test invalid address
 
-// TODO: send after schedule removal

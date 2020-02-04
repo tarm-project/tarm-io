@@ -34,7 +34,6 @@ public:
 
     IO_DLL_PUBLIC std::uint64_t last_packet_time_ns() const;
 
-    // TODO: do we need this????
     IO_DLL_PUBLIC bool is_open() const;
 
     using Removable::set_on_schedule_removal;

@@ -196,7 +196,7 @@ std::uint16_t UdpClient::port() const {
 }
 
 bool UdpClient::is_open() const {
-    return true; // TODO: fixme
+    return m_impl->is_open();
 }
 
 } // namespace io

@@ -95,7 +95,7 @@ void UdpPeer::send_data(const std::string& message, EndSendCallback callback) {
 }
 
 bool UdpPeer::is_open() const {
-    return true;
+    return m_impl->is_open();
 }
 
 UdpServer& UdpPeer::server() {

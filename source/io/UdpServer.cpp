@@ -57,6 +57,8 @@ Error UdpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) 
 }
 
 Error UdpServer::Impl::start_receive(const std::string& ip_addr_str, std::uint16_t port, DataReceivedCallback data_receive_callback) {
+    IO_LOG(m_loop, TRACE, m_parent, "");
+
     Error bind_error = bind(ip_addr_str, port);
     if (bind_error) {
         return bind_error;
