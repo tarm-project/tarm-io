@@ -795,8 +795,11 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
     EXPECT_EQ(SIZE, client_receive_message_counter);
 }
 
+// DOC: explain that too much of UDP sending may result in lost packets
+//      need to configure networking stack on some particular machine.
+//      on Linux 'net.core.wmem_default', 'net.core.rmem_max' and so on...
 TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads) {
-    std::size_t SIZE = 200; // TODO: this test does not work for size == 2000 at least on Mac
+    std::size_t SIZE = 200;
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
     ::srand(0);
     for(std::size_t i = 0; i < SIZE; ++i) {
@@ -813,11 +816,10 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
         std::function<void(io::UdpPeer&, const io::Error&)> on_server_send =
             [&](io::UdpPeer& client, const io::Error& error) {
                 EXPECT_FALSE(error);
+                //std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 ++server_send_message_counter;
                 if (server_send_message_counter < SIZE) {
                     client.send_data(message, SIZE - server_send_message_counter, on_server_send);
-                } else {
-                    client.server().schedule_removal();
                 }
             };
 
@@ -843,6 +845,16 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
         EXPECT_FALSE(listen_error);
 
+        auto timer = new io::Timer(server_loop);
+        timer->start(100, 100,
+            [&](io::Timer& timer) {
+                if (server_receive_message_counter == SIZE && server_send_message_counter == SIZE) {
+                    server->schedule_removal();
+                    timer.schedule_removal();
+                }
+            }
+        );
+
         ASSERT_EQ(0, server_loop.run());
     });
 
@@ -851,6 +863,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
         std::function<void(io::UdpClient&, const io::Error&)> client_send =
             [&](io::UdpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
+                //std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 ++client_send_message_counter;
                 if (client_send_message_counter < SIZE) {
                     client.send_data(message, SIZE - client_send_message_counter, client_send);
@@ -868,11 +881,21 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
                 ++client_receive_message_counter;
                 if (client_receive_message_counter == SIZE) {
-                    client.schedule_removal();
+                    //client.schedule_removal();
                 }
             }
         );
         client->send_data(message, SIZE, client_send);
+
+        auto timer = new io::Timer(client_loop);
+        timer->start(100, 100,
+            [&](io::Timer& timer) {
+                if (client_receive_message_counter == SIZE && client_send_message_counter == SIZE) {
+                    client->schedule_removal();
+                    timer.schedule_removal();
+                }
+            }
+        );
 
         ASSERT_EQ(0, client_loop.run());
     });
