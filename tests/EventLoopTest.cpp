@@ -349,3 +349,90 @@ TEST_F(EventLoopTest, run_loop_several_times) {
 }
 
 // TODO: create event loop in one thread and run in another
+
+TEST_F(EventLoopTest, schedule_1_callback) {
+    io::EventLoop loop;
+
+    std::size_t callback_counter = 0;
+    loop.schedule_callback([&](){
+        callback_counter++;
+    });
+
+    EXPECT_EQ(0, callback_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, callback_counter);
+}
+
+TEST_F(EventLoopTest, schedule_callback_after_loop_run) {
+    std::size_t callback_counter = 0;
+    io::ScopeExitGuard scope_guard([&](){
+        EXPECT_EQ(0, callback_counter);
+    });
+
+    io::EventLoop loop;
+
+    EXPECT_EQ(0, callback_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    loop.schedule_callback([&](){
+        callback_counter++;
+    });
+
+    EXPECT_EQ(0, callback_counter);
+}
+
+TEST_F(EventLoopTest, schedule_multiple_callbacks) {
+    io::EventLoop loop;
+
+    std::size_t callback_counter_1 = 0;
+    std::size_t callback_counter_2 = 0;
+    std::size_t callback_counter_3 = 0;
+
+    auto callback_1  = [&]() {
+        ++callback_counter_1;
+    };
+
+    auto callback_2  = [&]() {
+        ++callback_counter_2;
+    };
+
+    auto callback_3  = [&]() {
+        ++callback_counter_3;
+    };
+
+    loop.schedule_callback(callback_1);
+    loop.schedule_callback(callback_2);
+    loop.schedule_callback(callback_3);
+
+    EXPECT_EQ(0, callback_counter_1);
+    EXPECT_EQ(0, callback_counter_2);
+    EXPECT_EQ(0, callback_counter_3);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, callback_counter_1);
+    EXPECT_EQ(1, callback_counter_2);
+    EXPECT_EQ(1, callback_counter_3);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, callback_counter_1);
+    EXPECT_EQ(1, callback_counter_2);
+    EXPECT_EQ(1, callback_counter_3);
+
+    loop.schedule_callback(callback_1);
+    loop.schedule_callback(callback_2);
+
+    EXPECT_EQ(1, callback_counter_1);
+    EXPECT_EQ(1, callback_counter_2);
+    EXPECT_EQ(1, callback_counter_3);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(2, callback_counter_1);
+    EXPECT_EQ(2, callback_counter_2);
+    EXPECT_EQ(1, callback_counter_3);
+}

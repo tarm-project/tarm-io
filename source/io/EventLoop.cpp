@@ -7,14 +7,15 @@
 #include "Error.h"
 #include "global/Configuration.h"
 
-#include <unordered_map>
 #include <atomic>
 #include <cstring>
-#include <thread>
-#include <mutex>
 #include <deque>
 #include <functional>
+#include <mutex>
+#include <thread>
 #include <type_traits>
+#include <unordered_map>
+#include <vector>
 
 namespace io {
 
@@ -52,6 +53,8 @@ public:
 
     bool is_running() const;
 
+    void schedule_callback(WorkCallback callback);
+
 protected:
     void execute_pending_callbacks();
 
@@ -76,11 +79,15 @@ private:
     std::int64_t m_dummy_idle_ref_counter = 0;
 
     std::unique_ptr<uv_async_t, std::function<void(uv_async_t*)>> m_async;
-    std::deque<std::function<void()>> m_callbacks_queue;
-    std::mutex m_callbacks_queue_mutex;
+    std::deque<std::function<void()>> m_async_callbacks_queue;
+    std::mutex m_async_callbacks_queue_mutex;
 
     bool m_is_running = false;
     bool m_run_called = false;
+
+    std::size_t m_sync_callbacks_executor_handle = 0;
+    std::function<void()> m_sync_callbacks_executor_function;
+    std::vector<std::function<void()>> m_sync_callbacks_queue;
 };
 
 namespace {
@@ -95,6 +102,13 @@ EventLoop::Impl::Impl(EventLoop& loop) :
     m_loop(&loop),
     m_async(nullptr, [](uv_async_t* async) {
         uv_close(reinterpret_cast<uv_handle_t*>(async), on_async_close);
+    }),
+    m_sync_callbacks_executor_function([this]() {
+        for(auto&& v: m_sync_callbacks_queue) {
+            v();
+        }
+        m_sync_callbacks_queue.clear();
+        stop_call_on_each_loop_cycle(m_sync_callbacks_executor_handle);
     }) {
 
     this->data = &loop;
@@ -117,9 +131,9 @@ EventLoop::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, "dummy_idle_ref_counter:", m_dummy_idle_ref_counter);
 
     {
-        std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
+        std::lock_guard<std::mutex> guard(m_async_callbacks_queue_mutex);
         m_async.reset();
-        m_callbacks_queue.clear();
+        m_async_callbacks_queue.clear();
     }
 
     int status = uv_loop_close(this);
@@ -127,6 +141,8 @@ EventLoop::Impl::~Impl() {
     if (!m_run_called) {
         return;
     }
+
+    m_sync_callbacks_queue.clear();
 
     if (status == UV_EBUSY) {
         IO_LOG(m_loop, DEBUG, "loop returned EBUSY at close, running one more time");
@@ -137,6 +153,14 @@ EventLoop::Impl::~Impl() {
         uv_loop_close(this);
         IO_LOG(m_loop, DEBUG, "Done");
     }
+}
+
+void EventLoop::Impl::schedule_callback(WorkCallback callback) {
+    if (m_sync_callbacks_queue.empty()) {
+        m_sync_callbacks_executor_handle = schedule_call_on_each_loop_cycle(m_sync_callbacks_executor_function);
+    }
+
+    m_sync_callbacks_queue.push_back(callback);
 }
 
 Error EventLoop::Impl::init_async() {
@@ -229,8 +253,8 @@ int EventLoop::Impl::run() {
         // If there were pending async callbacks after the loop exit, executing one more run
         // because some new events may be scheduled right away.
         {
-            std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
-            has_pending_callbacks = m_callbacks_queue.size();
+            std::lock_guard<std::mutex> guard(m_async_callbacks_queue_mutex);
+            has_pending_callbacks = m_async_callbacks_queue.size();
         }
 
         execute_pending_callbacks();
@@ -299,8 +323,8 @@ void EventLoop::Impl::stop_dummy_idle() {
 
 void EventLoop::Impl::execute_on_loop_thread(AsyncCallback callback) {
     {
-        std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
-        m_callbacks_queue.push_back(callback);
+        std::lock_guard<std::mutex> guard(m_async_callbacks_queue_mutex);
+        m_async_callbacks_queue.push_back(callback);
     }
 
     uv_async_send(m_async.get());
@@ -314,8 +338,8 @@ void EventLoop::Impl::execute_pending_callbacks() {
     std::deque<std::function<void()>> callbacks_queue_copy;
 
     {
-        std::lock_guard<std::mutex> guard(m_callbacks_queue_mutex);
-        m_callbacks_queue.swap(callbacks_queue_copy);
+        std::lock_guard<decltype(m_async_callbacks_queue_mutex)> guard(m_async_callbacks_queue_mutex);
+        m_async_callbacks_queue.swap(callbacks_queue_copy);
     }
 
     for(auto& callback : callbacks_queue_copy) {
@@ -439,6 +463,10 @@ bool EventLoop::is_running() const {
 
 void* EventLoop::raw_loop() {
     return m_impl.get();
+}
+
+void EventLoop::schedule_callback(WorkCallback callback) {
+    return m_impl->schedule_callback(callback);
 }
 
 } // namespace io

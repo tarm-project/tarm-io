@@ -41,11 +41,15 @@ public:
     // Note: this method is thread safe
     IO_DLL_PUBLIC void execute_on_loop_thread(AsyncCallback callback);
 
+    // Schedule on loop's thread, will block loop. Not thread safe.
+    IO_DLL_PUBLIC void schedule_callback(WorkCallback callback);
+
     // Warning: do not perform heavy calculations or blocking calls here
+    // TODO: replace EachLoopCycleCallback -> WorkCallback ????
     IO_DLL_PUBLIC std::size_t schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback);
     IO_DLL_PUBLIC void stop_call_on_each_loop_cycle(std::size_t handle);
 
-    // TODO: explain this
+    // TODO: explain this, make private
     IO_DLL_PUBLIC void start_dummy_idle();
     IO_DLL_PUBLIC void stop_dummy_idle();
 

@@ -913,7 +913,6 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 }
 
 TEST_F(UdpClientServerTest, send_after_schedule_removal) {
-    this->log_to_stdout();
     io::EventLoop loop;
 
     std::size_t server_receive_counter = 0;
