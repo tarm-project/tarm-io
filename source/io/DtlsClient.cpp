@@ -30,7 +30,6 @@ public:
 
 protected:
     const SSL_METHOD* ssl_method() override;
-    bool ssl_set_siphers() override;
     void ssl_set_versions() override;
     bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
@@ -97,15 +96,6 @@ const SSL_METHOD* DtlsClient::Impl::ssl_method() {
 #else
     return DTLS_client_method();
 #endif
-}
-
-bool DtlsClient::Impl::ssl_set_siphers() {
-    auto result = SSL_CTX_set_cipher_list(this->ssl_ctx(), "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
-    if (result == 0) {
-        IO_LOG(m_loop, ERROR, m_parent, "Failed to set siphers list");
-        return false;
-    }
-    return true;
 }
 
 void DtlsClient::Impl::ssl_set_versions() {

@@ -29,7 +29,6 @@ public:
 
 protected:
     const SSL_METHOD* ssl_method() override;
-    bool ssl_set_siphers() override;
     void ssl_set_versions() override;
     bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
@@ -126,15 +125,6 @@ void TlsTcpClient::Impl::close() {
 
 const SSL_METHOD* TlsTcpClient::Impl::ssl_method() {
     return SSLv23_client_method(); // This call includes also TLS versions
-}
-
-bool TlsTcpClient::Impl::ssl_set_siphers() {
-    auto result = SSL_CTX_set_cipher_list(this->ssl_ctx(), "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
-    if (result == 0) {
-        IO_LOG(m_loop, ERROR, this->m_parent, "Failed to set siphers list");
-        return false;
-    }
-    return true;
 }
 
 void TlsTcpClient::Impl::ssl_set_versions() {

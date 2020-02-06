@@ -26,7 +26,6 @@ public:
 
 protected:
     const SSL_METHOD* ssl_method() override;
-    bool ssl_set_siphers() override;
     void ssl_set_versions() override;
     bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
@@ -90,16 +89,6 @@ const SSL_METHOD* DtlsConnectedClient::Impl::ssl_method() {
 #else
     return DTLS_server_method();
 #endif
-}
-
-bool DtlsConnectedClient::Impl::ssl_set_siphers() {
-    // TODO: hardcoded ciphers list. Need to extract
-    auto result = SSL_CTX_set_cipher_list(this->ssl_ctx(), "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
-    if (result == 0) {
-        IO_LOG(m_loop, ERROR, "Failed to set siphers list");
-        return false;
-    }
-    return true;
 }
 
 void DtlsConnectedClient::Impl::ssl_set_versions() {

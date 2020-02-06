@@ -28,7 +28,6 @@ public:
     bool is_ssl_inited() const;
 
     virtual const SSL_METHOD* ssl_method() = 0;
-    virtual bool ssl_set_siphers() = 0;
     virtual void ssl_set_versions() = 0;
     virtual bool ssl_init_certificate_and_key() = 0;
     virtual void ssl_set_state() = 0;
@@ -338,7 +337,7 @@ bool OpenSslClientImplBase<ParentType, ImplType>::is_open() const {
 
 template<typename ParentType, typename ImplType>
 Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
-    // TOOD: looks like this could be done only once
+    // TODO: looks like this could be done only once
     ERR_load_crypto_strings();
     SSL_load_error_strings();
     int result = SSL_library_init();
@@ -366,8 +365,10 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
     SSL_CTX_set_verify(m_ssl_ctx.get(), SSL_VERIFY_NONE, NULL);
     // SSL_CTX_set_verify_depth
 
-    if (!ssl_set_siphers()) {
-        return Error(StatusCode::OPENSSL_ERROR, "Failed to set siphers");
+    auto cipher_result = SSL_CTX_set_cipher_list(this->ssl_ctx(), "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
+    if (cipher_result == 0) {
+        // TODO: need some sort of MACRO like MAKE_ERROR to return error and write log record
+        return Error(StatusCode::OPENSSL_ERROR, "Failed to init certificate and key");;
     }
 
     if (!ssl_init_certificate_and_key()) {
