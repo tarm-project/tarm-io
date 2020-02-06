@@ -5,6 +5,8 @@
 #include "io/EventLoop.h"
 #include "io/TlsVersion.h"
 
+#include "io/global/Configuration.h"
+
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
@@ -365,7 +367,7 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
     SSL_CTX_set_verify(m_ssl_ctx.get(), SSL_VERIFY_NONE, NULL);
     // SSL_CTX_set_verify_depth
 
-    auto cipher_result = SSL_CTX_set_cipher_list(this->ssl_ctx(), "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
+    auto cipher_result = SSL_CTX_set_cipher_list(this->ssl_ctx(), global::ciphers_list().c_str());
     if (cipher_result == 0) {
         // TODO: need some sort of MACRO like MAKE_ERROR to return error and write log record
         return Error(StatusCode::OPENSSL_ERROR, "Failed to init certificate and key");;
