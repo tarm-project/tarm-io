@@ -370,7 +370,7 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init() {
     auto cipher_result = SSL_CTX_set_cipher_list(this->ssl_ctx(), global::ciphers_list().c_str());
     if (cipher_result == 0) {
         // TODO: need some sort of MACRO like MAKE_ERROR to return error and write log record
-        return Error(StatusCode::OPENSSL_ERROR, "Failed to init certificate and key");;
+        return Error(StatusCode::OPENSSL_ERROR, "Failed to set ciphers list");;
     }
 
     if (!ssl_init_certificate_and_key()) {

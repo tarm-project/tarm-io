@@ -627,13 +627,8 @@ TEST_F(DtlsClientServerTest, save_received_buffer) {
     const std::string server_message_1 = "1: Hello from server!";
     const std::string server_message_2 = "2: Hello from server!";
 
-    //std::size_t server_new_connection_counter = 0;
     std::size_t server_data_receive_counter = 0;
-    //std::size_t server_data_send_counter = 0;
-
-    //std::size_t client_new_connection_counter = 0;
     std::size_t client_data_receive_counter = 0;
-    //std::size_t client_data_send_counter = 0;
 
     std::shared_ptr<const char> client_saved_buf;
     std::shared_ptr<const char> server_saved_buf;
@@ -700,6 +695,60 @@ TEST_F(DtlsClientServerTest, save_received_buffer) {
     EXPECT_EQ(server_message_1, std::string(client_saved_buf.get(), server_message_1.size()));
     EXPECT_EQ(client_message_1, std::string(server_saved_buf.get(), client_message_1.size()));
 }
+
+TEST_F(DtlsClientServerTest, fail_to_init_ssl_on_client) {
+    // Note: in this test we set invalid ciphers list -> SSL is not able to init
+
+    io::EventLoop loop;
+
+    std::size_t server_connect_counter = 0;
+    std::size_t server_data_receive_counter = 0;
+
+    std::size_t client_data_receive_counter = 0;
+    std::size_t client_connect_counter = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen(m_default_addr, m_default_port,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_connect_counter;
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_data_receive_counter;
+        }
+    );
+
+    io::global::set_ciphers_list("!@#$%^&*()");
+
+    auto client = new io::DtlsClient(loop);
+    client->connect(m_default_addr, m_default_port,
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            ++client_connect_counter;
+            client.schedule_removal();
+            server->schedule_removal();
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_data_receive_counter;
+        }
+    );
+
+    EXPECT_EQ(0, server_connect_counter);
+    EXPECT_EQ(0, server_data_receive_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+    EXPECT_EQ(0, client_connect_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, server_connect_counter);
+    EXPECT_EQ(0, server_data_receive_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+    EXPECT_EQ(1, client_connect_counter);
+}
+
 
 // TODO: DTLS version lower is bigger than higher error
 

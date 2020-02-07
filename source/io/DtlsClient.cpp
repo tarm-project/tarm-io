@@ -66,17 +66,23 @@ void DtlsClient::Impl::connect(const std::string& address,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback) {
+    if (!is_ssl_inited()) {
+        Error ssl_init_error = ssl_init();
+        if (ssl_init_error) {
+            m_loop->schedule_callback([=]() {
+                connect_callback(*this->m_parent, ssl_init_error);
+            });
+            return;
+        }
+    }
+
     m_client = new UdpClient(*m_loop,
                              string_to_ip4_addr(address),
                              port,
                              [this](UdpClient&, const DataChunk& chunk, const Error&) {
-        this->on_data_receive(chunk.buf.get(), chunk.size);
-    });
-
-    if (!is_ssl_inited()) {
-        // TODO: error handling
-        Error ssl_init_error = ssl_init();
-    }
+                                 this->on_data_receive(chunk.buf.get(), chunk.size);
+                             }
+    );
 
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;
