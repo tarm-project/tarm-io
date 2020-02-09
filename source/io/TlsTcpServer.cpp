@@ -4,6 +4,7 @@
 #include "TcpServer.h"
 #include "detail/ConstexprString.h"
 #include "detail/TlsContext.h"
+#include "detail/OpenSslContext.h"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>
@@ -37,7 +38,10 @@ public:
 
     TlsVersionRange version_range() const;
 
-protected: // callbacks
+protected:
+    const SSL_METHOD* ssl_method();
+
+    // callbacks
     void on_new_connection(TcpConnectedClient& tcp_client, const io::Error& error);
     void on_data_receive(TcpConnectedClient& tcp_client, const DataChunk&, const Error&);
     void on_close(TcpConnectedClient& tcp_client, const Error& error);
@@ -57,6 +61,8 @@ private:
     EvpPkeyPtr m_private_key;
     TlsVersionRange m_version_range;
 
+    detail::OpenSslContext<TlsTcpServer, TlsTcpServer::Impl> m_openssl_context;
+
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
     CloseConnectionCallback m_close_connection_callback = nullptr;
@@ -74,11 +80,16 @@ TlsTcpServer::Impl::Impl(EventLoop& loop,
     m_private_key_path(private_key_path),
     m_certificate(nullptr, ::X509_free),
     m_private_key(nullptr, ::EVP_PKEY_free),
-    m_version_range(version_range) {
+    m_version_range(version_range),
+    m_openssl_context(loop, parent) {
 }
 
 TlsTcpServer::Impl::~Impl() {
     m_tcp_server->schedule_removal();
+}
+
+const SSL_METHOD* TlsTcpServer::Impl::ssl_method() {
+    return SSLv23_server_method(); // This call includes also TLS versions
 }
 
 TlsVersionRange TlsTcpServer::Impl::version_range() const {
@@ -95,6 +106,7 @@ void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const
     detail::TlsContext context {
         m_certificate.get(),
         m_private_key.get(),
+        m_openssl_context.ssl_ctx(),
         m_version_range
     };
 
@@ -160,6 +172,11 @@ Error TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
     if (!certificate_and_key_match()) {
         return Error(StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH);
     }
+
+    // TODO: error handling
+    m_openssl_context.init_ssl_context(ssl_method());
+    m_openssl_context.set_tls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
+    m_openssl_context.ssl_init_certificate_and_key(m_certificate.get(), m_private_key.get());
 
     using namespace std::placeholders;
     return m_tcp_server->listen(ip_addr_str,

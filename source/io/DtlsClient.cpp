@@ -5,6 +5,7 @@
 #include "UdpClient.h"
 #include "detail/ConstexprString.h"
 #include "detail/OpenSslClientImplBase.h"
+#include "detail/OpenSslContext.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -29,10 +30,8 @@ public:
     void close();
 
 protected:
-    const SSL_METHOD* ssl_method() override;
-    void ssl_set_versions() override;
-    bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
+    const SSL_METHOD* ssl_method();
 
     void on_ssl_read(const DataChunk& data) override;
     void on_handshake_complete() override;
@@ -43,6 +42,8 @@ private:
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
     DtlsVersionRange m_version_range;
+
+    detail::OpenSslContext<DtlsClient, DtlsClient::Impl> m_openssl_context;
 };
 
 DtlsClient::Impl::~Impl() {
@@ -50,7 +51,8 @@ DtlsClient::Impl::~Impl() {
 
 DtlsClient::Impl::Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClient& parent) :
     OpenSslClientImplBase(loop, parent),
-    m_version_range(version_range) {
+    m_version_range(version_range),
+    m_openssl_context(loop, parent) {
 }
 
 std::uint32_t DtlsClient::Impl::ipv4_addr() const {
@@ -67,11 +69,16 @@ void DtlsClient::Impl::connect(const std::string& address,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback) {
     if (!is_ssl_inited()) {
-        Error ssl_init_error = ssl_init();
+        auto context_errror = m_openssl_context.init_ssl_context(ssl_method());
+        if (context_errror) {
+            m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, context_errror); });
+            return;
+        }
+        m_openssl_context.set_dtls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
+
+        Error ssl_init_error = ssl_init(m_openssl_context.ssl_ctx());
         if (ssl_init_error) {
-            m_loop->schedule_callback([=]() {
-                connect_callback(*this->m_parent, ssl_init_error);
-            });
+            m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, ssl_init_error); });
             return;
         }
     }
@@ -103,16 +110,11 @@ const SSL_METHOD* DtlsClient::Impl::ssl_method() {
     return DTLS_client_method();
 #endif
 }
-
+/*
 void DtlsClient::Impl::ssl_set_versions() {
     this->set_dtls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
 }
-
-bool DtlsClient::Impl::ssl_init_certificate_and_key() {
-    // Do nothing
-    return true;
-}
-
+*/
 void DtlsClient::Impl::ssl_set_state() {
     SSL_set_connect_state(this->ssl());
 }

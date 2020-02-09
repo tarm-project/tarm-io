@@ -16,6 +16,8 @@ public:
     Impl(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, UdpPeer& udp_client, const detail::DtlsContext& context, DtlsConnectedClient& parent);
     ~Impl();
 
+    Error init_ssl();
+
     void close();
     void shutdown();
 
@@ -25,9 +27,6 @@ public:
     const DtlsServer& server() const;
 
 protected:
-    const SSL_METHOD* ssl_method() override;
-    void ssl_set_versions() override;
-    bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
 
     void on_ssl_read(const DataChunk& data) override;
@@ -60,6 +59,10 @@ DtlsConnectedClient::Impl::Impl(EventLoop& loop,
 DtlsConnectedClient::Impl::~Impl() {
 }
 
+Error DtlsConnectedClient::Impl::init_ssl() {
+    return ssl_init(m_dtls_context.ssl_ctx);
+}
+
 void DtlsConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback callback) {
     m_data_receive_callback = callback;
 }
@@ -82,40 +85,12 @@ const DtlsServer& DtlsConnectedClient::Impl::server() const {
     return *m_dtls_server;
 }
 
-const SSL_METHOD* DtlsConnectedClient::Impl::ssl_method() {
-// OpenSSL before version 1.0.2 had no generic method for DTLS and only supported DTLS 1.0
-#if OPENSSL_VERSION_NUMBER < 0x1000200fL
-    return DTLSv1_server_method();
-#else
-    return DTLS_server_method();
-#endif
-}
+/*
 
 void DtlsConnectedClient::Impl::ssl_set_versions() {
     this->set_dtls_version(std::get<0>(m_dtls_context.dtls_version_range), std::get<1>(m_dtls_context.dtls_version_range));
 }
-
-bool DtlsConnectedClient::Impl::ssl_init_certificate_and_key() {
-    auto result = SSL_CTX_use_certificate(this->ssl_ctx(), m_dtls_context.certificate);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load certificate");
-        return false;
-    }
-
-    result = SSL_CTX_use_PrivateKey(this->ssl_ctx(), m_dtls_context.private_key);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load private key");
-        return false;
-    }
-
-    result = SSL_CTX_check_private_key(this->ssl_ctx());
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to check private key");
-        return false;
-    }
-
-    return true;
-}
+*/
 
 void DtlsConnectedClient::Impl::ssl_set_state() {
     SSL_set_accept_state(this->ssl());
@@ -158,7 +133,7 @@ void DtlsConnectedClient::on_data_receive(const char* buf, std::size_t size) {
 }
 
 Error DtlsConnectedClient::init_ssl() {
-    return m_impl->ssl_init();
+    return m_impl->init_ssl();
 }
 
 void DtlsConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {

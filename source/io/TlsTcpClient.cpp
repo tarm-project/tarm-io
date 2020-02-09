@@ -4,6 +4,7 @@
 #include "TcpClient.h"
 #include "detail/ConstexprString.h"
 #include "detail/OpenSslClientImplBase.h"
+#include "detail/OpenSslContext.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -28,9 +29,7 @@ public:
     void close();
 
 protected:
-    const SSL_METHOD* ssl_method() override;
-    void ssl_set_versions() override;
-    bool ssl_init_certificate_and_key() override;
+    const SSL_METHOD* ssl_method();
     void ssl_set_state() override;
 
     void on_ssl_read(const DataChunk& data) override;
@@ -42,6 +41,8 @@ private:
     DataReceiveCallback m_receive_callback;
     CloseCallback m_close_callback;
     TlsVersionRange m_version_range;
+
+    detail::OpenSslContext<TlsTcpClient, TlsTcpClient::Impl> m_openssl_context;
 };
 
 TlsTcpClient::Impl::~Impl() {
@@ -49,7 +50,8 @@ TlsTcpClient::Impl::~Impl() {
 
 TlsTcpClient::Impl::Impl(EventLoop& loop, TlsVersionRange version_range, TlsTcpClient& parent) :
     OpenSslClientImplBase(loop, parent),
-    m_version_range(version_range) {
+    m_version_range(version_range),
+    m_openssl_context(loop, parent) {
 }
 
 std::uint32_t TlsTcpClient::Impl::ipv4_addr() const {
@@ -68,8 +70,18 @@ void TlsTcpClient::Impl::connect(const std::string& address,
     m_client = new TcpClient(*m_loop);
 
     if (!is_ssl_inited()) {
-        // TODO: error handling
-        Error ssl_init_error = ssl_init();
+        auto context_errror = m_openssl_context.init_ssl_context(ssl_method());
+        if (context_errror) {
+            m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, context_errror); });
+            return;
+        }
+        m_openssl_context.set_tls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
+
+        Error ssl_init_error = this->ssl_init(m_openssl_context.ssl_ctx());
+        if (ssl_init_error) {
+            m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, ssl_init_error); });
+            return;
+        }
     }
 
     m_connect_callback = connect_callback;
@@ -126,7 +138,7 @@ void TlsTcpClient::Impl::close() {
 const SSL_METHOD* TlsTcpClient::Impl::ssl_method() {
     return SSLv23_client_method(); // This call includes also TLS versions
 }
-
+/*
 void TlsTcpClient::Impl::ssl_set_versions() {
     this->set_tls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
 }
@@ -135,7 +147,7 @@ bool TlsTcpClient::Impl::ssl_init_certificate_and_key() {
     // Do nothing
     return true;
 }
-
+*/
 void TlsTcpClient::Impl::ssl_set_state() {
     SSL_set_connect_state(this->ssl());
 }

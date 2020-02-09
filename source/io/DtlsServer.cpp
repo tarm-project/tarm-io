@@ -5,6 +5,7 @@
 #include "UdpPeer.h"
 #include "detail/ConstexprString.h"
 #include "detail/DtlsContext.h"
+#include "detail/OpenSslContext.h"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>
@@ -36,7 +37,10 @@ public:
 
     bool certificate_and_key_match();
 
-protected: // callbacks
+protected:
+    const SSL_METHOD* ssl_method();
+
+    // callbacks
     void on_new_peer(UdpPeer& udp_client, const io::Error& error);
     void on_data_receive(UdpPeer& udp_client, const DataChunk& data, const Error& error);
     void on_timeout(UdpPeer& udp_client, const Error& error);
@@ -56,6 +60,8 @@ private:
     EvpPkeyPtr m_private_key;
     DtlsVersionRange m_version_range;
 
+    detail::OpenSslContext<DtlsServer, DtlsServer::Impl> m_openssl_context;
+
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
     ConnectionTimeoutCallback m_connection_timeout_callback = nullptr;
@@ -69,7 +75,8 @@ DtlsServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Path
     m_private_key_path(private_key_path),
     m_certificate(nullptr, ::X509_free),
     m_private_key(nullptr, ::EVP_PKEY_free),
-    m_version_range(version_range) {
+    m_version_range(version_range),
+    m_openssl_context(loop, parent) {
 }
 
 DtlsServer::Impl::~Impl() {
@@ -86,6 +93,7 @@ void DtlsServer::Impl::on_new_peer(UdpPeer& udp_client, const io::Error& error) 
     detail::DtlsContext context {
         m_certificate.get(),
         m_private_key.get(),
+        m_openssl_context.ssl_ctx(),
         m_version_range
     };
 
@@ -161,6 +169,11 @@ Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
         return Error(StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH);
     }
 
+    // TODO: error handling
+    m_openssl_context.init_ssl_context(ssl_method());
+    m_openssl_context.set_dtls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
+    m_openssl_context.ssl_init_certificate_and_key(m_certificate.get(), m_private_key.get());
+
     using namespace std::placeholders;
     return m_udp_server->start_receive(ip_addr_str,
                                        port,
@@ -200,6 +213,15 @@ bool DtlsServer::Impl::certificate_and_key_match() {
     assert(m_private_key);
 
     return X509_verify(m_certificate.get(), m_private_key.get()) != 0;
+}
+
+const SSL_METHOD* DtlsServer::Impl::ssl_method() {
+// OpenSSL before version 1.0.2 had no generic method for DTLS and only supported DTLS 1.0
+#if OPENSSL_VERSION_NUMBER < 0x1000200fL
+    return DTLSv1_server_method();
+#else
+    return DTLS_server_method();
+#endif
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////

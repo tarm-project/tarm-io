@@ -3,6 +3,7 @@
 #include "io/Path.h"
 #include "io/DtlsClient.h"
 #include "io/DtlsServer.h"
+#include "io/ScopeExitGuard.h"
 #include "io/global/Version.h"
 
 #include <thread>
@@ -719,7 +720,11 @@ TEST_F(DtlsClientServerTest, fail_to_init_ssl_on_client) {
         }
     );
 
+    const auto previous_ciphers = io::global::ciphers_list();
     io::global::set_ciphers_list("!@#$%^&*()");
+    io::ScopeExitGuard scope_guard([=]() {
+        io::global::set_ciphers_list(previous_ciphers);
+    });
 
     auto client = new io::DtlsClient(loop);
     client->connect(m_default_addr, m_default_port,

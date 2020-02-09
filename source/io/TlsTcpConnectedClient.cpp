@@ -22,6 +22,8 @@ public:
          TlsTcpConnectedClient& parent);
     ~Impl();
 
+    Error init_ssl();
+
     void close();
     void shutdown();
 
@@ -31,9 +33,6 @@ public:
     const TlsTcpServer& server() const;
 
 protected:
-    const SSL_METHOD* ssl_method() override;
-    void ssl_set_versions() override;
-    bool ssl_init_certificate_and_key() override;
     void ssl_set_state() override;
 
     void on_ssl_read(const DataChunk& data) override;
@@ -66,6 +65,10 @@ TlsTcpConnectedClient::Impl::Impl(EventLoop& loop,
 TlsTcpConnectedClient::Impl::~Impl() {
 }
 
+Error TlsTcpConnectedClient::Impl::init_ssl() {
+    return ssl_init(m_tls_context.ssl_ctx);
+}
+
 void TlsTcpConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback callback) {
     m_data_receive_callback = callback;
 }
@@ -77,7 +80,7 @@ void TlsTcpConnectedClient::Impl::close() {
 void TlsTcpConnectedClient::Impl::shutdown() {
     m_client->shutdown();
 }
-
+/*
 const SSL_METHOD* TlsTcpConnectedClient::Impl::ssl_method() {
     return SSLv23_server_method(); // This call includes also TLS versions
 }
@@ -107,7 +110,7 @@ bool TlsTcpConnectedClient::Impl::ssl_init_certificate_and_key() {
 
     return true;
 }
-
+*/
 void TlsTcpConnectedClient::Impl::ssl_set_state() {
     SSL_set_accept_state(this->ssl());
 }
@@ -183,7 +186,7 @@ void TlsTcpConnectedClient::on_data_receive(const char* buf, std::size_t size) {
 }
 
 Error TlsTcpConnectedClient::init_ssl() {
-    return m_impl->ssl_init();
+    return m_impl->init_ssl();
 }
 
 void TlsTcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {

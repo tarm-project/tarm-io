@@ -126,7 +126,7 @@ TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
     std::size_t client_on_connect_count = 0;
 
     auto client = new io::TlsTcpClient(loop);
-    client->connect("0.0.0" ,m_default_port,
+    client->connect("0.0.0", m_default_port,
         [&](io::TlsTcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
