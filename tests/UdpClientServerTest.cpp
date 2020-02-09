@@ -203,7 +203,7 @@ TEST_F(UdpClientServerTest, on_new_peer_callback) {
 
     auto server = new io::UdpServer(loop);
     auto listen_error = server->start_receive(m_default_addr, m_default_port,
-        [&](io::UdpPeer&, const io::Error& error) {
+        [&](io::UdpPeer& peer, const io::Error& error) {
             EXPECT_FALSE(error);
 
             if (!on_new_peer_counter) {

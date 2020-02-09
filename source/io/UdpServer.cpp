@@ -153,7 +153,8 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
 
                 DataChunk data_chunk(buf, std::size_t(nread));
                 if (this_.peer_bookkeeping_enabled()) {
-                    std::uint64_t peer_id = std::uint64_t(address->sin_port) << 16 | std::uint64_t(address->sin_addr.s_addr);
+                    // TODO: ipv6
+                    std::uint64_t peer_id = std::uint64_t(address->sin_port) << 32 | std::uint64_t(address->sin_addr.s_addr);
                     auto& peer_ptr = this_.m_peers[peer_id];
                     if (!peer_ptr.get()) {
                         peer_ptr.reset(new UdpPeer(*this_.m_loop,
