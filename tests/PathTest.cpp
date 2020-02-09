@@ -577,8 +577,8 @@ TEST_F(PathTest, iterator) {
     EXPECT_EQ(*--itr, "/");
 
     // POSIX says treat "a/b/" as "a/b/."
-    // Although similar to the prior test case, this failed the ". isn't end" test due to
-    // a bug while the prior case did not fail.
+    // Although similar to the prev test case, this failed the ". isn't end" test due to
+    // a bug while the prev case did not fail.
     itr_ck = "a/b/";
     itr = itr_ck.begin();
     EXPECT_EQ(*itr, "a");
@@ -632,6 +632,7 @@ TEST_F(PathTest, iterator) {
     EXPECT_EQ(*--itr, "/");
 
 #ifdef IO_BUILD_FOR_WINDOWS
+    {
         itr_ck = "c:/";
         itr = itr_ck.begin();
         EXPECT_EQ(itr->string(), "c:");
@@ -702,64 +703,64 @@ TEST_F(PathTest, iterator) {
         itr_ck = Path("c:");
         EXPECT_TRUE(*itr_ck.begin() == std::string("c:"));
         EXPECT_TRUE(next(itr_ck.begin()) == itr_ck.end());
-        EXPECT_TRUE(prior(itr_ck.end()) == itr_ck.begin());
-        EXPECT_TRUE(*prior(itr_ck.end()) == std::string("c:"));
+        EXPECT_TRUE(prev(itr_ck.end()) == itr_ck.begin());
+        EXPECT_TRUE(*prev(itr_ck.end()) == std::string("c:"));
 
         itr_ck = Path("c:/");
         EXPECT_TRUE(*itr_ck.begin() == std::string("c:"));
         EXPECT_TRUE(*next(itr_ck.begin()) == std::string("/"));
         EXPECT_TRUE(next(next(itr_ck.begin())) == itr_ck.end());
-        EXPECT_TRUE(prior(prior(itr_ck.end())) == itr_ck.begin());
-        EXPECT_TRUE(*prior(itr_ck.end()) == std::string("/"));
-        EXPECT_TRUE(*prior(prior(itr_ck.end())) == std::string("c:"));
+        EXPECT_TRUE(prev(prev(itr_ck.end())) == itr_ck.begin());
+        EXPECT_TRUE(*prev(itr_ck.end()) == std::string("/"));
+        EXPECT_TRUE(*prev(prev(itr_ck.end())) == std::string("c:"));
 
         itr_ck = Path("c:foo");
         EXPECT_TRUE(*itr_ck.begin() == std::string("c:"));
         EXPECT_TRUE(*next(itr_ck.begin()) == std::string("foo"));
         EXPECT_TRUE(next(next(itr_ck.begin())) == itr_ck.end());
-        EXPECT_TRUE(prior(prior(itr_ck.end())) == itr_ck.begin());
-        EXPECT_TRUE(*prior(itr_ck.end()) == std::string("foo"));
-        EXPECT_TRUE(*prior(prior(itr_ck.end())) == std::string("c:"));
+        EXPECT_TRUE(prev(prev(itr_ck.end())) == itr_ck.begin());
+        EXPECT_TRUE(*prev(itr_ck.end()) == std::string("foo"));
+        EXPECT_TRUE(*prev(prev(itr_ck.end())) == std::string("c:"));
 
         itr_ck = Path("c:/foo");
         EXPECT_TRUE(*itr_ck.begin() == std::string("c:"));
         EXPECT_TRUE(*next(itr_ck.begin()) == std::string("/"));
         EXPECT_TRUE(*next(next(itr_ck.begin())) == std::string("foo"));
         EXPECT_TRUE(next(next(next(itr_ck.begin()))) == itr_ck.end());
-        EXPECT_TRUE(prior(prior(prior(itr_ck.end()))) == itr_ck.begin());
-        EXPECT_TRUE(*prior(itr_ck.end()) == std::string("foo"));
-        EXPECT_TRUE(*prior(prior(itr_ck.end())) == std::string("/"));
-        EXPECT_TRUE(*prior(prior(prior(itr_ck.end()))) == std::string("c:"));
+        EXPECT_TRUE(prev(prev(prev(itr_ck.end()))) == itr_ck.begin());
+        EXPECT_TRUE(*prev(itr_ck.end()) == std::string("foo"));
+        EXPECT_TRUE(*prev(prev(itr_ck.end())) == std::string("/"));
+        EXPECT_TRUE(*prev(prev(prev(itr_ck.end()))) == std::string("c:"));
 
         itr_ck = Path("//net");
         EXPECT_TRUE(*itr_ck.begin() == std::string("//net"));
         EXPECT_TRUE(next(itr_ck.begin()) == itr_ck.end());
-        EXPECT_TRUE(prior(itr_ck.end()) == itr_ck.begin());
-        EXPECT_TRUE(*prior(itr_ck.end()) == std::string("//net"));
+        EXPECT_TRUE(prev(itr_ck.end()) == itr_ck.begin());
+        EXPECT_TRUE(*prev(itr_ck.end()) == std::string("//net"));
 
         itr_ck = Path("//net/");
         EXPECT_EQ(itr_ck.begin()->string(), "//net");
         EXPECT_EQ(next(itr_ck.begin())->string(), "/");
         EXPECT_TRUE(next(next(itr_ck.begin())) == itr_ck.end());
-        EXPECT_TRUE(prior(prior(itr_ck.end())) == itr_ck.begin());
-        EXPECT_EQ(prior(itr_ck.end())->string(), "/");
-        EXPECT_EQ(prior(prior(itr_ck.end()))->string(), "//net");
+        EXPECT_TRUE(prev(prev(itr_ck.end())) == itr_ck.begin());
+        EXPECT_EQ(prev(itr_ck.end())->string(), "/");
+        EXPECT_EQ(prev(prev(itr_ck.end()))->string(), "//net");
 
         itr_ck = Path("//net/foo");
         EXPECT_TRUE(*itr_ck.begin() == std::string("//net"));
         EXPECT_TRUE(*next(itr_ck.begin()) == std::string("/"));
         EXPECT_TRUE(*next(next(itr_ck.begin())) == std::string("foo"));
         EXPECT_TRUE(next(next(next(itr_ck.begin()))) == itr_ck.end());
-        EXPECT_TRUE(prior(prior(prior(itr_ck.end()))) == itr_ck.begin());
-        EXPECT_TRUE(*prior(itr_ck.end()) == std::string("foo"));
-        EXPECT_TRUE(*prior(prior(itr_ck.end())) == std::string("/"));
-        EXPECT_TRUE(*prior(prior(prior(itr_ck.end()))) == std::string("//net"));
+        EXPECT_TRUE(prev(prev(prev(itr_ck.end()))) == itr_ck.begin());
+        EXPECT_TRUE(*prev(itr_ck.end()) == std::string("foo"));
+        EXPECT_TRUE(*prev(prev(itr_ck.end())) == std::string("/"));
+        EXPECT_TRUE(*prev(prev(prev(itr_ck.end()))) == std::string("//net"));
 
         itr_ck = Path("prn:");
         EXPECT_TRUE(*itr_ck.begin() == std::string("prn:"));
         EXPECT_TRUE(next(itr_ck.begin()) == itr_ck.end());
-        EXPECT_TRUE(prior(itr_ck.end()) == itr_ck.begin());
-        EXPECT_TRUE(*prior(itr_ck.end()) == std::string("prn:"));
+        EXPECT_TRUE(prev(itr_ck.end()) == itr_ck.begin());
+        EXPECT_TRUE(*prev(itr_ck.end()) == std::string("prn:"));
     }
 #else
     {

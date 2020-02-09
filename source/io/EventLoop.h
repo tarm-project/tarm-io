@@ -25,7 +25,7 @@ public:
     using WorkCallbackWithUserData = std::function<void*()>;
     using WorkDoneCallbackWithUserData = std::function<void(void*)>;
 
-    static const std::size_t INVALID_HANDLE = std::numeric_limits<std::size_t>::max();
+    static const std::size_t INVALID_HANDLE = (std::numeric_limits<std::size_t>::max)();
 
     IO_FORBID_COPY(EventLoop);
     IO_DECLARE_DLL_PUBLIC_MOVE(EventLoop);

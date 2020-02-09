@@ -72,6 +72,8 @@ target_compile_definitions(io PRIVATE IO_BUILDING_DLL)
 
 if (WIN32)
     target_compile_definitions(io PUBLIC IO_BUILD_FOR_WINDOWS)
+    target_compile_definitions(io PRIVATE WIN32_LEAN_AND_MEAN)
+    target_compile_definitions(io PRIVATE NOGDI)
 endif()
 
 # TODO: no exceptions even in regular builds????
