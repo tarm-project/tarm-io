@@ -90,8 +90,8 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
     auto on_expired = [this](io::BacklogWithTimeout<std::shared_ptr<UdpPeer>>&, const std::shared_ptr<UdpPeer>& item) {
         m_peer_timeout_callback(*item, Error(0));
 
-        // TODO: store in peer or make a function for this
-        const std::uint64_t peer_id = std::uint64_t(host_to_network(item->port())) << 16 | std::uint64_t(host_to_network(item->address()));
+        // TODO: store in peer or make a function for this (this is copypaste)
+        const std::uint64_t peer_id = std::uint64_t(host_to_network(item->port())) << 32 | std::uint64_t(host_to_network(item->address()));
         auto it = m_peers.find(peer_id);
         if (it != m_peers.end()) {
             m_peers.erase(it);

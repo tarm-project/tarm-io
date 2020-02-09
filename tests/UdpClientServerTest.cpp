@@ -263,7 +263,7 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
     // Timeout : 200ms
     // UdpClient sends:    0 - 100 - - - - - - - - - - - - - 600
     //                          |-----| <- interval less than timeout. Decision: keep
-    //                          |-----------------| <- interval more than timeout. Decision: drop
+    //                          |-----------------| <- interval more than timeout. Decision: drop client
     //                                                        | <- register previos client as new one at this point
 
     io::EventLoop loop;
@@ -299,9 +299,11 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
     200, // timeout MS
     [&](io::UdpPeer& client, const io::Error& error) {
         EXPECT_FALSE(error);
+
         ASSERT_TRUE(client.user_data());
         auto& value = *reinterpret_cast<decltype(server_receive_counter)*>(client.user_data());
         EXPECT_EQ(2, value);
+
         ++server_timeout_counter;
     });
 
