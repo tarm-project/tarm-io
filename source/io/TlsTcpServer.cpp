@@ -173,10 +173,20 @@ Error TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
         return Error(StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH);
     }
 
-    // TODO: error handling
-    m_openssl_context.init_ssl_context(ssl_method());
-    m_openssl_context.set_tls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
-    m_openssl_context.ssl_init_certificate_and_key(m_certificate.get(), m_private_key.get());
+    const auto& context_init_error = m_openssl_context.init_ssl_context(ssl_method());
+    if (context_init_error) {
+        return context_init_error;
+    }
+
+    const auto& version_error = m_openssl_context.set_tls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
+    if (version_error) {
+        return version_error;
+    }
+
+    const auto& certificate_error = m_openssl_context.ssl_init_certificate_and_key(m_certificate.get(), m_private_key.get());
+    if (certificate_error) {
+        return certificate_error;
+    }
 
     using namespace std::placeholders;
     return m_tcp_server->listen(ip_addr_str,

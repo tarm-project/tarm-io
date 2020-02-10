@@ -26,8 +26,7 @@ public:
     Error init_ssl_context(const SSL_METHOD* method);
     Error set_tls_version(TlsVersion version_min, TlsVersion version_max);
     Error set_dtls_version(DtlsVersion version_min, DtlsVersion version_max);
-
-    bool ssl_init_certificate_and_key(::X509* certificate, ::EVP_PKEY* key);
+    Error ssl_init_certificate_and_key(::X509* certificate, ::EVP_PKEY* key);
 
     ::SSL_CTX* ssl_ctx();
 
@@ -227,14 +226,13 @@ Error OpenSslContext<ParentType, ImplType>::init_ssl_context(const SSL_METHOD* m
         return Error(StatusCode::OPENSSL_ERROR, "Failed to init SSL context");
     }
 
-    // TODO: implement verify?
     SSL_CTX_set_verify(m_ssl_ctx.get(), SSL_VERIFY_NONE, NULL);
     // SSL_CTX_set_verify_depth
 
     auto cipher_result = SSL_CTX_set_cipher_list(m_ssl_ctx.get(), global::ciphers_list().c_str());
     if (cipher_result == 0) {
         // TODO: need some sort of MACRO like MAKE_ERROR to return error and write log record
-        return Error(StatusCode::OPENSSL_ERROR, "Failed to set ciphers list");;
+        return Error(StatusCode::OPENSSL_ERROR, "Failed to set ciphers list");
     }
 
     // TODO:!!!
@@ -248,26 +246,26 @@ Error OpenSslContext<ParentType, ImplType>::init_ssl_context(const SSL_METHOD* m
 }
 
 template<typename ParentType, typename ImplType>
-bool OpenSslContext<ParentType, ImplType>::ssl_init_certificate_and_key(::X509* certificate, ::EVP_PKEY* key) {
+Error OpenSslContext<ParentType, ImplType>::ssl_init_certificate_and_key(::X509* certificate, ::EVP_PKEY* key) {
     auto result = SSL_CTX_use_certificate(this->ssl_ctx(), certificate);
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to load certificate");
-        return false;
+        return Error(StatusCode::OPENSSL_ERROR, "Failed to load certificate");
     }
 
     result = SSL_CTX_use_PrivateKey(this->ssl_ctx(), key);
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to load private key");
-        return false;
+        return Error(StatusCode::OPENSSL_ERROR, "Failed to load private key");
     }
 
     result = SSL_CTX_check_private_key(this->ssl_ctx());
     if (!result) {
         IO_LOG(m_loop, ERROR, "Failed to check private key");
-        return false;
+        return Error(StatusCode::OPENSSL_ERROR, "Failed to check private key");
     }
 
-    return true;
+    return StatusCode::OK;
 }
 
 } // namespace detail
