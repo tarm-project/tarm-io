@@ -6,6 +6,7 @@ FILE(GLOB IO_HEADERS_LIST
 
 list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
+        io/detail/OpenSslInitHelper.cpp
         io/global/Configuration.cpp
         io/global/Version.cpp
         io/path_impl/CodecvtErrorCategory.cpp

@@ -204,22 +204,6 @@ void OpenSslContext<ParentType, ImplType>::disable_dtls_version(DtlsVersion vers
 
 template<typename ParentType, typename ImplType>
 Error OpenSslContext<ParentType, ImplType>::init_ssl_context(const SSL_METHOD* method) {
-    // TODO: looks like this could be done only once
-    ERR_load_crypto_strings();
-    SSL_load_error_strings();
-    int result = SSL_library_init();
-
-    //SSL_load_error_strings();
-    //OpenSSL_add_ssl_algorithms();
-    if (!result) {
-        IO_LOG(m_loop, ERROR, m_parent, "Failed to init OpenSSL");
-        return Error(StatusCode::OPENSSL_ERROR, "Failed to init OpenSSL");
-    }
-
-    //OpenSSL_add_all_algorithms();
-    //OpenSSL_add_all_ciphers();
-    //OpenSSL_add_all_digests();
-
     m_ssl_ctx.reset(SSL_CTX_new(method));
     if (m_ssl_ctx == nullptr) {
         IO_LOG(m_loop, ERROR, m_parent, "Failed to init SSL context");
