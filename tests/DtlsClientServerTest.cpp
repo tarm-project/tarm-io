@@ -83,7 +83,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
 
             client.send_data(client_message,
                 [&](io::DtlsClient& client, const io::Error& error) {
-                    EXPECT_FALSE(error);
+                    EXPECT_FALSE(error) << error.string();
                     ++client_data_send_counter;
                 }
             );

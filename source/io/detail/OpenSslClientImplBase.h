@@ -316,7 +316,9 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<cons
     const auto actual_size = BIO_read(m_ssl_write_bio, ptr.get(), SIZE);
     if (actual_size < 0) {
         IO_LOG(m_loop, ERROR, m_parent, "BIO_read failed code:", actual_size);
-        // TODO: error handling???
+        if (callback) {
+            callback(*m_parent, Error(StatusCode::OPENSSL_ERROR, "Nothing to read from SSL"));
+        }
         return;
     }
 
