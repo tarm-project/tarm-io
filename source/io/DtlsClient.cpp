@@ -33,7 +33,7 @@ protected:
     void ssl_set_state() override;
     const SSL_METHOD* ssl_method();
 
-    void on_ssl_read(const DataChunk& data) override;
+    void on_ssl_read(const DataChunk& data, const Error& error) override;
     void on_handshake_complete() override;
     void on_handshake_failed(long openssl_error_code, const Error& error) override;
 
@@ -119,9 +119,9 @@ void DtlsClient::Impl::ssl_set_state() {
     SSL_set_connect_state(this->ssl());
 }
 
-void DtlsClient::Impl::on_ssl_read(const DataChunk& data) {
+void DtlsClient::Impl::on_ssl_read(const DataChunk& data, const Error& error) {
     if (m_receive_callback) {
-        m_receive_callback(*this->m_parent, data, Error(0));
+        m_receive_callback(*this->m_parent, data, error);
     }
 }
 

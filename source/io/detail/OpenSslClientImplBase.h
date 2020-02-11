@@ -31,7 +31,7 @@ public:
     virtual void ssl_set_state() = 0;
 
     void read_from_ssl();
-    virtual void on_ssl_read(const DataChunk&) = 0;
+    virtual void on_ssl_read(const DataChunk& data, const Error& error) = 0;
 
     void do_handshake();
     void handshake_read_from_sll_and_send();
@@ -210,7 +210,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
     while (decrypted_size > 0) {
         IO_LOG(m_loop, TRACE, m_parent, "Decrypted message of size:", decrypted_size);
         const auto prev_use_count = m_decrypt_buf.use_count();
-        on_ssl_read({m_decrypt_buf, static_cast<std::size_t>(decrypted_size)});
+        on_ssl_read({m_decrypt_buf, static_cast<std::size_t>(decrypted_size)}, StatusCode::OK);
         if (prev_use_count != m_decrypt_buf.use_count()) { // user made a copy
             m_decrypt_buf.reset(new char[DECRYPT_BUF_SIZE], std::default_delete<char[]>());
         }
@@ -222,7 +222,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
         if (code != SSL_ERROR_WANT_READ) {
             const auto openssl_error_code = ERR_get_error();
             IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size. Error code:", openssl_error_code, "message:", ERR_reason_error_string(openssl_error_code));
-            // TODO: handle error
+            on_ssl_read({nullptr, 0}, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
             return;
         }
     }
@@ -314,7 +314,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<cons
     std::shared_ptr<char> ptr(new char[SIZE], [](const char* p) { delete[] p;});
 
     const auto actual_size = BIO_read(m_ssl_write_bio, ptr.get(), SIZE);
-    if (actual_size < 0) {
+    if (actual_size <= 0) {
         IO_LOG(m_loop, ERROR, m_parent, "BIO_read failed code:", actual_size);
         if (callback) {
             callback(*m_parent, Error(StatusCode::OPENSSL_ERROR, "Nothing to read from SSL"));
@@ -342,16 +342,20 @@ void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* bu
     IO_LOG(m_loop, TRACE, m_parent, "");
 
     if (m_ssl_handshake_complete) {
-        const auto written_size = BIO_write(m_ssl_read_bio, buf, size);
-        if (written_size < 0) {
-            IO_LOG(m_loop, ERROR, m_parent, "BIO_write failed with code:", written_size);
+        const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
+        if (write_size < 0) {
+            IO_LOG(m_loop, ERROR, m_parent, "BIO_write failed with code:", write_size);
             return;
         }
 
         read_from_ssl();
     } else {
         const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
-        // TODO: error handling
+        if (write_size <= 0) {
+            IO_LOG(m_loop, ERROR, m_parent, "BIO_write failed with code:", write_size);
+            return;
+        }
+
         do_handshake();
     }
 }

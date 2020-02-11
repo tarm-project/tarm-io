@@ -35,7 +35,7 @@ public:
 protected:
     void ssl_set_state() override;
 
-    void on_ssl_read(const DataChunk& data) override;
+    void on_ssl_read(const DataChunk& data, const Error& error) override;
     void on_handshake_complete() override;
     void on_handshake_failed(long openssl_error_code, const Error& error) override;
 
@@ -115,9 +115,9 @@ void TlsTcpConnectedClient::Impl::ssl_set_state() {
     SSL_set_accept_state(this->ssl());
 }
 
-void TlsTcpConnectedClient::Impl::on_ssl_read(const DataChunk& data) {
+void TlsTcpConnectedClient::Impl::on_ssl_read(const DataChunk& data, const Error& error) {
     if (m_data_receive_callback) {
-        m_data_receive_callback(*m_parent, data, Error(0));
+        m_data_receive_callback(*m_parent, data, error);
     }
 }
 
