@@ -1,7 +1,7 @@
 #include "TcpConnectedClient.h"
 
 #include "ByteSwap.h"
-#include "Common.h"
+#include "detail/Common.h"
 #include "Convert.h"
 #include "TcpServer.h"
 #include "detail/TcpClientImplBase.h"

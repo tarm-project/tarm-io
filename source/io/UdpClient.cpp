@@ -3,7 +3,7 @@
 #include "ByteSwap.h"
 #include "detail/UdpClientImplBase.h"
 
-#include "Common.h"
+#include "detail/Common.h"
 
 #include <cstring>
 #include <cstddef>
@@ -80,7 +80,7 @@ bool UdpClient::Impl::close_with_removal() {
 }
 
 void UdpClient::Impl::start_receive() {
-    int status = uv_udp_recv_start(m_udp_handle.get(), default_alloc_buffer, on_data_received);
+    int status = uv_udp_recv_start(m_udp_handle.get(), detail::default_alloc_buffer, on_data_received);
     if (status < 0) {
 
     }

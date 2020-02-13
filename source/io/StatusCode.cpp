@@ -1,6 +1,6 @@
 #include "StatusCode.h"
 
-#include "Common.h"
+#include "detail/Common.h"
 
 #include <assert.h>
 #include <ostream>

@@ -1,6 +1,6 @@
 #include "StatData.h"
 
-#include "Common.h"
+#include "detail/Common.h"
 
 #include <cstddef>
 

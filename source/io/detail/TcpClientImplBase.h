@@ -195,7 +195,7 @@ void TcpClientImplBase<ParentType, ImplType>::alloc_read_buffer(uv_handle_t* han
     auto& this_ = *reinterpret_cast<ImplType*>(handle->data);
 
     if (this_.m_read_buf == nullptr) {
-        io::default_alloc_buffer(handle, suggested_size, buf);
+        default_alloc_buffer(handle, suggested_size, buf);
 
         this_.m_read_buf.reset(buf->base, std::default_delete<char[]>());
         this_.m_read_buf_size = buf->len;

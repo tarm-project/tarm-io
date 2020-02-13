@@ -2,7 +2,7 @@
 
 #include "BacklogWithTimeout.h"
 #include "ByteSwap.h"
-#include "Common.h"
+#include "detail/Common.h"
 #include "Timer.h"
 #include "UdpPeer.h"
 
@@ -65,7 +65,7 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str, std::uint16
     }
 
     m_data_receive_callback = data_receive_callback;
-    int status = uv_udp_recv_start(m_udp_handle.get(), default_alloc_buffer, on_data_received);
+    int status = uv_udp_recv_start(m_udp_handle.get(), detail::default_alloc_buffer, on_data_received);
     if (status < 0) {
 
     }

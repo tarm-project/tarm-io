@@ -3,7 +3,7 @@
 #include "ByteSwap.h"
 #include "detail/UdpClientImplBase.h"
 
-#include "Common.h"
+#include "detail/Common.h"
 
 namespace io {
 

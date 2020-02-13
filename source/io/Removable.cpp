@@ -1,6 +1,6 @@
 #include "Removable.h"
 
-#include "Common.h"
+#include "detail/Common.h"
 #include "Error.h"
 
 namespace io {

@@ -1,6 +1,6 @@
 #include "Timer.h"
 
-#include "Common.h"
+#include "detail/Common.h"
 
 #include <assert.h>
 
