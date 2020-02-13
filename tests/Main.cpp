@@ -1,6 +1,11 @@
+#include "io/global/Configuration.h"
+
 #include <gtest/gtest.h>
 
-#include "io/global/Configuration.h"
+#ifdef IO_BUILD_FOR_WINDOWS
+    #include <openssl/applink.c>
+#endif
+
 #include <iostream>
 
 int main(int argc, char **argv) {

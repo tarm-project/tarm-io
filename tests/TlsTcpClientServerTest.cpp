@@ -6,8 +6,6 @@
 #include "io/global/Version.h"
 
 #include <vector>
-// TODO: if win32
-//#include <openssl/applink.c>
 
 struct TlsTcpClientServerTest : public testing::Test,
                                 public LogRedirector {
