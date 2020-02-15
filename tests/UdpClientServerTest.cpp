@@ -949,6 +949,35 @@ TEST_F(UdpClientServerTest, send_after_schedule_removal) {
     EXPECT_EQ(1, client_send_counter);
 }
 
+
+
+TEST_F(UdpClientServerTest, client_with_timeout_1) {
+    io::EventLoop loop;
+
+    const std::size_t TIMEOUT = 100;
+
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
+    [&](io::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
+    },
+    TIMEOUT,
+    [&](io::UdpClient& client, const io::Error& error) {
+        client.schedule_removal();
+        t2 = std::chrono::high_resolution_clock::now();
+    });
+
+    EXPECT_NE(0, client->bound_port());
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
+}
+
+
+
 // TODO: UDP client sending test with no destination set
 // TODO: check address of UDP peer
 // TODO: error on multiple start_receive on UDP server

@@ -1,5 +1,6 @@
 #include "UdpClient.h"
 
+#include "BacklogWithTimeout.h"
 #include "ByteSwap.h"
 #include "detail/UdpClientImplBase.h"
 
@@ -16,7 +17,9 @@ public:
     Impl(EventLoop& loop, UdpClient& parent);
     Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent);
     Impl(EventLoop& loop, DataReceivedCallback receive_callback, UdpClient& parent);
+    Impl(EventLoop& loop, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent);
     Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, UdpClient& parent);
+    Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent);
 
     bool close_with_removal();
 
@@ -28,16 +31,32 @@ public:
     std::uint16_t port() const;
 
 protected:
+    std::uint64_t last_packet_receive_time() const;
+
     // statics
     static void on_data_received(
         uv_udp_t* handle, ssize_t nread, const uv_buf_t* uv_buf, const struct sockaddr* addr, unsigned flags);
 
 private:
     DataReceivedCallback m_receive_callback = nullptr;
+
+    TimeoutCallback m_timeout_callback = nullptr;
+
+    // Here is a bit unusual usage of backlog which consists of one single element to track expiration
+    std::unique_ptr<BacklogWithTimeout<UdpClient::Impl*>> m_timeout_handler;
+    std::function<void(BacklogWithTimeout<UdpClient::Impl*>&, UdpClient::Impl* const& )> m_on_item_expired = nullptr;
+
+    std::uint64_t m_last_packet_time = 0;
 };
 
 UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     UdpClientImplBase(loop, parent) {
+    m_on_item_expired = [this](BacklogWithTimeout<UdpClient::Impl*>&, UdpClient::Impl* const & item) {
+        if (m_timeout_callback) {
+            m_timeout_callback(*m_parent, Error(0));
+        }
+    };
+    m_last_packet_time = ::uv_hrtime();
 }
 
 UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent) :
@@ -55,6 +74,26 @@ UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, D
     Impl(loop, parent) {
     set_destination(host, port);
     m_receive_callback = receive_callback;
+    start_receive();
+}
+
+
+UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent) :
+    Impl(loop, parent) {
+    m_receive_callback = receive_callback;
+    m_timeout_callback = timeout_callback;
+    m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_receive_time, this), &::uv_hrtime));
+    m_timeout_handler->add_item(this);
+    start_receive();
+}
+
+UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent) :
+    Impl(loop, parent) {
+    set_destination(host, port);
+    m_receive_callback = receive_callback;
+    m_timeout_callback = timeout_callback;
+    m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_receive_time, this), &::uv_hrtime));
+    m_timeout_handler->add_item(this);
     start_receive();
 }
 
@@ -82,7 +121,7 @@ bool UdpClient::Impl::close_with_removal() {
 void UdpClient::Impl::start_receive() {
     int status = uv_udp_recv_start(m_udp_handle.get(), detail::default_alloc_buffer, on_data_received);
     if (status < 0) {
-
+        // TODO: error handling
     }
 }
 
@@ -96,6 +135,10 @@ std::uint16_t UdpClient::Impl::port() const {
     return network_to_host(unix_addr.sin_port);
 }
 
+std::uint64_t UdpClient::Impl::last_packet_receive_time() const {
+    return m_last_packet_time;
+}
+
 ///////////////////////////////////////////  static  ////////////////////////////////////////////
 
 void UdpClient::Impl::on_data_received(uv_udp_t* handle,
@@ -106,6 +149,9 @@ void UdpClient::Impl::on_data_received(uv_udp_t* handle,
     assert(handle);
     auto& this_ = *reinterpret_cast<UdpClient::Impl*>(handle->data);
     auto& parent = *this_.m_parent;
+
+    // TODO: update also on packet send???
+    this_.m_last_packet_time = ::uv_hrtime();
 
     // TODO: need some mechanism to reuse memory
     std::shared_ptr<const char> buf(uv_buf->base, std::default_delete<char[]>());
@@ -154,12 +200,31 @@ UdpClient::UdpClient(EventLoop& loop, DataReceivedCallback receive_callback) :
 }
 
 UdpClient::UdpClient(EventLoop& loop,
+                     DataReceivedCallback receive_callback,
+                     std::size_t timeout_ms,
+                     TimeoutCallback timeout_callback) :
+    Removable(loop),
+    m_impl(new UdpClient::Impl(loop, receive_callback, timeout_ms, timeout_callback, *this)) {
+}
+
+UdpClient::UdpClient(EventLoop& loop,
                      std::uint32_t dest_host,
                      std::uint16_t dest_port,
                      DataReceivedCallback receive_callback) :
     Removable(loop),
     m_impl(new UdpClient::Impl(loop, dest_host, dest_port, receive_callback, *this)) {
 }
+
+UdpClient::UdpClient(EventLoop& loop,
+                     std::uint32_t dest_host,
+                     std::uint16_t dest_port,
+                     DataReceivedCallback receive_callback,
+                     std::size_t timeout_ms,
+                     TimeoutCallback timeout_callback) :
+    Removable(loop),
+    m_impl(new UdpClient::Impl(loop, dest_host, dest_port, receive_callback, timeout_ms, timeout_callback, *this)) {
+}
+
 
 UdpClient::~UdpClient() {
 }

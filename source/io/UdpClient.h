@@ -13,12 +13,13 @@
 #include <functional>
 
 namespace io {
-// TODO: introduce connection timeout for UDP client??? (like for server)
+
 class UdpClient : public Removable,
                   public UserDataHolder {
 public:
     using EndSendCallback = std::function<void(UdpClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(UdpClient&, const DataChunk&, const Error&)>;
+    using TimeoutCallback = std::function<void(UdpClient&, const Error&)>;
 
     IO_FORBID_COPY(UdpClient);
     IO_DECLARE_DLL_PUBLIC_MOVE(UdpClient);
@@ -26,7 +27,9 @@ public:
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
     IO_DLL_PUBLIC UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port);
     IO_DLL_PUBLIC UdpClient(EventLoop& loop, DataReceivedCallback receive_callback);
+    IO_DLL_PUBLIC UdpClient(EventLoop& loop, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback);
     IO_DLL_PUBLIC UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port, DataReceivedCallback receive_callback);
+    IO_DLL_PUBLIC UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback);
 
     IO_DLL_PUBLIC void set_destination(std::uint32_t host, std::uint16_t port);
 
