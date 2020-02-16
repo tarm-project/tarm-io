@@ -8,6 +8,7 @@
 
 #include "detail/UdpImplBase.h"
 
+#include <iostream>
 #include <assert.h>
 #include <unordered_map>
 
@@ -110,6 +111,7 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
 }
 
 void UdpServer::Impl::close() {
+    std::cout << "UdpServer::Impl::close()" << std::endl;
     uv_udp_recv_stop(m_udp_handle.get());
     uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), nullptr);
 }

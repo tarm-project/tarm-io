@@ -949,16 +949,13 @@ TEST_F(UdpClientServerTest, send_after_schedule_removal) {
     EXPECT_EQ(1, client_send_counter);
 }
 
-
-
-TEST_F(UdpClientServerTest, client_with_timeout_1) {
+TEST_F(UdpClientServerTest, DISABLED_client_with_timeout_1) {
     io::EventLoop loop;
 
     const std::size_t TIMEOUT = 100;
 
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
-
 
     auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
     [&](io::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
@@ -976,7 +973,56 @@ TEST_F(UdpClientServerTest, client_with_timeout_1) {
     EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
 }
 
+TEST_F(UdpClientServerTest, client_with_timeout_2) {
+    io::EventLoop loop;
 
+    std::size_t server_receive_counter = 0;
+    std::size_t client_send_counter = 0;
+
+    auto server = new io::UdpServer(loop);
+    io::Error listen_error = server->start_receive(m_default_addr, m_default_port,
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_receive_counter;
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+    const std::size_t TIMEOUT = 100;
+
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
+    [&](io::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
+    },
+    TIMEOUT,
+    [&](io::UdpClient& client, const io::Error& error) {
+        t2 = std::chrono::high_resolution_clock::now();
+        EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
+        client.send_data("!!!",
+            [&](io::UdpClient& client, const io::Error& error) {
+                EXPECT_TRUE(error);
+                EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
+
+                auto timer = new io::Timer(loop);
+                timer->start(50, [&](io::Timer& timer) {
+                    client.schedule_removal();
+                    server->schedule_removal();
+                    timer.schedule_removal();
+                });
+            }
+        );
+    });
+
+    EXPECT_NE(0, client->bound_port());
+    EXPECT_EQ(0, server_receive_counter);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, server_receive_counter);
+    EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
+}
 
 // TODO: UDP client sending test with no destination set
 // TODO: check address of UDP peer

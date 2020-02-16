@@ -22,6 +22,8 @@ public:
     Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent);
 
     bool close_with_removal();
+    using CloseHandler = void (*)(uv_handle_t* handle);
+    bool close(CloseHandler handler);
 
     void set_destination(std::uint32_t host, std::uint16_t port);
 
@@ -53,6 +55,7 @@ UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     UdpClientImplBase(loop, parent) {
     m_on_item_expired = [this](BacklogWithTimeout<UdpClient::Impl*>&, UdpClient::Impl* const & item) {
         if (m_timeout_callback) {
+            this->close(on_close);
             m_timeout_callback(*m_parent, Error(0));
         }
     };
@@ -106,12 +109,16 @@ void UdpClient::Impl::set_destination(std::uint32_t host, std::uint16_t port) {
 }
 
 bool UdpClient::Impl::close_with_removal() {
-    if (m_udp_handle->data) {
+    return close(&on_close_with_removal);
+}
+
+bool UdpClient::Impl::close(CloseHandler handler) {
+    if (is_open()) {
         if (m_receive_callback) {
             uv_udp_recv_stop(m_udp_handle.get());
         }
 
-        uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), on_close_with_removal);
+        uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), handler);
         return false; // not ready to remove
     }
 

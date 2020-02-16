@@ -22,6 +22,7 @@ public:
 protected:
     // statics
     static void on_close_with_removal(uv_handle_t* handle);
+    static void on_close(uv_handle_t* handle);
 
     EventLoop* m_loop = nullptr;
     uv_loop_t* m_uv_loop = nullptr;
@@ -57,6 +58,12 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_udp_handle(udp_handle, [](uv_udp_t*){}) {
         std::memset(&m_destination_address, 0, sizeof(m_destination_address));
         m_udp_handle->data = udp_handle->data;
+}
+
+template<typename ParentType, typename ImplType>
+void UdpImplBase<ParentType, ImplType>::on_close(uv_handle_t* handle) {
+    auto& this_ = *reinterpret_cast<ImplType*>(handle->data);
+    handle->data = nullptr;
 }
 
 template<typename ParentType, typename ImplType>
