@@ -66,8 +66,10 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
                                 1,
                                 reinterpret_cast<const sockaddr*>(&(UdpImplBase<ParentType, ImplType>::m_destination_address)),
                                 on_send);
-    if (uv_status < 0 && callback) {
-        callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(uv_status));
+    if (uv_status < 0) {
+        if (callback) {
+            callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(uv_status));
+        }
     } else {
         if (m_ref_counted) {
             m_ref_counted->ref();

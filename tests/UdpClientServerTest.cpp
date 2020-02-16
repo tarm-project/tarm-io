@@ -865,6 +865,9 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
     });
 
     std::thread client_thread([&]() {
+        // Give a time to server thread to start
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
         std::size_t client_send_message_counter = 0;
         std::function<void(io::UdpClient&, const io::Error&)> client_send =
             [&](io::UdpClient& client, const io::Error& error) {
