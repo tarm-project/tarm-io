@@ -949,7 +949,7 @@ TEST_F(UdpClientServerTest, send_after_schedule_removal) {
     EXPECT_EQ(1, client_send_counter);
 }
 
-TEST_F(UdpClientServerTest, DISABLED_client_with_timeout_1) {
+TEST_F(UdpClientServerTest, client_with_timeout_1) {
     io::EventLoop loop;
 
     const std::size_t TIMEOUT = 100;

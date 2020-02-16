@@ -21,8 +21,9 @@ public:
     Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, UdpClient& parent);
     Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent);
 
-    bool close_with_removal();
     using CloseHandler = void (*)(uv_handle_t* handle);
+    bool close_on_timeout();
+    bool close_with_removal();
     bool close(CloseHandler handler);
 
     void set_destination(std::uint32_t host, std::uint16_t port);
@@ -39,6 +40,8 @@ protected:
     static void on_data_received(
         uv_udp_t* handle, ssize_t nread, const uv_buf_t* uv_buf, const struct sockaddr* addr, unsigned flags);
 
+    static void on_close_on_timeout(uv_handle_t* handle);
+
 private:
     DataReceivedCallback m_receive_callback = nullptr;
 
@@ -54,10 +57,7 @@ private:
 UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     UdpClientImplBase(loop, parent) {
     m_on_item_expired = [this](BacklogWithTimeout<UdpClient::Impl*>&, UdpClient::Impl* const & item) {
-        if (m_timeout_callback) {
-            this->close(on_close);
-            m_timeout_callback(*m_parent, Error(0));
-        }
+        this->close_on_timeout();
     };
     m_last_packet_time = ::uv_hrtime();
 }
@@ -110,6 +110,10 @@ void UdpClient::Impl::set_destination(std::uint32_t host, std::uint16_t port) {
 
 bool UdpClient::Impl::close_with_removal() {
     return close(&on_close_with_removal);
+}
+
+bool UdpClient::Impl::close_on_timeout() {
+    return close(&on_close_on_timeout);
 }
 
 bool UdpClient::Impl::close(CloseHandler handler) {
@@ -184,6 +188,17 @@ void UdpClient::Impl::on_data_received(uv_udp_t* handle,
     } else {
         DataChunk data(nullptr, 0);
         this_.m_receive_callback(parent, data, error);
+    }
+}
+
+void UdpClient::Impl::on_close_on_timeout(uv_handle_t* handle) {
+    auto& this_ = *reinterpret_cast<UdpClient::Impl*>(handle->data);
+    auto& parent = *this_.m_parent;
+
+    handle->data = nullptr;
+
+    if (this_.m_timeout_callback) {
+        this_.m_timeout_callback(parent, Error(0));
     }
 }
 

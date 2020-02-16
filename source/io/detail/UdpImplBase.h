@@ -61,12 +61,6 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
 }
 
 template<typename ParentType, typename ImplType>
-void UdpImplBase<ParentType, ImplType>::on_close(uv_handle_t* handle) {
-    auto& this_ = *reinterpret_cast<ImplType*>(handle->data);
-    handle->data = nullptr;
-}
-
-template<typename ParentType, typename ImplType>
 void UdpImplBase<ParentType, ImplType>::on_close_with_removal(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<ImplType*>(handle->data);
     auto& parent = *this_.m_parent;
