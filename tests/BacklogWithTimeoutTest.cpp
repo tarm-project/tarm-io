@@ -202,7 +202,7 @@ TEST_F(BacklogWithTimeoutTest, multiple_elements_at_the_same_time) {
 }
 
 TEST_F(BacklogWithTimeoutTest, multiple_elements_in_distinct_time) {
-    reset_fake_monothonic_clock(250 * 1000000);
+    reset_fake_monothonic_clock(250 * std::uint64_t(10000000));
 
     const std::size_t ELEMENTS_COUNT = 250;
 
@@ -215,18 +215,18 @@ TEST_F(BacklogWithTimeoutTest, multiple_elements_in_distinct_time) {
     FakeLoop loop;
     loop.set_user_data(this);
     io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer> backlog(
-        loop, 250, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+        loop, 2500, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
 
     for (std::size_t i = 0; i < ELEMENTS_COUNT; ++i) {
         TestItem item(i);
-        item.time = i * 1000000;
+        item.time = i * 10000000;
         ASSERT_TRUE(backlog.add_item(item)) << i;
     }
 
     // Item with index 0 is expired durin adding
     EXPECT_EQ(1, expired_counter);
 
-    advance_clock(500);
+    advance_clock(5000);
 
     EXPECT_EQ(ELEMENTS_COUNT, expired_counter);
 }

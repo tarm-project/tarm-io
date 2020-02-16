@@ -99,7 +99,7 @@ protected:
                 continue;
             }
 
-            auto index = bucket_index_from_time(time_diff);
+            auto index = bucket_index_from_time(m_entity_timeout - time_diff);
             if (index != timer_index) {
                 m_items[index].push_back(current_bucket[i]);
             } else {
