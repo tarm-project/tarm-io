@@ -75,7 +75,12 @@ void TlsTcpClient::Impl::connect(const std::string& address,
             m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, context_errror); });
             return;
         }
-        m_openssl_context.set_tls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
+
+        auto version_error = m_openssl_context.set_tls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
+        if (version_error) {
+            m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, version_error); });
+            return;
+        }
 
         Error ssl_init_error = this->ssl_init(m_openssl_context.ssl_ctx());
         if (ssl_init_error) {

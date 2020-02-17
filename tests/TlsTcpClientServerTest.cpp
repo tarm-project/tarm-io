@@ -1103,9 +1103,9 @@ TEST_F(TlsTcpClientServerTest, server_with_restricted_tls_version) {
 
     io::EventLoop loop;
 
-    io::TlsTcpServer server(loop, m_cert_path, m_key_path,
+    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path,
         io::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
-    auto listen_error = server.listen(m_default_addr, m_default_port,
+    auto listen_error = server->listen(m_default_addr, m_default_port,
         [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
@@ -1118,7 +1118,7 @@ TEST_F(TlsTcpClientServerTest, server_with_restricted_tls_version) {
             std::string received_message(data.buf.get(), data.size);
             EXPECT_EQ(message, received_message);
 
-            server.shutdown();
+            server->schedule_removal();
         }
     );
     ASSERT_FALSE(listen_error);
@@ -1209,7 +1209,6 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
 }
 
 TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
-    //this->log_to_stdout();
     if (io::global::min_supported_tls_version() == io::global::max_supported_tls_version()) {
         return;
     }
@@ -1274,7 +1273,58 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
     EXPECT_EQ(0, server_on_receive_callback_count);
 }
 
-// TODO: TLS version lower is bigger than higher error
+TEST_F(TlsTcpClientServerTest, server_with_invalid_tls_version_range) {
+    // Note: min is greater than max
+    if (io::global::min_supported_tls_version() == io::global::max_supported_tls_version()) {
+        return;
+    }
+
+    io::EventLoop loop;
+
+    io::TlsTcpServer server(loop, m_cert_path, m_key_path,
+        io::TlsVersionRange{io::global::max_supported_tls_version(), io::global::min_supported_tls_version()});
+    auto listen_error = server.listen(m_default_addr, m_default_port,
+        nullptr,
+        nullptr
+    );
+    EXPECT_TRUE(listen_error);
+    EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, listen_error.code());
+
+    ASSERT_EQ(0, loop.run());
+
+}
+
+TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
+    // Note: min is greater than max
+    if (io::global::min_supported_tls_version() == io::global::max_supported_tls_version()) {
+        return;
+    }
+
+    io::EventLoop loop;
+
+    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen(m_default_addr, m_default_port,
+        nullptr,
+        nullptr
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TlsTcpClient(loop,
+        io::TlsVersionRange{io::global::max_supported_tls_version(), io::global::min_supported_tls_version()});
+    client->connect(m_default_addr, m_default_port,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            server->schedule_removal();
+            client.schedule_removal();
+        },
+        nullptr,
+        nullptr
+    );
+
+    ASSERT_EQ(0, loop.run());
+}
+
 
 // TODO: connect as TCP and send invalid data on various stages
 // TODO: listen on invalid address

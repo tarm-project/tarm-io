@@ -62,7 +62,7 @@ template<typename VersionType,
          void(OpenSslContext<ParentType, ImplType>::*DisableMethod)(VersionType)>
 Error OpenSslContext<ParentType, ImplType>::set_tls_dtls_version(VersionType version_min, VersionType version_max) {
     if (version_min > version_max) {
-        // TODO: return error
+        return Error(StatusCode::OPENSSL_ERROR, "Version mismatch. Minimum version is greater than maximum");
     }
 
     if (version_min != VersionType::MIN) {
