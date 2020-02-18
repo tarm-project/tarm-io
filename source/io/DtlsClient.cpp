@@ -139,7 +139,7 @@ void DtlsClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const Er
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(DtlsClient);
+
 
 DtlsClient::DtlsClient(EventLoop& loop, DtlsVersionRange version_range) :
     Removable(loop),

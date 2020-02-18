@@ -177,7 +177,7 @@ void TlsTcpClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const 
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(TlsTcpClient);
+
 
 TlsTcpClient::TlsTcpClient(EventLoop& loop, TlsVersionRange version_range) :
     Removable(loop),

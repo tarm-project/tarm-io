@@ -10,7 +10,7 @@ namespace io {
 class UserDataHolder {
 public:
     IO_FORBID_COPY(UserDataHolder);
-    IO_DECLARE_DLL_PUBLIC_MOVE(UserDataHolder);
+    IO_FORBID_MOVE(UserDataHolder);
 
     IO_DLL_PUBLIC UserDataHolder();
     IO_DLL_PUBLIC ~UserDataHolder();

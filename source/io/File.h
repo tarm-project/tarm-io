@@ -30,7 +30,7 @@ public:
     using StatCallback = std::function<void(File&, const StatData&)>;
 
     IO_FORBID_COPY(File);
-    IO_DECLARE_DLL_PUBLIC_MOVE(File);
+    IO_FORBID_MOVE(File);
 
     IO_DLL_PUBLIC File(EventLoop& loop);
 

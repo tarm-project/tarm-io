@@ -249,7 +249,7 @@ void TcpServer::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(TcpServer);
+
 
 TcpServer::TcpServer(EventLoop& loop) :
     Removable(loop),

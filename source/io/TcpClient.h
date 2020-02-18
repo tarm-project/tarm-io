@@ -21,7 +21,7 @@ public:
     using DataReceiveCallback = std::function<void(TcpClient&, const DataChunk&, const Error&)>;
 
     IO_FORBID_COPY(TcpClient);
-    IO_DECLARE_DLL_PUBLIC_MOVE(TcpClient);
+    IO_FORBID_MOVE(TcpClient);
 
     IO_DLL_PUBLIC TcpClient(EventLoop& loop);
 

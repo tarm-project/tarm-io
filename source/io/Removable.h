@@ -18,7 +18,7 @@ public:
     using OnScheduleRemovalCallback = std::function<void(const Removable&)>;
 
     IO_FORBID_COPY(Removable);
-    IO_DECLARE_DLL_PUBLIC_MOVE(Removable);
+    IO_FORBID_MOVE(Removable);
 
     IO_DLL_PUBLIC Removable(EventLoop& loop);
     IO_DLL_PUBLIC virtual ~Removable();

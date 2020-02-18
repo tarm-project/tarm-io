@@ -178,7 +178,7 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(Dir);
+
 
 Dir::Dir(EventLoop& loop) :
     Removable(loop),

@@ -28,7 +28,7 @@ public:
     static const std::size_t INVALID_HANDLE = (std::numeric_limits<std::size_t>::max)();
 
     IO_FORBID_COPY(EventLoop);
-    IO_DECLARE_DLL_PUBLIC_MOVE(EventLoop);
+    IO_FORBID_MOVE(EventLoop);
 
     IO_DLL_PUBLIC EventLoop();
     IO_DLL_PUBLIC ~EventLoop();

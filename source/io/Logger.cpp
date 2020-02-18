@@ -2,7 +2,7 @@
 
 namespace io {
 
-IO_DEFINE_DEFAULT_MOVE(Logger);
+
 
 Logger::Logger() {
 

@@ -204,7 +204,7 @@ void UdpClient::Impl::on_close_on_timeout(uv_handle_t* handle) {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(UdpClient);
+
 
 UdpClient::UdpClient(EventLoop& loop) :
     Removable(loop),

@@ -32,10 +32,6 @@ UserDataHolder::UserDataHolder() :
 
 UserDataHolder::~UserDataHolder() = default;
 
-// Need to define move constructor and assignment explicitly to allow PIMPL usage with unique_ptr
-// The same is about destructor above
-IO_DEFINE_DEFAULT_MOVE(UserDataHolder);
-
 void UserDataHolder::set_user_data(void* data) {
     return m_impl->set_user_data(data);
 }

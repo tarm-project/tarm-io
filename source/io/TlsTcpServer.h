@@ -23,7 +23,7 @@ public:
     using CloseConnectionCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
 
     IO_FORBID_COPY(TlsTcpServer);
-    IO_DECLARE_DLL_PUBLIC_MOVE(TlsTcpServer);
+    IO_FORBID_MOVE(TlsTcpServer);
 
     IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,
                                const Path& certificate_path,

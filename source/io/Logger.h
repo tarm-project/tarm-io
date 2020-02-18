@@ -30,7 +30,7 @@ public:
     using Callback = std::function<void(const std::string& message)>;
 
     IO_FORBID_COPY(Logger);
-    IO_DECLARE_DLL_PUBLIC_MOVE(Logger);
+    IO_FORBID_MOVE(Logger);
 
     IO_DLL_PUBLIC Logger();
     IO_DLL_PUBLIC Logger(const std::string& prefix);

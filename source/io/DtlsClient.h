@@ -23,7 +23,7 @@ public:
     using CloseCallback = std::function<void(DtlsClient&, const Error&)>;
 
     IO_FORBID_COPY(DtlsClient);
-    IO_DECLARE_DLL_PUBLIC_MOVE(DtlsClient);
+    IO_FORBID_MOVE(DtlsClient);
 
     IO_DLL_PUBLIC DtlsClient(EventLoop& loop, DtlsVersionRange version_range = DEFAULT_DTLS_VERSION_RANGE);
 

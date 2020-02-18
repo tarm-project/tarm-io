@@ -21,7 +21,7 @@ public:
     using PeerTimeoutCallback = std::function<void(UdpPeer&, const Error&)>;
 
     IO_FORBID_COPY(UdpServer);
-    IO_DECLARE_DLL_PUBLIC_MOVE(UdpServer);
+    IO_FORBID_MOVE(UdpServer);
 
     IO_DLL_PUBLIC UdpServer(EventLoop& loop);
 

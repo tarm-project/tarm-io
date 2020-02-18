@@ -22,7 +22,7 @@ public:
     using TimeoutCallback = std::function<void(UdpClient&, const Error&)>;
 
     IO_FORBID_COPY(UdpClient);
-    IO_DECLARE_DLL_PUBLIC_MOVE(UdpClient);
+    IO_FORBID_MOVE(UdpClient);
 
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
     IO_DLL_PUBLIC UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port);

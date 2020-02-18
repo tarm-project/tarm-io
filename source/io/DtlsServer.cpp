@@ -236,7 +236,7 @@ const SSL_METHOD* DtlsServer::Impl::ssl_method() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(DtlsServer);
+
 
 DtlsServer::DtlsServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range) :
     Removable(loop),

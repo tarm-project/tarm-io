@@ -25,7 +25,7 @@ public:
     static const std::size_t DEFAULT_TIMEOUT_MS = 1000;
 
     IO_FORBID_COPY(DtlsServer);
-    IO_DECLARE_DLL_PUBLIC_MOVE(DtlsServer);
+    IO_FORBID_MOVE(DtlsServer);
 
     IO_DLL_PUBLIC DtlsServer(EventLoop& loop,
                              const Path& certificate_path,

@@ -226,7 +226,7 @@ bool TlsTcpServer::Impl::certificate_and_key_match() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(TlsTcpServer);
+
 
 TlsTcpServer::TlsTcpServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsVersionRange version_range) :
     Removable(loop),

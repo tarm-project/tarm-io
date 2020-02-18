@@ -21,7 +21,7 @@ public:
     IO_DLL_PUBLIC Timer(EventLoop& loop);
 
     IO_FORBID_COPY(Timer);
-    IO_DECLARE_DLL_PUBLIC_MOVE(Timer);
+    IO_FORBID_MOVE(Timer);
 
     // If timeout is zero, the callback fires on the next event loop iteration.
     // If repeat is non-zero, the callback fires first after timeout milliseconds

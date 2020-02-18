@@ -24,7 +24,7 @@ public:
     using EndReadCallback = std::function<void(Dir&)>;
 
     IO_FORBID_COPY(Dir);
-    IO_DECLARE_DLL_PUBLIC_MOVE(Dir);
+    IO_FORBID_MOVE(Dir);
 
     IO_DLL_PUBLIC Dir(EventLoop& loop);
 

@@ -31,7 +31,7 @@ public:
 
     // TODO: test all move constructors
     IO_FORBID_COPY(TcpServer);
-    IO_DECLARE_DLL_PUBLIC_MOVE(TcpServer);
+    IO_FORBID_MOVE(TcpServer);
 
     IO_DLL_PUBLIC TcpServer(EventLoop& loop);
     IO_DLL_PUBLIC ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server

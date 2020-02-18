@@ -209,7 +209,7 @@ void UdpServer::Impl::free_udp_peer(UdpPeer* peer) {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(UdpServer);
+
 
 UdpServer::UdpServer(EventLoop& loop) :
     Removable(loop),

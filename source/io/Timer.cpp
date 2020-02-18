@@ -127,7 +127,7 @@ void Timer::Impl::on_timer(uv_timer_t* handle) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(Timer);
+
 
 Timer::Timer(EventLoop& loop) :
     Removable(loop),
