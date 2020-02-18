@@ -977,6 +977,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_1) {
 }
 
 TEST_F(UdpClientServerTest, client_with_timeout_2) {
+    // Note: testing that after timeout data is not sent anymore
     io::EventLoop loop;
 
     std::size_t server_receive_counter = 0;
@@ -1007,6 +1008,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
             [&](io::UdpClient& client, const io::Error& error) {
                 EXPECT_TRUE(error);
                 EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
+                ++client_send_counter;
 
                 auto timer = new io::Timer(loop);
                 timer->start(50, [&](io::Timer& timer) {
@@ -1020,10 +1022,12 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
 
     EXPECT_NE(0, client->bound_port());
     EXPECT_EQ(0, server_receive_counter);
+    EXPECT_EQ(0, client_send_counter);
 
     EXPECT_EQ(0, loop.run());
 
     EXPECT_EQ(0, server_receive_counter);
+    EXPECT_EQ(1, client_send_counter);
     EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
 }
 
