@@ -32,7 +32,7 @@ public:
     IO_DLL_PUBLIC std::uint32_t address() const;
     IO_DLL_PUBLIC std::uint16_t port() const;
 
-    IO_DLL_PUBLIC std::uint64_t last_packet_time_ns() const;
+    IO_DLL_PUBLIC std::uint64_t last_packet_time() const;
 
     IO_DLL_PUBLIC bool is_open() const;
 
@@ -47,7 +47,7 @@ protected:
 private:
     IO_DLL_PUBLIC UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port);
 
-    IO_DLL_PUBLIC void set_last_packet_time_ns(std::uint64_t time);
+    IO_DLL_PUBLIC void set_last_packet_time(std::uint64_t time);
 
     class Impl;
     std::unique_ptr<Impl> m_impl;

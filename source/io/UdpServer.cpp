@@ -102,7 +102,7 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
     };
 
     auto time_getter = [](const std::shared_ptr<UdpPeer>& item) -> std::uint64_t {
-        return item->last_packet_time_ns();
+        return item->last_packet_time();
     };
 
     m_peers_backlog.reset(new BacklogWithTimeout<std::shared_ptr<UdpPeer>>(*m_loop, timeout_ms, on_expired, time_getter, &uv_hrtime));
@@ -166,7 +166,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                                    network_to_host(address->sin_port)),
                                        free_udp_peer); // Ref count is == 1 here
 
-                        peer_ptr->set_last_packet_time_ns(uv_hrtime());
+                        peer_ptr->set_last_packet_time(::uv_hrtime());
                         this_.m_peers_backlog->add_item(peer_ptr);
 
                         if (this_.m_new_peer_callback) {
@@ -175,7 +175,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                     }
                     this_.m_data_receive_callback(*peer_ptr, data_chunk, error);
 
-                    peer_ptr->set_last_packet_time_ns(uv_hrtime());
+                    peer_ptr->set_last_packet_time(::uv_hrtime());
                 } else {
                     // Ref/Unref semantics here was added to prolong lifetime of oneshot UdpPeer objects
                     // and to allow call send data in receive callback for UdpServer without peers tracking.

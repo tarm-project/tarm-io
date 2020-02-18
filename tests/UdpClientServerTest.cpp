@@ -1031,6 +1031,59 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
     EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
 }
 
+TEST_F(UdpClientServerTest, client_with_timeout_3) {
+    // Note: testing that sending data will delay timeout
+
+    io::EventLoop loop;
+
+    const std::size_t CLIENT_TIMEOUT = 100;
+    const std::size_t EXPECTED_ELAPSED_TIME = CLIENT_TIMEOUT + 300;
+
+    std::size_t client_on_timeout_count = 0;
+    std::size_t client_send_counter = 0;
+
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
+        nullptr,
+        CLIENT_TIMEOUT,
+        [&](io::UdpClient& client, const io::Error& error) {
+            ++client_on_timeout_count;
+
+            t2 = std::chrono::high_resolution_clock::now();
+            EXPECT_NEAR(EXPECTED_ELAPSED_TIME,
+                        std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(),
+                        EXPECTED_ELAPSED_TIME * 0.1);
+
+            client.schedule_removal();
+        }
+    );
+
+    const std::deque<std::uint64_t> send_timeouts = {50, 50, 50, 50, 50, 50};
+
+    auto timer = new io::Timer(loop);
+    timer->start(
+        send_timeouts,
+        [&](io::Timer& timer) {
+            client->send_data("!!!",
+            [&](io::UdpClient& client, const io::Error& error) {
+                if (++client_send_counter == send_timeouts.size()) {
+                    timer.schedule_removal();
+                }
+            });
+        }
+    );
+
+    EXPECT_EQ(0, client_on_timeout_count);
+    EXPECT_EQ(0, client_send_counter);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_timeout_count);
+    EXPECT_EQ(send_timeouts.size(), client_send_counter);
+}
+
 // TODO: UDP client sending test with no destination set
 // TODO: check address of UDP peer
 // TODO: error on multiple start_receive on UDP server

@@ -19,6 +19,9 @@ public:
 
     bool is_open() const;
 
+    void set_last_packet_time(std::uint64_t time);
+    std::uint64_t last_packet_time() const;
+
 protected:
     // statics
     static void on_close_with_removal(uv_handle_t* handle);
@@ -30,6 +33,9 @@ protected:
 
     std::unique_ptr<uv_udp_t, std::function<void(uv_udp_t*)>> m_udp_handle;
     sockaddr_storage m_destination_address;
+
+private:
+    std::uint64_t m_last_packet_time_ns = 0;
 };
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
@@ -41,6 +47,8 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_parent(&parent),
     m_udp_handle(new uv_udp_t, std::default_delete<uv_udp_t>()) {
     std::memset(&m_destination_address, 0, sizeof(m_destination_address));
+
+    this->set_last_packet_time(::uv_hrtime());
 
     auto status = uv_udp_init(m_uv_loop, m_udp_handle.get());
     if (status < 0) {
@@ -58,6 +66,7 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_udp_handle(udp_handle, [](uv_udp_t*){}) {
         std::memset(&m_destination_address, 0, sizeof(m_destination_address));
         m_udp_handle->data = udp_handle->data;
+        this->set_last_packet_time(::uv_hrtime());
 }
 
 template<typename ParentType, typename ImplType>
@@ -72,6 +81,16 @@ void UdpImplBase<ParentType, ImplType>::on_close_with_removal(uv_handle_t* handl
 template<typename ParentType, typename ImplType>
 bool UdpImplBase<ParentType, ImplType>::is_open() const {
     return m_udp_handle ? !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_udp_handle.get())) : false;
+}
+
+template<typename ParentType, typename ImplType>
+void UdpImplBase<ParentType, ImplType>::set_last_packet_time(std::uint64_t time) {
+    m_last_packet_time_ns = time;
+}
+
+template<typename ParentType, typename ImplType>
+std::uint64_t UdpImplBase<ParentType, ImplType>::last_packet_time() const {
+    return m_last_packet_time_ns;
 }
 
 } // namespace detail
