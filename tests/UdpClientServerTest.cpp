@@ -457,6 +457,73 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
     EXPECT_EQ(2, peer_to_close_count[client_3_message]);
 }
 
+TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
+    io::EventLoop loop;
+
+    const std::deque<std::uint64_t> send_timeouts = {50, 50, 50, 50, 50, 50};
+    const std::size_t TIMEOUT_MS = 100;
+    const std::size_t EXPECTED_ELAPSED_TIME_MS = 300 + TIMEOUT_MS;
+
+    std::size_t peer_timeout_counter = 0;
+    std::size_t server_data_send_counter = 0;
+    std::size_t client_data_receive_counter = 0;
+
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+        [&](io::UdpPeer& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            auto timer = new io::Timer(loop);
+            timer->start(
+                send_timeouts,
+                [&](io::Timer& timer) {
+                    ++server_data_send_counter;
+                    client.send_data("!!!");
+                    if (server_data_send_counter == send_timeouts.size()) {
+                        timer.schedule_removal();
+                    }
+                }
+            );
+        },
+        TIMEOUT_MS,
+        [&](io::UdpPeer& client, const io::Error& error) {
+            ++peer_timeout_counter;
+            EXPECT_FALSE(error);
+            t2 = std::chrono::high_resolution_clock::now();
+            EXPECT_NEAR(EXPECTED_ELAPSED_TIME_MS,
+                        std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(),
+                        EXPECTED_ELAPSED_TIME_MS * 0.1);
+            server->schedule_removal();
+        }
+    );
+
+    auto client = new io::UdpClient(loop, 0x7F000001, m_default_port,
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            ++client_data_receive_counter;
+
+            if (client_data_receive_counter == send_timeouts.size()) {
+                client.schedule_removal();
+            }
+        }
+    );
+
+    client->send_data("!!!");
+
+    EXPECT_EQ(0, server_data_send_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+    EXPECT_EQ(0, peer_timeout_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(send_timeouts.size(), server_data_send_counter);
+    EXPECT_EQ(send_timeouts.size(), client_data_receive_counter);
+    EXPECT_EQ(1, peer_timeout_counter);
+}
+
 TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     io::EventLoop loop;
 
