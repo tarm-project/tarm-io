@@ -29,7 +29,6 @@ public:
     IO_FORBID_MOVE(DtlsConnectedClient);
 
     IO_DLL_PUBLIC void close();
-    IO_DLL_PUBLIC void shutdown();
     IO_DLL_PUBLIC bool is_open() const;
 
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);

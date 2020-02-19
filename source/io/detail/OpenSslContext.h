@@ -219,13 +219,6 @@ Error OpenSslContext<ParentType, ImplType>::init_ssl_context(const SSL_METHOD* m
         return Error(StatusCode::OPENSSL_ERROR, "Failed to set ciphers list");
     }
 
-    // TODO:!!!
-    /*
-    if (!ssl_init_certificate_and_key()) {
-        return Error(StatusCode::OPENSSL_ERROR, "Failed to init certificate and key");
-    }
-    */
-
     return StatusCode::OK;
 }
 

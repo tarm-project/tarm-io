@@ -36,7 +36,6 @@ private:
     DataReceiveCallback m_receive_callback = nullptr;
 };
 
-
 TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, CloseCallback cloase_callback) :
     TcpClientImplBase(loop, parent),
     m_server(&server) {
@@ -46,9 +45,8 @@ TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedC
 }
 
 TcpConnectedClient::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, this, "_");
+    IO_LOG(m_loop, TRACE, m_parent, "");
 
-    // TODO: move to base class
     assert(m_tcp_stream != nullptr);
     delete m_tcp_stream;
 }

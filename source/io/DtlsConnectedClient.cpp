@@ -19,7 +19,6 @@ public:
     Error init_ssl();
 
     void close();
-    void shutdown();
 
     void set_data_receive_callback(DataReceiveCallback callback);
 
@@ -70,11 +69,6 @@ void DtlsConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback ca
 void DtlsConnectedClient::Impl::close() {
     // TODO: fixme
     //m_client->close();
-}
-
-void DtlsConnectedClient::Impl::shutdown() {
-    // TODO: fixme
-    //m_client->shutdown();
 }
 
 DtlsServer& DtlsConnectedClient::Impl::server() {
@@ -146,10 +140,6 @@ void DtlsConnectedClient::send_data(const std::string& message, EndSendCallback 
 
 void DtlsConnectedClient::close() {
     return m_impl->close();
-}
-
-void DtlsConnectedClient::shutdown() {
-    return m_impl->shutdown();
 }
 
 bool DtlsConnectedClient::is_open() const {

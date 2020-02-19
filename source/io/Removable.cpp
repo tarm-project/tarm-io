@@ -102,8 +102,6 @@ Removable::DefaultDelete Removable::Impl::default_delete() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-
-
 Removable::Removable(EventLoop& loop) :
     m_impl(new Impl(loop, *this)) {
 }

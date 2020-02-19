@@ -51,8 +51,6 @@ public:
                 std::size_t timeout_ms,
                 ConnectionTimeoutCallback timeout_callback);
 
-
-    IO_DLL_PUBLIC void shutdown();
     IO_DLL_PUBLIC void close();
 
     IO_DLL_PUBLIC std::size_t connected_clients_count() const;

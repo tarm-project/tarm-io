@@ -9,11 +9,6 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-//#include <memory>
-//#include <assert.h>
-// TODO: remove
-//#include <iostream>
-
 namespace io {
 namespace detail {
 

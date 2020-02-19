@@ -30,7 +30,6 @@ public:
                  std::size_t timeout_ms,
                  ConnectionTimeoutCallback timeout_callback);
 
-    void shutdown();
     void close();
 
     std::size_t connected_clients_count() const;
@@ -85,8 +84,10 @@ DtlsServer::Impl::~Impl() {
 
 void DtlsServer::Impl::on_new_peer(UdpPeer& udp_client, const io::Error& error) {
     if (error) {
-        //m_new_connection_callback(.......);
-        // TODO: error handling here
+        if (m_new_connection_callback) {
+            // TODO: fixme
+            //m_new_connection_callback(udp_client, error);
+        }
         return;
     }
 
@@ -163,8 +164,6 @@ Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
         return Error(StatusCode::TLS_PRIVATE_KEY_INVALID);
     }
 
-    // TODO: check unsigned long err = ERR_get_error(); ?????
-
     if (!certificate_and_key_match()) {
         return Error(StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH);
     }
@@ -193,14 +192,9 @@ Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
                                        std::bind(&DtlsServer::Impl::on_timeout, this, _1, _2));
 }
 
-void DtlsServer::Impl::shutdown() {
-    // TODO: fixme
-    //return m_udp_server->shutdown();
-}
-
 void DtlsServer::Impl::close() {
-    // TODO: fixme
-    //return m_udp_server->close();
+    // TODO: test this
+    return m_udp_server->close();
 }
 
 std::size_t DtlsServer::Impl::connected_clients_count() const {
@@ -266,10 +260,6 @@ Error DtlsServer::listen(const std::string& ip_addr_str,
                            std::size_t timeout_ms,
                            ConnectionTimeoutCallback timeout_callback) {
     return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, timeout_ms, timeout_callback);
-}
-
-void DtlsServer::shutdown() {
-    return m_impl->shutdown();
 }
 
 void DtlsServer::close() {

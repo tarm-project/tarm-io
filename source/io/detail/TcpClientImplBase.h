@@ -48,7 +48,6 @@ protected:
     std::uint32_t m_ipv4_addr = 0;
     std::uint16_t m_port = 0;
 
-    // TODO: need to ensure that one buffer is enough
     std::shared_ptr<char> m_read_buf;
     std::size_t m_read_buf_size = 0;
 
