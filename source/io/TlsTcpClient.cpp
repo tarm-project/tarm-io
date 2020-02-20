@@ -133,7 +133,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
             }
         };
 
-    m_client->connect(address, port, on_connect, on_data_receive, on_close);
+    m_client->connect({address, port}, on_connect, on_data_receive, on_close);
 }
 
 void TlsTcpClient::Impl::close() {

@@ -16,8 +16,7 @@ public:
 
     bool schedule_removal();
 
-    void connect(const std::string& address,
-                 std::uint16_t port,
+    void connect(const Endpoint& endpoint,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback = nullptr);
@@ -61,16 +60,13 @@ EventLoop* TcpClient::Impl::loop() {
     return m_loop;
 }
 
-void TcpClient::Impl::connect(const std::string& address,
-                              std::uint16_t port,
+void TcpClient::Impl::connect(const Endpoint& endpoint,
                               ConnectCallback connect_callback,
                               DataReceiveCallback receive_callback,
                               CloseCallback close_callback) {
-    struct sockaddr_in addr;
 
-    Error address_error = uv_ip4_addr(address.c_str(), port, &addr);
-    if (address_error) {
-        connect_callback(*m_parent, address_error);
+    if (endpoint.type() == Endpoint::UNDEFINED) {
+        connect_callback(*m_parent, Error(StatusCode::INVALID_ARGUMENT));
         return;
     }
 
@@ -79,8 +75,10 @@ void TcpClient::Impl::connect(const std::string& address,
         m_connect_req->data = this;
     }
 
-    m_port = port;
-    m_ipv4_addr = network_to_host(addr.sin_addr.s_addr);
+    auto addr = reinterpret_cast<const ::sockaddr_in*>(endpoint.raw_endpoint());
+
+    m_port = endpoint.port();
+    m_ipv4_addr = network_to_host(addr->sin_addr.s_addr);
 
     IO_LOG(m_loop, DEBUG, "address:", io::ip4_addr_to_string(m_ipv4_addr)); // TODO: port???
 
@@ -89,7 +87,7 @@ void TcpClient::Impl::connect(const std::string& address,
     m_receive_callback = receive_callback;
     m_close_callback = close_callback;
 
-    int uv_status = uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(&addr), on_connect);
+    int uv_status = uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(addr), on_connect);
     if (uv_status < 0) {
         Error error(uv_status);
         if (m_connect_callback) {
@@ -262,12 +260,11 @@ std::uint16_t TcpClient::port() const {
     return m_impl->port();
 }
 
-void TcpClient::connect(const std::string& address,
-                        std::uint16_t port,
+void TcpClient::connect(const Endpoint& endpoint,
                         ConnectCallback connect_callback,
                         DataReceiveCallback receive_callback,
                         CloseCallback close_callback) {
-    return m_impl->connect(address, port, connect_callback, receive_callback, close_callback);
+    return m_impl->connect(endpoint, connect_callback, receive_callback, close_callback);
 }
 
 void TcpClient::close() {

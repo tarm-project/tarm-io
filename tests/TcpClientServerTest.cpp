@@ -86,7 +86,7 @@ TEST_F(TcpClientServerTest, client_connect_to_invalid_address) {
     std::size_t client_on_connect_count = 0;
 
     auto client = new io::TcpClient(loop);
-    client->connect("0.0.0" ,m_default_port,
+    client->connect({"0.0.0", m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
@@ -142,7 +142,7 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     bool data_sent = false;
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr,m_default_port, [&](io::TcpClient& client, const io::Error& error) {
+    client->connect({m_default_addr, m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
         EXPECT_TRUE(client.is_open());
 
@@ -193,7 +193,7 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     bool data_sent_1 = false;
 
     auto client_1 = new io::TcpClient(loop);
-    client_1->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Error& error) {
+    client_1->connect({m_default_addr, m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
 
         client.send_data(message + "1", [&](io::TcpClient& client, const io::Error& error) {
@@ -207,7 +207,7 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     bool data_sent_2 = false;
 
     auto client_2 = new io::TcpClient(loop);
-    client_2->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Error& error) {
+    client_2->connect({m_default_addr, m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
 
         client.send_data(message + "2", [&](io::TcpClient& client, const io::Error& error) {
@@ -256,7 +256,7 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
 
         io::EventLoop loop;
         auto client = new io::TcpClient(loop);
-        client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Error& error) {
+        client->connect({m_default_addr, m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
 
             client.send_data(message, [&](io::TcpClient& client, const io::Error& error) {
@@ -301,7 +301,7 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
     bool data_received = false;
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Error& error) {
+    client->connect({m_default_addr, m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
         // do not send data
     },
@@ -373,7 +373,7 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
 
         io::EventLoop loop;
         auto client = new io::TcpClient(loop);
-        client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Error& error) {
+        client->connect({m_default_addr, m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
 
             for (size_t i = 0; i < CHUNKS_COUNT; ++i) {
@@ -400,7 +400,7 @@ TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server) {
 
     io::EventLoop loop;
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port, [&](io::TcpClient& client, const io::Error& error) {
+    client->connect({m_default_addr, m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
         EXPECT_TRUE(error);
         EXPECT_FALSE(client.is_open());
         EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, error.code());
@@ -442,7 +442,7 @@ TEST_F(TcpClientServerTest, DISABLED_server_disconnect_client_from_new_connectio
     nullptr);
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             client.send_data(client_message);
@@ -516,7 +516,7 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
     );
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -568,7 +568,7 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     bool disconnect_called = false;
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             client.send_data(client_message);
@@ -645,7 +645,7 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
         for(std::size_t i = 0; i < NUMBER_OF_CLIENTS; ++i) {
             auto tcp_client = new io::TcpClient(clients_loop);
             tcp_client->set_user_data(reinterpret_cast<void*>(i));
-            tcp_client->connect(m_default_addr, m_default_port,
+            tcp_client->connect({m_default_addr, m_default_port},
                 [i, tcp_client, NUMBER_OF_CLIENTS, send_all_clients, &all_clients]
                 (io::TcpClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
@@ -705,7 +705,7 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
         };
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port, connect_callback, nullptr);
+    client->connect({m_default_addr, m_default_port}, connect_callback, nullptr);
 
     auto timer = new io::Timer(loop);
     timer->start(500, [&](io::Timer& timer) {
@@ -750,7 +750,7 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
     int client_close_call_count = 0;
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             ++client_connect_call_count;
             EXPECT_FALSE(error);
@@ -807,7 +807,7 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
     int client_close_call_count = 0;
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             ++client_connect_call_count;
             EXPECT_FALSE(error);
@@ -869,7 +869,7 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
     ASSERT_FALSE(listen_error);
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr,m_default_port, [&](io::TcpClient& client, const io::Error& error) {
+    client->connect({m_default_addr,m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
         EXPECT_TRUE(client.is_open());
 
@@ -932,7 +932,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
     EXPECT_FALSE(listen_error);
 
     client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             client.send_data("_",
@@ -994,7 +994,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
     EXPECT_FALSE(listen_error);
 
     client_ptr = new io::TcpClient(loop);
-    client_ptr->connect(m_default_addr, m_default_port,
+    client_ptr->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             client.send_data(buf, DATA_SIZE,
@@ -1077,7 +1077,7 @@ TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
     ASSERT_FALSE(listen_error) << listen_error.string();
 
     client_ptr = new io::TcpClient(loop);
-    client_ptr->connect(m_default_addr, m_default_port,
+    client_ptr->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -1155,7 +1155,7 @@ TEST_F(TcpClientServerTest, client_saves_received_buffer) {
     io::DataChunk saved_buffer;
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
 
@@ -1242,7 +1242,7 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
         EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
 
         if (client_close_counter == 0) {
-            client.connect(m_default_addr, m_default_port,
+            client.connect({m_default_addr, m_default_port},
                 client_on_connect,
                 client_on_receive,
                 client_on_close
@@ -1255,7 +1255,7 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
     };
 
     auto client = new io::TcpClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         client_on_connect,
         client_on_receive,
         client_on_close

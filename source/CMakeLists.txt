@@ -17,17 +17,18 @@ list(APPEND IO_SOURCE_LIST
         io/path_impl/WindowsFileCodecvt.cpp
         io/ByteSwap.cpp
         io/Convert.cpp
-        io/RefCounted.cpp
-        io/Removable.cpp
         io/Dir.cpp
         io/DtlsClient.cpp
         io/DtlsConnectedClient.cpp
         io/DtlsServer.cpp
+        io/Endpoint.cpp
         io/Error.cpp
         io/EventLoop.cpp
         io/File.cpp
         io/Logger.cpp
         io/Path.cpp
+        io/RefCounted.cpp
+        io/Removable.cpp
         io/StatData.cpp
         io/StatusCode.cpp
         io/Timer.cpp
