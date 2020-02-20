@@ -51,7 +51,10 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
 
     if (!UdpImplBase<ParentType, ImplType>::m_parent->is_open()) {
         if (callback) {
-            callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(StatusCode::OPERATION_CANCELED));
+            UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=]() {
+                callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(StatusCode::OPERATION_CANCELED));
+            });
+            return;
         }
         return;
     }

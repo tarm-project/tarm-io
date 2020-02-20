@@ -1011,7 +1011,7 @@ TEST_F(UdpClientServerTest, send_after_schedule_removal) {
     );
 
     EXPECT_EQ(0, server_receive_counter);
-    EXPECT_EQ(1, client_send_counter); // TODO: FIXME execution before loop run
+    EXPECT_EQ(0, client_send_counter);
 
     EXPECT_EQ(0, loop.run());
 
