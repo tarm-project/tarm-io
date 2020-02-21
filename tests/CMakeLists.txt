@@ -45,6 +45,7 @@ list(APPEND TESTS_LIST
     ScopeExitGuardTest.cpp
     VersionTest.cpp
     PathTest.cpp
+    EndpointTest.cpp
     EventLoopTest.cpp
     TimerTest.cpp
     BacklogWithTimeoutTest.cpp

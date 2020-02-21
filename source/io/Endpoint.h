@@ -9,18 +9,6 @@
 #include <string>
 
 namespace io {
-/*
-class Address {
-public:
-    Address(const std::string& str);
-    Address(const std::string& str);
-
-
-
-private:
-
-};
-*/
 
 class Endpoint {
 public:
@@ -35,6 +23,8 @@ public:
         IP_V4,
         IP_V6
     };
+
+    IO_DLL_PUBLIC Endpoint();
 
     IO_DLL_PUBLIC Endpoint(const std::string& address, std::uint16_t port);
     IO_DLL_PUBLIC Endpoint(std::array<std::uint8_t, 4> address, std::uint16_t port);

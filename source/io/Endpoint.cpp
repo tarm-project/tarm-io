@@ -12,6 +12,7 @@ namespace io {
 
 class Endpoint::Impl {
 public:
+    Impl();
     Impl(const std::string& address, std::uint16_t port);
     Impl(std::array<std::uint8_t, 4> address, std::uint16_t port);
     Impl(std::array<std::uint8_t, 16> address, std::uint16_t port);
@@ -28,6 +29,9 @@ private:
     ::sockaddr_storage m_address_storage;
     Type m_type = UNDEFINED;
 };
+
+Endpoint::Impl::Impl() {
+}
 
 Endpoint::Impl::Impl(const std::string& address, std::uint16_t port) {
     auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
@@ -88,6 +92,10 @@ const void* Endpoint::Impl::raw_endpoint() const {
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
+
+Endpoint::Endpoint() :
+    m_impl(new Impl()) {
+}
 
 Endpoint::Endpoint(const std::string& address, std::uint16_t port) :
     m_impl(new Impl(address, port)) {
