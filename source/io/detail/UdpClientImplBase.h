@@ -70,7 +70,7 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
                                 UdpImplBase<ParentType, ImplType>::m_udp_handle.get(),
                                 &req->uv_buf,
                                 1,
-                                reinterpret_cast<const sockaddr*>(&(UdpImplBase<ParentType, ImplType>::m_destination_address)),
+                                reinterpret_cast<const sockaddr*>(UdpImplBase<ParentType, ImplType>::m_destination_endpoint.raw_endpoint()),
                                 on_send);
     if (uv_status < 0) {
         if (callback) {

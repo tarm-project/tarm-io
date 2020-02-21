@@ -9,7 +9,7 @@ namespace io {
 
 class UdpPeer::Impl : public detail::UdpClientImplBase<UdpPeer, UdpPeer::Impl> {
 public:
-    Impl(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port, UdpPeer& parent);
+    Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, UdpPeer& parent);
 
     std::uint32_t address();
     std::uint16_t port();
@@ -21,22 +21,20 @@ private:
     UdpServer* m_server = nullptr;
 };
 
-UdpPeer::Impl::Impl(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port, UdpPeer& parent) :
+UdpPeer::Impl::Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, UdpPeer& parent) :
     UdpClientImplBase(loop, parent, parent, reinterpret_cast<uv_udp_t*>(udp_handle)),
     m_server(&server) {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_destination_address);
-    unix_addr.sin_family = AF_INET;
-    unix_addr.sin_port = host_to_network(port);
-    unix_addr.sin_addr.s_addr = host_to_network(address);
+    m_destination_endpoint = endpoint;
 }
 
+// TODO: ipv6
 std::uint32_t UdpPeer::Impl::address() {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_destination_address);
+    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(m_destination_endpoint.raw_endpoint());
     return network_to_host(unix_addr.sin_addr.s_addr);
 }
 
 std::uint16_t UdpPeer::Impl::port() {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_destination_address);
+    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(m_destination_endpoint.raw_endpoint());
     return network_to_host(unix_addr.sin_port);
 }
 
@@ -50,9 +48,9 @@ const UdpServer& UdpPeer::Impl::server() const {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-UdpPeer::UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port) :
+UdpPeer::UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint) :
     RefCounted(loop),
-    m_impl(new Impl(loop, server, udp_handle, address, port, *this)) {
+    m_impl(new Impl(loop, server, udp_handle, endpoint, *this)) {
 }
 
 UdpPeer::~UdpPeer() {

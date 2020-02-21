@@ -1,5 +1,6 @@
 #pragma once
 
+#include "io/Endpoint.h"
 #include "io/EventLoop.h"
 
 #include <uv.h>
@@ -32,7 +33,7 @@ protected:
     ParentType* m_parent = nullptr;
 
     std::unique_ptr<uv_udp_t, std::function<void(uv_udp_t*)>> m_udp_handle;
-    sockaddr_storage m_destination_address;
+    Endpoint m_destination_endpoint;
 
 private:
     std::uint64_t m_last_packet_time_ns = 0;
@@ -46,7 +47,6 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
     m_parent(&parent),
     m_udp_handle(new uv_udp_t, std::default_delete<uv_udp_t>()) {
-    std::memset(&m_destination_address, 0, sizeof(m_destination_address));
 
     this->set_last_packet_time(::uv_hrtime());
 
@@ -64,7 +64,6 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
     m_parent(&parent),
     m_udp_handle(udp_handle, [](uv_udp_t*){}) {
-        std::memset(&m_destination_address, 0, sizeof(m_destination_address));
         m_udp_handle->data = udp_handle->data;
         this->set_last_packet_time(::uv_hrtime());
 }

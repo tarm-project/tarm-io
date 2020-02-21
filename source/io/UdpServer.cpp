@@ -162,8 +162,8 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                         peer_ptr.reset(new UdpPeer(*this_.m_loop,
                                                    *this_.m_parent,
                                                    this_.m_udp_handle.get(),
-                                                   network_to_host(address->sin_addr.s_addr),
-                                                   network_to_host(address->sin_port)),
+                                                   { network_to_host(address->sin_addr.s_addr),
+                                                     network_to_host(address->sin_port) } ),
                                        free_udp_peer); // Ref count is == 1 here
 
                         peer_ptr->set_last_packet_time(::uv_hrtime());
@@ -182,8 +182,8 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                     auto peer = new UdpPeer(*this_.m_loop,
                                  *this_.m_parent,
                                  this_.m_udp_handle.get(),
-                                 network_to_host(address->sin_addr.s_addr),
-                                 network_to_host(address->sin_port)); // Ref count is == 1 here
+                                 { network_to_host(address->sin_addr.s_addr),
+                                   network_to_host(address->sin_port) } ); // Ref count is == 1 here
                     this_.m_data_receive_callback(*peer, data_chunk, error);
                     peer->unref();
                 }
@@ -191,7 +191,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
         } else {
             DataChunk data(nullptr, 0);
             // TODO: could address be available here???
-            UdpPeer peer(*this_.m_loop, *this_.m_parent, this_.m_udp_handle.get(), 0, 0);
+            UdpPeer peer(*this_.m_loop, *this_.m_parent, this_.m_udp_handle.get(), Endpoint{0, 0});
 
             IO_LOG(this_.m_loop, ERROR, &parent, "failed to receive UDP packet", error.string());
             this_.m_data_receive_callback(peer, data, error);

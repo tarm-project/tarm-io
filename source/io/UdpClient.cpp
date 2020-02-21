@@ -15,18 +15,18 @@ namespace io {
 class UdpClient::Impl : public detail::UdpClientImplBase<UdpClient, UdpClient::Impl> {
 public:
     Impl(EventLoop& loop, UdpClient& parent);
-    Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent);
+    Impl(EventLoop& loop, const Endpoint& endpoint, UdpClient& parent);
     Impl(EventLoop& loop, DataReceivedCallback receive_callback, UdpClient& parent);
     Impl(EventLoop& loop, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent);
-    Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, UdpClient& parent);
-    Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent);
+    Impl(EventLoop& loop, const Endpoint& endpoint, DataReceivedCallback receive_callback, UdpClient& parent);
+    Impl(EventLoop& loop, const Endpoint& endpoint, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent);
 
     using CloseHandler = void (*)(uv_handle_t* handle);
     bool close_on_timeout();
     bool close_with_removal();
     bool close(CloseHandler handler);
 
-    void set_destination(std::uint32_t host, std::uint16_t port);
+    void set_destination(const Endpoint& endpoint);
 
     void start_receive();
 
@@ -57,9 +57,9 @@ UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     };
 }
 
-UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, UdpClient& parent) :
+UdpClient::Impl::Impl(EventLoop& loop, const Endpoint& endpoint, UdpClient& parent) :
     Impl(loop, parent) {
-    set_destination(host, port);
+    set_destination(endpoint);
 }
 
 UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, UdpClient& parent) :
@@ -68,9 +68,9 @@ UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, Ud
     start_receive();
 }
 
-UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, UdpClient& parent) :
+UdpClient::Impl::Impl(EventLoop& loop, const Endpoint& endpoint, DataReceivedCallback receive_callback, UdpClient& parent) :
     Impl(loop, parent) {
-    set_destination(host, port);
+    set_destination(endpoint);
     m_receive_callback = receive_callback;
     start_receive();
 }
@@ -85,9 +85,9 @@ UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, st
     start_receive();
 }
 
-UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent) :
+UdpClient::Impl::Impl(EventLoop& loop, const Endpoint& endpoint, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent) :
     Impl(loop, parent) {
-    set_destination(host, port);
+    set_destination(endpoint);
     m_receive_callback = receive_callback;
     m_timeout_callback = timeout_callback;
     m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_time, this), &::uv_hrtime));
@@ -95,12 +95,8 @@ UdpClient::Impl::Impl(EventLoop& loop, std::uint32_t host, std::uint16_t port, D
     start_receive();
 }
 
-void UdpClient::Impl::set_destination(std::uint32_t host, std::uint16_t port) {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(&m_destination_address);
-    unix_addr.sin_family = AF_INET;
-    unix_addr.sin_port = host_to_network(port);
-    unix_addr.sin_addr.s_addr = host_to_network(host);
-    //uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
+void UdpClient::Impl::set_destination(const Endpoint& endpoint) {
+    m_destination_endpoint = endpoint;
 }
 
 bool UdpClient::Impl::close_with_removal() {
@@ -131,13 +127,14 @@ void UdpClient::Impl::start_receive() {
     }
 }
 
+// TODO: ipv6
 std::uint32_t UdpClient::Impl::ipv4_addr() const {
-    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(&m_destination_address);
+    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(m_destination_endpoint.raw_endpoint());
     return network_to_host(unix_addr.sin_addr.s_addr);
 }
 
 std::uint16_t UdpClient::Impl::port() const {
-    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(&m_destination_address);
+    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(m_destination_endpoint.raw_endpoint());
     return network_to_host(unix_addr.sin_port);
 }
 
@@ -166,7 +163,7 @@ void UdpClient::Impl::on_data_received(uv_udp_t* handle,
     if (!error) {
         if (addr && nread) {
             const auto& address_in_from = *reinterpret_cast<const struct sockaddr_in*>(addr);
-            const auto& address_in_expect = *reinterpret_cast<sockaddr_in*>(&this_.m_destination_address);
+            const auto& address_in_expect = *reinterpret_cast<sockaddr_in*>(this_.m_destination_endpoint.raw_endpoint());
 
             if (address_in_from.sin_addr.s_addr == address_in_expect.sin_addr.s_addr &&
                 address_in_from.sin_port == address_in_expect.sin_port) {
@@ -201,9 +198,9 @@ UdpClient::UdpClient(EventLoop& loop) :
     m_impl(new UdpClient::Impl(loop, *this)) {
 }
 
-UdpClient::UdpClient(EventLoop& loop, std::uint32_t dest_host, std::uint16_t dest_port) :
+UdpClient::UdpClient(EventLoop& loop, const Endpoint& endpoint) :
     Removable(loop),
-    m_impl(new UdpClient::Impl(loop, dest_host, dest_port, *this)) {
+    m_impl(new UdpClient::Impl(loop, endpoint, *this)) {
 }
 
 UdpClient::UdpClient(EventLoop& loop, DataReceivedCallback receive_callback) :
@@ -220,29 +217,27 @@ UdpClient::UdpClient(EventLoop& loop,
 }
 
 UdpClient::UdpClient(EventLoop& loop,
-                     std::uint32_t dest_host,
-                     std::uint16_t dest_port,
+                     const Endpoint& endpoint,
                      DataReceivedCallback receive_callback) :
     Removable(loop),
-    m_impl(new UdpClient::Impl(loop, dest_host, dest_port, receive_callback, *this)) {
+    m_impl(new UdpClient::Impl(loop, endpoint, receive_callback, *this)) {
 }
 
 UdpClient::UdpClient(EventLoop& loop,
-                     std::uint32_t dest_host,
-                     std::uint16_t dest_port,
+                     const Endpoint& endpoint,
                      DataReceivedCallback receive_callback,
                      std::size_t timeout_ms,
                      TimeoutCallback timeout_callback) :
     Removable(loop),
-    m_impl(new UdpClient::Impl(loop, dest_host, dest_port, receive_callback, timeout_ms, timeout_callback, *this)) {
+    m_impl(new UdpClient::Impl(loop, endpoint, receive_callback, timeout_ms, timeout_callback, *this)) {
 }
 
 
 UdpClient::~UdpClient() {
 }
 
-void UdpClient::set_destination(std::uint32_t host, std::uint16_t port) {
-    return m_impl->set_destination(host, port);
+void UdpClient::set_destination(const Endpoint& endpoint) {
+    return m_impl->set_destination(endpoint);
 }
 
 void UdpClient::send_data(const std::string& message, EndSendCallback callback) {

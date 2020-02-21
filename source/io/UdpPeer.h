@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CommonMacros.h"
+#include "Endpoint.h"
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
@@ -45,7 +46,7 @@ protected:
     IO_DLL_PUBLIC ~UdpPeer();
 
 private:
-    IO_DLL_PUBLIC UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, std::uint32_t address, std::uint16_t port);
+    IO_DLL_PUBLIC UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint);
 
     IO_DLL_PUBLIC void set_last_packet_time(std::uint64_t time);
 

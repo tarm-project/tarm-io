@@ -84,8 +84,8 @@ void DtlsClient::Impl::connect(const std::string& address,
     }
 
     m_client = new UdpClient(*m_loop,
-                             string_to_ip4_addr(address),
-                             port,
+                             { string_to_ip4_addr(address),
+                               port },
                              [this](UdpClient&, const DataChunk& chunk, const Error&) {
                                  this->on_data_receive(chunk.buf.get(), chunk.size);
                              }
