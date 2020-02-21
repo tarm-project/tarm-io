@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace io {
 
@@ -25,14 +26,13 @@ public:
     };
 
     IO_DLL_PUBLIC Endpoint();
-
     IO_DLL_PUBLIC Endpoint(const std::string& address, std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(std::array<std::uint8_t, 4> address, std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(std::array<std::uint8_t, 16> address, std::uint16_t port);
     IO_DLL_PUBLIC Endpoint(std::uint32_t address, std::uint16_t port);
+    IO_DLL_PUBLIC Endpoint(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port);
+    IO_DLL_PUBLIC Endpoint(const std::vector<std::uint8_t>& address_bytes, std::uint16_t port);
     IO_DLL_PUBLIC ~Endpoint();
 
-    IO_DLL_PUBLIC std::string as_string() const;
+    IO_DLL_PUBLIC std::string address_string() const;
     IO_DLL_PUBLIC std::uint16_t port() const;
 
     IO_DLL_PUBLIC Type type() const;

@@ -14,11 +14,10 @@ class Endpoint::Impl {
 public:
     Impl();
     Impl(const std::string& address, std::uint16_t port);
-    Impl(std::array<std::uint8_t, 4> address, std::uint16_t port);
-    Impl(std::array<std::uint8_t, 16> address, std::uint16_t port);
     Impl(std::uint32_t address, std::uint16_t port);
+    Impl(const std::uint8_t* address_bytes, std::size_t _address_size, std::uint16_t port);
 
-    std::string as_string() const;
+    std::string address_string() const;
     std::uint16_t port() const;
     Type type() const;
 
@@ -45,6 +44,7 @@ Endpoint::Impl::Impl(const std::string& address, std::uint16_t port) {
     m_type = IP_V4;
 }
 
+/*
 Endpoint::Impl::Impl(std::array<std::uint8_t, 4> address, std::uint16_t port) {
     m_type = IP_V4;
     auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
@@ -55,10 +55,19 @@ Endpoint::Impl::Impl(std::array<std::uint8_t, 4> address, std::uint16_t port) {
                             std::uint32_t(address[2]) << 8  |
                             std::uint32_t(address[3]);
 }
+*/
 
-Endpoint::Impl::Impl(std::array<std::uint8_t, 16> address, std::uint16_t port) {
-    assert(false);
-    // TODO:
+Endpoint::Impl::Impl(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port) {
+    if (address_size == 4) {
+            m_type = IP_V4;
+            auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
+            addr->sin_family = AF_INET;
+            addr->sin_port = host_to_network(port);
+            addr->sin_addr.s_addr = std::uint32_t(address_bytes[3]) << 24 |
+                                    std::uint32_t(address_bytes[2]) << 16 |
+                                    std::uint32_t(address_bytes[1]) << 8  |
+                                    std::uint32_t(address_bytes[0]);
+    }
 }
 
 Endpoint::Impl::Impl(std::uint32_t address, std::uint16_t port) {
@@ -69,7 +78,12 @@ Endpoint::Impl::Impl(std::uint32_t address, std::uint16_t port) {
     addr->sin_addr.s_addr = host_to_network(address);
 }
 
-std::string Endpoint::Impl::as_string() const {
+std::string Endpoint::Impl::address_string() const {
+    if (m_type == IP_V4) {
+        const auto addr = reinterpret_cast<const ::sockaddr_in*>(&m_address_storage);
+        return ip4_addr_to_string(network_to_host(addr->sin_addr.s_addr));
+    }
+
     return "";
 }
 
@@ -101,23 +115,24 @@ Endpoint::Endpoint(const std::string& address, std::uint16_t port) :
     m_impl(new Impl(address, port)) {
 }
 
-Endpoint::Endpoint(std::array<std::uint8_t, 4> address, std::uint16_t port) :
-    m_impl(new Impl(address, port)) {
-}
-
-Endpoint::Endpoint(std::array<std::uint8_t, 16> address, std::uint16_t port) :
-    m_impl(new Impl(address, port)) {
-}
-
 Endpoint::Endpoint(std::uint32_t address, std::uint16_t port) :
     m_impl(new Impl(address, port)) {
+
+}
+
+Endpoint::Endpoint(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port) :
+    m_impl(new Impl(address_bytes, address_size, port)){
+}
+
+Endpoint::Endpoint(const std::vector<std::uint8_t>& address_bytes, std::uint16_t port) :
+    m_impl(new Impl(&address_bytes.front(), address_bytes.size(), port)){
 }
 
 Endpoint::~Endpoint() {
 }
 
-std::string Endpoint::as_string() const {
-    return m_impl->as_string();
+std::string Endpoint::address_string() const {
+    return m_impl->address_string();
 }
 
 std::uint16_t Endpoint::port() const {
