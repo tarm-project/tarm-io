@@ -24,6 +24,9 @@ private:
 
 class Endpoint {
 public:
+    friend class TcpClient;
+    friend class UdpClient;
+
     IO_FORBID_COPY(Endpoint);
     IO_ALLOW_MOVE(Endpoint);
 
@@ -44,11 +47,10 @@ public:
 
     IO_DLL_PUBLIC Type type() const;
 
-    // TODO:
-    IO_DLL_PUBLIC void* raw_endpoint();
-    IO_DLL_PUBLIC const void* raw_endpoint() const;
-
 private:
+    void* raw_endpoint();
+    const void* raw_endpoint() const;
+
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };

@@ -4,8 +4,9 @@
 #include "Convert.h"
 #include "Error.h"
 
-
 #include <uv.h>
+
+#include <assert.h>
 
 namespace io {
 
@@ -49,15 +50,19 @@ Endpoint::Impl::Impl(std::array<std::uint8_t, 4> address, std::uint16_t port) {
                             std::uint32_t(address[1]) << 16 |
                             std::uint32_t(address[2]) << 8  |
                             std::uint32_t(address[3]);
-
 }
 
 Endpoint::Impl::Impl(std::array<std::uint8_t, 16> address, std::uint16_t port) {
-
+    assert(false);
+    // TODO:
 }
 
 Endpoint::Impl::Impl(std::uint32_t address, std::uint16_t port) {
-
+    m_type = IP_V4;
+    auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
+    addr->sin_family = AF_INET;
+    addr->sin_port = host_to_network(port);
+    addr->sin_addr.s_addr = host_to_network(address);
 }
 
 std::string Endpoint::Impl::as_string() const {
@@ -65,8 +70,8 @@ std::string Endpoint::Impl::as_string() const {
 }
 
 std::uint16_t Endpoint::Impl::port() const {
+    // TODO: IPV6?
     auto addr = reinterpret_cast<const ::sockaddr_in*>(&m_address_storage);
-    // TODO: IPV6
     return network_to_host(addr->sin_port);
 }
 

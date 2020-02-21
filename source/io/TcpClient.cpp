@@ -17,6 +17,7 @@ public:
     bool schedule_removal();
 
     void connect(const Endpoint& endpoint,
+                 const void* raw_endpoint,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback = nullptr);
@@ -61,6 +62,7 @@ EventLoop* TcpClient::Impl::loop() {
 }
 
 void TcpClient::Impl::connect(const Endpoint& endpoint,
+                              const void* raw_endpoint,
                               ConnectCallback connect_callback,
                               DataReceiveCallback receive_callback,
                               CloseCallback close_callback) {
@@ -75,7 +77,7 @@ void TcpClient::Impl::connect(const Endpoint& endpoint,
         m_connect_req->data = this;
     }
 
-    auto addr = reinterpret_cast<const ::sockaddr_in*>(endpoint.raw_endpoint());
+    auto addr = reinterpret_cast<const ::sockaddr_in*>(raw_endpoint);
 
     m_port = endpoint.port();
     m_ipv4_addr = network_to_host(addr->sin_addr.s_addr);
@@ -264,7 +266,7 @@ void TcpClient::connect(const Endpoint& endpoint,
                         ConnectCallback connect_callback,
                         DataReceiveCallback receive_callback,
                         CloseCallback close_callback) {
-    return m_impl->connect(endpoint, connect_callback, receive_callback, close_callback);
+    return m_impl->connect(endpoint, endpoint.raw_endpoint(), connect_callback, receive_callback, close_callback);
 }
 
 void TcpClient::close() {
