@@ -17,6 +17,8 @@ public:
     Impl(std::uint32_t address, std::uint16_t port);
     Impl(const std::uint8_t* address_bytes, std::size_t _address_size, std::uint16_t port);
 
+    Impl(const Impl& other);
+
     std::string address_string() const;
     std::uint16_t port() const;
     Type type() const;
@@ -30,6 +32,11 @@ private:
 };
 
 Endpoint::Impl::Impl() {
+}
+
+Endpoint::Impl::Impl(const Impl& other) :
+   m_address_storage(other.m_address_storage),
+   m_type(other.m_type) {
 }
 
 Endpoint::Impl::Impl(const std::string& address, std::uint16_t port) {
@@ -129,6 +136,15 @@ Endpoint::Endpoint(const std::vector<std::uint8_t>& address_bytes, std::uint16_t
 }
 
 Endpoint::~Endpoint() {
+}
+
+Endpoint& Endpoint::operator=(const Endpoint& other) {
+    (*m_impl.get()) = (*other.m_impl.get());
+    return *this;
+}
+
+Endpoint::Endpoint(const Endpoint& other) :
+    m_impl(new Impl(*other.m_impl.get())) {
 }
 
 std::string Endpoint::address_string() const {

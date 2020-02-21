@@ -11,13 +11,26 @@
 
 namespace io {
 
+// TODO: private details in public domain
+namespace detail {
+    template<typename ParentType, typename ImplType>
+    class UdpClientImplBase;
+}
+
+
 class Endpoint {
 public:
     friend class TcpClient;
     friend class UdpClient;
+    friend class UdpPeer;
 
-    IO_FORBID_COPY(Endpoint);
+    template<typename ParentType, typename ImplType>
+    friend class detail::UdpClientImplBase;
+
     IO_ALLOW_MOVE(Endpoint);
+
+    IO_DLL_PUBLIC Endpoint& operator=(const Endpoint& other);
+    IO_DLL_PUBLIC Endpoint(const Endpoint& other);
 
     enum Type {
         UNDEFINED = 0,

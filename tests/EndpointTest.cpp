@@ -17,3 +17,26 @@ TEST_F(EndpointTest, ipv4_from_array) {
     EXPECT_EQ(io::Endpoint::IP_V4, endpoint.type());
     EXPECT_EQ("127.0.0.1", endpoint.address_string());
 }
+
+TEST_F(EndpointTest, copy_constructor) {
+    std::uint8_t array[4] = {127, 0, 0, 1};
+    io::Endpoint endpoint(array, sizeof(array), 1234);
+
+    io::Endpoint endpoint_copy(endpoint);
+
+    EXPECT_EQ(io::Endpoint::IP_V4, endpoint_copy.type());
+    EXPECT_EQ("127.0.0.1", endpoint_copy.address_string());
+    EXPECT_EQ(1234, endpoint_copy.port());
+}
+
+TEST_F(EndpointTest, copy_assignment) {
+    std::uint8_t array[4] = {127, 0, 0, 1};
+    io::Endpoint endpoint(array, sizeof(array), 1234);
+
+    io::Endpoint endpoint_copy;
+    endpoint_copy = endpoint;
+
+    EXPECT_EQ(io::Endpoint::IP_V4, endpoint_copy.type());
+    EXPECT_EQ("127.0.0.1", endpoint_copy.address_string());
+    EXPECT_EQ(1234, endpoint_copy.port());
+}
