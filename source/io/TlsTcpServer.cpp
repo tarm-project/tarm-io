@@ -189,8 +189,8 @@ Error TlsTcpServer::Impl::listen(const std::string& ip_addr_str,
     }
 
     using namespace std::placeholders;
-    return m_tcp_server->listen(ip_addr_str,
-                                port,
+    return m_tcp_server->listen({ip_addr_str,
+                                 port},
                                 std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2),
                                 std::bind(&TlsTcpServer::Impl::on_data_receive, this, _1, _2, _3),
                                 std::bind(&TlsTcpServer::Impl::on_close, this, _1, _2));

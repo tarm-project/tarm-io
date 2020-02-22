@@ -14,8 +14,7 @@ public:
     Impl(EventLoop& loop, TcpServer& parent);
     ~Impl();
 
-    Error listen(const std::string& ip_addr_str,
-                 std::uint16_t port,
+    Error listen(const Endpoint& endpoint,
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback,
                  CloseConnectionCallback close_connection_callback,
@@ -74,12 +73,15 @@ TcpServer::Impl::~Impl() {
     }
 }
 
-Error TcpServer::Impl::listen(const std::string& ip_addr_str,
-                              std::uint16_t port,
+Error TcpServer::Impl::listen(const Endpoint& endpoint,
                               NewConnectionCallback new_connection_callback,
                               DataReceivedCallback data_receive_callback,
                               CloseConnectionCallback close_connection_callback,
                               int backlog_size) {
+    if (endpoint.type() == Endpoint::UNDEFINED) {
+        return Error(StatusCode::INVALID_ARGUMENT);
+    }
+
     m_server_handle = new uv_tcp_t;
     const auto init_status = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
     m_server_handle->data = this;
@@ -100,14 +102,7 @@ Error TcpServer::Impl::listen(const std::string& ip_addr_str,
     setsockopt(handle, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
     */
 
-    struct sockaddr_in unix_addr;
-    const int ip4_status = uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
-    if (ip4_status < 0) {
-        IO_LOG(m_loop, ERROR, m_parent, uv_strerror(ip4_status));
-        return ip4_status;
-    }
-
-    const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(&unix_addr), 0);
+    const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(endpoint.raw_endpoint()), 0);
     if (bind_status < 0) {
         IO_LOG(m_loop, ERROR, m_parent, "Bind failed:", uv_strerror(bind_status));
         return bind_status;
@@ -259,13 +254,12 @@ TcpServer::TcpServer(EventLoop& loop) :
 TcpServer::~TcpServer() {
 }
 
-Error TcpServer::listen(const std::string& ip_addr_str,
-                        std::uint16_t port,
+Error TcpServer::listen(const Endpoint& endpoint,
                         NewConnectionCallback new_connection_callback,
                         DataReceivedCallback data_receive_callback,
                         CloseConnectionCallback close_connection_callback,
                         int backlog_size) {
-    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, close_connection_callback, backlog_size);
+    return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, close_connection_callback, backlog_size);
 }
 
 void TcpServer::shutdown() {

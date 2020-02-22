@@ -21,6 +21,7 @@ namespace detail {
 class Endpoint {
 public:
     friend class TcpClient;
+    friend class TcpServer;
     friend class UdpClient;
     friend class UdpPeer;
 

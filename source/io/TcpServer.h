@@ -2,6 +2,7 @@
 
 #include "CommonMacros.h"
 #include "DataChunk.h"
+#include "Endpoint.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Removable.h"
@@ -29,16 +30,14 @@ public:
     using DataReceivedCallback = std::function<void(TcpConnectedClient&, const DataChunk&, const Error&)>;
     using CloseConnectionCallback = std::function<void(TcpConnectedClient&, const Error&)>;
 
-    // TODO: test all move constructors
     IO_FORBID_COPY(TcpServer);
     IO_FORBID_MOVE(TcpServer);
 
     IO_DLL_PUBLIC TcpServer(EventLoop& loop);
-    IO_DLL_PUBLIC ~TcpServer(); // TODO: need to test if correct shutdown works in case of destruction of the server
+    IO_DLL_PUBLIC ~TcpServer(); // TODO: make private
 
     IO_DLL_PUBLIC
-    Error listen(const std::string& ip_addr_str,
-                 std::uint16_t port,
+    Error listen(const Endpoint& endpoint,
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback,
                  CloseConnectionCallback close_connection_callback,

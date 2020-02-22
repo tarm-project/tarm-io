@@ -37,7 +37,7 @@ TEST_F(TcpClientServerTest, invalid_ip4_address) {
     io::EventLoop loop;
 
     io::TcpServer server(loop);
-    auto listen_error = server.listen("1234567890", m_default_port,
+    auto listen_error = server.listen({"1234567890", m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -65,7 +65,7 @@ TEST_F(TcpClientServerTest, bind_privileged) {
     io::EventLoop loop;
 
     io::TcpServer server(loop);
-    auto listen_error = server.listen(m_default_addr, 100,
+    auto listen_error = server.listen({m_default_addr, 100},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -114,7 +114,7 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     bool data_received = false;
 
     io::TcpServer server(loop);
-    auto listen_error = server.listen("0.0.0.0", m_default_port,
+    auto listen_error = server.listen({"0.0.0.0", m_default_port},
     [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
         EXPECT_EQ(client.ipv4_addr(), 0x7F000001);
@@ -142,7 +142,8 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     bool data_sent = false;
 
     auto client = new io::TcpClient(loop);
-    client->connect({m_default_addr, m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
+    client->connect({m_default_addr, m_default_port},
+    [&](io::TcpClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
         EXPECT_TRUE(client.is_open());
 
@@ -169,7 +170,7 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     bool data_received_2 = false;
 
     io::TcpServer server(loop);
-    server.listen("0.0.0.0", m_default_port,
+    server.listen({"0.0.0.0", m_default_port},
     [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
     },
@@ -235,7 +236,7 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
     std::thread server_thread([this, &message, &receive_called]() {
         io::EventLoop loop;
         io::TcpServer server(loop);
-        server.listen("0.0.0.0", m_default_port,
+        server.listen({"0.0.0.0", m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -285,7 +286,7 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
     bool data_sent = false;
 
     io::TcpServer server(loop);
-    server.listen("0.0.0.0", m_default_port,
+    server.listen({"0.0.0.0", m_default_port},
     [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
         client.send_data(message, [&](io::TcpConnectedClient& client, const io::Error& error) {
@@ -339,7 +340,7 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
 
         std::vector<unsigned char> total_bytes_received;
 
-        server.listen("0.0.0.0", m_default_port,
+        server.listen({"0.0.0.0", m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -429,7 +430,7 @@ TEST_F(TcpClientServerTest, DISABLED_server_disconnect_client_from_new_connectio
 
     std::vector<unsigned char> total_bytes_received;
 
-    server.listen("0.0.0.0", m_default_port,
+    server.listen({"0.0.0.0", m_default_port},
     [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
         client.send_data(server_message);
@@ -499,7 +500,7 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
         ++connected_client_close_callback_count;
     };
 
-    server.listen(m_default_addr, m_default_port,
+    server.listen({m_default_addr, m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_connect_callback_count;
@@ -548,7 +549,7 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     io::EventLoop loop;
 
     io::TcpServer server(loop);
-    server.listen(m_default_addr, m_default_port,
+    server.listen({m_default_addr, m_default_port},
     [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
     },
@@ -605,7 +606,7 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
     std::vector<bool> clinets_data_log(NUMBER_OF_CLIENTS, false);
 
     io::TcpServer server(server_loop);
-    server.listen(m_default_addr, m_default_port,
+    server.listen({m_default_addr, m_default_port},
     [&connections_counter](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
         ++connections_counter;
@@ -697,7 +698,7 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
 
         };
 
-    server.listen(m_default_addr, m_default_port, on_server_new_connection, on_server_receive_data, on_client_close);
+    server.listen({m_default_addr, m_default_port}, on_server_new_connection, on_server_receive_data, on_client_close);
 
     io::TcpClient::ConnectCallback connect_callback =
         [](io::TcpClient& client, const io::Error error) {
@@ -729,7 +730,7 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
     io::EventLoop loop;
 
     io::TcpServer server(loop);
-    server.listen(m_default_addr, m_default_port,
+    server.listen({m_default_addr, m_default_port},
         [](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -780,8 +781,7 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
 
     io::TcpServer server(loop);
     server.listen(
-        m_default_addr,
-        m_default_port,
+        io::Endpoint{m_default_addr, m_default_port},
         [](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -853,7 +853,7 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
     bool client_shutdown_complete = false;
 
     io::TcpServer server(loop);
-    auto listen_error = server.listen("0.0.0.0", m_default_port,
+    auto listen_error = server.listen({"0.0.0.0", m_default_port},
     [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
     },
@@ -913,7 +913,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
     io::EventLoop loop;
 
     io::TcpServer server(loop);
-    auto listen_error = server.listen(m_default_addr, m_default_port,
+    auto listen_error = server.listen({m_default_addr, m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             client.send_data(buf, DATA_SIZE,
@@ -974,7 +974,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
     io::EventLoop loop;
 
     io::TcpServer server(loop);
-    auto listen_error = server.listen(m_default_addr, m_default_port,
+    auto listen_error = server.listen({m_default_addr, m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             client.send_data("_",
@@ -1060,7 +1060,7 @@ TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
         }
     };
 
-    auto listen_error = server.listen(m_default_addr, m_default_port,
+    auto listen_error = server.listen({m_default_addr, m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             send_data(client);
@@ -1125,7 +1125,7 @@ TEST_F(TcpClientServerTest, client_saves_received_buffer) {
     std::size_t server_receive_counter = 0;
 
     io::TcpServer server(loop);
-    auto listen_error = server.listen(m_default_addr, m_default_port,
+    auto listen_error = server.listen({m_default_addr, m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             //client.delay_send(false); // disabling Nagle's algorithm
             EXPECT_FALSE(error);
@@ -1208,7 +1208,7 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
     io::EventLoop loop;
 
     io::TcpServer server(loop);
-    auto listen_error = server.listen(m_default_addr, m_default_port,
+    auto listen_error = server.listen({m_default_addr, m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             client.send_data("go away!",
