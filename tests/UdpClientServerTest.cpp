@@ -38,7 +38,7 @@ TEST_F(UdpClientServerTest, server_bind) {
     io::EventLoop loop;
 
     auto server = new io::UdpServer(loop);
-    auto error = server->start_receive(m_default_addr, m_default_port, nullptr);
+    auto error = server->start_receive({m_default_addr, m_default_port}, nullptr);
     ASSERT_FALSE(error);
     server->schedule_removal();
 
@@ -51,7 +51,7 @@ TEST_F(UdpClientServerTest, bind_privileged) {
     io::EventLoop loop;
 
     auto server = new io::UdpServer(loop);
-    ASSERT_EQ(io::Error(io::StatusCode::PERMISSION_DENIED), server->start_receive(m_default_addr, 80, nullptr));
+    ASSERT_EQ(io::Error(io::StatusCode::PERMISSION_DENIED), server->start_receive({m_default_addr, 80}, nullptr));
     server->schedule_removal();
 
     ASSERT_EQ(0, loop.run());
@@ -67,7 +67,7 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     bool data_received = false;
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(server, &peer.server());
@@ -102,7 +102,7 @@ TEST_F(UdpClientServerTest, peer_identity_without_preservation_on_server) {
     std::size_t server_receive_counter = 0;
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
 
@@ -153,7 +153,7 @@ TEST_F(UdpClientServerTest, peer_identity_with_preservation_on_server) {
     std::size_t server_receive_counter = 0;
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
 
@@ -202,7 +202,7 @@ TEST_F(UdpClientServerTest, on_new_peer_callback) {
     std::size_t on_data_receive_counter = 0;
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::UdpPeer& peer, const io::Error& error) {
             EXPECT_FALSE(error);
 
@@ -277,7 +277,7 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
     std::size_t client_send_counter = 0;
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
 
@@ -372,7 +372,7 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
     std::unordered_map<std::string, std::size_t> peer_to_close_count;
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::UdpPeer& client, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
 
@@ -472,7 +472,7 @@ TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
     auto t2 = std::chrono::high_resolution_clock::now();
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::UdpPeer& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             auto timer = new io::Timer(loop);
@@ -537,7 +537,7 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     std::size_t client_data_send_counter = 0;
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
         ++server_data_receive_counter;
@@ -619,7 +619,7 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
             }
         };
 
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
 
@@ -720,7 +720,7 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
     bool data_received = false;
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
         EXPECT_EQ(SIZE, data.size);
@@ -803,7 +803,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
         };
 
     auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive(m_default_addr, m_default_port,
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::UdpPeer& client, const io::DataChunk& chunk, const io::Error& error) {
             EXPECT_FALSE(error);
 
@@ -895,7 +895,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
         io::EventLoop server_loop;
 
         auto server = new io::UdpServer(server_loop);
-        auto listen_error = server->start_receive(m_default_addr, m_default_port,
+        auto listen_error = server->start_receive({m_default_addr, m_default_port},
             [&](io::UdpPeer& client, const io::DataChunk& chunk, const io::Error& error) {
                 EXPECT_FALSE(error);
 
@@ -991,7 +991,7 @@ TEST_F(UdpClientServerTest, send_after_schedule_removal) {
     std::size_t client_send_counter = 0;
 
     auto server = new io::UdpServer(loop);
-    io::Error listen_error = server->start_receive(m_default_addr, m_default_port,
+    io::Error listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_receive_counter;
@@ -1051,7 +1051,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
     std::size_t client_send_counter = 0;
 
     auto server = new io::UdpServer(loop);
-    io::Error listen_error = server->start_receive(m_default_addr, m_default_port,
+    io::Error listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_receive_counter;

@@ -18,9 +18,9 @@ class UdpServer::Impl : public detail::UdpImplBase<UdpServer, UdpServer::Impl>{
 public:
     Impl(EventLoop& loop, UdpServer& parent);
 
-    Error bind(const std::string& ip_addr_str, std::uint16_t port);
-    Error start_receive(const std::string& ip_addr_str, std::uint16_t port, DataReceivedCallback data_receive_callback);
-    Error start_receive(const std::string& ip_addr_str, std::uint16_t port, NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
+    Error bind(const Endpoint& endpoint);
+    Error start_receive(const Endpoint& endpoint, DataReceivedCallback data_receive_callback);
+    Error start_receive(const Endpoint& endpoint, NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
 
     void close();
     bool close_with_removal();
@@ -48,19 +48,19 @@ UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
     UdpImplBase(loop, parent) {
 }
 
-Error UdpServer::Impl::bind(const std::string& ip_addr_str, std::uint16_t port) {
-    struct sockaddr_in unix_addr;
-    uv_ip4_addr(ip_addr_str.c_str(), port, &unix_addr);
+Error UdpServer::Impl::bind(const Endpoint& endpoint) {
+    if (endpoint.type() == Endpoint::UNDEFINED) {
+        return Error(StatusCode::INVALID_ARGUMENT);
+    }
 
-    auto uv_status = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const struct sockaddr*>(&unix_addr), UV_UDP_REUSEADDR);
-    Error error(uv_status);
-    return error;
+    auto uv_status = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const struct sockaddr*>(endpoint.raw_endpoint()), UV_UDP_REUSEADDR);
+    return Error(uv_status);;
 }
 
-Error UdpServer::Impl::start_receive(const std::string& ip_addr_str, std::uint16_t port, DataReceivedCallback data_receive_callback) {
+Error UdpServer::Impl::start_receive(const Endpoint& endpoint, DataReceivedCallback data_receive_callback) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
-    Error bind_error = bind(ip_addr_str, port);
+    Error bind_error = bind(endpoint);
     if (bind_error) {
         return bind_error;
     }
@@ -74,8 +74,7 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str, std::uint16
     return Error(0);
 }
 
-Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
-                                     std::uint16_t port,
+Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
                                      NewPeerCallback new_peer_callback,
                                      DataReceivedCallback receive_callback,
                                      std::size_t timeout_ms,
@@ -107,7 +106,7 @@ Error UdpServer::Impl::start_receive(const std::string& ip_addr_str,
 
     m_peers_backlog.reset(new BacklogWithTimeout<std::shared_ptr<UdpPeer>>(*m_loop, timeout_ms, on_expired, time_getter, &uv_hrtime));
 
-    return start_receive(ip_addr_str, port, receive_callback);
+    return start_receive(endpoint, receive_callback);
 }
 
 void UdpServer::Impl::close() {
@@ -219,16 +218,16 @@ UdpServer::UdpServer(EventLoop& loop) :
 UdpServer::~UdpServer() {
 }
 
-Error UdpServer::start_receive(const std::string& ip_addr_str, std::uint16_t port, DataReceivedCallback data_receive_callback) {
-    return m_impl->start_receive(ip_addr_str, port, data_receive_callback);
+Error UdpServer::start_receive(const Endpoint& endpoint, DataReceivedCallback data_receive_callback) {
+    return m_impl->start_receive(endpoint, data_receive_callback);
 }
 
-Error UdpServer::start_receive(const std::string& ip_addr_str, std::uint16_t port, NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback) {
-    return m_impl->start_receive(ip_addr_str, port, new_peer_callback, receive_callback, timeout_ms, timeout_callback);
+Error UdpServer::start_receive(const Endpoint& endpoint, NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback) {
+    return m_impl->start_receive(endpoint, new_peer_callback, receive_callback, timeout_ms, timeout_callback);
 }
 
-Error UdpServer::start_receive(const std::string& ip_addr_str, std::uint16_t port, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback) {
-    return m_impl->start_receive(ip_addr_str, port, nullptr, receive_callback, timeout_ms, timeout_callback);
+Error UdpServer::start_receive(const Endpoint& endpoint, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback) {
+    return m_impl->start_receive(endpoint, nullptr, receive_callback, timeout_ms, timeout_callback);
 }
 
 void UdpServer::close() {

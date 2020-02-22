@@ -184,8 +184,8 @@ Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
     }
 
     using namespace std::placeholders;
-    return m_udp_server->start_receive(ip_addr_str,
-                                       port,
+    return m_udp_server->start_receive({ip_addr_str,
+                                        port},
                                        std::bind(&DtlsServer::Impl::on_new_peer, this, _1, _2),
                                        std::bind(&DtlsServer::Impl::on_data_receive, this, _1, _2, _3),
                                        timeout_ms,

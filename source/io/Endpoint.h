@@ -24,6 +24,7 @@ public:
     friend class TcpServer;
     friend class UdpClient;
     friend class UdpPeer;
+    friend class UdpServer;
 
     template<typename ParentType, typename ImplType>
     friend class detail::UdpClientImplBase;

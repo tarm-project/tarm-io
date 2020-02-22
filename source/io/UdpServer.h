@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CommonMacros.h"
+#include "Endpoint.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "DataChunk.h"
@@ -27,19 +28,16 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC Error start_receive(const std::string& ip_addr_str,
-                                      std::uint16_t port,
+    IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
                                       DataReceivedCallback receive_callback);
 
-    IO_DLL_PUBLIC Error start_receive(const std::string& ip_addr_str,
-                                      std::uint16_t port,
+    IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
                                       NewPeerCallback new_peer_callback,
                                       DataReceivedCallback receive_callback,
                                       std::size_t timeout_ms,
                                       PeerTimeoutCallback timeout_callback);
 
-    IO_DLL_PUBLIC Error start_receive(const std::string& ip_addr_str,
-                                      std::uint16_t port,
+    IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
                                       DataReceivedCallback receive_callback,
                                       std::size_t timeout_ms,
                                       PeerTimeoutCallback timeout_callback);
