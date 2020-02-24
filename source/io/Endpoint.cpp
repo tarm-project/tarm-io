@@ -131,8 +131,8 @@ Endpoint::Endpoint(const std::uint8_t* address_bytes, std::size_t address_size, 
     m_impl(new Impl(address_bytes, address_size, port)){
 }
 
-Endpoint::Endpoint(const std::vector<std::uint8_t>& address_bytes, std::uint16_t port) :
-    m_impl(new Impl(&address_bytes.front(), address_bytes.size(), port)){
+Endpoint::Endpoint(std::initializer_list<std::uint8_t> address_bytes, std::uint16_t port) :
+    m_impl(new Impl(&*address_bytes.begin(), address_bytes.size(), port)) {
 }
 
 Endpoint::~Endpoint() {

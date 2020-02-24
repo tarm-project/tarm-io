@@ -40,3 +40,19 @@ TEST_F(EndpointTest, copy_assignment) {
     EXPECT_EQ("127.0.0.1", endpoint_copy.address_string());
     EXPECT_EQ(1234, endpoint_copy.port());
 }
+
+TEST_F(EndpointTest, inplace_address) {
+    io::Endpoint endpoint({127, 0, 0, 1}, 1234);
+
+    EXPECT_EQ(io::Endpoint::IP_V4, endpoint.type());
+    EXPECT_EQ("127.0.0.1", endpoint.address_string());
+    EXPECT_EQ(1234, endpoint.port());
+}
+
+TEST_F(EndpointTest, empty_inplace_address) {
+    io::Endpoint endpoint({}, 1234);
+
+    EXPECT_EQ(io::Endpoint::UNDEFINED, endpoint.type());
+    EXPECT_EQ("", endpoint.address_string());
+    EXPECT_EQ(0, endpoint.port());
+}

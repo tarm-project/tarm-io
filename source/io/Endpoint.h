@@ -44,7 +44,7 @@ public:
     IO_DLL_PUBLIC Endpoint(const std::string& address, std::uint16_t port);
     IO_DLL_PUBLIC Endpoint(std::uint32_t address, std::uint16_t port);
     IO_DLL_PUBLIC Endpoint(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(const std::vector<std::uint8_t>& address_bytes, std::uint16_t port);
+    IO_DLL_PUBLIC Endpoint(std::initializer_list<std::uint8_t> address_bytes, std::uint16_t port);
     IO_DLL_PUBLIC ~Endpoint();
 
     IO_DLL_PUBLIC std::string address_string() const;
