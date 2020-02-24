@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
     io::EventLoop loop;
     auto client = new io::TlsTcpClient(loop);
 
-    client->connect(argv[1], 443,
+    client->connect({argv[1], 443},
         [](io::TlsTcpClient& client, const io::Error& error) {
             if (error) {
                 std::cerr << error.string() << std::endl;

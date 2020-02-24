@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
     const std::string key_name = "key.pem";
 
     io::TlsTcpServer server(loop, cert_name, key_name);
-    auto listen_result = server.listen("0.0.0.0", 12345,
+    auto listen_result = server.listen({"0.0.0.0", 12345},
     [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
     },
     [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
