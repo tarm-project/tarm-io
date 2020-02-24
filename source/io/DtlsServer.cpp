@@ -23,8 +23,7 @@ public:
     Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent);
     ~Impl();
 
-    Error listen(const std::string& ip_addr_str,
-                 std::uint16_t port,
+    Error listen(const Endpoint& endpoint,
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback,
                  std::size_t timeout_ms,
@@ -132,8 +131,7 @@ void DtlsServer::Impl::on_timeout(UdpPeer& udp_client, const Error& error) {
     delete &dtls_client;
 }
 
-Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
-                               std::uint16_t port,
+Error DtlsServer::Impl::listen(const Endpoint& endpoint,
                                NewConnectionCallback new_connection_callback,
                                DataReceivedCallback data_receive_callback,
                                std::size_t timeout_ms,
@@ -184,8 +182,7 @@ Error DtlsServer::Impl::listen(const std::string& ip_addr_str,
     }
 
     using namespace std::placeholders;
-    return m_udp_server->start_receive({ip_addr_str,
-                                        port},
+    return m_udp_server->start_receive(endpoint,
                                        std::bind(&DtlsServer::Impl::on_new_peer, this, _1, _2),
                                        std::bind(&DtlsServer::Impl::on_data_receive, this, _1, _2, _3),
                                        timeout_ms,
@@ -230,8 +227,6 @@ const SSL_METHOD* DtlsServer::Impl::ssl_method() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-
-
 DtlsServer::DtlsServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range) :
     Removable(loop),
     m_impl(new Impl(loop, certificate_path, private_key_path, version_range, *this)) {
@@ -240,26 +235,23 @@ DtlsServer::DtlsServer(EventLoop& loop, const Path& certificate_path, const Path
 DtlsServer::~DtlsServer() {
 }
 
-Error DtlsServer::listen(const std::string& ip_addr_str,
-                           std::uint16_t port,
-                           DataReceivedCallback data_receive_callback) {
-    return m_impl->listen(ip_addr_str, port, nullptr, data_receive_callback, DEFAULT_TIMEOUT_MS, nullptr);
+Error DtlsServer::listen(const Endpoint& endpoint,
+                         DataReceivedCallback data_receive_callback) {
+    return m_impl->listen(endpoint, nullptr, data_receive_callback, DEFAULT_TIMEOUT_MS, nullptr);
 }
 
-Error DtlsServer::listen(const std::string& ip_addr_str,
-                           std::uint16_t port,
-                           NewConnectionCallback new_connection_callback,
-                           DataReceivedCallback data_receive_callback) {
-    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, DEFAULT_TIMEOUT_MS, nullptr);
+Error DtlsServer::listen(const Endpoint& endpoint,
+                         NewConnectionCallback new_connection_callback,
+                         DataReceivedCallback data_receive_callback) {
+    return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, DEFAULT_TIMEOUT_MS, nullptr);
 }
 
-Error DtlsServer::listen(const std::string& ip_addr_str,
-                           std::uint16_t port,
-                           NewConnectionCallback new_connection_callback,
-                           DataReceivedCallback data_receive_callback,
-                           std::size_t timeout_ms,
-                           ConnectionTimeoutCallback timeout_callback) {
-    return m_impl->listen(ip_addr_str, port, new_connection_callback, data_receive_callback, timeout_ms, timeout_callback);
+Error DtlsServer::listen(const Endpoint& endpoint,
+                         NewConnectionCallback new_connection_callback,
+                         DataReceivedCallback data_receive_callback,
+                         std::size_t timeout_ms,
+                         ConnectionTimeoutCallback timeout_callback) {
+    return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, timeout_ms, timeout_callback);
 }
 
 void DtlsServer::close() {

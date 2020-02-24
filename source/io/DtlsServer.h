@@ -3,6 +3,7 @@
 #include "CommonMacros.h"
 #include "DtlsConnectedClient.h"
 #include "DtlsVersion.h"
+#include "Endpoint.h"
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
@@ -33,19 +34,16 @@ public:
                              DtlsVersionRange version_range = DEFAULT_DTLS_VERSION_RANGE);
 
     IO_DLL_PUBLIC
-    Error listen(const std::string& ip_addr_str,
-                 std::uint16_t port,
+    Error listen(const Endpoint& endpoint,
                  DataReceivedCallback data_receive_callback);
 
     IO_DLL_PUBLIC
-    Error listen(const std::string& ip_addr_str,
-                 std::uint16_t port,
+    Error listen(const Endpoint& endpoint,
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback);
 
    IO_DLL_PUBLIC
-   Error listen(const std::string& ip_addr_str,
-                std::uint16_t port,
+   Error listen(const Endpoint& endpoint,
                 NewConnectionCallback new_connection_callback,
                 DataReceivedCallback data_receive_callback,
                 std::size_t timeout_ms,

@@ -3,6 +3,7 @@
 #include "CommonMacros.h"
 #include "DataChunk.h"
 #include "DtlsVersion.h"
+#include "Endpoint.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
@@ -33,8 +34,7 @@ public:
     IO_DLL_PUBLIC std::uint16_t port() const;
 
     IO_DLL_PUBLIC
-    void connect(const std::string& address,
-                 std::uint16_t port,
+    void connect(const Endpoint& endpoint,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback = nullptr,
                  CloseCallback close_callback = nullptr);

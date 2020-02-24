@@ -53,7 +53,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     std::size_t client_data_send_counter = 0;
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    server->listen(m_default_addr, m_default_port,
+    server->listen({m_default_addr, m_default_port},
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(server, &client.server());
@@ -76,7 +76,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     );
 
     auto client = new io::DtlsClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++client_new_connection_counter;
@@ -136,7 +136,7 @@ TEST_F(DtlsClientServerTest, connected_peer_timeout) {
     std::chrono::high_resolution_clock::time_point t2;
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    server->listen(m_default_addr, m_default_port,
+    server->listen({m_default_addr, m_default_port},
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_new_connection_counter;
@@ -158,7 +158,7 @@ TEST_F(DtlsClientServerTest, connected_peer_timeout) {
     );
 
     auto client = new io::DtlsClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++client_new_connection_counter;
@@ -209,7 +209,7 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
         io::EventLoop loop;
 
         auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-        server->listen(m_default_addr, m_default_port,
+        server->listen({m_default_addr, m_default_port},
             [&](io::DtlsConnectedClient& client, const io::Error& error){
                 EXPECT_FALSE(error);
                 ++server_new_connection_counter;
@@ -246,7 +246,7 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
         auto client = new io::DtlsClient(loop);
-        client->connect(m_default_addr, m_default_port,
+        client->connect({m_default_addr, m_default_port},
             [&](io::DtlsClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error.string();
                 ++client_new_connection_counter;
@@ -298,7 +298,7 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
 
     // A bit of callback hell here ]:-)
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    server->listen(m_default_addr, m_default_port,
+    server->listen({m_default_addr, m_default_port},
         nullptr,
         [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -330,7 +330,7 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
     );
 
     auto client = new io::DtlsClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             client.send_data(client_buf, LARGE_DATA_SIZE,
                 [&](io::DtlsClient& client, const io::Error& error) {
@@ -376,7 +376,7 @@ TEST_F(DtlsClientServerTest, dtls_negotiated_version) {
     std::size_t client_new_connection_counter = 0;
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    server->listen(m_default_addr, m_default_port,
+    server->listen({m_default_addr, m_default_port},
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(io::global::max_supported_dtls_version(), client.negotiated_dtls_version());
@@ -387,7 +387,7 @@ TEST_F(DtlsClientServerTest, dtls_negotiated_version) {
 
     auto client = new io::DtlsClient(loop);
     EXPECT_EQ(io::DtlsVersion::UNKNOWN, client->negotiated_dtls_version());
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++client_new_connection_counter;
@@ -456,7 +456,7 @@ TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
     io::EventLoop loop;
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    auto listen_error = server->listen(m_default_addr, m_default_port,
+    auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
@@ -478,7 +478,7 @@ TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
     auto client = new io::DtlsClient(loop,
         io::DtlsVersionRange{io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
 
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(io::global::min_supported_dtls_version(), client.negotiated_dtls_version());
@@ -515,7 +515,7 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path,
         io::DtlsVersionRange{io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
-    auto listen_error = server->listen(m_default_addr, m_default_port,
+    auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
@@ -536,7 +536,7 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
 
     auto client = new io::DtlsClient(loop);
 
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(io::global::min_supported_dtls_version(), client.negotiated_dtls_version());
@@ -576,7 +576,7 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path,
         io::DtlsVersionRange{io::global::max_supported_dtls_version(), io::global::max_supported_dtls_version()});
-    auto listen_error = server->listen(m_default_addr, m_default_port,
+    auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
@@ -593,7 +593,7 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
 
     auto client = new io::DtlsClient(loop,
         io::DtlsVersionRange{io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
@@ -635,7 +635,7 @@ TEST_F(DtlsClientServerTest, save_received_buffer) {
     std::shared_ptr<const char> server_saved_buf;
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    server->listen(m_default_addr, m_default_port,
+    server->listen({m_default_addr, m_default_port},
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -658,7 +658,7 @@ TEST_F(DtlsClientServerTest, save_received_buffer) {
     );
 
     auto client = new io::DtlsClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
 
@@ -709,7 +709,7 @@ TEST_F(DtlsClientServerTest, fail_to_init_ssl_on_client) {
     std::size_t client_connect_counter = 0;
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    server->listen(m_default_addr, m_default_port,
+    server->listen({m_default_addr, m_default_port},
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_connect_counter;
@@ -727,7 +727,7 @@ TEST_F(DtlsClientServerTest, fail_to_init_ssl_on_client) {
     });
 
     auto client = new io::DtlsClient(loop);
-    client->connect(m_default_addr, m_default_port,
+    client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());

@@ -22,8 +22,7 @@ public:
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
 
-    void connect(const std::string& address,
-                 std::uint16_t port,
+    void connect(const Endpoint& endpoint,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback);
@@ -63,11 +62,10 @@ std::uint16_t DtlsClient::Impl::port() const {
     return m_client->port();
 }
 
-void DtlsClient::Impl::connect(const std::string& address,
-                 std::uint16_t port,
-                 ConnectCallback connect_callback,
-                 DataReceiveCallback receive_callback,
-                 CloseCallback close_callback) {
+void DtlsClient::Impl::connect(const Endpoint& endpoint,
+                               ConnectCallback connect_callback,
+                               DataReceiveCallback receive_callback,
+                               CloseCallback close_callback) {
     if (!is_ssl_inited()) {
         auto context_errror = m_openssl_context.init_ssl_context(ssl_method());
         if (context_errror) {
@@ -84,8 +82,7 @@ void DtlsClient::Impl::connect(const std::string& address,
     }
 
     m_client = new UdpClient(*m_loop,
-                             { string_to_ip4_addr(address),
-                               port },
+                             endpoint,
                              [this](UdpClient&, const DataChunk& chunk, const Error&) {
                                  this->on_data_receive(chunk.buf.get(), chunk.size);
                              }
@@ -164,12 +161,11 @@ std::uint16_t DtlsClient::port() const {
     return m_impl->port();
 }
 
-void DtlsClient::connect(const std::string& address,
-                           std::uint16_t port,
-                           ConnectCallback connect_callback,
-                           DataReceiveCallback receive_callback,
-                           CloseCallback close_callback) {
-    return m_impl->connect(address, port, connect_callback, receive_callback, close_callback);
+void DtlsClient::connect(const Endpoint& endpoint,
+                         ConnectCallback connect_callback,
+                         DataReceiveCallback receive_callback,
+                         CloseCallback close_callback) {
+    return m_impl->connect(endpoint, connect_callback, receive_callback, close_callback);
 }
 
 void DtlsClient::close() {
