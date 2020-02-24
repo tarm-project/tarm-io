@@ -54,5 +54,5 @@ TEST_F(EndpointTest, empty_inplace_address) {
 
     EXPECT_EQ(io::Endpoint::UNDEFINED, endpoint.type());
     EXPECT_EQ("", endpoint.address_string());
-    EXPECT_EQ(0, endpoint.port());
+    EXPECT_EQ(1234, endpoint.port());
 }

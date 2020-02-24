@@ -65,11 +65,13 @@ Endpoint::Impl::Impl(std::array<std::uint8_t, 4> address, std::uint16_t port) {
 */
 
 Endpoint::Impl::Impl(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port) {
+    auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
+    addr->sin_port = host_to_network(port);
+
     if (address_size == 4) {
             m_type = IP_V4;
             auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
             addr->sin_family = AF_INET;
-            addr->sin_port = host_to_network(port);
             addr->sin_addr.s_addr = std::uint32_t(address_bytes[3]) << 24 |
                                     std::uint32_t(address_bytes[2]) << 16 |
                                     std::uint32_t(address_bytes[1]) << 8  |
