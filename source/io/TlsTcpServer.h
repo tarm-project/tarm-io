@@ -2,6 +2,7 @@
 
 #include "CommonMacros.h"
 #include "DataChunk.h"
+#include "Endpoint.h"
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
@@ -31,23 +32,20 @@ public:
                                TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
     IO_DLL_PUBLIC
-    Error listen(const std::string& ip_addr_str,
-                 std::uint16_t port,
+    Error listen(const Endpoint endpoint,
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback,
                  CloseConnectionCallback close_connection_callback,
                  int backlog_size = 128);
 
     IO_DLL_PUBLIC
-    Error listen(const std::string& ip_addr_str,
-                 std::uint16_t port,
+    Error listen(const Endpoint endpoint,
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback,
                  int backlog_size = 128);
 
     IO_DLL_PUBLIC
-    Error listen(const std::string& ip_addr_str,
-                 std::uint16_t port,
+    Error listen(const Endpoint endpoint,
                  DataReceivedCallback data_receive_callback,
                  int backlog_size = 128);
 

@@ -21,8 +21,7 @@ public:
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
 
-    void connect(const std::string& address,
-                 std::uint16_t port,
+    void connect(const Endpoint endpoint,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
                  CloseCallback close_callback);
@@ -62,11 +61,10 @@ std::uint16_t TlsTcpClient::Impl::port() const {
     return m_client->port();
 }
 
-void TlsTcpClient::Impl::connect(const std::string& address,
-                 std::uint16_t port,
-                 ConnectCallback connect_callback,
-                 DataReceiveCallback receive_callback,
-                 CloseCallback close_callback) {
+void TlsTcpClient::Impl::connect(const Endpoint endpoint,
+                                 ConnectCallback connect_callback,
+                                 DataReceiveCallback receive_callback,
+                                 CloseCallback close_callback) {
     m_client = new TcpClient(*m_loop);
 
     if (!is_ssl_inited()) {
@@ -133,7 +131,7 @@ void TlsTcpClient::Impl::connect(const std::string& address,
             }
         };
 
-    m_client->connect({address, port}, on_connect, on_data_receive, on_close);
+    m_client->connect(endpoint, on_connect, on_data_receive, on_close);
 }
 
 void TlsTcpClient::Impl::close() {
@@ -202,12 +200,11 @@ std::uint16_t TlsTcpClient::port() const {
     return m_impl->port();
 }
 
-void TlsTcpClient::connect(const std::string& address,
-                           std::uint16_t port,
+void TlsTcpClient::connect(const Endpoint endpoint,
                            ConnectCallback connect_callback,
                            DataReceiveCallback receive_callback,
                            CloseCallback close_callback) {
-    return m_impl->connect(address, port, connect_callback, receive_callback, close_callback);
+    return m_impl->connect(endpoint, connect_callback, receive_callback, close_callback);
 }
 
 void TlsTcpClient::close() {
