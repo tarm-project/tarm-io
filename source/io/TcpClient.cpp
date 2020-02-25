@@ -68,7 +68,11 @@ void TcpClient::Impl::connect(const Endpoint& endpoint,
                               CloseCallback close_callback) {
 
     if (endpoint.type() == Endpoint::UNDEFINED) {
-        connect_callback(*m_parent, Error(StatusCode::INVALID_ARGUMENT));
+        if (connect_callback) {
+            m_loop->schedule_callback([=]() {
+                connect_callback(*m_parent, Error(StatusCode::INVALID_ARGUMENT));
+            });
+        }
         return;
     }
 

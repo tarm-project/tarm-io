@@ -102,8 +102,7 @@ TEST_F(TcpClientServerTest, client_connect_to_invalid_address) {
         }
     );
 
-    // TODO: callback before loop run
-    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(0, client_on_connect_count);
 
     ASSERT_EQ(0, loop.run());
 
