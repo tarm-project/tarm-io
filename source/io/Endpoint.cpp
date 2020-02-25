@@ -122,11 +122,19 @@ Endpoint::Endpoint(std::uint32_t address, std::uint16_t port) :
 }
 
 Endpoint::Endpoint(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port) :
-    m_impl(new Impl(address_bytes, address_size, port)){
+    m_impl(new Impl(address_bytes, address_size, port)) {
 }
 
 Endpoint::Endpoint(std::initializer_list<std::uint8_t> address_bytes, std::uint16_t port) :
     m_impl(new Impl(&*address_bytes.begin(), address_bytes.size(), port)) {
+}
+
+Endpoint::Endpoint(std::uint8_t (&address_bytes)[4], std::uint16_t port) :
+    m_impl(new Impl(address_bytes, 4, port)) {
+}
+
+Endpoint::Endpoint(std::uint8_t (&address_bytes)[16], std::uint16_t port)  :
+    m_impl(new Impl(address_bytes, 16, port)){
 }
 
 Endpoint::~Endpoint() {
