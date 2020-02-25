@@ -6,6 +6,7 @@
 
 #include <uv.h>
 
+#include <cstring>
 #include <assert.h>
 
 namespace io {
@@ -32,6 +33,7 @@ private:
 };
 
 Endpoint::Impl::Impl() {
+    std::memset(&m_address_storage, 0, sizeof(::sockaddr_storage));
 }
 
 Endpoint::Impl::Impl(const Impl& other) :
@@ -39,7 +41,8 @@ Endpoint::Impl::Impl(const Impl& other) :
    m_type(other.m_type) {
 }
 
-Endpoint::Impl::Impl(const std::string& address, std::uint16_t port) {
+Endpoint::Impl::Impl(const std::string& address, std::uint16_t port) :
+    Impl() {
     auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
 
     Error address_error = uv_ip4_addr(address.c_str(), port, addr);
@@ -51,20 +54,8 @@ Endpoint::Impl::Impl(const std::string& address, std::uint16_t port) {
     m_type = IP_V4;
 }
 
-/*
-Endpoint::Impl::Impl(std::array<std::uint8_t, 4> address, std::uint16_t port) {
-    m_type = IP_V4;
-    auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
-    addr->sin_family = AF_INET;
-    addr->sin_port = host_to_network(port);
-    addr->sin_addr.s_addr = std::uint32_t(address[0]) << 24 |
-                            std::uint32_t(address[1]) << 16 |
-                            std::uint32_t(address[2]) << 8  |
-                            std::uint32_t(address[3]);
-}
-*/
-
-Endpoint::Impl::Impl(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port) {
+Endpoint::Impl::Impl(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port) :
+    Impl() {
     auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
     addr->sin_port = host_to_network(port);
 
@@ -79,7 +70,8 @@ Endpoint::Impl::Impl(const std::uint8_t* address_bytes, std::size_t address_size
     }
 }
 
-Endpoint::Impl::Impl(std::uint32_t address, std::uint16_t port) {
+Endpoint::Impl::Impl(std::uint32_t address, std::uint16_t port) :
+    Impl() {
     m_type = IP_V4;
     auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
     addr->sin_family = AF_INET;
