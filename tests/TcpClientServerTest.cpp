@@ -1270,6 +1270,96 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
     EXPECT_EQ(2, client_close_counter);
 }
 
+TEST_F(TcpClientServerTest, server_shutdown_callback) {
+    io::EventLoop loop;
+
+    const std::string client_message = "Hello world!";
+
+    std::size_t on_server_shutdown_call_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+    [&](io::TcpConnectedClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+    },
+    [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+
+        server->shutdown([&](io::TcpServer& server, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++on_server_shutdown_call_count;
+            server.schedule_removal();
+        });
+    },
+    nullptr);
+
+    ASSERT_FALSE(listen_error);
+
+    bool data_sent = false;
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+    [&](io::TcpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+        client.send_data(client_message, [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.schedule_removal();
+        });
+    },
+    nullptr);
+
+    EXPECT_EQ(0, on_server_shutdown_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, on_server_shutdown_call_count);
+}
+
+TEST_F(TcpClientServerTest, server_close_callback) {
+    io::EventLoop loop;
+
+    const std::string client_message = "Hello world!";
+
+    std::size_t on_server_close_call_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+    [&](io::TcpConnectedClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+    },
+    [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+
+        server->close([&](io::TcpServer& server, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++on_server_close_call_count;
+            server.schedule_removal();
+        });
+    },
+    nullptr);
+
+    ASSERT_FALSE(listen_error);
+
+    bool data_sent = false;
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+    [&](io::TcpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+        client.send_data(client_message, [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.schedule_removal();
+        });
+    },
+    nullptr);
+
+    EXPECT_EQ(0, on_server_close_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, on_server_close_call_count);
+}
+
 // TODO: server sends lot of data to many connected clients
 
 // TODO: client's write after close in server receive callback

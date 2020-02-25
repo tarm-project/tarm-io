@@ -30,6 +30,9 @@ public:
     using DataReceivedCallback = std::function<void(TcpConnectedClient&, const DataChunk&, const Error&)>;
     using CloseConnectionCallback = std::function<void(TcpConnectedClient&, const Error&)>;
 
+    using CloseServerCallback = std::function<void(TcpServer&, const Error&)>;
+    using ShutdownServerCallback = std::function<void(TcpServer&, const Error&)>;
+
     IO_FORBID_COPY(TcpServer);
     IO_FORBID_MOVE(TcpServer);
 
@@ -43,8 +46,8 @@ public:
                  CloseConnectionCallback close_connection_callback,
                  int backlog_size = 128);
 
-    IO_DLL_PUBLIC void shutdown();
-    IO_DLL_PUBLIC void close();
+    IO_DLL_PUBLIC void close(CloseServerCallback close_callback = nullptr);
+    IO_DLL_PUBLIC void shutdown(ShutdownServerCallback shutdown_callback = nullptr);
 
     IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 

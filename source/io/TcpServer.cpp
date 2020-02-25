@@ -20,8 +20,8 @@ public:
                  CloseConnectionCallback close_connection_callback,
                  int backlog_size);
 
-    void shutdown();
-    void close();
+    void shutdown(ShutdownServerCallback shutdown_callback);
+    void close(CloseServerCallback close_callback);
 
     std::size_t connected_clients_count() const;
 
@@ -48,9 +48,9 @@ private:
     DataReceivedCallback m_data_receive_callback = nullptr;
     CloseConnectionCallback m_close_connection_callback = nullptr;
 
-    // Using such interesting kind of mapping here to be able find connections by raw C pointer
-    // and also have benefits of RAII with unique_ptr
-    //std::map<uv_tcp_t*, TcpConnectedClientPtr> m_client_connections;
+    CloseServerCallback m_end_server_callback = nullptr;
+
+    // TODO: unordered set???
     std::set<TcpConnectedClient*> m_client_connections;
 
     // Made as unique_ptr because boost::pool has no move constructor defined
@@ -119,7 +119,9 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
     return listen_status;
 }
 
-void TcpServer::Impl::shutdown() {
+void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
+    m_end_server_callback = shutdown_callback;
+
     for (auto& client : m_client_connections) {
         client->shutdown(); // TODO: shutdown with schedule_removal?????
     }
@@ -135,12 +137,14 @@ void TcpServer::Impl::shutdown() {
     }
     */
 
+   // TODO: is this check still relevant???
    if (m_server_handle && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_server_handle))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
    }
 }
 
-void TcpServer::Impl::close() {
+void TcpServer::Impl::close(CloseServerCallback close_callback) {
+    m_end_server_callback = close_callback;
     // TODO: clients close??????
 
     uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
@@ -230,6 +234,9 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 void TcpServer::Impl::on_close(uv_handle_t* handle) {
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpServer::Impl*>(handle->data);
+        if (this_.m_end_server_callback) {
+            this_.m_end_server_callback(*this_.m_parent, Error(0));
+        }
         this_.m_server_handle = nullptr;
     }
 
@@ -262,12 +269,12 @@ Error TcpServer::listen(const Endpoint& endpoint,
     return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, close_connection_callback, backlog_size);
 }
 
-void TcpServer::shutdown() {
-    return m_impl->shutdown();
+void TcpServer::shutdown(ShutdownServerCallback shutdown_callback) {
+    return m_impl->shutdown(shutdown_callback);
 }
 
-void TcpServer::close() {
-    return m_impl->close();
+void TcpServer::close(CloseServerCallback close_callback) {
+    return m_impl->close(close_callback);
 }
 
 std::size_t TcpServer::connected_clients_count() const {
