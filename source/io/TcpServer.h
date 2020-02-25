@@ -37,7 +37,6 @@ public:
     IO_FORBID_MOVE(TcpServer);
 
     IO_DLL_PUBLIC TcpServer(EventLoop& loop);
-    IO_DLL_PUBLIC ~TcpServer(); // TODO: make private
 
     IO_DLL_PUBLIC
     Error listen(const Endpoint& endpoint,
@@ -50,6 +49,9 @@ public:
     IO_DLL_PUBLIC void shutdown(ShutdownServerCallback shutdown_callback = nullptr);
 
     IO_DLL_PUBLIC std::size_t connected_clients_count() const;
+
+protected:
+    IO_DLL_PUBLIC ~TcpServer();
 
 private:
     void remove_client_connection(TcpConnectedClient* client);
