@@ -105,7 +105,7 @@ TlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_tls_version()
         return TlsVersion::UNKNOWN;
     }
 
-    switch (m_ssl.get()->version) {
+    switch (SSL_version(m_ssl.get())) {
 #ifdef TLS1_VERSION
         case TLS1_VERSION:
             return TlsVersion::V1_0;
@@ -137,7 +137,7 @@ DtlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_dtls_version
         return DtlsVersion::UNKNOWN;
     }
 
-    switch (m_ssl.get()->version) {
+    switch (SSL_version(m_ssl.get())) {
 #ifdef DTLS1_VERSION
         case DTLS1_VERSION:
             return DtlsVersion::V1_0;
