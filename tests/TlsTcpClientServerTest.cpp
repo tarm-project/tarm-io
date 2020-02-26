@@ -135,9 +135,7 @@ TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
         }
     );
 
-    // TODO: is it OK to call this callback with error before loop run???
-    // Looks like no because we should guarantee that no callbacks are executed before loop run() call
-    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(0, client_on_connect_count);
 
     ASSERT_EQ(0, loop.run());
 

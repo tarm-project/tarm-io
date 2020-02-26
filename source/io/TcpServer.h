@@ -50,6 +50,8 @@ public:
 
     IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 
+    IO_DLL_PUBLIC void schedule_removal() override;
+
 protected:
     IO_DLL_PUBLIC ~TcpServer();
 

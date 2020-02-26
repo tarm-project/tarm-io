@@ -577,7 +577,7 @@ TEST_F(TcpClientServerTest, DISABLED_server_disconnect_client_from_new_connectio
 // but which makes close() from server side
 
 TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
-    // Test description: in this test we check that optional clase callback is called on server side
+    // Test description: in this test we check that optional close callback is called on server side
     // for connected client on connection termination.
 
     io::EventLoop loop;
@@ -589,7 +589,6 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
     unsigned client_receive_callback_count = 0;
     unsigned connected_client_close_callback_count = 0;
 
-    //const std::string client_message = "Hello!";
     const std::string server_message = "I quit!";
 
     std::function<void(io::TcpConnectedClient&, const io::Error&)> connected_client_close_callback =
@@ -605,7 +604,6 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
             client.send_data(server_message, [&](io::TcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
                 ++server_send_callback_count;
-                // TODO: the same test but schedule_removal instead of shutdown
                 server->shutdown([&](io::TcpServer& server, const io::Error& error) {
                     EXPECT_FALSE(error);
                     server.schedule_removal();
@@ -644,6 +642,58 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
     EXPECT_EQ(1, server_send_callback_count);
     EXPECT_EQ(1, client_receive_callback_count);
     EXPECT_EQ(1, connected_client_close_callback_count);
+}
+
+TEST_F(TcpClientServerTest, server_schedule_remove_after_send) {
+    const std::string server_message = "I quit!";
+
+    std::size_t server_send_callback_count = 0;
+    std::size_t server_receive_callback_count = 0;
+    std::size_t client_receive_callback_count = 0;
+
+    io::EventLoop loop;
+    auto server = new io::TcpServer(loop);
+
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            //++server_connect_callback_count;
+            client.send_data(server_message,
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    ++server_send_callback_count;
+                    client.server().schedule_removal();
+                }
+            );
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            ++server_receive_callback_count;
+        },
+        nullptr
+    );
+    EXPECT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        },
+        [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_receive_callback_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_send_callback_count);
+    EXPECT_EQ(0, server_receive_callback_count);
+    EXPECT_EQ(0, client_receive_callback_count);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_send_callback_count);
+    EXPECT_EQ(0, server_receive_callback_count);
+    EXPECT_EQ(1, client_receive_callback_count);
 }
 
 TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback) {

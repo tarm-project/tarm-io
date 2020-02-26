@@ -16,6 +16,8 @@ public:
 
     bool is_removal_scheduled() const;
 
+    void set_removal_scheduled();
+
     static DefaultDelete default_delete();
 
 protected:
@@ -49,6 +51,10 @@ Removable::Impl::~Impl() {
 
 bool Removable::Impl::is_removal_scheduled() const {
     return m_removal_scheduled;
+}
+
+void Removable::Impl::set_removal_scheduled() {
+    m_removal_scheduled = true;
 }
 
 void Removable::Impl::schedule_removal() {
@@ -123,6 +129,10 @@ bool Removable::is_removal_scheduled() const {
 
 Removable::DefaultDelete Removable::default_delete() {
     return Impl::default_delete();
+}
+
+void Removable::set_removal_scheduled() {
+    return m_impl->set_removal_scheduled();
 }
 
 } // namespace io

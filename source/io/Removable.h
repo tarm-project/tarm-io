@@ -32,6 +32,9 @@ public:
 
     IO_DLL_PUBLIC static DefaultDelete default_delete();
 
+protected:
+    IO_DLL_PUBLIC void set_removal_scheduled();
+
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

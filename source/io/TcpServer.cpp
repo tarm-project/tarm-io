@@ -27,7 +27,11 @@ public:
 
     void remove_client_connection(TcpConnectedClient* client);
 
+    bool schedule_removal();
+
 protected:
+    void close_impl();
+
     // statics
     static void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 
@@ -65,12 +69,6 @@ TcpServer::Impl::Impl(EventLoop& loop, TcpServer& parent) :
 }
 
 TcpServer::Impl::~Impl() {
-    //shutdown();
-    if (m_server_handle) {
-        m_server_handle->data = nullptr;
-        uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
-        m_server_handle = nullptr;
-    }
 }
 
 Error TcpServer::Impl::listen(const Endpoint& endpoint,
@@ -123,7 +121,7 @@ void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
     m_end_server_callback = shutdown_callback;
 
     for (auto& client : m_client_connections) {
-        client->shutdown(); // TODO: shutdown with schedule_removal?????
+        client->shutdown();
     }
 
     m_client_connections.clear();
@@ -137,17 +135,23 @@ void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
     }
     */
 
-   // TODO: is this check still relevant???
-   if (m_server_handle && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_server_handle))) {
-        uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
-   }
+    close_impl();
 }
 
 void TcpServer::Impl::close(CloseServerCallback close_callback) {
     m_end_server_callback = close_callback;
-    // TODO: clients close??????
 
-    uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
+    for (auto& client : m_client_connections) {
+        client->close();
+    }
+
+    close_impl();
+}
+
+void TcpServer::Impl::close_impl() {
+    if (m_server_handle && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_server_handle))) {
+        uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
+    }
 }
 
 void TcpServer::Impl::remove_client_connection(TcpConnectedClient* client) {
@@ -156,6 +160,24 @@ void TcpServer::Impl::remove_client_connection(TcpConnectedClient* client) {
 
 std::size_t TcpServer::Impl::connected_clients_count() const {
     return m_client_connections.size();
+}
+
+bool TcpServer::Impl::schedule_removal() {
+    const auto removal_scheduled = m_parent->is_removal_scheduled();
+
+    if (!removal_scheduled) {
+        m_parent->set_removal_scheduled();
+
+        auto end_server_callback_copy = m_end_server_callback;
+
+        this->close([this, end_server_callback_copy] (TcpServer& server, const Error& error) {
+            if (end_server_callback_copy) {
+                end_server_callback_copy(server, error);
+            }
+        });
+    }
+
+    return removal_scheduled || m_server_handle == nullptr;
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
@@ -237,6 +259,11 @@ void TcpServer::Impl::on_close(uv_handle_t* handle) {
         if (this_.m_end_server_callback) {
             this_.m_end_server_callback(*this_.m_parent, Error(0));
         }
+
+        if (this_.m_parent->is_removal_scheduled()) {
+            this_.m_parent->schedule_removal();
+        }
+
         this_.m_server_handle = nullptr;
     }
 
@@ -250,8 +277,6 @@ void TcpServer::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
-
-
 
 TcpServer::TcpServer(EventLoop& loop) :
     Removable(loop),
@@ -283,6 +308,13 @@ std::size_t TcpServer::connected_clients_count() const {
 
 void TcpServer::remove_client_connection(TcpConnectedClient* client) {
     return m_impl->remove_client_connection(client);
+}
+
+void TcpServer::schedule_removal() {
+    const bool ready_to_remove = m_impl->schedule_removal();
+    if (ready_to_remove) {
+        Removable::schedule_removal();
+    }
 }
 
 } // namespace io
