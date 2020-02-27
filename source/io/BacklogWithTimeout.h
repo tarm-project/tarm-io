@@ -62,28 +62,20 @@ public:
             return true;
         }
 
-        auto index = bucket_index_from_time(time_diff);
+        auto index = bucket_index_from_time(m_entity_timeout - time_diff);
         m_items[index].push_back(t);
 
         return true;
     }
 
     bool remove_item(const T& t) {
-        const std::uint64_t current_time = m_clock_getter();
-        const std::uint64_t item_time = m_time_getter(t);
-
-        if (current_time < item_time) { // item from the future
-            return false;
-        }
-
-        const auto time_diff = current_time - item_time;
-
-        auto index = bucket_index_from_time(time_diff);
-        auto& items = m_items[index];
-        auto it = std::find(items.begin(), items.end(), t);
-        if (it != items.end()) {
-            items.erase(it);
-            return true;
+        for(std::size_t i = 0; i < m_timers.size(); ++i) {
+            auto& items = m_items[i];
+            auto it = std::find(items.begin(), items.end(), t);
+            if (it != items.end()) {
+                items.erase(it);
+                return true;
+            }
         }
 
         return false;

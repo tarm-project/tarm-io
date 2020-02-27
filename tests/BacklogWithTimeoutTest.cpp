@@ -387,7 +387,7 @@ TEST_F(BacklogWithTimeoutTest, remove_1_element) {
 
     EXPECT_EQ(0, expired_counter);
 
-    backlog.remove_item(item_1);
+    EXPECT_TRUE(backlog.remove_item(item_1));
 
     EXPECT_EQ(0, expired_counter);
 
@@ -399,7 +399,7 @@ TEST_F(BacklogWithTimeoutTest, remove_1_element) {
 TEST_F(BacklogWithTimeoutTest, remove_multiple_items) {
     const std::size_t ELEMENTS_COUNT = 1000;
 
-    const std::uint64_t START_TIME = 250 * 10000;
+    const std::uint64_t START_TIME = 250 * 1000000;
     reset_fake_monothonic_clock(START_TIME);
 
     std::size_t expired_counter = 0;
@@ -415,14 +415,14 @@ TEST_F(BacklogWithTimeoutTest, remove_multiple_items) {
 
     for (std::size_t i = 0; i < ELEMENTS_COUNT; ++i) {
         TestItem item(i);
-        item.time = START_TIME - i * 1000;
+        item.time = START_TIME - i * 1000000 / 4;
         ASSERT_TRUE(backlog.add_item(item)) << i;
     }
 
     for (std::size_t i = 0; i < ELEMENTS_COUNT; ++i) {
         if (i % 2 == 0) {
             TestItem item(i);
-            item.time = START_TIME - i * 100;
+            item.time = START_TIME - i * 1000000 / 4;
             backlog.remove_item(item);
         }
     }
