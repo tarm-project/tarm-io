@@ -18,8 +18,8 @@ int main(int argc, char* argv[]) {
     const std::string cert_name = "certificate.pem";
     const std::string key_name = "key.pem";
 
-    io::TlsTcpServer server(loop, cert_name, key_name);
-    auto listen_result = server.listen({"0.0.0.0", 12345},
+    auto server = new io::TlsTcpServer(loop, cert_name, key_name);
+    auto listen_result = server->listen({"0.0.0.0", 12345},
     [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
     },
     [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
 
         if (message.find("close") != std::string::npos ) {
             std::cout << "Forcing server shut down..." << std::endl;
-            server.shutdown();
+            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
             //timer.stop();
         }
 
@@ -229,7 +229,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if ((error = server.listen(on_new_connection, on_data_read))) {
+    if ((error = server->listen(on_new_connection, on_data_read))) {
         std::cerr << "[Server] Failed to listen. Reason: " << error.string() << std::endl;
         return 1;
     }

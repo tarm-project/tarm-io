@@ -28,8 +28,8 @@ public:
                  CloseConnectionCallback close_connection_callback,
                  int backlog_size);
 
-    void shutdown();
-    void close();
+    void shutdown(ShutdownServerCallback shutdown_callback);
+    void close(CloseServerCallback close_callback);
 
     std::size_t connected_clients_count() const;
 
@@ -193,12 +193,24 @@ Error TlsTcpServer::Impl::listen(const Endpoint endpoint,
                                 std::bind(&TlsTcpServer::Impl::on_close, this, _1, _2));
 }
 
-void TlsTcpServer::Impl::shutdown() {
-    return m_tcp_server->shutdown();
+void TlsTcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
+    if (shutdown_callback) {
+        m_tcp_server->shutdown([this, shutdown_callback](TcpServer&, const Error& error) {
+            shutdown_callback(*m_parent, error);
+        });
+    } else {
+        m_tcp_server->shutdown();
+    }
 }
 
-void TlsTcpServer::Impl::close() {
-    return m_tcp_server->close();
+void TlsTcpServer::Impl::close(CloseServerCallback close_callback) {
+    if (close_callback) {
+        m_tcp_server->shutdown([this, close_callback](TcpServer&, const Error& error) {
+            close_callback(*m_parent, error);
+        });
+    } else {
+        m_tcp_server->close();
+    }
 }
 
 std::size_t TlsTcpServer::Impl::connected_clients_count() const {
@@ -254,12 +266,12 @@ Error TlsTcpServer::listen(const Endpoint endpoint,
     return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, nullptr, backlog_size);
 }
 
-void TlsTcpServer::shutdown() {
-    return m_impl->shutdown();
+void TlsTcpServer::shutdown(CloseServerCallback shutdown_callback) {
+    return m_impl->shutdown(shutdown_callback);
 }
 
-void TlsTcpServer::close() {
-    return m_impl->close();
+void TlsTcpServer::close(CloseServerCallback close_callback) {
+    return m_impl->close(close_callback);
 }
 
 std::size_t TlsTcpServer::connected_clients_count() const {

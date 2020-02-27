@@ -16,7 +16,7 @@ namespace io {
 template<typename T, typename LoopType = ::io::EventLoop, typename TimerType = ::io::Timer>
 class BacklogWithTimeout {
 public:
-    using OnItemExpiredCallback = std::function<void(BacklogWithTimeout<T, LoopType, TimerType>&,  const T& item)>;
+    using OnItemExpiredCallback = std::function<void(BacklogWithTimeout<T, LoopType, TimerType>&, const T& item)>;
     using ItemTimeGetter = std::function<std::uint64_t(const T&)>;
     using MonothonicClockGetterType = std::uint64_t(*)();
 
