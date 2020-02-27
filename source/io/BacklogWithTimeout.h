@@ -68,6 +68,27 @@ public:
         return true;
     }
 
+    bool remove_item(const T& t) {
+        const std::uint64_t current_time = m_clock_getter();
+        const std::uint64_t item_time = m_time_getter(t);
+
+        if (current_time < item_time) { // item from the future
+            return false;
+        }
+
+        const auto time_diff = current_time - item_time;
+
+        auto index = bucket_index_from_time(time_diff);
+        auto& items = m_items[index];
+        auto it = std::find(items.begin(), items.end(), t);
+        if (it != items.end()) {
+            items.erase(it);
+            return true;
+        }
+
+        return false;
+    }
+
     void stop() {
         m_entity_timeout = 0;
         m_expired_callback = nullptr;

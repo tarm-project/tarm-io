@@ -54,6 +54,10 @@ struct TestItem {
     }
 };
 
+bool operator==(const TestItem& item1, const TestItem& item2) {
+    return item1.id == item2.id;
+}
+
 } // namespace
 
 class FakeLoop : public ::io::UserDataHolder {
@@ -361,6 +365,75 @@ TEST_F(BacklogWithTimeoutTest, huge_number_of_items) {
     }
 
     EXPECT_EQ(ELEMENTS_COUNT, expired_counter);
+}
+
+TEST_F(BacklogWithTimeoutTest, remove_1_element) {
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer>&, const TestItem& item) {
+        ++expired_counter;
+    };
+
+    FakeLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer> backlog(
+        loop, 250, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    TestItem item_1(0);
+    EXPECT_TRUE(backlog.add_item(item_1));
+
+    EXPECT_EQ(0, expired_counter);
+
+    advance_clock(200);
+
+    EXPECT_EQ(0, expired_counter);
+
+    backlog.remove_item(item_1);
+
+    EXPECT_EQ(0, expired_counter);
+
+    advance_clock(50);
+
+    EXPECT_EQ(0, expired_counter);
+}
+
+TEST_F(BacklogWithTimeoutTest, remove_multiple_items) {
+    const std::size_t ELEMENTS_COUNT = 1000;
+
+    const std::uint64_t START_TIME = 250 * 10000;
+    reset_fake_monothonic_clock(START_TIME);
+
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer>&, const TestItem& item) {
+        ++expired_counter;
+        EXPECT_NE(0, item.id % 2);
+    };
+
+    FakeLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer> backlog(
+        loop, 250, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    for (std::size_t i = 0; i < ELEMENTS_COUNT; ++i) {
+        TestItem item(i);
+        item.time = START_TIME - i * 1000;
+        ASSERT_TRUE(backlog.add_item(item)) << i;
+    }
+
+    for (std::size_t i = 0; i < ELEMENTS_COUNT; ++i) {
+        if (i % 2 == 0) {
+            TestItem item(i);
+            item.time = START_TIME - i * 100;
+            backlog.remove_item(item);
+        }
+    }
+
+    EXPECT_EQ(0, expired_counter);
+
+    for (std::size_t i = 0; i < 500; ++i) {
+        advance_clock(1);
+    }
+
+    EXPECT_EQ(ELEMENTS_COUNT / 2, expired_counter);
 }
 
 // --- real loop and timer ---
