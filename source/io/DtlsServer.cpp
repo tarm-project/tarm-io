@@ -27,7 +27,7 @@ public:
                  NewConnectionCallback new_connection_callback,
                  DataReceivedCallback data_receive_callback,
                  std::size_t timeout_ms,
-                 ConnectionTimeoutCallback timeout_callback);
+                 CloseConnectionCallback close_callback);
 
     void close();
 
@@ -62,7 +62,7 @@ private:
 
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
-    ConnectionTimeoutCallback m_connection_timeout_callback = nullptr;
+    CloseConnectionCallback m_connection_close_callback = nullptr;
 };
 
 DtlsServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent) :
@@ -98,7 +98,8 @@ void DtlsServer::Impl::on_new_peer(UdpPeer& udp_client, const io::Error& error) 
     };
 
     DtlsConnectedClient* dtls_client =
-        new DtlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, udp_client, &context);
+        new DtlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_connection_close_callback, udp_client, &context);
+    dtls_client->set_user_data(&udp_client);
     udp_client.set_on_schedule_removal(
         [=](const Removable&) {
             delete dtls_client;
@@ -119,13 +120,14 @@ void DtlsServer::Impl::on_data_receive(UdpPeer& udp_client, const DataChunk& dat
 }
 
 void DtlsServer::Impl::on_timeout(UdpPeer& udp_client, const Error& error) {
-    IO_LOG(this->m_loop, TRACE, "Removing DTLS client");
+    auto& dtls_client = *reinterpret_cast<DtlsConnectedClient*>(udp_client.user_data());
+
+    IO_LOG(this->m_loop, TRACE, &dtls_client, "Removing DTLS client due to timeout");
 
     udp_client.set_on_schedule_removal(nullptr);
 
-    auto& dtls_client = *reinterpret_cast<DtlsConnectedClient*>(udp_client.user_data());
-    if (m_connection_timeout_callback) {
-        m_connection_timeout_callback(dtls_client, error);
+    if (m_connection_close_callback) {
+        m_connection_close_callback(dtls_client, error);
     }
 
     delete &dtls_client;
@@ -135,10 +137,10 @@ Error DtlsServer::Impl::listen(const Endpoint& endpoint,
                                NewConnectionCallback new_connection_callback,
                                DataReceivedCallback data_receive_callback,
                                std::size_t timeout_ms,
-                               ConnectionTimeoutCallback timeout_callback) {
+                               CloseConnectionCallback close_callback) {
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
-    m_connection_timeout_callback = timeout_callback;
+    m_connection_close_callback = close_callback;
 
     using FilePtr = std::unique_ptr<FILE, decltype(&std::fclose)>;
 
@@ -250,8 +252,8 @@ Error DtlsServer::listen(const Endpoint& endpoint,
                          NewConnectionCallback new_connection_callback,
                          DataReceivedCallback data_receive_callback,
                          std::size_t timeout_ms,
-                         ConnectionTimeoutCallback timeout_callback) {
-    return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, timeout_ms, timeout_callback);
+                         CloseConnectionCallback close_callback) {
+    return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, timeout_ms, close_callback);
 }
 
 void DtlsServer::close() {

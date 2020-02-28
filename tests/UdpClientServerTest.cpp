@@ -1347,7 +1347,7 @@ TEST_F(UdpClientServerTest, close_peer_from_server_and_than_try_send) {
                 }
             );
         },
-        1000,
+        1000 * 5,
         nullptr
     );
     EXPECT_FALSE(error);

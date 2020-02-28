@@ -64,6 +64,8 @@ void Removable::Impl::schedule_removal() {
         IO_LOG(m_loop, ERROR, "Scheduling removal after the loop finished run. This may lead to memory leaks or memory corruption.");
     }
 
+    IO_LOG(m_loop, TRACE, m_parent, "");
+
     auto idle_ptr = new uv_idle_t;
     idle_ptr->data = this;
 

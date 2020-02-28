@@ -20,7 +20,7 @@ public:
     using EndSendCallback = std::function<void(DtlsClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(DtlsClient&, const DataChunk&, const Error&)>;
 
-    // TODO: this callback is unused
+    // TODO: timeout on timer????
     using CloseCallback = std::function<void(DtlsClient&, const Error&)>;
 
     IO_FORBID_COPY(DtlsClient);

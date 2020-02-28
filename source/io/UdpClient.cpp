@@ -20,6 +20,7 @@ public:
     Impl(EventLoop& loop, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent);
     Impl(EventLoop& loop, const Endpoint& endpoint, DataReceivedCallback receive_callback, UdpClient& parent);
     Impl(EventLoop& loop, const Endpoint& endpoint, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent);
+    ~Impl();
 
     using CloseHandler = void (*)(uv_handle_t* handle);
     bool close_on_timeout();
@@ -60,6 +61,7 @@ UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
 UdpClient::Impl::Impl(EventLoop& loop, const Endpoint& endpoint, UdpClient& parent) :
     Impl(loop, parent) {
     set_destination(endpoint);
+    IO_LOG(m_loop, TRACE, m_parent, "New UdpClient");
 }
 
 UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, UdpClient& parent) :
@@ -74,7 +76,6 @@ UdpClient::Impl::Impl(EventLoop& loop, const Endpoint& endpoint, DataReceivedCal
     m_receive_callback = receive_callback;
     start_receive();
 }
-
 
 UdpClient::Impl::Impl(EventLoop& loop, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback, UdpClient& parent) :
     Impl(loop, parent) {
@@ -93,6 +94,10 @@ UdpClient::Impl::Impl(EventLoop& loop, const Endpoint& endpoint, DataReceivedCal
     m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_time, this), &::uv_hrtime));
     m_timeout_handler->add_item(this);
     start_receive();
+}
+
+UdpClient::Impl::~Impl() {
+    IO_LOG(m_loop, TRACE, m_parent, "Deleted UdpClient");
 }
 
 void UdpClient::Impl::set_destination(const Endpoint& endpoint) {

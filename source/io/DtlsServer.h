@@ -21,7 +21,7 @@ class DtlsServer : public Removable,
 public:
     using NewConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(DtlsConnectedClient&, const DataChunk&, const Error&)>;
-    using ConnectionTimeoutCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
+    using CloseConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
 
     static const std::size_t DEFAULT_TIMEOUT_MS = 1000;
 
@@ -47,7 +47,7 @@ public:
                 NewConnectionCallback new_connection_callback,
                 DataReceivedCallback data_receive_callback,
                 std::size_t timeout_ms,
-                ConnectionTimeoutCallback timeout_callback);
+                CloseConnectionCallback close_callback);
 
     IO_DLL_PUBLIC void close();
 

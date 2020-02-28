@@ -9,6 +9,8 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+#include <iostream>
+
 namespace io {
 namespace detail {
 
@@ -33,12 +35,16 @@ public:
     virtual void on_handshake_complete() = 0;
     virtual void on_handshake_failed(long openssl_error_code, const Error& error) = 0;
 
+    virtual void on_alert(int code) = 0;
+
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
 
     void on_data_receive(const char* buf, std::size_t size);
 
     bool is_open() const;
+
+    void ssl_shutdown();
 
     TlsVersion negotiated_tls_version() const;
     DtlsVersion negotiated_dtls_version() const;
@@ -65,14 +71,15 @@ protected:
     bool m_ssl_inited = false;
 
 private:
-    /*
+    //* // TODO:
     static void ssl_state_callback(const SSL* ssl, int where, int ret) {
         auto& this_ = *reinterpret_cast<OpenSslClientImplBase*>(SSL_get_ex_data(ssl, 0));
         if (where & SSL_CB_ALERT) {
-            std::cout << "ALERT!!! " << ret << std::endl;
+            //std::cout << "ALERT!!! " << ret << " " << SSL_alert_type_string_long(ret) << " " << SSL_alert_desc_string_long(ret) << std::endl;
+            this_.on_alert(ret & 0xFF);
         }
     }
-    */
+    //*/
 
     SSLPtr m_ssl;
 
@@ -170,7 +177,7 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init(::SSL_CTX* ssl_ctx) 
     }
 
     SSL_set_ex_data(m_ssl.get(), 0, this);
-    //SSL_set_info_callback(m_ssl.get(), &OpenSslClientImplBase<ParentType, ImplType>::ssl_state_callback);
+    SSL_set_info_callback(m_ssl.get(), &OpenSslClientImplBase<ParentType, ImplType>::ssl_state_callback);
 
     m_ssl_read_bio = BIO_new(BIO_s_mem());
     if (m_ssl_read_bio == nullptr) {
@@ -371,6 +378,23 @@ bool OpenSslClientImplBase<ParentType, ImplType>::schedule_removal() {
     }
 
     return true;
+}
+
+template<typename ParentType, typename ImplType>
+void OpenSslClientImplBase<ParentType, ImplType>::ssl_shutdown() {
+    auto return_code = SSL_shutdown(m_ssl.get());
+    // TODO: fixme!!!
+    std::cout << "return_code: " << return_code << std::endl;
+
+    int write_pending = BIO_pending(m_ssl_write_bio);
+    int read_pending = BIO_pending(m_ssl_read_bio);
+    std::cout << "write_pending: " << write_pending << std::endl;
+    std::cout << "read_pending: " << read_pending << std::endl;
+
+    if (write_pending) {
+        // TODO: need better name here
+        handshake_read_from_sll_and_send();
+    }
 }
 
 } // namespace detail

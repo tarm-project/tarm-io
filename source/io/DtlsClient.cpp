@@ -35,6 +35,7 @@ protected:
     void on_ssl_read(const DataChunk& data, const Error& error) override;
     void on_handshake_complete() override;
     void on_handshake_failed(long openssl_error_code, const Error& error) override;
+    void on_alert(int code) override;
 
 private:
     ConnectCallback m_connect_callback;
@@ -46,12 +47,14 @@ private:
 };
 
 DtlsClient::Impl::~Impl() {
+    IO_LOG(m_loop, TRACE, m_parent, "Deleted DtlsClient");
 }
 
 DtlsClient::Impl::Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClient& parent) :
     OpenSslClientImplBase(loop, parent),
     m_version_range(version_range),
     m_openssl_context(loop, parent) {
+    IO_LOG(m_loop, TRACE, m_parent, "New DtlsClient");
 }
 
 std::uint32_t DtlsClient::Impl::ipv4_addr() const {
@@ -107,11 +110,7 @@ const SSL_METHOD* DtlsClient::Impl::ssl_method() {
     return DTLS_client_method();
 #endif
 }
-/*
-void DtlsClient::Impl::ssl_set_versions() {
-    this->set_dtls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
-}
-*/
+
 void DtlsClient::Impl::ssl_set_state() {
     SSL_set_connect_state(this->ssl());
 }
@@ -131,6 +130,14 @@ void DtlsClient::Impl::on_handshake_complete() {
 void DtlsClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const Error& error) {
     if (m_connect_callback) {
         m_connect_callback(*this->m_parent, error);
+    }
+}
+
+void DtlsClient::Impl::on_alert(int code) {
+    if (code == SSL3_AD_CLOSE_NOTIFY) {
+        if (m_close_callback) {
+            m_close_callback(*m_parent, Error(0));
+        }
     }
 }
 

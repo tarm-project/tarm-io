@@ -13,7 +13,13 @@ namespace io {
 
 class DtlsConnectedClient::Impl : public detail::OpenSslClientImplBase<DtlsConnectedClient, DtlsConnectedClient::Impl> {
 public:
-    Impl(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, UdpPeer& udp_client, const detail::DtlsContext& context, DtlsConnectedClient& parent);
+    Impl(EventLoop& loop,
+         DtlsServer& dtls_server,
+         NewConnectionCallback new_connection_callback,
+         CloseCallback close_callback,
+         UdpPeer& udp_client,
+         const detail::DtlsContext& context,
+         DtlsConnectedClient& parent);
     ~Impl();
 
     Error init_ssl();
@@ -31,6 +37,7 @@ protected:
     void on_ssl_read(const DataChunk& data, const Error& error) override;
     void on_handshake_complete() override;
     void on_handshake_failed(long openssl_error_code, const Error& error) override;
+    void on_alert(int code) override;
 
 private:
     DtlsServer* m_dtls_server;
@@ -39,18 +46,21 @@ private:
 
     DataReceiveCallback m_data_receive_callback = nullptr;
     NewConnectionCallback m_new_connection_callback = nullptr;
+    CloseCallback m_close_callback = nullptr;
 };
 
 DtlsConnectedClient::Impl::Impl(EventLoop& loop,
                                 DtlsServer& dtls_server,
                                 NewConnectionCallback new_connection_callback,
+                                CloseCallback close_callback,
                                 UdpPeer& udp_client,
                                 const detail::DtlsContext& context,
                                 DtlsConnectedClient& parent) :
     OpenSslClientImplBase(loop, parent),
     m_dtls_server(&dtls_server),
     m_dtls_context(context),
-    m_new_connection_callback(new_connection_callback) {
+    m_new_connection_callback(new_connection_callback),
+    m_close_callback(close_callback) {
     m_client = &udp_client;
     m_client->set_user_data(&parent);
 }
@@ -67,8 +77,11 @@ void DtlsConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback ca
 }
 
 void DtlsConnectedClient::Impl::close() {
-    // TODO: fixme
-    //m_client->close();
+    this->ssl_shutdown();
+    if (m_close_callback) {
+        m_close_callback(*m_parent, Error(0));
+    }
+    m_client->close(1000); // TODO: hardcode
 }
 
 DtlsServer& DtlsConnectedClient::Impl::server() {
@@ -108,11 +121,20 @@ void DtlsConnectedClient::Impl::on_handshake_failed(long /*openssl_error_code*/,
     }
 }
 
+void DtlsConnectedClient::Impl::on_alert(int code) {
+    // Do nothing
+}
+
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-DtlsConnectedClient::DtlsConnectedClient(EventLoop& loop, DtlsServer& dtls_server, NewConnectionCallback new_connection_callback, UdpPeer& udp_client, void* context) :
+DtlsConnectedClient::DtlsConnectedClient(EventLoop& loop,
+                                         DtlsServer& dtls_server,
+                                         NewConnectionCallback new_connection_callback,
+                                         CloseCallback close_callback,
+                                         UdpPeer& udp_client,
+                                         void* context) :
     Removable(loop),
-    m_impl(new Impl(loop, dtls_server, new_connection_callback, udp_client, *reinterpret_cast<detail::DtlsContext*>(context), *this)) {
+    m_impl(new Impl(loop, dtls_server, new_connection_callback, close_callback, udp_client, *reinterpret_cast<detail::DtlsContext*>(context), *this)) {
 }
 
 DtlsConnectedClient::~DtlsConnectedClient() {

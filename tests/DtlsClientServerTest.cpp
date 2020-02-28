@@ -754,6 +754,61 @@ TEST_F(DtlsClientServerTest, fail_to_init_ssl_on_client) {
     EXPECT_EQ(1, client_connect_counter);
 }
 
+TEST_F(DtlsClientServerTest, close_connection_from_server_side) {
+    io::EventLoop loop;
+
+    std::size_t client_on_close_count = 0;
+    std::size_t client_on_receive_count = 0;
+
+    const std::string client_message = "Hello from client!";
+    const std::string server_message = "Hello from server!";
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            client.send_data(server_message,
+                [&](io::DtlsConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error.string();
+                    client.close();
+                }
+            );
+        }
+    );
+
+    auto client = new io::DtlsClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            client.send_data(client_message,
+                [&](io::DtlsClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error.string();
+                }
+            );
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            ++client_on_receive_count;
+        },
+        [&](io::DtlsClient& client, const io::Error& error) {
+            server->schedule_removal();
+            client.schedule_removal();
+
+            ++client_on_close_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, client_on_receive_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(1, client_on_receive_count);
+}
 
 // TODO: DTLS version lower is bigger than higher error
 

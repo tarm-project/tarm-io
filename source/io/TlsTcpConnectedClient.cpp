@@ -38,6 +38,7 @@ protected:
     void on_ssl_read(const DataChunk& data, const Error& error) override;
     void on_handshake_complete() override;
     void on_handshake_failed(long openssl_error_code, const Error& error) override;
+    void on_alert(int code) override;
 
 private:
     TlsTcpServer* m_tls_server = nullptr;;
@@ -153,6 +154,10 @@ void TlsTcpConnectedClient::Impl::on_handshake_failed(long openssl_error_code, c
     }
 
     m_client->close();
+}
+
+void TlsTcpConnectedClient::Impl::on_alert(int code) {
+    // Do nothing
 }
 
 TlsTcpServer& TlsTcpConnectedClient::Impl::server() {
