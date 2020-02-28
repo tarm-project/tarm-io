@@ -4,6 +4,7 @@
 #include "Timer.h"
 #include "EventLoop.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <functional>
