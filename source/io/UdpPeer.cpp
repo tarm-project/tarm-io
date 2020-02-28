@@ -1,5 +1,7 @@
 #include "UdpPeer.h"
 
+#include "UdpServer.h"
+
 #include "ByteSwap.h"
 #include "detail/UdpClientImplBase.h"
 
@@ -16,6 +18,10 @@ public:
 
     UdpServer& server();
     const UdpServer& server() const;
+
+    void close(std::size_t inactivity_timeout_ms);
+
+    std::uint64_t id();
 
 private:
     UdpServer* m_server = nullptr;
@@ -44,6 +50,15 @@ UdpServer& UdpPeer::Impl::server() {
 
 const UdpServer& UdpPeer::Impl::server() const {
     return *m_server;
+}
+
+void UdpPeer::Impl::close(std::size_t inactivity_timeout_ms) {
+    m_server->close_peer(*m_parent, inactivity_timeout_ms);
+    m_udp_handle = nullptr;
+}
+
+std::uint64_t UdpPeer::Impl::id() {
+    return std::uint64_t(host_to_network(port())) << 32 | std::uint64_t(host_to_network(address()));
 }
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
@@ -90,6 +105,14 @@ UdpServer& UdpPeer::server() {
 
 const UdpServer& UdpPeer::server() const {
     return m_impl->server();
+}
+
+void UdpPeer::close(std::size_t inactivity_timeout_ms) {
+    return m_impl->close(inactivity_timeout_ms);
+}
+
+std::uint64_t UdpPeer::id() {
+    return m_impl->id();
 }
 
 } // namespace io

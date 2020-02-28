@@ -133,8 +133,8 @@ Endpoint::Endpoint(std::uint8_t (&address_bytes)[4], std::uint16_t port) :
     m_impl(new Impl(address_bytes, 4, port)) {
 }
 
-Endpoint::Endpoint(std::uint8_t (&address_bytes)[16], std::uint16_t port)  :
-    m_impl(new Impl(address_bytes, 16, port)){
+Endpoint::Endpoint(std::uint8_t (&address_bytes)[16], std::uint16_t port) :
+    m_impl(new Impl(address_bytes, 16, port)) {
 }
 
 Endpoint::~Endpoint() {

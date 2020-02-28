@@ -27,6 +27,8 @@ public:
 
     bool peer_bookkeeping_enabled() const;
 
+    void close_peer(UdpPeer& peer, std::size_t inactivity_timeout_ms);
+
 protected:
     // statics
     static void on_data_received(
@@ -41,6 +43,7 @@ private:
     PeerTimeoutCallback m_peer_timeout_callback = nullptr;
 
     std::unordered_map<std::uint64_t, std::shared_ptr<UdpPeer>> m_peers;
+    std::unordered_map<std::uint64_t, std::unique_ptr<Timer, typename Timer::DefaultDelete>> m_inactive_peers;
     std::unique_ptr<BacklogWithTimeout<std::shared_ptr<UdpPeer>>> m_peers_backlog;
 };
 
@@ -54,7 +57,7 @@ Error UdpServer::Impl::bind(const Endpoint& endpoint) {
     }
 
     auto uv_status = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const struct sockaddr*>(endpoint.raw_endpoint()), UV_UDP_REUSEADDR);
-    return Error(uv_status);;
+    return Error(uv_status);
 }
 
 Error UdpServer::Impl::start_receive(const Endpoint& endpoint, DataReceivedCallback data_receive_callback) {
@@ -90,9 +93,7 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
     auto on_expired = [this](io::BacklogWithTimeout<std::shared_ptr<UdpPeer>>&, const std::shared_ptr<UdpPeer>& item) {
         m_peer_timeout_callback(*item, Error(0));
 
-        // TODO: store in peer or make a function for this (this is copypaste)
-        const std::uint64_t peer_id = std::uint64_t(host_to_network(item->port())) << 32 | std::uint64_t(host_to_network(item->address()));
-        auto it = m_peers.find(peer_id);
+        auto it = m_peers.find(item->id());
         if (it != m_peers.end()) {
             m_peers.erase(it);
         } else {
@@ -123,12 +124,41 @@ bool UdpServer::Impl::close_with_removal() {
     }
 
     m_peers.clear();
+    m_inactive_peers.clear();
 
     return true;
 }
 
 bool UdpServer::Impl::peer_bookkeeping_enabled() const {
     return m_peers_backlog.get() != nullptr;
+}
+
+void UdpServer::Impl::close_peer(UdpPeer& peer, std::size_t inactivity_timeout_ms) {
+    const auto peer_id = peer.id();
+
+    auto it = m_inactive_peers.find(peer_id);
+    if (it != m_inactive_peers.end()) {
+        return;
+    }
+
+    auto timer = new Timer(*m_loop);
+    m_inactive_peers.insert(std::make_pair(peer_id,
+                                           std::unique_ptr<Timer,
+                                                           typename Timer::DefaultDelete>
+                                                          (timer, Timer::default_delete())));
+    timer->start(inactivity_timeout_ms,
+                 [this, peer_id] (Timer& timer) {
+                     m_inactive_peers.erase(peer_id);
+                 });
+
+    auto active_it = m_peers.find(peer_id);
+    if (active_it == m_peers.end()) {
+        // TODO: log error
+        return;
+    }
+
+    m_peers_backlog->remove_item(active_it->second);
+    m_peers.erase(active_it);
 }
 
 ///////////////////////////////////////////  static  ////////////////////////////////////////////
@@ -155,7 +185,12 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                 DataChunk data_chunk(buf, std::size_t(nread));
                 if (this_.peer_bookkeeping_enabled()) {
                     // TODO: ipv6
-                    std::uint64_t peer_id = std::uint64_t(address->sin_port) << 32 | std::uint64_t(address->sin_addr.s_addr);
+                    const std::uint64_t peer_id = std::uint64_t(address->sin_port) << 32 | std::uint64_t(address->sin_addr.s_addr);
+                    auto inative_peer_it = this_.m_inactive_peers.find(peer_id);
+                    if (inative_peer_it != this_.m_inactive_peers.end()) {
+                        return;
+                    }
+
                     auto& peer_ptr = this_.m_peers[peer_id];
                     if (!peer_ptr.get()) {
                         peer_ptr.reset(new UdpPeer(*this_.m_loop,
@@ -172,9 +207,11 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                             this_.m_new_peer_callback(*peer_ptr.get(), Error(0));
                         }
                     }
-                    this_.m_data_receive_callback(*peer_ptr, data_chunk, error);
 
                     peer_ptr->set_last_packet_time(::uv_hrtime());
+
+                    // This should be the last because peer may be reseted in callback
+                    this_.m_data_receive_callback(*peer_ptr, data_chunk, error);
                 } else {
                     // Ref/Unref semantics here was added to prolong lifetime of oneshot UdpPeer objects
                     // and to allow call send data in receive callback for UdpServer without peers tracking.
@@ -208,8 +245,6 @@ void UdpServer::Impl::free_udp_peer(UdpPeer* peer) {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-
-
 UdpServer::UdpServer(EventLoop& loop) :
     Removable(loop),
     m_impl(new UdpServer::Impl(loop, *this)) {
@@ -239,6 +274,10 @@ void UdpServer::schedule_removal() {
     if (ready_to_remove) {
         Removable::schedule_removal();
     }
+}
+
+void UdpServer::close_peer(UdpPeer& peer, std::size_t inactivity_timeout_ms) {
+    return m_impl->close_peer(peer, inactivity_timeout_ms);
 }
 
 } // namespace io

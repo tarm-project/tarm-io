@@ -48,6 +48,10 @@ protected:
     IO_DLL_PUBLIC ~UdpServer();
 
 private:
+    friend class UdpPeer;
+
+    void close_peer(UdpPeer& peer, std::size_t inactivity_timeout_ms);
+
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };

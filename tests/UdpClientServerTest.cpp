@@ -1151,6 +1151,229 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
     EXPECT_EQ(send_timeouts.size(), client_send_counter);
 }
 
+TEST_F(UdpClientServerTest, close_peer_from_server) {
+    io::EventLoop loop;
+
+    const std::size_t INACTIVE_TIMEOUT = 500;
+
+    std::size_t server_on_data_receive_callback_count = 0;
+    std::size_t server_on_new_peer_callback_count = 0;
+    std::size_t server_on_peer_timeout_callback_count = 0;
+
+    std::chrono::system_clock::time_point t1;
+    std::chrono::system_clock::time_point t2;
+
+    auto server = new io::UdpServer(loop);
+    auto error = server->start_receive(
+        { m_default_addr, m_default_port } ,
+        [&] (io::UdpPeer&, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_new_peer_callback_count;
+        },
+        [&] (io::UdpPeer& peer, const io::DataChunk&, const io::Error&) {
+            peer.close(INACTIVE_TIMEOUT);
+
+            if (server_on_data_receive_callback_count == 0) {
+                t1 = std::chrono::system_clock::now();
+            } else if (server_on_data_receive_callback_count == 1) {
+                t2 = std::chrono::system_clock::now();
+            }
+
+            ++server_on_data_receive_callback_count;
+        },
+        1000 * 100,
+        [&] (io::UdpPeer&, const io::Error&){
+            ++server_on_peer_timeout_callback_count;
+        }
+    );
+    EXPECT_FALSE(error);
+
+    auto client = new io::UdpClient(loop, { m_default_addr, m_default_port });
+
+    auto cleint_send_timer = new io::Timer(loop);
+    cleint_send_timer->start(
+        1,
+        1,
+        [&](io::Timer& timer) {
+            client->send_data("!");
+            if (server_on_data_receive_callback_count == 2) {
+                server->schedule_removal();
+                timer.schedule_removal();
+                client->schedule_removal();
+            }
+        }
+    );
+
+    EXPECT_EQ(0, server_on_data_receive_callback_count);
+    EXPECT_EQ(0, server_on_new_peer_callback_count);
+    EXPECT_EQ(0, server_on_peer_timeout_callback_count);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(2, server_on_data_receive_callback_count);
+    EXPECT_EQ(2, server_on_new_peer_callback_count);
+    EXPECT_EQ(0, server_on_peer_timeout_callback_count);
+
+    const auto time_between_received_packets = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    EXPECT_GE(time_between_received_packets, INACTIVE_TIMEOUT - INACTIVE_TIMEOUT * 0.1);
+}
+
+TEST_F(UdpClientServerTest, closed_peer_from_server_has_no_timeout) {
+    io::EventLoop loop;
+
+    const std::size_t INACTIVE_TIMEOUT = 250;
+    const std::size_t CLIENT_TIMEOUT = 100;
+
+    std::size_t server_on_data_receive_callback_count = 0;
+    std::size_t server_on_new_peer_callback_count = 0;
+    std::size_t server_on_peer_timeout_callback_count = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto error = server->start_receive(
+        { m_default_addr, m_default_port } ,
+        [&] (io::UdpPeer&, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_new_peer_callback_count;
+        },
+        [&] (io::UdpPeer& peer, const io::DataChunk&, const io::Error&) {
+            peer.close(INACTIVE_TIMEOUT);
+
+            ++server_on_data_receive_callback_count;
+        },
+        CLIENT_TIMEOUT,
+        [&] (io::UdpPeer&, const io::Error&){
+            ++server_on_peer_timeout_callback_count;
+        }
+    );
+    EXPECT_FALSE(error);
+
+    auto client = new io::UdpClient(loop, { m_default_addr, m_default_port });
+    client->send_data("!");
+
+    auto cleint_send_timer = new io::Timer(loop);
+    cleint_send_timer->start(
+        INACTIVE_TIMEOUT * 2,
+        [&](io::Timer& timer) {
+            server->schedule_removal();
+            timer.schedule_removal();
+            client->schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_data_receive_callback_count);
+    EXPECT_EQ(0, server_on_new_peer_callback_count);
+    EXPECT_EQ(0, server_on_peer_timeout_callback_count);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_data_receive_callback_count);
+    EXPECT_EQ(1, server_on_new_peer_callback_count);
+    EXPECT_EQ(0, server_on_peer_timeout_callback_count);
+}
+
+TEST_F(UdpClientServerTest, double_close_peer_from_server) {
+    // Note: testing that second attempt to close peer while its being closed has no efect
+
+    io::EventLoop loop;
+
+    const std::size_t INACTIVE_TIMEOUT_1 = 200;
+    const std::size_t INACTIVE_TIMEOUT_2 = 50;
+
+    std::size_t server_on_data_receive_callback_count = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto error = server->start_receive(
+        { m_default_addr, m_default_port } ,
+        [&] (io::UdpPeer& peer, const io::DataChunk&, const io::Error&) {
+            peer.close(INACTIVE_TIMEOUT_1);
+            peer.close(INACTIVE_TIMEOUT_2); // This will be ignored
+
+            ++server_on_data_receive_callback_count;
+        },
+        1000,
+        nullptr
+    );
+    EXPECT_FALSE(error);
+
+    auto client = new io::UdpClient(loop, { m_default_addr, m_default_port });
+    client->send_data("!");
+
+    auto cleint_send_timer = new io::Timer(loop);
+    cleint_send_timer->start(
+        INACTIVE_TIMEOUT_2 * 2,
+        [&] (io::Timer& timer) {
+            client->send_data("!");
+            timer.schedule_removal();
+        }
+    );
+
+    auto cleanup_timer = new io::Timer(loop);
+    cleanup_timer->start(
+        INACTIVE_TIMEOUT_2 * 3,
+        [&] (io::Timer& timer) {
+            server->schedule_removal();
+            client->schedule_removal();
+            timer.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_data_receive_callback_count);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_data_receive_callback_count);
+}
+
+TEST_F(UdpClientServerTest, close_peer_from_server_and_than_try_send) {
+    io::EventLoop loop;
+
+    const std::size_t INACTIVE_TIMEOUT = 100;
+
+    std::size_t server_on_data_receive_callback_count = 0;
+    std::size_t peer_on_send_callback_count = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto error = server->start_receive(
+        { m_default_addr, m_default_port } ,
+        [&] (io::UdpPeer& peer, const io::DataChunk&, const io::Error&) {
+            peer.close(INACTIVE_TIMEOUT);
+
+            ++server_on_data_receive_callback_count;
+
+            peer.send_data("!",
+                [&](io::UdpPeer& peer, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    ++peer_on_send_callback_count;
+                }
+            );
+        },
+        1000,
+        nullptr
+    );
+    EXPECT_FALSE(error);
+
+    auto client = new io::UdpClient(loop, { m_default_addr, m_default_port });
+    client->send_data("!");
+
+    auto cleint_send_timer = new io::Timer(loop);
+    cleint_send_timer->start(
+        INACTIVE_TIMEOUT * 2,
+        [&] (io::Timer& timer) {
+            server->schedule_removal();
+            timer.schedule_removal();
+            client->schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_data_receive_callback_count);
+    EXPECT_EQ(0, peer_on_send_callback_count);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_data_receive_callback_count);
+    EXPECT_EQ(1, peer_on_send_callback_count);
+}
+
 // TODO: UDP client sending test with no destination set
 // TODO: check address of UDP peer
 // TODO: error on multiple start_receive on UDP server

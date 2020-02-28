@@ -46,10 +46,9 @@ UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, Pare
 
 template<typename ParentType, typename ImplType>
 void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
-
     this->set_last_packet_time(::uv_hrtime());
 
-    if (!UdpImplBase<ParentType, ImplType>::m_parent->is_open()) {
+    if (!UdpImplBase<ParentType, ImplType>::is_open()) {
         if (callback) {
             UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=]() {
                 callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(StatusCode::OPERATION_CANCELED));

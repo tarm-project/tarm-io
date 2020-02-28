@@ -42,13 +42,19 @@ public:
     IO_DLL_PUBLIC UdpServer& server();
     IO_DLL_PUBLIC const UdpServer& server() const;
 
+    // DOC: timeout of inactivity as UDP is connectionless protocol
+    // TODO: hardcoded value
+    // TODO: what about peers with no bookkeeping enabled? Do we need to enable bookkeeping by default???
+    //       or enable it for peers which were closed only?
+    IO_DLL_PUBLIC void close(std::size_t inactivity_timeout_ms = 1000);
+
 protected:
     IO_DLL_PUBLIC ~UdpPeer();
 
 private:
     IO_DLL_PUBLIC UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint);
-
     IO_DLL_PUBLIC void set_last_packet_time(std::uint64_t time);
+    std::uint64_t id();
 
     class Impl;
     std::unique_ptr<Impl> m_impl;
