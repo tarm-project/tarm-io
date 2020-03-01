@@ -301,7 +301,7 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
         EXPECT_FALSE(error);
 
         ASSERT_TRUE(client.user_data());
-        auto& value = *reinterpret_cast<decltype(server_receive_counter)*>(client.user_data());
+        auto& value = *reinterpret_cast<std::size_t*>(client.user_data());
         EXPECT_EQ(2, value);
 
         ++server_timeout_counter;
