@@ -295,6 +295,150 @@ TEST_F(TimerTest, multiple_intervals) {
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(TimerTest, start_in_callback_1) {
+    io::EventLoop loop;
+
+    std::size_t call_counter = 0;
+
+    auto timer = new io::Timer(loop);
+    timer->start(10, [&](io::Timer& timer) {
+        ++call_counter;
+        EXPECT_EQ(10, timer.timeout_ms());
+        timer.start(20, [&](io::Timer& timer) {
+            ++call_counter;
+            EXPECT_EQ(20, timer.timeout_ms());
+            timer.start(30, [&](io::Timer& timer) {
+                ++call_counter;
+                EXPECT_EQ(30, timer.timeout_ms());
+                timer.schedule_removal();
+            });
+            EXPECT_EQ(30, timer.timeout_ms());
+        });
+        EXPECT_EQ(20, timer.timeout_ms());
+    });
+    EXPECT_EQ(10, timer->timeout_ms());
+
+    EXPECT_EQ(0, call_counter);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(3, call_counter);
+}
+
+TEST_F(TimerTest, start_in_callback_2) {
+    io::EventLoop loop;
+
+    std::size_t call_counter = 0;
+
+    auto timer = new io::Timer(loop);
+    timer->start(10, 100, [&](io::Timer& timer) {
+        ++call_counter;
+        EXPECT_EQ(10, timer.timeout_ms());
+        timer.start(20, 200, [&](io::Timer& timer) {
+            ++call_counter;
+            EXPECT_EQ(20, timer.timeout_ms());
+            timer.start(30, 300, [&](io::Timer& timer) {
+                ++call_counter;
+                EXPECT_EQ(30, timer.timeout_ms());
+                timer.schedule_removal();
+            });
+            EXPECT_EQ(30, timer.timeout_ms());
+        });
+        EXPECT_EQ(20, timer.timeout_ms());
+    });
+    EXPECT_EQ(10, timer->timeout_ms());
+
+    EXPECT_EQ(0, call_counter);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(3, call_counter);
+}
+
+TEST_F(TimerTest, start_in_callback_3) {
+    io::EventLoop loop;
+
+    std::size_t call_counter = 0;
+
+    auto timer = new io::Timer(loop);
+    timer->start({1, 2, 3}, [&](io::Timer& timer) {
+        ++call_counter;
+        EXPECT_EQ(1, timer.timeout_ms());
+        timer.start({10, 20, 30}, [&](io::Timer& timer) {
+            ++call_counter;
+            EXPECT_EQ(10, timer.timeout_ms());
+            timer.start({100, 200, 300}, [&](io::Timer& timer) {
+                ++call_counter;
+                EXPECT_EQ(100, timer.timeout_ms());
+                timer.schedule_removal();
+            });
+            EXPECT_EQ(100, timer.timeout_ms());
+        });
+        EXPECT_EQ(10, timer.timeout_ms());
+    });
+    EXPECT_EQ(1, timer->timeout_ms());
+
+    EXPECT_EQ(0, call_counter);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(3, call_counter);
+}
+
+TEST_F(TimerTest, callback_call_counter_1) {
+    io::EventLoop loop;
+
+    const std::size_t CALL_COUNT_MAX = 10;
+
+    std::size_t callback_counter = 0;
+
+    std::function<void(io::Timer&)> timer_callback = [&] (io::Timer& timer) {
+        EXPECT_EQ(0, timer.callback_call_counter());
+        if (callback_counter == CALL_COUNT_MAX - 1) {
+            timer.schedule_removal();
+        } else {
+            timer.start(10, timer_callback);
+        }
+        ++callback_counter;
+    };
+
+    auto timer = new io::Timer(loop);
+    EXPECT_EQ(0, timer->callback_call_counter());
+    timer->start(10, timer_callback);
+    EXPECT_EQ(0, timer->callback_call_counter());
+
+    EXPECT_EQ(0, callback_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(CALL_COUNT_MAX, callback_counter);
+}
+
+TEST_F(TimerTest, callback_call_counter_2) {
+    io::EventLoop loop;
+
+    const std::size_t CALL_COUNT_MAX = 10;
+
+    std::size_t callback_counter = 0;
+
+    auto timer = new io::Timer(loop);
+    EXPECT_EQ(0, timer->callback_call_counter());
+    timer->start(10, 20, [&] (io::Timer& timer) {
+        EXPECT_EQ(callback_counter, timer.callback_call_counter());
+        if (callback_counter == CALL_COUNT_MAX - 1) {
+            timer.schedule_removal();
+        }
+        ++callback_counter;
+    });
+    EXPECT_EQ(0, timer->callback_call_counter());
+
+    EXPECT_EQ(0, callback_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(CALL_COUNT_MAX, callback_counter);
+}
+
 TEST_F(TimerTest, 100k_timers) {
     io::EventLoop loop;
 

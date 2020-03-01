@@ -21,6 +21,9 @@ public:
     std::uint64_t timeout_ms() const;
     std::uint64_t repeat_ms() const;
 
+    std::size_t callback_call_counter() const;
+
+protected:
     // statics
     static void on_timer(uv_timer_t* handle);
 
@@ -33,6 +36,10 @@ private:
     std::deque<std::uint64_t> m_timeouts_ms;
     uint64_t m_current_timeout_ms = 0;
     uint64_t m_repeat_ms = 0;
+
+    std::size_t m_call_counter = 0;
+
+    bool m_state_was_reset = false;
 };
 
 Timer::Impl::Impl(EventLoop& loop, Timer& parent) :
@@ -70,6 +77,8 @@ void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, Callback c
 }
 
 void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t repeat_ms, Callback callback) {
+    m_call_counter = 0;
+
     if (callback == nullptr) {
         return;
     }
@@ -77,6 +86,8 @@ void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t r
     if (timeouts_ms.empty()) {
         return;
     }
+
+    m_state_was_reset = true;
 
     m_timeouts_ms = timeouts_ms;
     m_repeat_ms = repeat_ms;
@@ -109,6 +120,10 @@ std::uint64_t Timer::Impl::repeat_ms() const {
     return m_uv_timer ? uv_timer_get_repeat(m_uv_timer) : 0;
 }
 
+std::size_t Timer::Impl::callback_call_counter() const {
+    return m_call_counter;
+}
+
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 void Timer::Impl::on_timer(uv_timer_t* handle) {
     assert(handle->data);
@@ -116,9 +131,16 @@ void Timer::Impl::on_timer(uv_timer_t* handle) {
     auto& this_ = *reinterpret_cast<Timer::Impl*>(handle->data);
     auto& parent_ = *this_.m_parent;
 
+    this_.m_state_was_reset = false;
     if (this_.m_callback) {
         this_.m_callback(parent_);
     }
+
+    if (this_.m_state_was_reset) {
+        return;
+    }
+
+    ++this_.m_call_counter;
 
     if (!this_.m_timeouts_ms.empty()) {
         this_.start_impl();
@@ -126,8 +148,6 @@ void Timer::Impl::on_timer(uv_timer_t* handle) {
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
-
-
 
 Timer::Timer(EventLoop& loop) :
     Removable(loop),
@@ -164,6 +184,10 @@ std::uint64_t Timer::timeout_ms() const {
 
 std::uint64_t Timer::repeat_ms() const {
     return m_impl->repeat_ms();
+}
+
+std::size_t Timer::callback_call_counter() const {
+    return m_impl->callback_call_counter();
 }
 
 } // namespace io

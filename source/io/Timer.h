@@ -41,6 +41,8 @@ public:
     IO_DLL_PUBLIC std::uint64_t timeout_ms() const;
     IO_DLL_PUBLIC std::uint64_t repeat_ms() const;
 
+    IO_DLL_PUBLIC std::size_t callback_call_counter() const;
+
 protected:
     IO_DLL_PUBLIC ~Timer();
 
