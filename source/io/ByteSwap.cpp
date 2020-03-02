@@ -4,7 +4,11 @@
     #include <Winsock2.h>
 #else
     #include <netinet/in.h>
-    #include <endian.h>
+    #ifdef __APPLE__
+        #include <machine/endian.h>
+    #else
+        #include <endian.h>
+    #endif
 
     #if __BYTE_ORDER == __BIG_ENDIAN
         #define IO_NTOHLL(x) (x)
