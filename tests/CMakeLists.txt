@@ -36,6 +36,7 @@ list(APPEND TESTS_LIST
     Main.cpp
     LogRedirector.cpp
     ConstexprStringTest.cpp
+    ByteSwapTest.cpp
     UTCommon.cpp
     ConvertTest.cpp
     UserDataHolderTest.cpp
