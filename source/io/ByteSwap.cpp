@@ -2,6 +2,16 @@
 
 #ifdef _WIN32
     #include <Winsock2.h>
+    #include <stdlib.h>
+
+    #if IO_BIG_ENDIAN
+        #define IO_NTOHLL(x) (x)
+        #define IO_HTONLL(x) (x)
+    #else
+        #define IO_NTOHLL(x) _byteswap_uint64(x)
+        #define IO_HTONLL(x) _byteswap_uint64(x)
+    #endif
+
 #else
     #include <netinet/in.h>
     #ifdef __APPLE__

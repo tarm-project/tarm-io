@@ -1,3 +1,6 @@
+include(TestBigEndian)
+TEST_BIG_ENDIAN(IO_IS_BIG_ENDIAN)
+
 FILE(GLOB IO_HEADERS_LIST
         io/*.h
         io/global/*.h
@@ -71,6 +74,10 @@ endif()
 target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 target_include_directories(io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 target_compile_definitions(io PRIVATE IO_BUILDING_DLL)
+
+if (IO_IS_BIG_ENDIAN)
+    target_compile_definitions(io PRIVATE IO_BIG_ENDIAN)
+endif()
 
 if (WIN32)
     target_compile_definitions(io PUBLIC IO_BUILD_FOR_WINDOWS)
