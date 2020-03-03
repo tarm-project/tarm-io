@@ -21,12 +21,16 @@ std::uint32_t network_to_host(std::uint32_t v);
 IO_DLL_PUBLIC
 std::uint64_t network_to_host(std::uint64_t v);
 
+// TODO:
+
+/*
 // unsigned long is used to make MSVC happy
 template <typename T>
 typename std::enable_if<std::is_same<unsigned long, T>::value && sizeof(unsigned long) == 4, T>::type
 network_to_host(T v) {
     return network_to_host(std::uint32_t(v));
 }
+*/
 
 // host_to_network
 template <typename T>
@@ -41,6 +45,7 @@ std::uint32_t host_to_network(std::uint32_t v);
 IO_DLL_PUBLIC
 std::uint64_t host_to_network(std::uint64_t v);
 
+// TODO:
 // unsigned long is used to make MSVC happy
 template <typename T>
 typename std::enable_if<std::is_same<unsigned long, T>::value && sizeof(unsigned long) == 4, T>::type
