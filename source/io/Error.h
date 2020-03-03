@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CommonMacros.h"
 #include "Export.h"
 #include "StatusCode.h"
 
@@ -7,16 +8,19 @@
 
 namespace io {
 
-class IO_DLL_PUBLIC Error {
+class Error {
 public:
-    Error(std::int64_t libuv_code);
-    Error(StatusCode status_code);
-    Error(StatusCode status_code, const std::string& custom_error_message);
+    IO_ALLOW_COPY(Error);
+    IO_ALLOW_MOVE(Error);
 
-    StatusCode code() const;
-    std::string string() const;
+    IO_DLL_PUBLIC Error(std::int64_t libuv_code);
+    IO_DLL_PUBLIC Error(StatusCode status_code);
+    IO_DLL_PUBLIC Error(StatusCode status_code, const std::string& custom_error_message);
 
-    operator bool() const;
+    IO_DLL_PUBLIC StatusCode code() const;
+    IO_DLL_PUBLIC std::string string() const;
+
+    IO_DLL_PUBLIC operator bool() const;
 
 private:
     std::int64_t m_libuv_code = 0;

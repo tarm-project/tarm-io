@@ -10,6 +10,10 @@
     X(const X&&) = delete;            \
     X& operator=(const X&&) = delete;
 
+#define IO_ALLOW_COPY(X)              \
+    X(const X&) = default;            \
+    X& operator=(const X&) = default;
+
 #define IO_ALLOW_MOVE(X)         \
     X(X&&) = default;            \
     X& operator=(X&&) = default;
