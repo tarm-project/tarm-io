@@ -118,7 +118,10 @@ Endpoint::Endpoint(const std::string& address, std::uint16_t port) :
 
 Endpoint::Endpoint(std::uint32_t address, std::uint16_t port) :
     m_impl(new Impl(address, port)) {
+}
 
+Endpoint::Endpoint(unsigned long address, std::uint16_t port) :
+    m_impl(new Impl(std::uint32_t(address), port)) {
 }
 
 Endpoint::Endpoint(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port) :
