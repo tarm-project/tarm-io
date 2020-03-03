@@ -810,6 +810,69 @@ TEST_F(DtlsClientServerTest, close_connection_from_server_side) {
     EXPECT_EQ(1, client_on_receive_count);
 }
 
+TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_no_data_sent) {
+    io::EventLoop loop;
+
+    std::size_t client_on_new_connection_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    std::size_t server_on_new_connection_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_new_connection_count;
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            // Not expecting this call
+            ++server_on_receive_count;
+        },
+        1000 * 100,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            ++server_on_close_count;
+            server->schedule_removal();
+        }
+    );
+
+    auto client = new io::DtlsClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_on_new_connection_count;
+            client.close();
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            // Not expecting this call
+            ++client_on_receive_count;
+        },
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_close_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_on_new_connection_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_new_connection_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_new_connection_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(1, server_on_new_connection_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(1, server_on_close_count);
+}
+
 // TODO: DTLS version lower is bigger than higher error
 
 // TODO: unit test invalid address

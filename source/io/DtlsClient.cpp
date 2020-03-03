@@ -99,7 +99,10 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
 }
 
 void DtlsClient::Impl::close() {
-    // TODO: implement
+    const auto error = this->ssl_shutdown();
+    if (m_close_callback) {
+        m_close_callback(*m_parent, error);
+    }
 }
 
 const SSL_METHOD* DtlsClient::Impl::ssl_method() {
@@ -134,6 +137,8 @@ void DtlsClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const Er
 }
 
 void DtlsClient::Impl::on_alert(int code) {
+    IO_LOG(m_loop, DEBUG, m_parent, "");
+
     if (code == SSL3_AD_CLOSE_NOTIFY) {
         if (m_close_callback) {
             m_close_callback(*m_parent, Error(0));

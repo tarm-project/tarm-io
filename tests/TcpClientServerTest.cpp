@@ -839,12 +839,8 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
 
     auto server = new io::TcpServer(loop);
 
-    bool client_close_called = false;
-    io::TcpServer::CloseConnectionCallback on_client_close =
-        [&](io::TcpConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
-            client_close_called = true;
-        };
+    std::size_t on_connected_client_close_call_count = 0;
+    std::size_t on_raw_client_close_call_count = 0;
 
     io::TcpServer::NewConnectionCallback on_server_new_connection =
         [=](io::TcpConnectedClient& client, const io::Error& error) {
@@ -856,32 +852,50 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
 
         };
 
+    io::TcpServer::CloseConnectionCallback on_connected_client_close =
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++on_connected_client_close_call_count;
+        };
+
     auto listen_error = server->listen({m_default_addr, m_default_port},
                                        on_server_new_connection,
                                        on_server_receive_data,
-                                       on_client_close);
+                                       on_connected_client_close);
     EXPECT_FALSE(listen_error);
 
-    io::TcpClient::ConnectCallback connect_callback =
+    io::TcpClient::ConnectCallback on_client_connect_callback =
         [](io::TcpClient& client, const io::Error error) {
             client.close();
         };
+    io::TcpClient::CloseCallback on_raw_client_close_callback =
+        [&](io::TcpClient& client, const io::Error error) {
+            ++on_raw_client_close_call_count;
+        };
 
     auto client = new io::TcpClient(loop);
-    client->connect({m_default_addr, m_default_port}, connect_callback, nullptr);
+    client->connect({m_default_addr, m_default_port},
+                    on_client_connect_callback,
+                    nullptr,
+                    on_raw_client_close_callback);
 
     auto timer = new io::Timer(loop);
     timer->start(500, [&](io::Timer& timer) {
         // Disconnect should be called before timer callback
-        EXPECT_TRUE(client_close_called);
+        EXPECT_EQ(1, on_connected_client_close_call_count);
 
         client->schedule_removal();
         server->schedule_removal();
         timer.schedule_removal();
     });
 
+    EXPECT_EQ(0, on_connected_client_close_call_count);
+    EXPECT_EQ(0, on_raw_client_close_call_count);
+
     ASSERT_EQ(0, loop.run());
-    EXPECT_TRUE(client_close_called);
+
+    EXPECT_EQ(1, on_connected_client_close_call_count);
+    EXPECT_EQ(1, on_raw_client_close_call_count);
 }
 
 TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {

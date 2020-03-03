@@ -77,9 +77,9 @@ void DtlsConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback ca
 }
 
 void DtlsConnectedClient::Impl::close() {
-    this->ssl_shutdown();
+    const auto error = this->ssl_shutdown();
     if (m_close_callback) {
-        m_close_callback(*m_parent, Error(0));
+        m_close_callback(*m_parent, error);
     }
     m_client->close(1000); // TODO: hardcode
 }
@@ -122,7 +122,13 @@ void DtlsConnectedClient::Impl::on_handshake_failed(long /*openssl_error_code*/,
 }
 
 void DtlsConnectedClient::Impl::on_alert(int code) {
-    // Do nothing
+    IO_LOG(m_loop, DEBUG, m_parent, "");
+
+    if (code == SSL3_AD_CLOSE_NOTIFY) {
+        if (m_close_callback) {
+            m_close_callback(*m_parent, Error(0));
+        }
+    }
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////

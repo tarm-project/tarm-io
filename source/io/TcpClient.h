@@ -17,9 +17,9 @@ class TcpClient : public Removable,
                   public UserDataHolder {
 public:
     using ConnectCallback = std::function<void(TcpClient&, const Error&)>;
+    using DataReceiveCallback = std::function<void(TcpClient&, const DataChunk&, const Error&)>;
     using CloseCallback = std::function<void(TcpClient&, const Error&)>;
     using EndSendCallback = std::function<void(TcpClient&, const Error&)>;
-    using DataReceiveCallback = std::function<void(TcpClient&, const DataChunk&, const Error&)>;
 
     IO_FORBID_COPY(TcpClient);
     IO_FORBID_MOVE(TcpClient);
