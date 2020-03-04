@@ -1,5 +1,7 @@
 #include "ByteSwap.h"
 
+#include <cstring>
+
 #ifdef _WIN32
     #include <Winsock2.h>
     #include <stdlib.h>
@@ -40,6 +42,13 @@ template <typename T, std::size_t SIZE = sizeof(T)>
 struct NetworkToHostDispatcher;
 
 template <typename T>
+struct NetworkToHostDispatcher<T, 2> {
+    static T convert(T t) {
+        return ntohs(t);
+    }
+};
+
+template <typename T>
 struct NetworkToHostDispatcher<T, 4> {
     static T convert(T t) {
         return ntohl(t);
@@ -49,13 +58,20 @@ struct NetworkToHostDispatcher<T, 4> {
 template <typename T>
 struct NetworkToHostDispatcher<T, 8> {
     static T convert(T t) {
-        return IO_NTOHLL(v);
+        return IO_NTOHLL(t);
     }
 };
 
 // HostToNetworkDispatcher
 template <typename T, std::size_t SIZE = sizeof(T)>
 struct HostToNetworkDispatcher;
+
+template <typename T>
+struct HostToNetworkDispatcher<T, 2> {
+    static T convert(T t) {
+        return htons(t);
+    }
+};
 
 template <typename T>
 struct HostToNetworkDispatcher<T, 4> {
@@ -67,28 +83,28 @@ struct HostToNetworkDispatcher<T, 4> {
 template <typename T>
 struct HostToNetworkDispatcher<T, 8> {
     static T convert(T t) {
-        return IO_HTONLL(v);
+        return IO_HTONLL(t);
     }
 };
 
 } // namespace
 
 // network_to_host
-std::uint16_t network_to_host(std::uint16_t v) { return ntohs(v); }
+unsigned short network_to_host(unsigned short v) { return NetworkToHostDispatcher<unsigned short>::convert(v); }
 
-std::uint32_t network_to_host(std::uint32_t v) { return ntohl(v); }
-
-std::uint64_t network_to_host(std::uint64_t v) { return IO_NTOHLL(v); }
+unsigned int network_to_host(unsigned int v) { return NetworkToHostDispatcher<unsigned int>::convert(v); }
 
 unsigned long network_to_host(unsigned long v) { return NetworkToHostDispatcher<unsigned long>::convert(v); }
 
+unsigned long long network_to_host(unsigned long long v) { return NetworkToHostDispatcher<unsigned long long>::convert(v); }
+
 // host_to_network
-std::uint16_t host_to_network(std::uint16_t v) { return htons(v); }
+unsigned short host_to_network(unsigned short v) { return HostToNetworkDispatcher<unsigned short>::convert(v); }
 
-std::uint32_t host_to_network(std::uint32_t v) { return htonl(v); }
-
-std::uint64_t host_to_network(std::uint64_t v) { return IO_HTONLL(v); }
+unsigned int host_to_network(unsigned int v) { return HostToNetworkDispatcher<unsigned int>::convert(v); }
 
 unsigned long host_to_network(unsigned long v) { return HostToNetworkDispatcher<unsigned long>::convert(v); }
+
+unsigned long long host_to_network(unsigned long long v) { return HostToNetworkDispatcher<unsigned long long>::convert(v); }
 
 } // namespace io
