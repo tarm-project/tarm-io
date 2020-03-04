@@ -77,11 +77,18 @@ void DtlsConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback ca
 }
 
 void DtlsConnectedClient::Impl::close() {
-    const auto error = this->ssl_shutdown();
-    if (m_close_callback) {
-        m_close_callback(*m_parent, error);
+    const auto error = this->ssl_shutdown([this](io::UdpPeer& client, const io::Error& error) {
+        if (m_close_callback) {
+            m_close_callback(*m_parent, Error(0));
+        }
+        m_client->close(1000); // TODO: hardcode
+    });
+
+    if (error) {
+        if (m_close_callback) {
+            m_close_callback(*m_parent, error);
+        }
     }
-    m_client->close(1000); // TODO: hardcode
 }
 
 DtlsServer& DtlsConnectedClient::Impl::server() {

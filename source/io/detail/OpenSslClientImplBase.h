@@ -31,7 +31,7 @@ public:
     virtual void on_ssl_read(const DataChunk& data, const Error& error) = 0;
 
     void do_handshake();
-    void handshake_read_from_sll_and_send();
+    void handshake_read_from_sll_and_send(typename ParentType::UnderlyingClientType::EndSendCallback on_send);
     virtual void on_handshake_complete() = 0;
     virtual void on_handshake_failed(long openssl_error_code, const Error& error) = 0;
 
@@ -44,7 +44,7 @@ public:
 
     bool is_open() const;
 
-    Error ssl_shutdown();
+    Error ssl_shutdown(typename ParentType::UnderlyingClientType::EndSendCallback on_send);
 
     TlsVersion negotiated_tls_version() const;
     DtlsVersion negotiated_dtls_version() const;
@@ -223,14 +223,14 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
 }
 
 template<typename ParentType, typename ImplType>
-void OpenSslClientImplBase<ParentType, ImplType>::handshake_read_from_sll_and_send() {
+void OpenSslClientImplBase<ParentType, ImplType>::handshake_read_from_sll_and_send(typename ParentType::UnderlyingClientType::EndSendCallback on_send) {
     // TODO: investigate this size.
     const std::size_t BUF_SIZE = 4096;
     std::shared_ptr<char> buf(new char[BUF_SIZE], [](const char* p) { delete[] p; });
     const auto size = BIO_read(m_ssl_write_bio, buf.get(), BUF_SIZE);
 
     IO_LOG(m_loop, TRACE, m_parent, "Getting data from SSL and sending to server, size:", size);
-    m_client->send_data(buf, size);
+    m_client->send_data(buf, size, on_send);
 }
 
 template<typename ParentType, typename ImplType>
@@ -250,14 +250,14 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
         if (error == SSL_ERROR_WANT_READ) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_READ");
 
-            handshake_read_from_sll_and_send();
+            handshake_read_from_sll_and_send(nullptr);
         } else if (error == SSL_ERROR_WANT_WRITE) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_WRITE");
         } else {
             const auto openssl_error_code = ERR_get_error();
             IO_LOG(m_loop, ERROR, m_parent, "Handshake error:", openssl_error_code);
             if (write_pending) {
-                handshake_read_from_sll_and_send();
+                handshake_read_from_sll_and_send(nullptr);
             }
 
             on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
@@ -266,7 +266,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
         IO_LOG(m_loop, DEBUG, m_parent, "Connected!");
 
         if (write_pending) {
-            handshake_read_from_sll_and_send();
+            handshake_read_from_sll_and_send(nullptr);
         }
 
         m_ssl_handshake_complete = true;
@@ -373,7 +373,7 @@ bool OpenSslClientImplBase<ParentType, ImplType>::schedule_removal() {
 }
 
 template<typename ParentType, typename ImplType>
-Error OpenSslClientImplBase<ParentType, ImplType>::ssl_shutdown() {
+Error OpenSslClientImplBase<ParentType, ImplType>::ssl_shutdown(typename ParentType::UnderlyingClientType::EndSendCallback on_send) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
     auto return_code = SSL_shutdown(m_ssl.get());
@@ -389,7 +389,7 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_shutdown() {
 
     if (write_pending) {
         // TODO: need better name here
-        handshake_read_from_sll_and_send();
+        handshake_read_from_sll_and_send(on_send);
     }
 
     return Error(0);

@@ -99,9 +99,16 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
 }
 
 void DtlsClient::Impl::close() {
-    const auto error = this->ssl_shutdown();
-    if (m_close_callback) {
-        m_close_callback(*m_parent, error);
+    const auto error = this->ssl_shutdown([this](UdpClient& client, const Error& error) {
+        if (m_close_callback) {
+            m_close_callback(*m_parent, Error(0));
+        }
+    });
+
+    if (error) {
+        if (m_close_callback) {
+            m_close_callback(*m_parent, error);
+        }
     }
 }
 

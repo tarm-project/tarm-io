@@ -7,6 +7,8 @@
 #include "io/global/Version.h"
 
 #include <thread>
+#include <vector>
+#include <string>
 
 struct DtlsClientServerTest : public testing::Test,
                               public LogRedirector {
@@ -870,6 +872,80 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_no_data_sent
     EXPECT_EQ(1, client_on_close_count);
     EXPECT_EQ(1, server_on_new_connection_count);
     EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(1, server_on_close_count);
+}
+
+TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_with_data_sent) {
+    io::EventLoop loop;
+
+    const std::vector<std::string> client_data_to_send = {
+        "a", "b", "c", "d", "e", "f", "g", "h", "i"
+    };
+
+    std::size_t client_on_new_connection_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    std::size_t server_on_new_connection_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_new_connection_count;
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_count;
+        },
+        1000 * 100,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            ++server_on_close_count;
+            server->schedule_removal();
+        }
+    );
+
+    auto client = new io::DtlsClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_on_new_connection_count;
+            for (auto v : client_data_to_send) {
+                client.send_data(v, [=, &client_data_to_send](io::DtlsClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error.string();
+                    if (v == client_data_to_send.back()) {
+                        client.close();
+                    }
+                });
+            }
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            // Not expecting this call
+            ++client_on_receive_count;
+        },
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_close_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_on_new_connection_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_new_connection_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_new_connection_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(1, server_on_new_connection_count);
+    EXPECT_EQ(client_data_to_send.size(), server_on_receive_count);
     EXPECT_EQ(1, server_on_close_count);
 }
 
