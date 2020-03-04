@@ -117,11 +117,12 @@ endif()
 # TODO: replace hardcoded 'tests' with ${TESTS_EXE_NAME}
 if(WIN32) # AND BUILD_SHARED_LIBS
     add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD # Adds a post-build event to tests
-      #COMMAND ${CMAKE_COMMAND} -E copy_if_different      # which executes "cmake - E copy_if_different..."
-      #    "${CMAKE_BINARY_DIR}/source/$<CONFIG>/io.dll"  # <--this is in-file
-      #    $<TARGET_FILE_DIR:tests>                       # <--this is out-file path
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          $<TARGET_PROPERTY:GTest::gtest,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>
+#      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#          $<TARGET_PROPERTY:GTest::gtest,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>
+#          $<TARGET_FILE_DIR:tests>
+#          )
+	 COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          $<TARGET_PROPERTY:GTest::gtest,INTERFACE_INCLUDE_DIRECTORIES>/../bin/gtest$<$<CONFIG:DEBUG>:d>.dll
           $<TARGET_FILE_DIR:tests>
           )
 endif()
@@ -165,7 +166,7 @@ function(print_target_properties tgt)
     endforeach(prop)
 endfunction(print_target_properties)
 
-#print_target_properties(GTest::gtest)
+print_target_properties(GTest::gtest)
 
 # get_cmake_property(_variableNames VARIABLES)
 # list (SORT _variableNames)
