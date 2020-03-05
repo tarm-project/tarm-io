@@ -949,6 +949,78 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_with_data_se
     EXPECT_EQ(1, server_on_close_count);
 }
 
-// TODO: DTLS version lower is bigger than higher error
+TEST_F(DtlsClientServerTest, client_with_invalid_dtls_version) {
+    if (io::global::min_supported_dtls_version() == io::global::max_supported_dtls_version()) {
+        return;
+    }
+
+    std::size_t client_on_connect_count = 0;
+
+    // Note: Min > Max in this test
+    io::EventLoop loop;
+    auto client = new io::DtlsClient(loop,
+        io::DtlsVersionRange{io::global::max_supported_dtls_version(),
+                             io::global::min_supported_dtls_version()});
+
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            ++client_on_connect_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_count);
+}
+
+TEST_F(DtlsClientServerTest, server_with_invalid_dtls_version) {
+    if (io::global::min_supported_dtls_version() == io::global::max_supported_dtls_version()) {
+        return;
+    }
+
+    std::size_t server_on_new_connection_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    // Note: Min > Max in this test
+    io::EventLoop loop;
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path,
+        io::DtlsVersionRange{io::global::max_supported_dtls_version(),
+                             io::global::min_supported_dtls_version()});
+    auto error = server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_new_connection_count;
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_count;
+        },
+        1000 * 100,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            ++server_on_close_count;
+        }
+    );
+
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+
+    server->schedule_removal();
+
+    EXPECT_EQ(0, server_on_new_connection_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, server_on_new_connection_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+}
 
 // TODO: unit test invalid address
