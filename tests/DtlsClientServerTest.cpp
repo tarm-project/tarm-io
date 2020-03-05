@@ -1078,7 +1078,6 @@ TEST_F(DtlsClientServerTest, server_with_invalid_address) {
         1000 * 100,
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             ++server_on_close_count;
-            server->schedule_removal();
         }
     );
 
