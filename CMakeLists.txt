@@ -23,8 +23,6 @@ if(WIN32)
     if (MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP") # Multicore building
     endif()
-# TODO: 32 bit build support
-#    set(CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE x64)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
