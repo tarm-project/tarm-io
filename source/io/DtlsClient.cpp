@@ -69,6 +69,15 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
                                ConnectCallback connect_callback,
                                DataReceiveCallback receive_callback,
                                CloseCallback close_callback) {
+    if (endpoint.type() == Endpoint::UNDEFINED) {
+        if (connect_callback) {
+            m_loop->schedule_callback([=]() {
+                connect_callback(*m_parent, Error(StatusCode::INVALID_ARGUMENT));
+            });
+        }
+        return;
+    }
+
     if (!is_ssl_inited()) {
         auto context_errror = m_openssl_context.init_ssl_context(ssl_method());
         if (context_errror) {

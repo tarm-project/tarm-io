@@ -1023,4 +1023,77 @@ TEST_F(DtlsClientServerTest, server_with_invalid_dtls_version) {
     EXPECT_EQ(0, server_on_close_count);
 }
 
-// TODO: unit test invalid address
+TEST_F(DtlsClientServerTest, client_with_invalid_address) {
+    std::size_t client_on_connect_count = 0;
+
+    io::EventLoop loop;
+    auto client = new io::DtlsClient(loop);
+
+    client->connect({"0.0", m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+            ++client_on_connect_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_count);
+}
+
+TEST_F(DtlsClientServerTest, client_with_invalid_address_and_no_connect_callback) {
+    // Note: crash test
+    io::EventLoop loop;
+    auto client = new io::DtlsClient(loop);
+
+    client->connect({"0.0", m_default_port},
+        nullptr
+    );
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(DtlsClientServerTest, server_with_invalid_address) {
+    io::EventLoop loop;
+
+    std::size_t server_on_new_connection_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto error = server->listen({"", m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_new_connection_count;
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_count;
+        },
+        1000 * 100,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            ++server_on_close_count;
+            server->schedule_removal();
+        }
+    );
+
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+
+    server->schedule_removal();
+
+    EXPECT_EQ(0, server_on_new_connection_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, server_on_new_connection_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+}

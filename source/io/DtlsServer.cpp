@@ -138,6 +138,10 @@ Error DtlsServer::Impl::listen(const Endpoint& endpoint,
                                DataReceivedCallback data_receive_callback,
                                std::size_t timeout_ms,
                                CloseConnectionCallback close_callback) {
+    if (endpoint.type() == Endpoint::UNDEFINED) {
+        return Error(StatusCode::INVALID_ARGUMENT);
+    }
+
     m_new_connection_callback = new_connection_callback;
     m_data_receive_callback = data_receive_callback;
     m_connection_close_callback = close_callback;
