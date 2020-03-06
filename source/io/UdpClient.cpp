@@ -53,6 +53,7 @@ private:
 
 UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     UdpClientImplBase(loop, parent) {
+
     m_on_item_expired = [this](BacklogWithTimeout<UdpClient::Impl*>&, UdpClient::Impl* const & item) {
         this->close_on_timeout();
     };
@@ -101,6 +102,14 @@ UdpClient::Impl::~Impl() {
 }
 
 void UdpClient::Impl::set_destination(const Endpoint& endpoint) {
+    // TODO: invalid endpoint handling
+
+    if (m_udp_handle.get()->u.fd == 0) {
+        ::sockaddr_storage storage{0};
+        storage.ss_family = endpoint.type() == Endpoint::IP_V4 ? AF_INET : AF_INET6;
+        Error bind_error = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const ::sockaddr*>(&storage), UV_UDP_REUSEADDR);
+    }
+
     m_destination_endpoint = endpoint;
 }
 
@@ -126,10 +135,30 @@ bool UdpClient::Impl::close(CloseHandler handler) {
 }
 
 void UdpClient::Impl::start_receive() {
-    int status = uv_udp_recv_start(m_udp_handle.get(), detail::default_alloc_buffer, on_data_received);
-    if (status < 0) {
-        // TODO: error handling
+    Error recv_start_error = uv_udp_recv_start(m_udp_handle.get(), detail::default_alloc_buffer, on_data_received);
+    if (recv_start_error) {
+        if (m_receive_callback) {
+            m_loop->schedule_callback([=]() {
+                m_receive_callback(*m_parent, {}, recv_start_error);
+            });
+        }
+        return;
     }
+    /*
+    int receive_size = 1024 * 1024 * 2;
+    Error receive_buffer_size_error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
+    if (receive_buffer_size_error) {
+        std::cout << receive_buffer_size_error.string() << std::endl;
+    //    return receive_buffer_size_error;
+    }
+
+    int send_size = 1024 * 1024 * 2;
+    Error send_buffer_size_error = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &send_size);
+    if (send_buffer_size_error) {
+        std::cout << send_buffer_size_error.string() << std::endl;
+      //  return send_buffer_size_error;
+    }
+    */
 }
 
 // TODO: ipv6
@@ -274,6 +303,14 @@ std::uint16_t UdpClient::port() const {
 
 bool UdpClient::is_open() const {
     return m_impl->is_open();
+}
+
+BufferSizeResult UdpClient::receive_buffer_size() const {
+    return m_impl->receive_buffer_size();
+}
+
+BufferSizeResult UdpClient::send_buffer_size() const {
+    return m_impl->send_buffer_size();
 }
 
 } // namespace io

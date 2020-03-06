@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BufferSizeResult.h"
 #include "CommonMacros.h"
 #include "Endpoint.h"
 #include "EventLoop.h"
@@ -25,6 +26,7 @@ public:
     IO_FORBID_MOVE(UdpServer);
 
     IO_DLL_PUBLIC UdpServer(EventLoop& loop);
+    //IO_DLL_PUBLIC UdpServer(EventLoop& loop, std::size_t receive_buffer_size, std::size_t send_buffer_size);
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
@@ -43,6 +45,9 @@ public:
                                       PeerTimeoutCallback timeout_callback);
 
     IO_DLL_PUBLIC void close();
+
+    IO_DLL_PUBLIC BufferSizeResult receive_buffer_size() const;
+    IO_DLL_PUBLIC BufferSizeResult send_buffer_size() const;
 
 protected:
     IO_DLL_PUBLIC ~UdpServer();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "io/BufferSizeResult.h"
 #include "io/Endpoint.h"
 #include "io/EventLoop.h"
 
@@ -22,6 +23,9 @@ public:
 
     void set_last_packet_time(std::uint64_t time);
     std::uint64_t last_packet_time() const;
+
+    BufferSizeResult receive_buffer_size() const;
+    BufferSizeResult send_buffer_size() const;
 
 protected:
     // statics
@@ -47,6 +51,8 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
     m_parent(&parent),
     m_udp_handle(new uv_udp_t, std::default_delete<uv_udp_t>()) {
+
+    m_udp_handle.get()->u.fd = 0;
 
     this->set_last_packet_time(::uv_hrtime());
 
@@ -90,6 +96,22 @@ void UdpImplBase<ParentType, ImplType>::set_last_packet_time(std::uint64_t time)
 template<typename ParentType, typename ImplType>
 std::uint64_t UdpImplBase<ParentType, ImplType>::last_packet_time() const {
     return m_last_packet_time_ns;
+}
+
+template<typename ParentType, typename ImplType>
+BufferSizeResult UdpImplBase<ParentType, ImplType>::receive_buffer_size() const {
+    int receive_size = 0;
+    const Error receive_buffer_size_error =
+        uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
+    return {receive_buffer_size_error, static_cast<std::size_t>(receive_size)};
+}
+
+template<typename ParentType, typename ImplType>
+BufferSizeResult UdpImplBase<ParentType, ImplType>::send_buffer_size() const {
+    int receive_size = 0;
+    const Error receive_buffer_size_error =
+        uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
+    return {receive_buffer_size_error, static_cast<std::size_t>(receive_size)};
 }
 
 } // namespace detail

@@ -68,10 +68,28 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint, DataReceivedCallb
         return bind_error;
     }
 
-    m_data_receive_callback = data_receive_callback;
-    int status = uv_udp_recv_start(m_udp_handle.get(), detail::default_alloc_buffer, on_data_received);
-    if (status < 0) {
+    /*
+    int receive_size = 1024 * 1024 * 2;
+    Error receive_buffer_size_error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
+    if (receive_buffer_size_error) {
+        std::cout << receive_buffer_size_error.string() << std::endl;
+        return receive_buffer_size_error;
+    }
 
+    int send_size = 1024 * 1024 * 2;
+    Error send_buffer_size_error = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &send_size);
+    if (send_buffer_size_error) {
+        std::cout << send_buffer_size_error.string() << std::endl;
+        return send_buffer_size_error;
+    }
+
+    */
+
+    m_data_receive_callback = data_receive_callback;
+
+    Error receive_start_error = uv_udp_recv_start(m_udp_handle.get(), detail::default_alloc_buffer, on_data_received);
+    if (receive_start_error) {
+        return receive_start_error;
     }
 
     return Error(0);
@@ -288,6 +306,14 @@ void UdpServer::schedule_removal() {
 
 void UdpServer::close_peer(UdpPeer& peer, std::size_t inactivity_timeout_ms) {
     return m_impl->close_peer(peer, inactivity_timeout_ms);
+}
+
+BufferSizeResult UdpServer::receive_buffer_size() const {
+    return m_impl->receive_buffer_size();
+}
+
+BufferSizeResult UdpServer::send_buffer_size() const {
+    return m_impl->send_buffer_size();
 }
 
 } // namespace io

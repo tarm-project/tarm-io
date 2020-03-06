@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BufferSizeResult.h"
 #include "CommonMacros.h"
 #include "DataChunk.h"
 #include "Endpoint.h"
@@ -38,6 +39,9 @@ public:
     IO_DLL_PUBLIC std::uint16_t port() const;
 
     IO_DLL_PUBLIC  bool is_open() const;
+
+    IO_DLL_PUBLIC BufferSizeResult receive_buffer_size() const;
+    IO_DLL_PUBLIC BufferSizeResult send_buffer_size() const;
 
     // Return 0 on error
     IO_DLL_PUBLIC std::uint16_t bound_port() const;

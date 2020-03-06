@@ -93,6 +93,91 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     EXPECT_TRUE(data_received);
 }
 
+TEST_F(UdpClientServerTest, client_buffer_size_1) {
+    io::EventLoop loop;
+    auto client = new io::UdpClient(loop);
+
+    // At this point client has no receive callback nor destination set.
+    // Even IP protocol version is undefined yet.
+    const auto receive_buffer_1 = client->receive_buffer_size();
+    EXPECT_TRUE(receive_buffer_1.error);
+
+    const auto send_buffer_1 = client->send_buffer_size();
+    EXPECT_TRUE(send_buffer_1.error);
+
+    client->set_destination({0x7F000001u, m_default_port});
+
+    const auto receive_buffer_2 = client->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer_2.error);
+    EXPECT_NE(0, receive_buffer_2.size);
+
+    const auto send_buffer_2 = client->send_buffer_size();
+    EXPECT_FALSE(send_buffer_2.error);
+    EXPECT_NE(0, send_buffer_2.size);
+
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(UdpClientServerTest, client_buffer_size_2) {
+    io::EventLoop loop;
+    auto client = new io::UdpClient(loop,
+                                    {0x7F000001u, m_default_port},
+                                    [](io::UdpClient&, const io::DataChunk&, const io::Error&) {
+                                    });
+
+    const auto receive_buffer_2 = client->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer_2.error);
+    EXPECT_NE(0, receive_buffer_2.size);
+
+    const auto send_buffer_2 = client->send_buffer_size();
+    EXPECT_FALSE(send_buffer_2.error);
+    EXPECT_NE(0, send_buffer_2.size);
+
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(UdpClientServerTest, server_buffer_size_1) {
+    io::EventLoop loop;
+
+    auto server = new io::UdpServer(loop);
+    const auto receive_buffer = server->receive_buffer_size();
+    EXPECT_TRUE(receive_buffer.error);
+
+    const auto send_buffer = server->send_buffer_size();
+    EXPECT_TRUE(send_buffer.error);
+
+    server->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(UdpClientServerTest, server_buffer_size_2) {
+    io::EventLoop loop;
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
+        [&](io::UdpPeer&, const io::DataChunk&, const io::Error&) {
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+    const auto receive_buffer = server->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer.error);
+    EXPECT_NE(0, receive_buffer.size);
+
+    const auto send_buffer = server->send_buffer_size();
+    EXPECT_FALSE(send_buffer.error);
+    EXPECT_NE(0, send_buffer.size);
+
+    server->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
 TEST_F(UdpClientServerTest, peer_identity_without_preservation_on_server) {
     io::EventLoop loop;
 
@@ -868,7 +953,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
 //      need to configure networking stack on some particular machine.
 //      on Linux 'net.core.wmem_default', 'net.core.rmem_max' and so on...
 TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads) {
-    std::size_t SIZE = 200;
+    std::size_t SIZE = 200; // TODO: increase
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
     ::srand(0);
     for(std::size_t i = 0; i < SIZE; ++i) {
@@ -917,6 +1002,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
         auto timer = new io::Timer(server_loop);
         timer->start(100, 100,
             [&](io::Timer& timer) {
+                //std::cout << "s " << server_receive_message_counter << " " << server_send_message_counter << std::endl;
                 if (server_receive_message_counter == SIZE && server_send_message_counter == SIZE) {
                     server->schedule_removal();
                     timer.schedule_removal();
@@ -956,9 +1042,6 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
                 }
 
                 ++client_receive_message_counter;
-                if (client_receive_message_counter == SIZE) {
-                    //client.schedule_removal();
-                }
             }
         );
         client->send_data(message, SIZE, client_send);
@@ -966,6 +1049,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
         auto timer = new io::Timer(client_loop);
         timer->start(100, 100,
             [&](io::Timer& timer) {
+                //std::cout << "c " << client_receive_message_counter << " " << client_send_message_counter << std::endl;
                 if (client_receive_message_counter == SIZE && client_send_message_counter == SIZE) {
                     client->schedule_removal();
                     timer.schedule_removal();
@@ -1380,3 +1464,4 @@ TEST_F(UdpClientServerTest, close_peer_from_server_and_than_try_send) {
 
 // TODO: unit test invalid address
 
+// TODO: set_destination with ipv4 address athan with ipv6
