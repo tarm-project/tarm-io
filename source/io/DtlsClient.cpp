@@ -100,7 +100,8 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
     }
 
     m_client = new UdpClient(*m_loop, endpoint);
-    m_client->start_receive([this](UdpClient&, const DataChunk& chunk, const Error&) {
+    // TODO:
+    auto error = m_client->start_receive([this](UdpClient&, const DataChunk& chunk, const Error&) {
         this->on_data_receive(chunk.buf.get(), chunk.size);
     });
 
