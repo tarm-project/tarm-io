@@ -28,10 +28,11 @@ public:
 
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
     IO_DLL_PUBLIC UdpClient(EventLoop& loop, const Endpoint& endpoint);
-    IO_DLL_PUBLIC UdpClient(EventLoop& loop, DataReceivedCallback receive_callback);
-    IO_DLL_PUBLIC UdpClient(EventLoop& loop, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback);
-    IO_DLL_PUBLIC UdpClient(EventLoop& loop, const Endpoint& endpoint, DataReceivedCallback receive_callback);
-    IO_DLL_PUBLIC UdpClient(EventLoop& loop, const Endpoint& endpoint, DataReceivedCallback receive_callback, std::size_t timeout_ms, TimeoutCallback timeout_callback);
+
+    IO_DLL_PUBLIC Error start_receive(DataReceivedCallback receive_callback);
+    IO_DLL_PUBLIC Error start_receive(DataReceivedCallback receive_callback,
+                                      std::size_t timeout_ms,
+                                      TimeoutCallback timeout_callback);
 
     IO_DLL_PUBLIC void set_destination(const Endpoint& endpoint);
 

@@ -122,10 +122,12 @@ TEST_F(UdpClientServerTest, client_buffer_size_1) {
 
 TEST_F(UdpClientServerTest, client_buffer_size_2) {
     io::EventLoop loop;
-    auto client = new io::UdpClient(loop,
-                                    {0x7F000001u, m_default_port},
-                                    [](io::UdpClient&, const io::DataChunk&, const io::Error&) {
-                                    });
+    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port});
+    auto receive_error = client->start_receive(
+        [](io::UdpClient&, const io::DataChunk&, const io::Error&) {
+        }
+    );
+    EXPECT_FALSE(receive_error);
 
     const auto receive_buffer_2 = client->receive_buffer_size();
     EXPECT_FALSE(receive_buffer_2.error);
@@ -584,7 +586,8 @@ TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
         }
     );
 
-    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port},
+    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port});
+    auto receive_error = client->start_receive(
         [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
 
@@ -595,6 +598,7 @@ TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
             }
         }
     );
+    EXPECT_FALSE(receive_error);
 
     client->send_data("!!!");
 
@@ -641,7 +645,8 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
 
     EXPECT_FALSE(listen_error);
 
-    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port},
+    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port});
+    auto receive_error = client->start_receive(
         [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
 
@@ -652,6 +657,7 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
             client.schedule_removal();
         }
     );
+    EXPECT_FALSE(receive_error);
 
     client->send_data(client_message,
         [&](io::UdpClient& client, const io::Error& error) {
@@ -714,7 +720,8 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
 
     EXPECT_FALSE(listen_error);
 
-    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port},
+    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port});
+    auto receive_error = client->start_receive(
         [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
 
@@ -728,6 +735,7 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
             }
         }
     );
+    EXPECT_FALSE(receive_error);
 
     client->send_data(client_message,
         [&](io::UdpClient& client, const io::Error& error) {
@@ -759,12 +767,15 @@ TEST_F(UdpClientServerTest, client_receive_data_only_from_it_target) {
 
     auto client_2 = new io::UdpClient(loop);
 
-    auto client_1 = new io::UdpClient(loop,
+    auto client_1 = new io::UdpClient(loop);
+    auto receive_error = client_1->start_receive(
         [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++receive_callback_call_count;
         }
     );
+    EXPECT_FALSE(receive_error);
+
     client_1->set_destination({0x7F000001u, m_default_port});
     client_1->send_data(client_message,
         [&](io::UdpClient& client, const io::Error& error) {
@@ -916,7 +927,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
             }
         };
 
-    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port},
+    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port});
+    auto receive_error = client->start_receive(
         [&](io::UdpClient&, const io::DataChunk& chunk, const io::Error& error) {
             EXPECT_FALSE(error);
             ASSERT_EQ(SIZE - client_receive_message_counter, chunk.size);
@@ -927,6 +939,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
             ++client_receive_message_counter;
         }
     );
+    EXPECT_FALSE(receive_error);
+
     client->send_data(message, SIZE - client_send_message_counter, client_send);
 
     auto timer = new io::Timer(loop);
@@ -1034,7 +1048,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
         io::EventLoop client_loop;
 
-        auto client = new io::UdpClient(client_loop, {0x7F000001u, m_default_port},
+        auto client = new io::UdpClient(client_loop, {0x7F000001u, m_default_port});
+        auto receive_error = client->start_receive(
             [&](io::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
                 EXPECT_FALSE(error);
                 for (std::size_t i = 0; i < chunk.size; ++i) {
@@ -1044,6 +1059,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
                 ++client_receive_message_counter;
             }
         );
+        EXPECT_FALSE(receive_error);
+
         client->send_data(message, SIZE, client_send);
 
         auto timer = new io::Timer(client_loop);
@@ -1111,14 +1128,17 @@ TEST_F(UdpClientServerTest, client_with_timeout_1) {
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port},
-    [&](io::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
-    },
-    TIMEOUT,
-    [&](io::UdpClient& client, const io::Error& error) {
-        client.schedule_removal();
-        t2 = std::chrono::high_resolution_clock::now();
-    });
+    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port});
+    auto receive_error = client->start_receive(
+        [&](io::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
+        },
+        TIMEOUT,
+        [&](io::UdpClient& client, const io::Error& error) {
+            client.schedule_removal();
+            t2 = std::chrono::high_resolution_clock::now();
+        }
+    );
+    EXPECT_FALSE(receive_error);
 
     EXPECT_NE(0, client->bound_port());
 
@@ -1148,28 +1168,31 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port},
-    [&](io::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
-    },
-    TIMEOUT,
-    [&](io::UdpClient& client, const io::Error& error) {
-        t2 = std::chrono::high_resolution_clock::now();
-        EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
-        client.send_data("!!!",
-            [&](io::UdpClient& client, const io::Error& error) {
-                EXPECT_TRUE(error);
-                EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
-                ++client_send_counter;
+    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port});
+    auto receive_error = client->start_receive(
+        [&](io::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
+        },
+        TIMEOUT,
+        [&](io::UdpClient& client, const io::Error& error) {
+            t2 = std::chrono::high_resolution_clock::now();
+            EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
+            client.send_data("!!!",
+                [&](io::UdpClient& client, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
+                    ++client_send_counter;
 
-                auto timer = new io::Timer(loop);
-                timer->start(50, [&](io::Timer& timer) {
-                    client.schedule_removal();
-                    server->schedule_removal();
-                    timer.schedule_removal();
-                });
-            }
-        );
-    });
+                    auto timer = new io::Timer(loop);
+                    timer->start(50, [&](io::Timer& timer) {
+                        client.schedule_removal();
+                        server->schedule_removal();
+                        timer.schedule_removal();
+                    });
+                }
+            );
+        }
+    );
+    EXPECT_FALSE(receive_error);
 
     EXPECT_NE(0, client->bound_port());
     EXPECT_EQ(0, server_receive_counter);
@@ -1196,7 +1219,8 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port},
+    auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port});
+    auto receive_error = client->start_receive(
         nullptr,
         CLIENT_TIMEOUT,
         [&](io::UdpClient& client, const io::Error& error) {
@@ -1210,6 +1234,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
             client.schedule_removal();
         }
     );
+    EXPECT_FALSE(receive_error);
 
     const std::deque<std::uint64_t> send_timeouts = {50, 50, 50, 50, 50, 50};
 

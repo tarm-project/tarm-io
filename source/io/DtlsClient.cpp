@@ -99,12 +99,10 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
         }
     }
 
-    m_client = new UdpClient(*m_loop,
-                             endpoint,
-                             [this](UdpClient&, const DataChunk& chunk, const Error&) {
-                                 this->on_data_receive(chunk.buf.get(), chunk.size);
-                             }
-    );
+    m_client = new UdpClient(*m_loop, endpoint);
+    m_client->start_receive([this](UdpClient&, const DataChunk& chunk, const Error&) {
+        this->on_data_receive(chunk.buf.get(), chunk.size);
+    });
 
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;
