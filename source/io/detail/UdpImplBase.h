@@ -7,6 +7,7 @@
 #include <uv.h>
 
 #include <cstring>
+#include <limits>
 #include <memory>
 
 namespace io {
@@ -27,7 +28,12 @@ public:
     BufferSizeResult receive_buffer_size() const;
     BufferSizeResult send_buffer_size() const;
 
+    Error set_receive_buffer_size(std::size_t size);
+    Error set_send_buffer_size(std::size_t size);
+
 protected:
+    Error check_buffer_size_value(std::size_t size) const;
+
     // statics
     static void on_close_with_removal(uv_handle_t* handle);
     static void on_close(uv_handle_t* handle);
@@ -101,17 +107,64 @@ std::uint64_t UdpImplBase<ParentType, ImplType>::last_packet_time() const {
 template<typename ParentType, typename ImplType>
 BufferSizeResult UdpImplBase<ParentType, ImplType>::receive_buffer_size() const {
     int receive_size = 0;
-    const Error receive_buffer_size_error =
-        uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
-    return {receive_buffer_size_error, static_cast<std::size_t>(receive_size)};
+    const Error error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
+    return {error, static_cast<std::size_t>(receive_size)};
 }
 
 template<typename ParentType, typename ImplType>
 BufferSizeResult UdpImplBase<ParentType, ImplType>::send_buffer_size() const {
     int receive_size = 0;
-    const Error receive_buffer_size_error =
-        uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
-    return {receive_buffer_size_error, static_cast<std::size_t>(receive_size)};
+    const Error error = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
+    return {error, static_cast<std::size_t>(receive_size)};
+}
+
+template<typename ParentType, typename ImplType>
+Error UdpImplBase<ParentType, ImplType>::check_buffer_size_value(std::size_t size) const {
+    if (size == 0) {
+        return Error(StatusCode::INVALID_ARGUMENT);
+    }
+
+    if (size > std::numeric_limits<int>::max()) {
+        return Error(StatusCode::INVALID_ARGUMENT);
+    }
+
+    if (m_udp_handle.get()->io_watcher.fd == -1) {
+        return Error(StatusCode::ADDRESS_NOT_AVAILABLE);
+    }
+
+    return Error(0);
+}
+
+template<typename ParentType, typename ImplType>
+Error UdpImplBase<ParentType, ImplType>::set_receive_buffer_size(std::size_t size) {
+    auto parameter_error = check_buffer_size_value(size);
+    if (parameter_error) {
+        return parameter_error;
+    }
+
+    auto receive_size = static_cast<int>(size);
+    Error error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
+    if (error) {
+        return error;
+    }
+
+    return Error(0);
+}
+
+template<typename ParentType, typename ImplType>
+Error UdpImplBase<ParentType, ImplType>::set_send_buffer_size(std::size_t size) {
+    auto parameter_error = check_buffer_size_value(size);
+    if (parameter_error) {
+        return parameter_error;
+    }
+
+    auto send_size = static_cast<int>(size);
+    Error error = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &send_size);
+    if (error) {
+        return error;
+    }
+
+    return Error(0);
 }
 
 } // namespace detail

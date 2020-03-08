@@ -93,7 +93,7 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     EXPECT_TRUE(data_received);
 }
 
-TEST_F(UdpClientServerTest, client_buffer_size_1) {
+TEST_F(UdpClientServerTest, client_get_buffer_size_1) {
     io::EventLoop loop;
     auto client = new io::UdpClient(loop);
 
@@ -105,6 +105,7 @@ TEST_F(UdpClientServerTest, client_buffer_size_1) {
     const auto send_buffer_1 = client->send_buffer_size();
     EXPECT_TRUE(send_buffer_1.error);
 
+    // TODO: double set_destination in a row
     client->set_destination({0x7F000001u, m_default_port});
 
     const auto receive_buffer_2 = client->receive_buffer_size();
@@ -120,7 +121,7 @@ TEST_F(UdpClientServerTest, client_buffer_size_1) {
     ASSERT_EQ(0, loop.run());
 }
 
-TEST_F(UdpClientServerTest, client_buffer_size_2) {
+TEST_F(UdpClientServerTest, client_get_buffer_size_2) {
     io::EventLoop loop;
     auto client = new io::UdpClient(loop, {0x7F000001u, m_default_port});
     auto receive_error = client->start_receive(
@@ -142,7 +143,7 @@ TEST_F(UdpClientServerTest, client_buffer_size_2) {
     ASSERT_EQ(0, loop.run());
 }
 
-TEST_F(UdpClientServerTest, server_buffer_size_1) {
+TEST_F(UdpClientServerTest, server_get_buffer_size_1) {
     io::EventLoop loop;
 
     auto server = new io::UdpServer(loop);
@@ -157,7 +158,7 @@ TEST_F(UdpClientServerTest, server_buffer_size_1) {
     ASSERT_EQ(0, loop.run());
 }
 
-TEST_F(UdpClientServerTest, server_buffer_size_2) {
+TEST_F(UdpClientServerTest, server_get_buffer_size_2) {
     io::EventLoop loop;
 
     auto server = new io::UdpServer(loop);
@@ -174,6 +175,132 @@ TEST_F(UdpClientServerTest, server_buffer_size_2) {
     const auto send_buffer = server->send_buffer_size();
     EXPECT_FALSE(send_buffer.error);
     EXPECT_NE(0, send_buffer.size);
+
+    server->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(UdpClientServerTest, client_set_buffer_size_1) {
+    io::EventLoop loop;
+    auto client = new io::UdpClient(loop);
+
+    EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), client->set_send_buffer_size(4096));
+    EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), client->set_receive_buffer_size(4096));
+
+    client->set_destination({0x7F000001u, m_default_port});
+
+    EXPECT_EQ(io::Error(io::StatusCode::OK), client->set_send_buffer_size(4096));
+    EXPECT_EQ(io::Error(io::StatusCode::OK), client->set_receive_buffer_size(4096));
+
+    auto receive_buffer = client->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer.error);
+    EXPECT_EQ(4096, receive_buffer.size);
+
+    auto send_buffer = client->send_buffer_size();
+    EXPECT_FALSE(send_buffer.error);
+    EXPECT_EQ(4096, send_buffer.size);
+
+    EXPECT_EQ(io::Error(io::StatusCode::INVALID_ARGUMENT), client->set_send_buffer_size(0));
+    EXPECT_EQ(io::Error(io::StatusCode::INVALID_ARGUMENT), client->set_receive_buffer_size(0));
+
+    receive_buffer = client->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer.error);
+    EXPECT_EQ(4096, receive_buffer.size);
+
+    send_buffer = client->send_buffer_size();
+    EXPECT_FALSE(send_buffer.error);
+    EXPECT_EQ(4096, send_buffer.size);
+
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(UdpClientServerTest, client_set_buffer_size_2) {
+    io::EventLoop loop;
+    auto client = new io::UdpClient(loop);
+
+    EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), client->set_send_buffer_size(4096));
+    EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), client->set_receive_buffer_size(4096));
+
+    client->start_receive([](io::UdpClient&, const io::DataChunk&, const io::Error&) {
+    });
+
+    EXPECT_EQ(io::Error(io::StatusCode::OK), client->set_send_buffer_size(4096));
+    EXPECT_EQ(io::Error(io::StatusCode::OK), client->set_receive_buffer_size(4096));
+
+    auto receive_buffer = client->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer.error);
+    EXPECT_EQ(4096, receive_buffer.size);
+
+    auto send_buffer = client->send_buffer_size();
+    EXPECT_FALSE(send_buffer.error);
+    EXPECT_EQ(4096, send_buffer.size);
+
+    EXPECT_EQ(io::Error(io::StatusCode::INVALID_ARGUMENT), client->set_send_buffer_size(4000000000u));
+    EXPECT_EQ(io::Error(io::StatusCode::INVALID_ARGUMENT), client->set_receive_buffer_size(4000000000u));
+
+    receive_buffer = client->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer.error);
+    EXPECT_EQ(4096, receive_buffer.size);
+
+    send_buffer = client->send_buffer_size();
+    EXPECT_FALSE(send_buffer.error);
+    EXPECT_EQ(4096, send_buffer.size);
+
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(UdpClientServerTest, server_set_buffer_size) {
+    io::EventLoop loop;
+
+    auto server = new io::UdpServer(loop);
+
+    EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), server->set_send_buffer_size(4096));
+    EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), server->set_receive_buffer_size(4096));
+
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
+        [&](io::UdpPeer&, const io::DataChunk&, const io::Error&) {
+        }
+    );
+
+    EXPECT_FALSE(listen_error);
+
+    EXPECT_EQ(io::Error(io::StatusCode::OK), server->set_send_buffer_size(4096));
+    EXPECT_EQ(io::Error(io::StatusCode::OK), server->set_receive_buffer_size(4096));
+
+    auto receive_buffer = server->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer.error);
+    EXPECT_EQ(4096, receive_buffer.size);
+
+    auto send_buffer = server->send_buffer_size();
+    EXPECT_FALSE(send_buffer.error);
+    EXPECT_EQ(4096, send_buffer.size);
+
+    EXPECT_EQ(io::Error(io::StatusCode::INVALID_ARGUMENT), server->set_send_buffer_size(4000000000u));
+    EXPECT_EQ(io::Error(io::StatusCode::INVALID_ARGUMENT), server->set_receive_buffer_size(4000000000u));
+
+    receive_buffer = server->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer.error);
+    EXPECT_EQ(4096, receive_buffer.size);
+
+    send_buffer = server->send_buffer_size();
+    EXPECT_FALSE(send_buffer.error);
+    EXPECT_EQ(4096, send_buffer.size);
+
+    EXPECT_EQ(io::Error(io::StatusCode::INVALID_ARGUMENT), server->set_send_buffer_size(0));
+    EXPECT_EQ(io::Error(io::StatusCode::INVALID_ARGUMENT), server->set_receive_buffer_size(0));
+
+    receive_buffer = server->receive_buffer_size();
+    EXPECT_FALSE(receive_buffer.error);
+    EXPECT_EQ(4096, receive_buffer.size);
+
+    send_buffer = server->send_buffer_size();
+    EXPECT_FALSE(send_buffer.error);
+    EXPECT_EQ(4096, send_buffer.size);
 
     server->schedule_removal();
 

@@ -85,10 +85,11 @@ UdpClient::Impl::~Impl() {
 void UdpClient::Impl::set_destination(const Endpoint& endpoint) {
     // TODO: invalid endpoint handling
 
-    if (m_udp_handle.get()->u.fd == 0) {
+    if (m_udp_handle.get()->io_watcher.fd == -1) {
         ::sockaddr_storage storage{0};
         storage.ss_family = endpoint.type() == Endpoint::IP_V4 ? AF_INET : AF_INET6;
         Error bind_error = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const ::sockaddr*>(&storage), UV_UDP_REUSEADDR);
+        // TODO: error handling
     }
 
     m_destination_endpoint = endpoint;
@@ -120,21 +121,6 @@ Error UdpClient::Impl::start_receive_impl() {
     if (recv_start_error) {
         return recv_start_error;
     }
-    /*
-    int receive_size = 1024 * 1024 * 2;
-    Error receive_buffer_size_error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
-    if (receive_buffer_size_error) {
-        std::cout << receive_buffer_size_error.string() << std::endl;
-    //    return receive_buffer_size_error;
-    }
-
-    int send_size = 1024 * 1024 * 2;
-    Error send_buffer_size_error = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &send_size);
-    if (send_buffer_size_error) {
-        std::cout << send_buffer_size_error.string() << std::endl;
-      //  return send_buffer_size_error;
-    }
-    */
 
     return Error(0);
 }
@@ -267,6 +253,14 @@ BufferSizeResult UdpClient::receive_buffer_size() const {
 
 BufferSizeResult UdpClient::send_buffer_size() const {
     return m_impl->send_buffer_size();
+}
+
+Error UdpClient::set_receive_buffer_size(std::size_t size) {
+    return m_impl->set_receive_buffer_size(size);
+}
+
+Error UdpClient::set_send_buffer_size(std::size_t size) {
+    return m_impl->set_send_buffer_size(size);
 }
 
 } // namespace io

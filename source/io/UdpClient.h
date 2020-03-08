@@ -43,6 +43,8 @@ public:
 
     IO_DLL_PUBLIC BufferSizeResult receive_buffer_size() const;
     IO_DLL_PUBLIC BufferSizeResult send_buffer_size() const;
+    IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
+    IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
 
     // Return 0 on error
     IO_DLL_PUBLIC std::uint16_t bound_port() const;

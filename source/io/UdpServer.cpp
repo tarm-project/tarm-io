@@ -68,23 +68,6 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint, DataReceivedCallb
         return bind_error;
     }
 
-    /*
-    int receive_size = 1024 * 1024 * 2;
-    Error receive_buffer_size_error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
-    if (receive_buffer_size_error) {
-        std::cout << receive_buffer_size_error.string() << std::endl;
-        return receive_buffer_size_error;
-    }
-
-    int send_size = 1024 * 1024 * 2;
-    Error send_buffer_size_error = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &send_size);
-    if (send_buffer_size_error) {
-        std::cout << send_buffer_size_error.string() << std::endl;
-        return send_buffer_size_error;
-    }
-
-    */
-
     m_data_receive_callback = data_receive_callback;
 
     Error receive_start_error = uv_udp_recv_start(m_udp_handle.get(), detail::default_alloc_buffer, on_data_received);
@@ -314,6 +297,14 @@ BufferSizeResult UdpServer::receive_buffer_size() const {
 
 BufferSizeResult UdpServer::send_buffer_size() const {
     return m_impl->send_buffer_size();
+}
+
+Error UdpServer::set_receive_buffer_size(std::size_t size) {
+    return m_impl->set_receive_buffer_size(size);
+}
+
+Error UdpServer::set_send_buffer_size(std::size_t size) {
+    return m_impl->set_send_buffer_size(size);
 }
 
 } // namespace io
