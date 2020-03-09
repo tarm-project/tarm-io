@@ -18,5 +18,20 @@ void set_ciphers_list(const std::string& ciphers);
 IO_DLL_PUBLIC
 const std::string& ciphers_list();
 
+IO_DLL_PUBLIC
+std::size_t min_receive_buffer_size();
+IO_DLL_PUBLIC
+std::size_t default_receive_buffer_size();
+IO_DLL_PUBLIC
+std::size_t max_receive_buffer_size();
+
+IO_DLL_PUBLIC
+std::size_t min_send_buffer_size();
+IO_DLL_PUBLIC
+std::size_t default_send_buffer_size();
+IO_DLL_PUBLIC
+std::size_t max_send_buffer_size();
+
+
 } // namespace global
 } // namespace io
