@@ -45,6 +45,7 @@ list(APPEND TESTS_LIST
     RefCountedTest.cpp
     ScopeExitGuardTest.cpp
     VersionTest.cpp
+    ConfigurationTest.cpp
     PathTest.cpp
     EndpointTest.cpp
     EventLoopTest.cpp
