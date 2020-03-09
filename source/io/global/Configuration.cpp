@@ -49,7 +49,14 @@ bool is_buffer_size_available(uv_handle_t* handle,
         return false;
     }
 
-    if (size_to_get != size_to_set) {
+    std::size_t size_multiplier = 1;
+#if defined(__linux__)
+    // For details read http://man7.org/linux/man-pages/man7/socket.7.html
+    // SO_RCVBUF option or similar ones.
+    size_multiplier = 2;
+#endif
+
+    if (size_to_get != size_to_set * size_multiplier) {
         return false;
     }
 
@@ -110,10 +117,14 @@ std::size_t bound_buffer_size(uv_handle_t& handle, std::size_t lower_bound, std:
     }
 
     if (detail::is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), upper_bound, &::uv_recv_buffer_size)) {
-        return static_cast<std::size_t>(upper_bound);
+        return direction == BufferSizeSearchDirection::MIN ?
+               static_cast<std::size_t>(upper_bound) :
+               static_cast<std::size_t>(lower_bound);
     }
 
-    return static_cast<std::size_t>(lower_bound);
+    return direction == BufferSizeSearchDirection::MIN ?
+               static_cast<std::size_t>(lower_bound) :
+               static_cast<std::size_t>(upper_bound);
 }
 
 } // namespace detail
