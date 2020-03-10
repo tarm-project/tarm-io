@@ -95,11 +95,15 @@ enum class BufferSizeSearchDirection {
     MAX
 };
 
-std::size_t bound_buffer_size(uv_handle_t& handle, std::size_t lower_bound, std::size_t upper_bound, BufferSizeSearchDirection direction) {
+std::size_t bound_buffer_size(uv_handle_t& handle,
+                              int(*accessor_function)(uv_handle_t* handle, int* value),
+                              std::size_t lower_bound,
+                              std::size_t upper_bound,
+                              BufferSizeSearchDirection direction) {
     auto value_to_test = (upper_bound + lower_bound) / 2;
 
     while (lower_bound + 1 < upper_bound) {
-        if (detail::is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), value_to_test, &::uv_recv_buffer_size)) {
+        if (detail::is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), value_to_test, accessor_function)) {
             if (direction == BufferSizeSearchDirection::MIN) {
                 upper_bound = value_to_test;
             } else {
@@ -116,7 +120,7 @@ std::size_t bound_buffer_size(uv_handle_t& handle, std::size_t lower_bound, std:
         value_to_test = (upper_bound + lower_bound) / 2;
     }
 
-    if (detail::is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), upper_bound, &::uv_recv_buffer_size)) {
+    if (detail::is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), upper_bound, accessor_function)) {
         return direction == BufferSizeSearchDirection::MIN ?
                static_cast<std::size_t>(upper_bound) :
                static_cast<std::size_t>(lower_bound);
@@ -127,17 +131,8 @@ std::size_t bound_buffer_size(uv_handle_t& handle, std::size_t lower_bound, std:
                static_cast<std::size_t>(upper_bound);
 }
 
-} // namespace detail
-
-std::size_t g_min_receive_buffer_size = 0;
-std::size_t g_default_receive_buffer_size = 0;
-std::size_t g_max_receive_buffer_size = 0;
-
-std::size_t g_min_send_buffer_size = 0;
-std::size_t g_default_send_buffer_size = 0;
-std::size_t g_max_send_buffer_size = 0;
-
-std::size_t min_receive_buffer_size() {
+std::size_t min_buffer_size(std::size_t& value,
+                            int(*accessor_function)(uv_handle_t* handle, int* value)) {
     uv_loop_t loop;
     uv_udp_t handle;
     auto init_error = detail::init_handle_for_buffer_size(loop, handle);
@@ -147,19 +142,19 @@ std::size_t min_receive_buffer_size() {
 
     auto lower_bound = std::size_t(0);
     auto upper_bound = default_receive_buffer_size();
-    g_min_receive_buffer_size =
-        detail::bound_buffer_size(*reinterpret_cast<uv_handle_t*>(&handle), lower_bound, upper_bound, detail::BufferSizeSearchDirection::MIN);
+    value = detail::bound_buffer_size(*reinterpret_cast<uv_handle_t*>(&handle),
+                                      &::uv_recv_buffer_size,
+                                      lower_bound,
+                                      upper_bound,
+                                      detail::BufferSizeSearchDirection::MIN);
 
     detail::close_handle_for_buffer_size(loop, handle);
 
-    return g_min_receive_buffer_size;
+    return value;
 }
 
-std::size_t default_receive_buffer_size() {
-    if (g_default_receive_buffer_size != 0) {
-        return g_default_receive_buffer_size;
-    }
-
+std::size_t default_buffer_size(std::size_t& value,
+                                int(*accessor_function)(uv_handle_t* handle, int* value)) {
     uv_loop_t loop;
     uv_udp_t handle;
     auto init_error = detail::init_handle_for_buffer_size(loop, handle);
@@ -167,20 +162,21 @@ std::size_t default_receive_buffer_size() {
         return 0;
     }
 
-    int value = 0;
-    const auto size_error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(&handle), &value);
+    int size_value = 0;
+    const auto size_error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(&handle), &size_value);
     if (size_error) {
         return 0;
     }
 
     detail::close_handle_for_buffer_size(loop, handle);
 
-    g_default_receive_buffer_size = static_cast<std::size_t>(value);
+    value = static_cast<std::size_t>(size_value);
 
-    return g_default_receive_buffer_size;
+    return value;
 }
 
-std::size_t max_receive_buffer_size() {
+std::size_t max_buffer_size(std::size_t& value,
+                            int(*accessor_function)(uv_handle_t* handle, int* value)) {
     uv_loop_t loop;
     uv_udp_t handle;
 
@@ -195,24 +191,49 @@ std::size_t max_receive_buffer_size() {
         upper_bound *= 2;
     }
 
-    g_max_receive_buffer_size =
-        detail::bound_buffer_size(*reinterpret_cast<uv_handle_t*>(&handle), lower_bound, upper_bound, detail::BufferSizeSearchDirection::MAX);
+    value = detail::bound_buffer_size(*reinterpret_cast<uv_handle_t*>(&handle),
+                                      accessor_function,
+                                      lower_bound,
+                                      upper_bound,
+                                      detail::BufferSizeSearchDirection::MAX);
 
     detail::close_handle_for_buffer_size(loop, handle);
 
-    return g_max_receive_buffer_size;
+    return value;
+}
+
+} // namespace detail
+
+std::size_t g_min_receive_buffer_size = 0;
+std::size_t g_default_receive_buffer_size = 0;
+std::size_t g_max_receive_buffer_size = 0;
+
+std::size_t g_min_send_buffer_size = 0;
+std::size_t g_default_send_buffer_size = 0;
+std::size_t g_max_send_buffer_size = 0;
+
+std::size_t min_receive_buffer_size() {
+    return detail::min_buffer_size(g_min_receive_buffer_size, &::uv_recv_buffer_size);
+}
+
+std::size_t default_receive_buffer_size() {
+    return detail::default_buffer_size(g_default_receive_buffer_size, &::uv_recv_buffer_size);
+}
+
+std::size_t max_receive_buffer_size() {
+    return detail::max_buffer_size(g_max_receive_buffer_size, &::uv_recv_buffer_size);
 }
 
 std::size_t min_send_buffer_size() {
-    return 0;
+    return detail::min_buffer_size(g_min_send_buffer_size, &::uv_send_buffer_size);
 }
 
 std::size_t default_send_buffer_size() {
-    return 0;
+    return detail::default_buffer_size(g_default_send_buffer_size, &::uv_send_buffer_size);
 }
 
 std::size_t max_send_buffer_size() {
-    return 0;
+    return detail::max_buffer_size(g_max_send_buffer_size, &::uv_send_buffer_size);
 }
 
 
