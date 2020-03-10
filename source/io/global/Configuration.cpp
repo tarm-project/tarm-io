@@ -117,30 +117,18 @@ std::size_t bound_buffer_size(uv_handle_t& handle,
     }
 
     if (direction == BufferSizeSearchDirection::MIN) {
-        if (is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), upper_bound, accessor_function)) {
-            return upper_bound;
-        } else {
-            return lower_bound;
-        }
-    } else {
         if (is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), lower_bound, accessor_function)) {
             return lower_bound;
         } else {
             return upper_bound;
         }
+    } else {
+        if (is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), upper_bound, accessor_function)) {
+            return upper_bound;
+        } else {
+            return lower_bound;
+        }
     }
-
-    /*
-    if (is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), upper_bound, accessor_function)) {
-        return direction == BufferSizeSearchDirection::MIN ?
-               static_cast<std::size_t>(upper_bound) :
-               static_cast<std::size_t>(lower_bound);
-    }
-
-    return direction == BufferSizeSearchDirection::MIN ?
-               static_cast<std::size_t>(lower_bound) :
-               static_cast<std::size_t>(upper_bound);
-    */
 }
 
 std::size_t min_buffer_size(std::size_t& value,
