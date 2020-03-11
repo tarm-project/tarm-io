@@ -7,7 +7,25 @@ struct ConfigurationTest : public testing::Test,
                            public LogRedirector {
 };
 
-TEST_F(ConfigurationTest, receive_buffer_size) {
+TEST_F(ConfigurationTest, buffer_size) {
+    const auto min_receive_buf_size = io::global::min_receive_buffer_size();
+    const auto default_receive_buf_size = io::global::default_receive_buffer_size();
+    const auto max_receive_buf_size = io::global::max_receive_buffer_size();
+    EXPECT_NE(0, min_receive_buf_size);
+    EXPECT_NE(0, default_receive_buf_size);
+    EXPECT_NE(0, max_receive_buf_size);
+    EXPECT_LE(min_receive_buf_size, default_receive_buf_size);
+    EXPECT_LE(default_receive_buf_size, max_receive_buf_size);
+
+    const auto min_send_buf_size = io::global::min_send_buffer_size();
+    const auto default_send_buf_size = io::global::default_send_buffer_size();
+    const auto max_send_buf_size = io::global::max_send_buffer_size();
+    EXPECT_NE(0, min_send_buf_size);
+    EXPECT_NE(0, default_send_buf_size);
+    EXPECT_NE(0, max_send_buf_size);
+    EXPECT_LE(min_send_buf_size, default_send_buf_size);
+    EXPECT_LE(default_send_buf_size, max_send_buf_size);
+
     std::cout << io::global::min_receive_buffer_size() << std::endl;
     std::cout << io::global::default_receive_buffer_size() << std::endl;
     std::cout << io::global::max_receive_buffer_size() << std::endl;
@@ -18,6 +36,7 @@ TEST_F(ConfigurationTest, receive_buffer_size) {
     std::cout << io::global::default_send_buffer_size() << std::endl;
     std::cout << io::global::max_send_buffer_size() << std::endl;
 
+    // TODO: move this test to Udp
     io::EventLoop loop;
     auto client = new io::UdpClient(loop, {"127.0.0.1", 1500});
     auto error = client->set_receive_buffer_size(io::global::max_receive_buffer_size());

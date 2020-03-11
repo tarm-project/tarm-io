@@ -307,6 +307,44 @@ TEST_F(UdpClientServerTest, server_set_buffer_size) {
     ASSERT_EQ(0, loop.run());
 }
 
+// TODO:
+TEST_F(UdpClientServerTest, DISABLED_client_set_minimal_buffer_size_and_send_more) {
+    io::EventLoop loop;
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            std::cout << "!!!!" << std::endl;
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+
+    auto client = new io::UdpClient(loop, {m_default_addr, m_default_port});
+
+    const auto min_send_buffer_size = io::global::min_send_buffer_size();
+    //EXPECT_FALSE(client->set_send_buffer_size(min_send_buffer_size));
+    //EXPECT_FALSE(client->set_receive_buffer_size(min_send_buffer_size));
+
+    //EXPECT_FALSE(server->set_send_buffer_size(min_send_buffer_size));
+    EXPECT_FALSE(server->set_receive_buffer_size(min_send_buffer_size));
+
+    const std::size_t buf_size = min_send_buffer_size + 1;
+    std::shared_ptr<char> buf(new char[buf_size], std::default_delete<char[]>());
+    std::memset(buf.get(), 0, buf_size);
+
+    client->send_data(buf, buf_size,
+        [](io::UdpClient& peer, const io::Error& error) {
+        EXPECT_FALSE(error) << error.string();
+    });
+
+
+    client->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
 TEST_F(UdpClientServerTest, peer_identity_without_preservation_on_server) {
     io::EventLoop loop;
 
