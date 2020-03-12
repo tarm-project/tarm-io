@@ -4,8 +4,6 @@
 #include "ByteSwap.h"
 #include "detail/UdpClientImplBase.h"
 
-#include "detail/Common.h"
-
 #include <cstring>
 #include <cstddef>
 #include <assert.h>
@@ -85,7 +83,7 @@ UdpClient::Impl::~Impl() {
 void UdpClient::Impl::set_destination(const Endpoint& endpoint) {
     // TODO: invalid endpoint handling
 
-    if (m_udp_handle.get()->io_watcher.fd == -1) {
+    if ((m_udp_handle.get()->flags & IO_UV_HANDLE_BOUND) == 0) {
         ::sockaddr_storage storage{0};
         storage.ss_family = endpoint.type() == Endpoint::IP_V4 ? AF_INET : AF_INET6;
         Error bind_error = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const ::sockaddr*>(&storage), UV_UDP_REUSEADDR);
