@@ -134,7 +134,7 @@ Error UdpImplBase<ParentType, ImplType>::check_buffer_size_value(std::size_t siz
         return Error(StatusCode::INVALID_ARGUMENT);
     }
 
-    if (size > std::numeric_limits<int>::max()) {
+    if (size > (std::numeric_limits<int>::max)()) {
         return Error(StatusCode::INVALID_ARGUMENT);
     }
 
