@@ -307,8 +307,71 @@ TEST_F(UdpClientServerTest, server_set_buffer_size) {
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
+    io::EventLoop loop;
+
+    const auto min_send_buffer_size = io::global::min_send_buffer_size();
+    const auto min_receive_buffer_size = io::global::min_receive_buffer_size();
+
+    std::size_t server_on_send_counter = 0;
+    std::size_t server_on_receive_counter = 0;
+    std::size_t client_on_send_counter = 0;
+    std::size_t client_on_receive_counter = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_counter;
+
+            peer.send_data("!",
+                [&](io::UdpPeer& peer, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    ++server_on_send_counter;
+                    server->schedule_removal();
+                }
+            );
+        }
+    );
+    EXPECT_FALSE(listen_error);
+    EXPECT_FALSE(server->set_send_buffer_size(min_send_buffer_size));
+    EXPECT_FALSE(server->set_receive_buffer_size(min_receive_buffer_size));
+
+    auto client = new io::UdpClient(loop, {m_default_addr, m_default_port});
+    client->start_receive(
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_receive_counter;
+            client.schedule_removal();
+        }
+    );
+    EXPECT_FALSE(client->set_send_buffer_size(min_send_buffer_size));
+    EXPECT_FALSE(client->set_receive_buffer_size(min_receive_buffer_size));
+
+    std::shared_ptr<char> buf(new char[min_send_buffer_size], std::default_delete<char[]>());
+    std::memset(buf.get(), 0, min_send_buffer_size);
+    client->send_data(buf, min_send_buffer_size,
+        [&](io::UdpClient& peer, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_on_send_counter;
+        }
+    );
+
+    EXPECT_EQ(0, server_on_send_counter);
+    EXPECT_EQ(0, server_on_receive_counter);
+    EXPECT_EQ(0, client_on_send_counter);
+    EXPECT_EQ(0, client_on_receive_counter);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_send_counter);
+    EXPECT_EQ(1, server_on_receive_counter);
+    EXPECT_EQ(1, client_on_send_counter);
+    EXPECT_EQ(1, client_on_receive_counter);
+}
+
 // TODO:
-TEST_F(UdpClientServerTest, DISABLED_client_set_minimal_buffer_size_and_send_more) {
+TEST_F(UdpClientServerTest, client_set_minimal_buffer_size_and_send_more) {
     io::EventLoop loop;
 
     auto server = new io::UdpServer(loop);
@@ -338,9 +401,17 @@ TEST_F(UdpClientServerTest, DISABLED_client_set_minimal_buffer_size_and_send_mor
         [](io::UdpClient& peer, const io::Error& error) {
         EXPECT_FALSE(error) << error.string();
     });
+    client->send_data(buf, buf_size,
+        [](io::UdpClient& peer, const io::Error& error) {
+        EXPECT_FALSE(error) << error.string();
+    });
+    client->send_data(buf, buf_size,
+        [](io::UdpClient& peer, const io::Error& error) {
+        EXPECT_FALSE(error) << error.string();
+    });
 
 
-    client->schedule_removal();
+    //client->schedule_removal();
 
     ASSERT_EQ(0, loop.run());
 }
