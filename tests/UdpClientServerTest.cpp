@@ -371,7 +371,7 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
 }
 
 // TODO:
-TEST_F(UdpClientServerTest, client_set_minimal_buffer_size_and_send_more) {
+TEST_F(UdpClientServerTest, DISABLED_client_set_minimal_buffer_size_and_send_more) {
     io::EventLoop loop;
 
     auto server = new io::UdpServer(loop);
