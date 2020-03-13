@@ -708,7 +708,7 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
             client.set_user_data(&client_3_message);
         }
     },
-    210, // timeout MS
+    220, // timeout MS
     [&](io::UdpPeer& client, const io::Error& error) {
         EXPECT_FALSE(error);
         ASSERT_TRUE(client.user_data());
