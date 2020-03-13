@@ -1246,8 +1246,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
                 ++server_receive_message_counter;
             }
         );
-
         EXPECT_FALSE(listen_error);
+		EXPECT_FALSE(server->set_receive_buffer_size(1024 * 16));
 
         auto timer = new io::Timer(server_loop);
         timer->start(100, 100,
