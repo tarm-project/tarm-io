@@ -1209,7 +1209,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
 //      need to configure networking stack on some particular machine.
 //      on Linux 'net.core.wmem_default', 'net.core.rmem_max' and so on...
 TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads) {
-    const std::size_t SERVER_RECEIVE_BUFFER_SIZE = 64 * 1024;
+    const std::size_t SERVER_RECEIVE_BUFFER_SIZE = 128 * 1024;
     if (SERVER_RECEIVE_BUFFER_SIZE > io::global::max_receive_buffer_size()) {
         return;
         // TOOD: skip;
