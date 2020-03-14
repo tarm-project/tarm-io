@@ -1209,7 +1209,13 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
 //      need to configure networking stack on some particular machine.
 //      on Linux 'net.core.wmem_default', 'net.core.rmem_max' and so on...
 TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads) {
-    std::size_t SIZE = 200; // TODO: increase
+    const std::size_t SERVER_RECEIVE_BUFFER_SIZE = 64 * 1024;
+    if (SERVER_RECEIVE_BUFFER_SIZE > io::global::max_receive_buffer_size()) {
+        return;
+        // TOOD: skip;
+    }
+
+    const std::size_t SIZE = 200;
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
     ::srand(0);
     for(std::size_t i = 0; i < SIZE; ++i) {
@@ -1253,7 +1259,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
             }
         );
         EXPECT_FALSE(listen_error);
-		EXPECT_FALSE(server->set_receive_buffer_size(1024 * 16)); // TODO:
+		EXPECT_FALSE(server->set_receive_buffer_size(SERVER_RECEIVE_BUFFER_SIZE));
 
         auto timer = new io::Timer(server_loop);
         timer->start(100, 100,
