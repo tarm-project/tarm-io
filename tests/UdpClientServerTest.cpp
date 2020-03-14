@@ -311,7 +311,13 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
     io::EventLoop loop;
 
     const auto min_send_buffer_size = io::global::min_send_buffer_size();
-    const auto min_receive_buffer_size = io::global::min_receive_buffer_size();
+    const auto min_receive_buffer_size = io::global::min_receive_buffer_size()
+#ifdef __APPLE__
+    // At least on MAC OS X receive buffer should be larger (N + 16) than send buffer
+    // to be able to receive packets of size N
+    + 16
+#endif
+    ;
 
     std::size_t server_on_send_counter = 0;
     std::size_t server_on_receive_counter = 0;
@@ -335,7 +341,7 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
     );
     EXPECT_FALSE(listen_error);
     EXPECT_FALSE(server->set_send_buffer_size(min_send_buffer_size));
-    EXPECT_FALSE(server->set_receive_buffer_size(min_receive_buffer_size));
+    EXPECT_FALSE(server->set_receive_buffer_size(min_receive_buffer_size + 16));
 
     auto client = new io::UdpClient(loop, {m_default_addr, m_default_port});
     client->start_receive(
@@ -346,7 +352,7 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
         }
     );
     EXPECT_FALSE(client->set_send_buffer_size(min_send_buffer_size));
-    EXPECT_FALSE(client->set_receive_buffer_size(min_receive_buffer_size));
+    EXPECT_FALSE(client->set_receive_buffer_size(min_receive_buffer_size + 16));
 
     std::shared_ptr<char> buf(new char[min_send_buffer_size], std::default_delete<char[]>());
     std::memset(buf.get(), 0, min_send_buffer_size);
