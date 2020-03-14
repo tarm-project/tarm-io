@@ -2,8 +2,8 @@
 
 #include <uv.h>
 
+#include <limits>
 
-#include <iostream>
 namespace io {
 namespace global {
 
@@ -184,13 +184,13 @@ std::size_t max_buffer_size(int(*accessor_function)(uv_handle_t* handle, int* va
         return 0;
     }
 
-	// int is used here because setsockopt() accepts int as paramter
-	const auto upper_limit = std::size_t((std::numeric_limits<int>::max)()) / 2;
+    // int is used here because setsockopt() accepts int as paramter
+    const auto upper_limit = std::size_t((std::numeric_limits<int>::max)()) / 2;
 
     auto lower_bound = default_value;
     auto upper_bound = default_value;
     while (is_buffer_size_available(reinterpret_cast<uv_handle_t*>(&handle), upper_bound, accessor_function) &&
-		   upper_bound < upper_limit) { 
+           upper_bound < upper_limit) {
         upper_bound *= 2;
     }
 
