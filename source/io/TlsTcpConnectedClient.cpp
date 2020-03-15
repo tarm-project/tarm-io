@@ -79,7 +79,7 @@ void TlsTcpConnectedClient::Impl::close() {
 }
 
 void TlsTcpConnectedClient::Impl::shutdown() {
-    m_client->shutdown();
+    m_client->shutdown();SSLv23_server_method
 }
 /*
 const SSL_METHOD* TlsTcpConnectedClient::Impl::ssl_method() {

@@ -1208,6 +1208,15 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
 // DOC: explain that too much of UDP sending may result in lost packets
 //      need to configure networking stack on some particular machine.
 //      on Linux 'net.core.wmem_default', 'net.core.rmem_max' and so on...
+
+// From man 2 sendmsg
+/*
+ ENOBUFS
+ The output queue for a network interface was full.  This generally indicates that the interface has stopped sending, but may  be
+ caused by transient congestion.  (Normally, this does not occur in Linux.  Packets are just silently dropped when a device queue
+ overflows.)
+ */
+
 TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads) {
     const std::size_t SERVER_RECEIVE_BUFFER_SIZE = 128 * 1024;
     if (SERVER_RECEIVE_BUFFER_SIZE > io::global::max_receive_buffer_size()) {
