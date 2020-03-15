@@ -566,7 +566,7 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
 
 TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
     if (io::global::min_supported_dtls_version() == io::global::max_supported_dtls_version()) {
-        return;
+        IO_TEST_SKIP();
     }
 
     std::size_t client_on_connect_callback_count = 0;
@@ -951,7 +951,7 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_with_data_se
 
 TEST_F(DtlsClientServerTest, client_with_invalid_dtls_version) {
     if (io::global::min_supported_dtls_version() == io::global::max_supported_dtls_version()) {
-        return;
+        IO_TEST_SKIP();
     }
 
     std::size_t client_on_connect_count = 0;
@@ -980,7 +980,7 @@ TEST_F(DtlsClientServerTest, client_with_invalid_dtls_version) {
 
 TEST_F(DtlsClientServerTest, server_with_invalid_dtls_version) {
     if (io::global::min_supported_dtls_version() == io::global::max_supported_dtls_version()) {
-        return;
+        IO_TEST_SKIP();
     }
 
     std::size_t server_on_new_connection_count = 0;
