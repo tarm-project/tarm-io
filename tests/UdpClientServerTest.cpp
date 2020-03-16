@@ -1739,6 +1739,74 @@ TEST_F(UdpClientServerTest, close_peer_from_server_and_than_try_send) {
     EXPECT_EQ(1, peer_on_send_callback_count);
 }
 
+TEST_F(UdpClientServerTest, send_data_of_size_0) {
+    io::EventLoop loop;
+
+    std::size_t server_on_send_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t client_on_send_count = 0;
+    std::size_t client_on_receive_count = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive({"0.0.0.0", m_default_port},
+        [&](io::UdpPeer& client, const io::DataChunk& data, const io::Error& error) {
+            ++server_on_receive_count;
+
+            EXPECT_FALSE(error);
+
+            std::shared_ptr<char> buf(new char[4], std::default_delete<char[]>());
+
+            client.send_data(buf, 0); // silent fail
+
+            client.send_data(buf, 0,
+                [&](io::UdpPeer& client, const io::Error& error) {
+                    ++server_on_send_count;
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+                    server->schedule_removal();
+                }
+            );
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::UdpClient(loop, {"127.0.0.1", m_default_port});
+    auto receive_error = client->start_receive(
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            ++client_on_receive_count;
+            EXPECT_FALSE(error);
+        }
+    );
+    EXPECT_FALSE(receive_error);
+
+    client->send_data("!",
+        [&](io::UdpClient& client, const io::Error& error) {
+            ++client_on_send_count;
+            EXPECT_FALSE(error);
+        });
+
+    client->send_data("",
+        [&](io::UdpClient& client, const io::Error& error) {
+            ++client_on_send_count;
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_send_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, client_on_send_count);
+    EXPECT_EQ(0, client_on_receive_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_send_count);
+    EXPECT_EQ(1, server_on_receive_count);
+    EXPECT_EQ(2, client_on_send_count);
+    EXPECT_EQ(0, client_on_receive_count);
+}
+
 // TODO: UDP client sending test with no destination set
 // TODO: check address of UDP peer
 // TODO: error on multiple start_receive on UDP server
@@ -1746,5 +1814,3 @@ TEST_F(UdpClientServerTest, close_peer_from_server_and_than_try_send) {
 // TODO: unit test invalid address
 
 // TODO: set_destination with ipv4 address athan with ipv6
-
-// TODO: send_data_of_size_0
