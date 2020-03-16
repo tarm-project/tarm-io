@@ -100,6 +100,13 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
         return;
     }
 
+    if (size == 0) {
+        if (callback) {
+            callback(*m_parent, io::Error(StatusCode::INVALID_ARGUMENT));
+        }
+        return;
+    }
+
     auto req = new WriteRequest;
     req->end_send_callback = callback;
     req->data = this;

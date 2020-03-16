@@ -1601,14 +1601,76 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
     server_thread.join();
 }
 
+TEST_F(TcpClientServerTest, send_data_of_size_0) {
+    io::EventLoop loop;
+
+    std::size_t server_on_send_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t client_on_send_count = 0;
+    std::size_t client_on_receive_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+    [&](io::TcpConnectedClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+
+        std::shared_ptr<char> buf(new char[4], std::default_delete<char[]>());
+
+        client.send_data(buf, 0); // silent fail
+
+        client.send_data(buf, 0,
+            [&](io::TcpConnectedClient& client, const io::Error& error) {
+                ++server_on_send_count;
+                EXPECT_TRUE(error);
+                EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+                server->schedule_removal();
+            }
+        );
+    },
+    [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        ++server_on_receive_count;
+    },
+    nullptr);
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+    [&](io::TcpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+
+        client.send_data("",
+            [&](io::TcpClient& client, const io::Error& error) {
+                ++client_on_send_count;
+                EXPECT_TRUE(error);
+                EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+                client.schedule_removal();
+            }
+        );
+    },
+    [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        ++client_on_receive_count;
+        EXPECT_FALSE(error);
+    });
+
+    EXPECT_EQ(0, server_on_send_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, client_on_send_count);
+    EXPECT_EQ(0, client_on_receive_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_send_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(1, client_on_send_count);
+    EXPECT_EQ(0, client_on_receive_count);
+}
+
 // TODO: client's write after close in server receive callback
 // TODO: write large chunks of data and schedule removal
 // TODO: double shutdown test
 // TODO: shutdown not connected test
 // TODO: send-receive large ammount of data (client -> server, server -> client)
 // TODO: simultaneous send/receive for both client and server
-
-// send data of size 0
 
 // investigate from libuv: test-tcp-write-to-half-open-connection.c
 
