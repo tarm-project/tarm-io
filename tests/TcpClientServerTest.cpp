@@ -1461,7 +1461,147 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
     EXPECT_EQ(2, client_close_counter);
 }
 
-// TODO: server sends lot of data to many connected clients
+TEST_F(TcpClientServerTest, server_send_lot_of_data_in_small_chunks_to_many_connected_clients) {
+    const std::size_t CLIENTS_COUNT = 10;
+    const std::size_t DATA_TO_SEND_SIZE = 1 * 1024 * 1024;
+
+    static_assert(DATA_TO_SEND_SIZE % 4 == 0, "Data should bae aligned by 4");
+
+    const std::size_t CHUNKS_PER_CLIENT_COUNT = DATA_TO_SEND_SIZE / 4;
+
+    std::shared_ptr<char> buffers[CLIENTS_COUNT];
+    for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
+        buffers[i].reset(new char[DATA_TO_SEND_SIZE], std::default_delete<char[]>());
+
+        for (std::size_t k = 0; k < DATA_TO_SEND_SIZE / 4; ++k) {
+            *reinterpret_cast<std::uint32_t*>(&buffers[i].get()[k * 4]) = i * DATA_TO_SEND_SIZE + k;
+        }
+    }
+
+    std::thread server_thread([&](){
+        io::EventLoop loop;
+
+        std::size_t server_on_connect_count = 0;
+        std::size_t server_on_client_count = 0;
+
+        struct ClientData {
+            ClientData(std::size_t id_) :
+                id(id_),
+                offset(0) {
+            }
+
+            std::size_t id;
+            std::size_t offset;
+        };
+
+        std::function<void(io::TcpConnectedClient&, const io::Error&)> on_send =
+            [&](io::TcpConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+                auto client_data = reinterpret_cast<ClientData*>(client.user_data());
+                //std::cout << offset << std::endl;
+
+                if (client_data->offset == DATA_TO_SEND_SIZE) {
+                    delete client_data;
+                    client.shutdown();
+                    return;
+                }
+
+                std::shared_ptr<char> buf(new char[4], std::default_delete<char[]>());
+                std::memcpy(buf.get(), buffers[client_data->id].get() + client_data->offset, 4);
+
+                client.send_data(buf, 4, on_send);
+
+                client_data->offset += 4;
+            };
+
+        auto server = new io::TcpServer(loop);
+        auto listen_error = server->listen(
+            {m_default_addr, m_default_port},
+            [&](io::TcpConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+                ++server_on_connect_count;
+            },
+            [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error);
+
+                const std::string received_message(data.buf.get(), data.size);
+
+                std::size_t client_id = std::stoul(received_message);
+                EXPECT_LT(client_id, CLIENTS_COUNT);
+                auto client_data = new ClientData(client_id);
+                client.set_user_data(client_data);
+                //std::cout << "Received data from client with ID:" <<client_id << std::endl;
+
+                //std::size_t
+
+                std::shared_ptr<char> buf(new char[4], std::default_delete<char[]>());
+                std::memcpy(buf.get(), buffers[client_id].get(), 4);
+                client_data->offset += 4;
+
+                client.send_data(buf, 4, on_send);
+            },
+            [&](io::TcpConnectedClient&, const io::Error&) {
+                ++server_on_client_count;
+                if (server_on_client_count == CLIENTS_COUNT) {
+                    server->schedule_removal();
+                }
+            }
+        );
+        ASSERT_FALSE(listen_error);
+
+        EXPECT_EQ(0, server_on_connect_count);
+
+        ASSERT_EQ(0, loop.run());
+
+        EXPECT_EQ(CLIENTS_COUNT, server_on_connect_count);
+    });
+
+    std::vector<std::thread> client_threads;
+
+    for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
+        client_threads.emplace_back([&](std::size_t thread_id) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+            std::size_t client_on_data_receive_bytes_count = 0;
+
+            io::EventLoop loop;
+            auto client = new io::TcpClient(loop);
+            client->connect(
+                {m_default_addr, m_default_port},
+                [&](io::TcpClient& client, const io::Error& error){
+                    EXPECT_FALSE(error) << error.string();
+                    client.send_data(std::to_string(thread_id));
+                },
+                [&](io::TcpClient& client, const io::DataChunk& data, const io::Error&){
+                    const std::size_t start_offset = client_on_data_receive_bytes_count;
+                    client_on_data_receive_bytes_count += data.size;
+
+                    for (auto i = start_offset; i < client_on_data_receive_bytes_count; i += 4) {
+                        ASSERT_EQ(thread_id * DATA_TO_SEND_SIZE + i / 4,
+                                  *reinterpret_cast<const std::uint32_t*>(data.buf.get() + (i - start_offset)));
+                    }
+                },
+                [&](io::TcpClient& client, const io::Error& error){
+                    EXPECT_FALSE(error) << error.string();
+                    client.schedule_removal();
+                }
+            );
+
+            EXPECT_EQ(0, client_on_data_receive_bytes_count);
+
+            ASSERT_EQ(0, loop.run());
+
+            EXPECT_EQ(DATA_TO_SEND_SIZE, client_on_data_receive_bytes_count);
+        },
+        i);
+    }
+
+    for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
+        client_threads[i].join();
+    }
+
+    server_thread.join();
+}
 
 // TODO: client's write after close in server receive callback
 // TODO: write large chunks of data and schedule removal
