@@ -1463,18 +1463,21 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
 
 TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clients) {
     const std::size_t CLIENTS_COUNT = 40;
-    const std::size_t DATA_TO_SEND_SIZE = 10 * 1024;
+    const std::size_t DATA_TO_SEND_SIZE = 20 * 1024;
 
-    static_assert(DATA_TO_SEND_SIZE % 4 == 0, "Data should bae aligned by 4");
+    using UnderlyingType = std::uint64_t;
+    const std::size_t UNDERLYING_TYPE_SIZE = sizeof(UnderlyingType);
 
-    const std::size_t CHUNKS_PER_CLIENT_COUNT = DATA_TO_SEND_SIZE / 4;
+    static_assert(DATA_TO_SEND_SIZE % UNDERLYING_TYPE_SIZE == 0, "Data should bae aligned");
+
+    const std::size_t CHUNKS_PER_CLIENT_COUNT = DATA_TO_SEND_SIZE / UNDERLYING_TYPE_SIZE;
 
     std::shared_ptr<char> buffers[CLIENTS_COUNT];
     for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
         buffers[i].reset(new char[DATA_TO_SEND_SIZE], std::default_delete<char[]>());
 
-        for (std::size_t k = 0; k < DATA_TO_SEND_SIZE / 4; ++k) {
-            *reinterpret_cast<std::uint32_t*>(&buffers[i].get()[k * 4]) = i * DATA_TO_SEND_SIZE + k;
+        for (std::size_t k = 0; k < DATA_TO_SEND_SIZE / UNDERLYING_TYPE_SIZE; ++k) {
+            *reinterpret_cast<UnderlyingType*>(&buffers[i].get()[k * UNDERLYING_TYPE_SIZE]) = i * DATA_TO_SEND_SIZE + k;
         }
     }
 
@@ -1488,7 +1491,7 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
             ClientData(std::size_t id_) :
                 id(id_),
                 offset(0),
-                buf(new char[4], std::default_delete<char[]>()) {
+                buf(new char[UNDERLYING_TYPE_SIZE], std::default_delete<char[]>()) {
             }
 
             std::size_t id;
@@ -1507,10 +1510,10 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
                     return;
                 }
 
-                std::memcpy(client_data->buf.get(), buffers[client_data->id].get() + client_data->offset, 4);
-                client.send_data(client_data->buf, 4, on_send);
+                std::memcpy(client_data->buf.get(), buffers[client_data->id].get() + client_data->offset, UNDERLYING_TYPE_SIZE);
+                client.send_data(client_data->buf, UNDERLYING_TYPE_SIZE, on_send);
 
-                client_data->offset += 4;
+                client_data->offset += UNDERLYING_TYPE_SIZE;
             };
 
         auto server = new io::TcpServer(loop);
@@ -1530,10 +1533,10 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
                 auto client_data = new ClientData(client_id);
                 client.set_user_data(client_data);
 
-                std::memcpy(client_data->buf.get(), buffers[client_id].get(), 4);
-                client_data->offset += 4;
+                std::memcpy(client_data->buf.get(), buffers[client_id].get(), UNDERLYING_TYPE_SIZE);
+                client_data->offset += UNDERLYING_TYPE_SIZE;
 
-                client.send_data(client_data->buf, 4, on_send);
+                client.send_data(client_data->buf, UNDERLYING_TYPE_SIZE, on_send);
             },
             [&](io::TcpConnectedClient&, const io::Error&) {
                 ++server_on_client_count;
@@ -1571,9 +1574,9 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
                     const std::size_t start_offset = client_on_data_receive_bytes_count;
                     client_on_data_receive_bytes_count += data.size;
 
-                    for (auto i = start_offset; i < client_on_data_receive_bytes_count; i += 4) {
-                        ASSERT_EQ(thread_id * DATA_TO_SEND_SIZE + i / 4,
-                                  *reinterpret_cast<const std::uint32_t*>(data.buf.get() + (i - start_offset)));
+                    for (auto i = start_offset; i < client_on_data_receive_bytes_count; i += UNDERLYING_TYPE_SIZE) {
+                        ASSERT_EQ(thread_id * DATA_TO_SEND_SIZE + i / UNDERLYING_TYPE_SIZE,
+                                  *reinterpret_cast<const UnderlyingType*>(data.buf.get() + (i - start_offset)));
                     }
                 },
                 [&](io::TcpClient& client, const io::Error& error){
