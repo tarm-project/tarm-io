@@ -1461,9 +1461,9 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
     EXPECT_EQ(2, client_close_counter);
 }
 
-TEST_F(TcpClientServerTest, server_send_lot_of_data_in_small_chunks_to_many_connected_clients) {
-    const std::size_t CLIENTS_COUNT = 10;
-    const std::size_t DATA_TO_SEND_SIZE = 1 * 1024 * 1024;
+TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clients) {
+    const std::size_t CLIENTS_COUNT = 40;
+    const std::size_t DATA_TO_SEND_SIZE = 10 * 1024;
 
     static_assert(DATA_TO_SEND_SIZE % 4 == 0, "Data should bae aligned by 4");
 
@@ -1487,18 +1487,19 @@ TEST_F(TcpClientServerTest, server_send_lot_of_data_in_small_chunks_to_many_conn
         struct ClientData {
             ClientData(std::size_t id_) :
                 id(id_),
-                offset(0) {
+                offset(0),
+                buf(new char[4], std::default_delete<char[]>()) {
             }
 
             std::size_t id;
             std::size_t offset;
+            std::shared_ptr<char> buf;
         };
 
         std::function<void(io::TcpConnectedClient&, const io::Error&)> on_send =
             [&](io::TcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
                 auto client_data = reinterpret_cast<ClientData*>(client.user_data());
-                //std::cout << offset << std::endl;
 
                 if (client_data->offset == DATA_TO_SEND_SIZE) {
                     delete client_data;
@@ -1506,10 +1507,8 @@ TEST_F(TcpClientServerTest, server_send_lot_of_data_in_small_chunks_to_many_conn
                     return;
                 }
 
-                std::shared_ptr<char> buf(new char[4], std::default_delete<char[]>());
-                std::memcpy(buf.get(), buffers[client_data->id].get() + client_data->offset, 4);
-
-                client.send_data(buf, 4, on_send);
+                std::memcpy(client_data->buf.get(), buffers[client_data->id].get() + client_data->offset, 4);
+                client.send_data(client_data->buf, 4, on_send);
 
                 client_data->offset += 4;
             };
@@ -1530,15 +1529,11 @@ TEST_F(TcpClientServerTest, server_send_lot_of_data_in_small_chunks_to_many_conn
                 EXPECT_LT(client_id, CLIENTS_COUNT);
                 auto client_data = new ClientData(client_id);
                 client.set_user_data(client_data);
-                //std::cout << "Received data from client with ID:" <<client_id << std::endl;
 
-                //std::size_t
-
-                std::shared_ptr<char> buf(new char[4], std::default_delete<char[]>());
-                std::memcpy(buf.get(), buffers[client_id].get(), 4);
+                std::memcpy(client_data->buf.get(), buffers[client_id].get(), 4);
                 client_data->offset += 4;
 
-                client.send_data(buf, 4, on_send);
+                client.send_data(client_data->buf, 4, on_send);
             },
             [&](io::TcpConnectedClient&, const io::Error&) {
                 ++server_on_client_count;
