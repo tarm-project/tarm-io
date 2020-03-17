@@ -1392,7 +1392,7 @@ TEST_F(TcpClientServerTest, client_saves_received_buffer) {
     EXPECT_EQ(2, server_receive_counter);
 }
 
-TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
+TEST_F(TcpClientServerTest, reuse_client_connection_after_disconnect_from_server) {
     std::size_t client_receive_counter = 0;
     std::size_t client_close_counter = 0;
 
@@ -1409,8 +1409,9 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
                 }
             );
         },
-    nullptr,
-    nullptr);
+        nullptr,
+        nullptr);
+    EXPECT_FALSE(listen_error);
 
     auto client_on_connect = [&](io::TcpClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -1429,8 +1430,7 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
 
     std::function<void(io::TcpClient& client, const io::Error& error)> client_on_close = nullptr;
     client_on_close = [&](io::TcpClient& client, const io::Error& error) {
-        EXPECT_TRUE(error);
-        EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
+        EXPECT_FALSE(error);
 
         if (client_close_counter == 0) {
             client.connect({m_default_addr, m_default_port},
@@ -1440,6 +1440,7 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
             );
         } else {
             client.schedule_removal();
+            server->schedule_removal();
         }
 
         ++client_close_counter;
@@ -1461,6 +1462,81 @@ TEST_F(TcpClientServerTest, DISABLED_reuse_client_connection) {
     EXPECT_EQ(2, client_close_counter);
 }
 
+// TODO: test connect in read callback while server sends large stream
+TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
+    io::EventLoop loop;
+
+    std::size_t server_1_on_new_client_count = 0;
+    std::size_t server_2_on_new_client_count = 0;
+    std::size_t server_3_on_new_client_count = 0;
+
+    std::size_t client_on_connect_ok_count = 0;
+    std::size_t client_on_connect_fail_count = 0;
+
+    auto server_on_new_client = [&](io::TcpConnectedClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+        *reinterpret_cast<std::size_t*>(client.server().user_data()) += 1;
+        client.server().schedule_removal();
+    };
+
+    auto server_1 = new io::TcpServer(loop);
+    server_1->set_user_data(&server_1_on_new_client_count);
+    auto listen_error_1 = server_1->listen(
+        {m_default_addr, m_default_port},
+        server_on_new_client,
+        nullptr,
+        nullptr);
+    EXPECT_FALSE(listen_error_1);
+
+    auto server_2 = new io::TcpServer(loop);
+    server_2->set_user_data(&server_2_on_new_client_count);
+    auto listen_error_2 = server_2->listen(
+        {m_default_addr, std::uint16_t(m_default_port + 1)},
+        server_on_new_client,
+        nullptr,
+        nullptr);
+    EXPECT_FALSE(listen_error_2);
+
+    auto server_3 = new io::TcpServer(loop);
+    server_3->set_user_data(&server_3_on_new_client_count);
+    auto listen_error_3 = server_3->listen(
+        {m_default_addr, std::uint16_t(m_default_port + 2)},
+        server_on_new_client,
+        nullptr,
+        nullptr);
+    EXPECT_FALSE(listen_error_3);
+
+    std::uint16_t port = m_default_port;
+
+    std::function<void(io::TcpClient& client, const io::Error& error)> client_on_connect;
+    client_on_connect = [&](io::TcpClient& client, const io::Error& error) {
+        if (error) {
+            ++client_on_connect_fail_count;
+        } else {
+            ++client_on_connect_ok_count;
+        }
+
+        if (client_on_connect_fail_count == 3) {
+            client.schedule_removal();
+            return;
+        }
+
+        ++port;
+        client.connect({m_default_addr, port}, client_on_connect, nullptr, nullptr);
+    };
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, port}, client_on_connect, nullptr, nullptr);
+
+    EXPECT_EQ(0, client_on_connect_fail_count);
+    EXPECT_EQ(0, client_on_connect_ok_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(3, client_on_connect_fail_count);
+    EXPECT_EQ(3, client_on_connect_ok_count);
+}
+
 TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clients) {
     const std::size_t CLIENTS_COUNT = 40;
     const std::size_t DATA_TO_SEND_SIZE = 20 * 1024;
@@ -1468,7 +1544,7 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
     using UnderlyingType = std::uint64_t;
     const std::size_t UNDERLYING_TYPE_SIZE = sizeof(UnderlyingType);
 
-    static_assert(DATA_TO_SEND_SIZE % UNDERLYING_TYPE_SIZE == 0, "Data should bae aligned");
+    static_assert(DATA_TO_SEND_SIZE % UNDERLYING_TYPE_SIZE == 0, "Data should be aligned");
 
     const std::size_t CHUNKS_PER_CLIENT_COUNT = DATA_TO_SEND_SIZE / UNDERLYING_TYPE_SIZE;
 

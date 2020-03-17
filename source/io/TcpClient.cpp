@@ -20,7 +20,7 @@ public:
                  const void* raw_endpoint,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
-                 CloseCallback close_callback = nullptr);
+                 CloseCallback close_callback);
     bool close();
 
     void set_close_callback(CloseCallback callback);
@@ -30,6 +30,11 @@ public:
     EventLoop* loop();
 
 protected:
+    void connect_impl(const Endpoint& endpoint,
+                      const void* raw_endpoint,
+                      ConnectCallback connect_callback,
+                      DataReceiveCallback receive_callback,
+                      CloseCallback close_callback);
     // statics
     static void on_shutdown(uv_shutdown_t* req, int uv_status);
     static void on_close(uv_handle_t* handle);
@@ -66,12 +71,27 @@ void TcpClient::Impl::connect(const Endpoint& endpoint,
                               ConnectCallback connect_callback,
                               DataReceiveCallback receive_callback,
                               CloseCallback close_callback) {
+    if (m_tcp_stream) {
+        m_tcp_stream->data = nullptr;
+        uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
+        m_tcp_stream = nullptr;
+    }
+
+    m_loop->schedule_callback([=]() {
+        const Endpoint e = endpoint;
+        connect_impl(e, e.raw_endpoint(), connect_callback, receive_callback, close_callback);
+    });
+}
+
+void TcpClient::Impl::connect_impl(const Endpoint& endpoint,
+                                   const void* raw_endpoint,
+                                   ConnectCallback connect_callback,
+                                   DataReceiveCallback receive_callback,
+                                   CloseCallback close_callback) {
 
     if (endpoint.type() == Endpoint::UNDEFINED) {
         if (connect_callback) {
-            m_loop->schedule_callback([=]() {
-                connect_callback(*m_parent, Error(StatusCode::INVALID_ARGUMENT));
-            });
+            connect_callback(*m_parent, Error(StatusCode::INVALID_ARGUMENT));
         }
         return;
     }
@@ -86,7 +106,7 @@ void TcpClient::Impl::connect(const Endpoint& endpoint,
     m_port = endpoint.port();
     m_ipv4_addr = network_to_host(addr->sin_addr.s_addr);
 
-    IO_LOG(m_loop, DEBUG, "address:", io::ip4_addr_to_string(m_ipv4_addr)); // TODO: port???
+    IO_LOG(m_loop, DEBUG, m_parent, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", m_port);
 
     init_stream();
     m_connect_callback = connect_callback;
@@ -137,6 +157,7 @@ bool TcpClient::Impl::close() {
 
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
+        m_tcp_stream = nullptr;
     }
 
     return false;
@@ -169,7 +190,7 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
         this_.m_connect_callback(*this_.m_parent, error);
     }
 
-    if (error) {
+    if (error && this_.m_tcp_stream) {
         this_.m_tcp_stream->data = nullptr;
         uv_close(reinterpret_cast<uv_handle_t*>(this_.m_tcp_stream), on_close);
         return;
@@ -210,6 +231,7 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
 
 void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(handle->data);
+    auto& loop = *reinterpret_cast<EventLoop*>(handle->loop->data);
 
     Error error(nread);
     if (!error) {
@@ -221,8 +243,15 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
             }
         }
     } else {
+        IO_LOG(&loop, TRACE, "Closed from other side. Reason:", error.string());
+
         if (this_.m_close_callback) {
             this_.m_is_open = false;
+
+            // Need this because user may connect to other endpoint in close callback
+            auto old_tcp_stream = this_.m_tcp_stream;
+            old_tcp_stream->data = nullptr;
+            this_.m_tcp_stream = nullptr;
 
             if (error.code() == io::StatusCode::END_OF_FILE) {
                 this_.m_close_callback(*this_.m_parent, Error(0)); // OK
@@ -231,8 +260,7 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
                 this_.m_close_callback(*this_.m_parent, error);
             }
 
-            this_.m_tcp_stream->data = nullptr;
-            uv_close(reinterpret_cast<uv_handle_t*>(this_.m_tcp_stream), on_close);
+            uv_close(reinterpret_cast<uv_handle_t*>(old_tcp_stream), on_close);
         }
     }
 }

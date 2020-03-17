@@ -72,7 +72,7 @@ void TcpConnectedClient::Impl::close() {
         return;
     }
 
-    IO_LOG(m_loop, TRACE, "address:", ip4_addr_to_string(m_ipv4_addr), ":", port());
+    IO_LOG(m_loop, TRACE, m_parent, "address:", ip4_addr_to_string(m_ipv4_addr), ":", port());
 
     m_is_open = false;
 
@@ -143,9 +143,9 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
 
     if (nread >= 0) {
-        IO_LOG(this_.m_loop, TRACE, "Received data, size:", nread);
+        IO_LOG(this_.m_loop, TRACE, this_.m_parent, "Received data, size:", nread);
     } else {
-        IO_LOG(this_.m_loop, TRACE, "Receive error:", uv_strerror(nread));
+        IO_LOG(this_.m_loop, TRACE, this_.m_parent, "Receive error:", uv_strerror(nread));
     }
 
     Error error(nread);

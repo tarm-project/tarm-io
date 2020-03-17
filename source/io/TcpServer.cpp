@@ -217,30 +217,11 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
             tcp_client->set_port(network_to_host(addr_info->sin_port));
             tcp_client->set_ipv4_addr(network_to_host(addr_info->sin_addr.s_addr));
 
-            bool allow_connection = true;
-            // TODO: add some optional callback call here to reject undesired connections
-            /*
-            if (this_.m_new_connection_callback) {
-                allow_connection = this_.m_new_connection_callback(*this_.m_parent, *tcp_client);
-            }
-            */
-
+            this_.m_client_connections.insert(tcp_client);
             this_.m_new_connection_callback(*tcp_client, Error(0));
-
-            if (allow_connection) {
-                this_.m_client_connections.insert(tcp_client);
-
+            if (tcp_client->is_open()) {
                 tcp_client->start_read(this_.m_data_receive_callback);
-            } else {
-                // TODO: need to investigate this. On Windows close() is immediate operation and any pending operations are discarded
-                //       On Unix at least for localhost close() does not discard immediately pending send operations.
-                //       See test server_disconnect_client_from_new_connection_callback for details
-                //       execute_on_loop_thread call was added here to make behavior on Windows consistent with Unix
-                this_.m_loop->execute_on_loop_thread([tcp_client]() {
-                    tcp_client->close();
-                });
             }
-
         } else {
             // TODO: call close???
             IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", uv_strerror(getpeername_status));
