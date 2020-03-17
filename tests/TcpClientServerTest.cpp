@@ -1531,10 +1531,18 @@ TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
     EXPECT_EQ(0, client_on_connect_fail_count);
     EXPECT_EQ(0, client_on_connect_ok_count);
 
+    EXPECT_EQ(0, server_1_on_new_client_count);
+    EXPECT_EQ(0, server_2_on_new_client_count);
+    EXPECT_EQ(0, server_3_on_new_client_count);
+
     ASSERT_EQ(0, loop.run());
 
     EXPECT_EQ(3, client_on_connect_fail_count);
     EXPECT_EQ(3, client_on_connect_ok_count);
+
+    EXPECT_EQ(1, server_1_on_new_client_count);
+    EXPECT_EQ(1, server_2_on_new_client_count);
+    EXPECT_EQ(1, server_3_on_new_client_count);
 }
 
 TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clients) {
