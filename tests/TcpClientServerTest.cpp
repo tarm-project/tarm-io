@@ -1462,7 +1462,6 @@ TEST_F(TcpClientServerTest, reuse_client_connection_after_disconnect_from_server
     EXPECT_EQ(2, client_close_counter);
 }
 
-// TODO: test connect in read callback while server sends large stream
 TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
     io::EventLoop loop;
 
@@ -1545,6 +1544,111 @@ TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
     EXPECT_EQ(1, server_3_on_new_client_count);
 }
 
+TEST_F(TcpClientServerTest, connect_to_other_server_in_receive_callback) {
+    io::EventLoop loop;
+
+    const std::size_t SERVER_DATA_SIZE = 5 * 1024 * 1024;
+
+    std::size_t server_on_new_connection_count = 0;
+
+    std::size_t server_1_on_close_client_count = 0;
+    std::size_t server_2_on_close_client_count = 0;
+
+    std::size_t client_on_new_connection_count = 0;
+
+    int buf_value = 0;
+    auto server_on_new_client = [&](io::TcpConnectedClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+        ++server_on_new_connection_count;
+
+        std::shared_ptr<char> buf(new char[SERVER_DATA_SIZE], std::default_delete<char[]>());
+        std::memset(buf.get(), buf_value, SERVER_DATA_SIZE);
+        client.send_data(buf, SERVER_DATA_SIZE,
+            [&](io::TcpConnectedClient& client, const io::Error& error) {
+                if (server_on_new_connection_count == 1) {
+                    EXPECT_TRUE(error) << error.string();
+                    EXPECT_EQ(io::StatusCode::BROKEN_PIPE, error.code());
+                } else {
+                    EXPECT_FALSE(error) << error.string();
+                }
+
+                client.server().schedule_removal();
+            }
+        );
+        ++buf_value;
+    };
+
+    auto server_on_client_close = [&](io::TcpConnectedClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+        *reinterpret_cast<std::size_t*>(client.server().user_data()) += 1;
+    };
+
+    auto server_1 = new io::TcpServer(loop);
+    server_1->set_user_data(&server_1_on_close_client_count);
+    auto listen_error_1 = server_1->listen(
+        {m_default_addr, m_default_port},
+        server_on_new_client,
+        nullptr,
+        server_on_client_close);
+    EXPECT_FALSE(listen_error_1);
+
+    auto server_2 = new io::TcpServer(loop);
+    server_2->set_user_data(&server_2_on_close_client_count);
+    auto listen_error_2 = server_2->listen(
+        {m_default_addr, std::uint16_t(m_default_port + 1)},
+        server_on_new_client,
+        nullptr,
+        server_on_client_close);
+    EXPECT_FALSE(listen_error_2);
+
+    std::uint16_t port = m_default_port;
+
+    std::function<void(io::TcpClient& client, const io::Error& error)> client_on_connect;
+    std::function<void(io::TcpClient& client, const io::DataChunk&, const io::Error& error)> client_on_receive;
+    std::function<void(io::TcpClient& client, const io::Error& error)> client_on_close;
+
+    client_on_connect = [&](io::TcpClient& client, const io::Error& error) {
+        ++client_on_new_connection_count;
+    };
+
+    client_on_receive = [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+
+        if (client_on_new_connection_count == 1) {
+            client.connect({m_default_addr, ++port}, client_on_connect, client_on_receive, client_on_close);
+            EXPECT_EQ(0, data.buf.get()[0]);
+        } else {
+            EXPECT_EQ(1, data.buf.get()[0]);
+        }
+    };
+
+    client_on_close = [&](io::TcpClient& client, const io::Error& error) {
+        if (client_on_new_connection_count == 2) {
+            client.schedule_removal();
+            return;
+        }
+    };
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, port}, client_on_connect, client_on_receive, client_on_close);
+
+    EXPECT_EQ(0, server_on_new_connection_count);
+
+    EXPECT_EQ(0, server_1_on_close_client_count);
+    EXPECT_EQ(0, server_2_on_close_client_count);
+
+    EXPECT_EQ(0, client_on_new_connection_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(2, server_on_new_connection_count);
+
+    EXPECT_EQ(1, server_1_on_close_client_count);
+    EXPECT_EQ(1, server_2_on_close_client_count);
+
+    EXPECT_EQ(2, client_on_new_connection_count);
+}
+
 TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clients) {
     const std::size_t CLIENTS_COUNT = 40;
     const std::size_t DATA_TO_SEND_SIZE = 20 * 1024;
@@ -1553,8 +1657,6 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
     const std::size_t UNDERLYING_TYPE_SIZE = sizeof(UnderlyingType);
 
     static_assert(DATA_TO_SEND_SIZE % UNDERLYING_TYPE_SIZE == 0, "Data should be aligned");
-
-    const std::size_t CHUNKS_PER_CLIENT_COUNT = DATA_TO_SEND_SIZE / UNDERLYING_TYPE_SIZE;
 
     std::shared_ptr<char> buffers[CLIENTS_COUNT];
     for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
