@@ -513,14 +513,14 @@ TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server) {
     EXPECT_TRUE(callback_called);
 }
 
-// TODO: revise this test
-TEST_F(TcpClientServerTest, DISABLED_server_disconnect_client_from_new_connection_callback) {
+TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callback) {
     io::EventLoop loop;
     auto server = new io::TcpServer(loop);
 
-    bool server_receive_callback_called = false;
-    bool client_receive_callback_called = false;
-    bool client_close_callback_called = false;
+    std::size_t server_new_connection_callback_call_count = 0;
+    std::size_t server_receive_callback_call_count = 0;
+    std::size_t client_receive_callback_call_count = 0;
+    std::size_t client_close_callback_call_count = 0;
 
     const std::string client_message = "Hello :-)";
     const std::string server_message = "Go away!";
@@ -528,16 +528,27 @@ TEST_F(TcpClientServerTest, DISABLED_server_disconnect_client_from_new_connectio
     std::vector<unsigned char> total_bytes_received;
 
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
-    [&](io::TcpConnectedClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
-        client.send_data(server_message);
-        EXPECT_EQ(0, server->connected_clients_count());
-        //return false;
-    },
-    [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-        server_receive_callback_called = true;
-    },
-    nullptr);
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_new_connection_callback_call_count;
+
+            client.send_data(server_message,
+                [&](io::TcpConnectedClient&, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                }
+            );
+
+            EXPECT_EQ(1, server->connected_clients_count());
+            client.shutdown();
+            EXPECT_EQ(1, server->connected_clients_count());
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            ++server_receive_callback_call_count;
+        },
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_EQ(0, server->connected_clients_count());
+        }
+    );
     EXPECT_FALSE(listen_error);
 
     auto client = new io::TcpClient(loop);
@@ -548,29 +559,29 @@ TEST_F(TcpClientServerTest, DISABLED_server_disconnect_client_from_new_connectio
         },
         [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
-            client_receive_callback_called = true;
             EXPECT_EQ(std::string(data.buf.get(), data.size), server_message);
+            ++client_receive_callback_call_count;
         },
         [&](io::TcpClient& client, const io::Error& error) {
             // Not checking status here bacause could be connection reset error
-            client_close_callback_called = true;
+            ++client_close_callback_call_count;
+
+            client.schedule_removal();
+            server->schedule_removal();
         }
     );
 
-    auto timer = new io::Timer(loop);
-    timer->start(500, [&](io::Timer& timer) {
-        // Disconnect should be called before timer callback
-        EXPECT_TRUE(client_close_callback_called);
-
-        client->schedule_removal();
-        server->schedule_removal();
-        timer.schedule_removal();
-    });
+    EXPECT_EQ(0, server_new_connection_callback_call_count);
+    EXPECT_EQ(0, server_receive_callback_call_count);
+    EXPECT_EQ(0, client_receive_callback_call_count);
+    EXPECT_EQ(0, client_close_callback_call_count);
 
     EXPECT_EQ(0, loop.run());
-    EXPECT_FALSE(server_receive_callback_called);
-    EXPECT_TRUE(client_receive_callback_called);
-    EXPECT_TRUE(client_close_callback_called);
+
+    EXPECT_EQ(1, server_new_connection_callback_call_count);
+    EXPECT_EQ(0, server_receive_callback_call_count);
+    EXPECT_EQ(1, client_receive_callback_call_count);
+    EXPECT_EQ(1, client_close_callback_call_count);
 }
 
 // TODO: need the same test as server_shutdown_calls_close_on_connected_clients

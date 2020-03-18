@@ -109,12 +109,12 @@ void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 
     IO_LOG(this_.m_loop, TRACE, this_.m_parent, "address:", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
 
+    this_.m_server->remove_client_connection(this_.m_parent);
+
     if (this_.m_close_callback) {
         this_.m_close_callback(*this_.m_parent, Error(status));
         this_.m_close_callback = nullptr; // TODO: looks like a hack
     }
-
-    this_.m_server->remove_client_connection(this_.m_parent);
 
     uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
     delete req;
