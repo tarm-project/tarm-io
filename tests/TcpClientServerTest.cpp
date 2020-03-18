@@ -2000,7 +2000,70 @@ TEST_F(TcpClientServerTest, send_data_of_size_0) {
     EXPECT_EQ(0, client_on_receive_count);
 }
 
-// TODO: client's write after close in server receive callback
+TEST_F(TcpClientServerTest, connected_client_write_after_close_in_server_receive_callback) {
+    io::EventLoop loop;
+
+    std::size_t server_on_send_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t client_on_receive_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_count;
+            client.close();
+            client.send_data("!!!",
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    ++server_on_send_count;
+                    EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
+                }
+            );
+        },
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            client.server().schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            client.send_data("!",
+                [&](io::TcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                }
+            );
+        },
+        [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_receive_count;
+        },
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_send_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, client_on_receive_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_send_count);
+    EXPECT_EQ(1, server_on_receive_count);
+    EXPECT_EQ(0, client_on_receive_count);
+
+
+}
+
 // TODO: write large chunks of data and schedule removal
 // TODO: double shutdown test
 // TODO: shutdown not connected test
