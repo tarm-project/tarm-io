@@ -1615,7 +1615,9 @@ TEST_F(TcpClientServerTest, connect_to_other_server_in_receive_callback) {
             [&](io::TcpConnectedClient& client, const io::Error& error) {
                 if (server_on_new_connection_count == 1) {
                     EXPECT_TRUE(error) << error.string();
-                    EXPECT_EQ(io::StatusCode::BROKEN_PIPE, error.code());
+
+                    ASSERT_TRUE(error.code() == io::StatusCode::BROKEN_PIPE ||
+                                error.code() == io::StatusCode::CONNECTION_RESET_BY_PEER);
                 } else {
                     EXPECT_FALSE(error) << error.string();
                 }
