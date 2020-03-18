@@ -1224,12 +1224,11 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
     EXPECT_TRUE(server_closed_from_client_side);
 }
 
-// TODO: the same test but for client and for receiving data
 TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
-    // Note: in this test server send large cunk of data to client but in receive callback closes that connection
+    // Note: in this test server sends large cunk of data to client but in receive callback closes that connection
     //       which does not allow to complete that sending operation, thus it is cancelled
 
-    const std::size_t DATA_SIZE = 128 * 1024 * 1024;
+    const std::size_t DATA_SIZE = 64 * 1024 * 1024;
 
     std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
 
@@ -1293,7 +1292,10 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
 }
 
 TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
-    const std::size_t DATA_SIZE = 128 * 1024 * 1024;
+    // Note: in this test client sends large cunk of data to server but in receive callback closes that connection
+    //       which does not allow to complete that sending operation, thus it is cancelled
+
+    const std::size_t DATA_SIZE = 64 * 1024 * 1024;
 
     std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
 
@@ -1356,7 +1358,6 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
 }
 
 TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
-    //this->log_to_stdout();
     io::EventLoop loop;
 
     auto server = new io::TcpServer(loop);
