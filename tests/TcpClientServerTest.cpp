@@ -16,6 +16,9 @@ struct TcpClientServerTest : public testing::Test,
 protected:
     std::uint16_t m_default_port = 31540;
     std::string m_default_addr = "127.0.0.1";
+
+    void test_impl_server_disconnect_client_from_data_receive_callback(
+        std::function<void(io::TcpConnectedClient& client)> close_variant);
 };
 
 TEST_F(TcpClientServerTest, server_constructor) {
@@ -788,7 +791,8 @@ TEST_F(TcpClientServerTest, server_schedule_remove_after_send) {
     EXPECT_EQ(1, client_receive_callback_count);
 }
 
-TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback) {
+void TcpClientServerTest::test_impl_server_disconnect_client_from_data_receive_callback(
+    std::function<void(io::TcpConnectedClient& client)> close_variant) {
     const std::string client_message = "Disconnect me!";
 
     io::EventLoop loop;
@@ -800,11 +804,8 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
     },
     [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         EXPECT_EQ(std::string(data.buf.get(), data.size), client_message);
-        client.close();
+        close_variant(client);
         EXPECT_EQ(1, server->connected_clients_count()); // not closed yet
-
-        // TODO: also test with shutdown
-        //client.shutdown();
     },
     [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -840,6 +841,22 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback)
 
     EXPECT_EQ(0, loop.run());
     EXPECT_TRUE(disconnect_called);
+}
+
+TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback_1) {
+    test_impl_server_disconnect_client_from_data_receive_callback(
+        [](io::TcpConnectedClient& client) {
+            client.close();
+        }
+    );
+}
+
+TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback_2) {
+    test_impl_server_disconnect_client_from_data_receive_callback(
+        [](io::TcpConnectedClient& client) {
+            client.shutdown();
+        }
+    );
 }
 
 TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
