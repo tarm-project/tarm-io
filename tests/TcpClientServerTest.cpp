@@ -584,12 +584,9 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
     EXPECT_EQ(1, client_close_callback_call_count);
 }
 
-// TODO: need the same test as server_shutdown_calls_close_on_connected_clients
-// but which makes close() from server side
-
-TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
-    // Test description: in this test we check that optional close callback is called on server side
-    // for connected client on connection termination.
+TEST_F(TcpClientServerTest, server_close_calls_close_on_connected_clients) {
+    // Test description: in this test we check that close callbacks are called
+    // for both client and server side when server is closed
 
     io::EventLoop loop;
     auto server = new io::TcpServer(loop);
@@ -598,6 +595,83 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
     unsigned server_receive_callback_count = 0;
     unsigned server_send_callback_count = 0;
     unsigned client_receive_callback_count = 0;
+    unsigned client_close_callback_count = 0;
+    unsigned connected_client_close_callback_count = 0;
+
+    const std::string server_message = "I quit!";
+
+    std::function<void(io::TcpConnectedClient&, const io::Error&)> connected_client_close_callback =
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+        ++connected_client_close_callback_count;
+    };
+
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_connect_callback_count;
+            client.send_data(server_message, [&](io::TcpConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+                ++server_send_callback_count;
+                server->close([&](io::TcpServer& server, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    server.schedule_removal();
+                });
+            });
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_receive_callback_count;
+        },
+        connected_client_close_callback
+    );
+    EXPECT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        },
+        [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_receive_callback_count;
+            client.schedule_removal();
+        },
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_close_callback_count;
+        }
+    );
+
+    EXPECT_EQ(0, server_connect_callback_count);
+    EXPECT_EQ(0, server_receive_callback_count);
+    EXPECT_EQ(0, server_send_callback_count);
+    EXPECT_EQ(0, client_receive_callback_count);
+    EXPECT_EQ(0, connected_client_close_callback_count);
+    EXPECT_EQ(0, client_close_callback_count);
+
+    EXPECT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_connect_callback_count);
+    EXPECT_EQ(0, server_receive_callback_count);
+    EXPECT_EQ(1, server_send_callback_count);
+    EXPECT_EQ(1, client_receive_callback_count);
+    EXPECT_EQ(1, connected_client_close_callback_count);
+    EXPECT_EQ(1, client_close_callback_count);
+}
+
+TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
+    // Test description: in this test we check that close callbacks are called
+    // for both client and server side when server is shut down
+
+    io::EventLoop loop;
+    auto server = new io::TcpServer(loop);
+
+    unsigned server_connect_callback_count = 0;
+    unsigned server_receive_callback_count = 0;
+    unsigned server_send_callback_count = 0;
+    unsigned client_receive_callback_count = 0;
+    unsigned client_close_callback_count = 0;
     unsigned connected_client_close_callback_count = 0;
 
     const std::string server_message = "I quit!";
@@ -622,6 +696,7 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
             });
         },
         [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
             ++server_receive_callback_count;
         },
         connected_client_close_callback
@@ -637,6 +712,10 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
             EXPECT_FALSE(error);
             ++client_receive_callback_count;
             client.schedule_removal();
+        },
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_close_callback_count;
         }
     );
 
@@ -645,6 +724,7 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
     EXPECT_EQ(0, server_send_callback_count);
     EXPECT_EQ(0, client_receive_callback_count);
     EXPECT_EQ(0, connected_client_close_callback_count);
+    EXPECT_EQ(0, client_close_callback_count);
 
     EXPECT_EQ(0, loop.run());
 
@@ -653,6 +733,7 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
     EXPECT_EQ(1, server_send_callback_count);
     EXPECT_EQ(1, client_receive_callback_count);
     EXPECT_EQ(1, connected_client_close_callback_count);
+    EXPECT_EQ(1, client_close_callback_count);
 }
 
 TEST_F(TcpClientServerTest, server_schedule_remove_after_send) {
