@@ -196,9 +196,7 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
         return;
     }
 
-    if (this_.m_receive_callback) {
-        uv_read_start(req->handle, alloc_read_buffer, on_read);
-    }
+    uv_read_start(req->handle, alloc_read_buffer, on_read);
 
     //TODO: set ip and port
     this_.set_ipv4_addr(0);

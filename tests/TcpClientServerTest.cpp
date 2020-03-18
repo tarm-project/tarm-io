@@ -909,6 +909,42 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
     EXPECT_EQ(1, on_raw_client_close_call_count);
 }
 
+TEST_F(TcpClientServerTest, client_closed_without_read_and_connect_callback) {
+    io::EventLoop loop;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen(
+        io::Endpoint{m_default_addr, m_default_port},
+        [](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.close();
+            client.server().schedule_removal();
+        },
+        nullptr,
+        nullptr
+    );
+    EXPECT_FALSE(listen_error);
+
+    int client_close_call_count = 0;
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        nullptr,
+        nullptr,
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_close_call_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_close_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_close_call_count);
+}
+
 TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
     // Note: in this test we send data in both direction and shout down server
     // from the on_send callback. Client is removed from clase callback which is
@@ -1021,9 +1057,6 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
             );
             EXPECT_EQ(6, client.pending_write_requesets());
         },
-        // TODO: this test does not work if receive callback is nullptr because read is not started and EOF from server is not received
-        // Need to enforce this callback or start reading without it.
-        // Need to implement separate test to cover the case
         [](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
         },
@@ -1034,7 +1067,11 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
         }
     );
 
+    EXPECT_EQ(0, client_connect_call_count);
+    EXPECT_EQ(0, client_close_call_count);
+
     ASSERT_EQ(0, loop.run());
+
     EXPECT_EQ(1, client_connect_call_count);
     EXPECT_EQ(1, client_close_call_count);
 }
