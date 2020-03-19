@@ -1577,7 +1577,10 @@ TEST_F(TcpClientServerTest, reuse_client_connection_after_disconnect_from_server
 
     std::function<void(io::TcpClient& client, const io::Error& error)> client_on_close = nullptr;
     client_on_close = [&](io::TcpClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
+        if (error) {
+            // TODO: investigate this
+            EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
+        }
 
         if (client_close_counter == 0) {
             client.connect({m_default_addr, m_default_port},
@@ -2064,7 +2067,47 @@ TEST_F(TcpClientServerTest, connected_client_write_after_close_in_server_receive
 
 }
 
-// TODO: write large chunks of data and schedule removal
+TEST_F(TcpClientServerTest, client_schedule_removal_during_large_chunk_send) {
+    this->log_to_stdout();
+    io::EventLoop loop;
+
+    std::size_t server_on_close_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen(
+        {m_default_addr, m_default_port},
+        nullptr,
+        nullptr,
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_close_count;
+            server->schedule_removal();
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+    const std::size_t DATA_SIZE = 64 * 1024 * 1024;
+    std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
+    for (std::size_t i = 0; i < DATA_SIZE; ++i) {
+        buf.get()[i] = static_cast<char>(i);
+    }
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.send_data(buf, DATA_SIZE);
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_close_count);
+}
+
 // TODO: double shutdown test
 // TODO: shutdown not connected test
 // TODO: send-receive large ammount of data (client -> server, server -> client)

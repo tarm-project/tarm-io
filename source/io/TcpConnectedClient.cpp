@@ -86,12 +86,10 @@ void TcpConnectedClient::Impl::close() {
 void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callback) {
     m_receive_callback = data_receive_callback;
 
-    if (m_receive_callback) {
-        // TODO: handle return status code
-        uv_read_start(reinterpret_cast<uv_stream_t*>(m_tcp_stream),
-                      alloc_read_buffer,
-                      on_read);
-    }
+    // TODO: handle return status code
+    uv_read_start(reinterpret_cast<uv_stream_t*>(m_tcp_stream),
+                  alloc_read_buffer,
+                  on_read);
 }
 
 TcpServer& TcpConnectedClient::Impl::server() {

@@ -55,6 +55,7 @@ public:
 
     void schedule_callback(WorkCallback callback);
 
+    void finish();
 protected:
     void execute_pending_callbacks();
 
@@ -127,7 +128,7 @@ EventLoop::Impl::Impl(EventLoop& loop) :
     }
 }
 
-EventLoop::Impl::~Impl() {
+void EventLoop::Impl::finish() {
     IO_LOG(m_loop, TRACE, "dummy_idle_ref_counter:", m_dummy_idle_ref_counter);
 
     {
@@ -153,6 +154,9 @@ EventLoop::Impl::~Impl() {
         uv_loop_close(this);
         IO_LOG(m_loop, DEBUG, "Done");
     }
+}
+
+EventLoop::Impl::~Impl() {
 }
 
 void EventLoop::Impl::schedule_callback(WorkCallback callback) {
@@ -423,6 +427,7 @@ EventLoop::EventLoop() :
 }
 
 EventLoop::~EventLoop() {
+    m_impl->finish();
 }
 
 void EventLoop::execute_on_loop_thread(AsyncCallback callback) {

@@ -6,6 +6,7 @@
 #include "detail/TcpClientImplBase.h"
 
 #include <assert.h>
+#include <iostream>
 
 namespace io {
 
@@ -156,6 +157,17 @@ bool TcpClient::Impl::close() {
     m_is_open = false;
 
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
+        // TODO: custom implementation of uv_tcp_close_reset
+        /*
+        uv_os_fd_t handle;
+        int status = uv_fileno((uv_handle_t*)m_tcp_stream, &handle);
+        if (status < 0) {
+            std::cout << uv_strerror(status) << std::endl;
+        }
+        struct linger l = { 1, 0 };
+        if (0 != setsockopt(handle, SOL_SOCKET, SO_LINGER, &l, sizeof(l)))
+            return false;
+        //*/
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
         m_tcp_stream = nullptr;
     }

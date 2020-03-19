@@ -36,7 +36,6 @@ protected:
     static void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 
     static void on_new_connection(uv_stream_t* server, int status);
-    static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf);
 
     static void on_close(uv_handle_t* handle);
     static void on_shutdown(uv_shutdown_t* req, int status);
@@ -186,7 +185,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
     auto& this_ = *reinterpret_cast<TcpServer::Impl*>(server->data);
 
-    IO_LOG(this_.m_loop, TRACE, "_");
+    IO_LOG(this_.m_loop, TRACE, this_.m_parent, "");
 
     if (status < 0) {
         // TODO: error handling
@@ -207,25 +206,39 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
     auto accept_status = uv_accept(server, reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream()));
     if (accept_status == 0) {
         //sockaddr_storage info;
-        struct sockaddr info;
+        struct sockaddr_storage info;
         int info_len = sizeof info;
-        int getpeername_status = uv_tcp_getpeername(reinterpret_cast<uv_tcp_t*>(tcp_client->tcp_client_stream()),
-                                                    &info,
-                                                    &info_len);
-        if (getpeername_status == 0) {
+        Error getpeername_error = uv_tcp_getpeername(reinterpret_cast<uv_tcp_t*>(tcp_client->tcp_client_stream()),
+                                                     reinterpret_cast<struct sockaddr*>(&info),
+                                                     &info_len);
+        if (!getpeername_error) {
             auto addr_info = reinterpret_cast<sockaddr_in*>(&info);
             tcp_client->set_port(network_to_host(addr_info->sin_port));
             tcp_client->set_ipv4_addr(network_to_host(addr_info->sin_addr.s_addr));
 
             this_.m_client_connections.insert(tcp_client);
-            this_.m_new_connection_callback(*tcp_client, Error(0));
+
+            if (this_.m_new_connection_callback) {
+                this_.m_new_connection_callback(*tcp_client, Error(0));
+            }
+
             if (tcp_client->is_open()) {
                 tcp_client->start_read(this_.m_data_receive_callback);
             }
         } else {
-            // TODO: call close???
-            IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", uv_strerror(getpeername_status));
-            this_.m_new_connection_callback(*tcp_client, Error(getpeername_status));
+            IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", getpeername_error.string());
+            if (this_.m_new_connection_callback) {
+                if (getpeername_error.code() == StatusCode::INVALID_ARGUMENT) {
+                    // Thanks to Apple and incompatibility
+                    // https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/getpeername.2.html
+                    // The same is true for Mac OS X
+                    this_.m_new_connection_callback(*tcp_client, StatusCode::CONNECTION_RESET_BY_PEER);
+                } else {
+                    this_.m_new_connection_callback(*tcp_client, getpeername_error);
+                }
+            }
+
+            tcp_client->schedule_removal();
         }
     } else {
         this_.m_new_connection_callback(*tcp_client, Error(accept_status));
