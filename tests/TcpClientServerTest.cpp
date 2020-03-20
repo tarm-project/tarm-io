@@ -406,6 +406,61 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
     });
 }
 
+TEST_F(TcpClientServerTest, null_send_buf) {
+    io::EventLoop loop;
+
+    std::shared_ptr<char> buf;
+
+    std::size_t server_on_send_count = 0;
+    std::size_t client_on_send_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            client.send_data(buf, 1,
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+                    ++server_on_send_count;
+                    server->schedule_removal();
+                }
+            );
+        },
+        nullptr,
+        nullptr
+    );
+    ASSERT_FALSE(listen_error);
+
+    bool data_sent = false;
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            client.send_data(buf, 1,
+                [&](io::TcpClient& client, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+                    ++client_on_send_count;
+                    client.schedule_removal();
+                }
+            );
+        },
+        nullptr
+    );
+
+    EXPECT_EQ(0, server_on_send_count);
+    EXPECT_EQ(0, client_on_send_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_send_count);
+    EXPECT_EQ(1, client_on_send_count);
+}
+
 TEST_F(TcpClientServerTest, server_shutdown_callback) {
     io::EventLoop loop;
 
@@ -2165,7 +2220,5 @@ TEST_F(TcpClientServerTest, server_schedule_removal_during_large_chunk_send) {
 // TODO: shutdown not connected test
 // TODO: simultaneous send/receive large ammount of data for both client and server
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
-// TODO: send data with size -1 will trigger Invalid Argument error
 // TODO: connect->close->connect->close cycle for TcpCLient
 // TODO: simultaneous connect attempts (multiple connect calls)
-// TODO: unit test invalid address
