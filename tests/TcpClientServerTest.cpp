@@ -1872,7 +1872,7 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
     const std::size_t DATA_TO_SEND_SIZE = 20 * 1024;
 
     using UnderlyingType = std::uint64_t;
-    const std::size_t UNDERLYING_TYPE_SIZE = sizeof(UnderlyingType);
+    static const std::size_t UNDERLYING_TYPE_SIZE = sizeof(UnderlyingType);
 
     static_assert(DATA_TO_SEND_SIZE % UNDERLYING_TYPE_SIZE == 0, "Data should be aligned");
 
