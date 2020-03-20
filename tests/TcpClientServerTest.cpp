@@ -2118,18 +2118,54 @@ TEST_F(TcpClientServerTest, client_schedule_removal_during_large_chunk_send) {
     EXPECT_EQ(1, server_on_close_count);
 }
 
+TEST_F(TcpClientServerTest, server_schedule_removal_during_large_chunk_send) {
+    io::EventLoop loop;
+
+    std::size_t client_on_close_count = 0;
+
+    const std::size_t DATA_SIZE = 16 * 1024 * 1024;
+    std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
+    for (std::size_t i = 0; i < DATA_SIZE; ++i) {
+        buf.get()[i] = static_cast<char>(i);
+    }
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen(
+        {m_default_addr, m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            client.send_data(buf, DATA_SIZE);
+            server->schedule_removal();
+        },
+        nullptr,
+        nullptr
+    );
+    EXPECT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        nullptr,
+        nullptr,
+        [&](io::TcpClient& client, const io::Error& error) {
+            // Here is no CONNECTION_RESET_BY_PEER error because sending is closing connection,
+            // so it is expected.
+            EXPECT_FALSE(error);
+            client.schedule_removal();
+            ++client_on_close_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_close_count);
+}
+
 // TODO: double shutdown test
 // TODO: shutdown not connected test
-// TODO: send-receive large ammount of data (client -> server, server -> client)
-// TODO: simultaneous send/receive for both client and server
-
-// investigate from libuv: test-tcp-write-to-half-open-connection.c
-
-
+// TODO: simultaneous send/receive large ammount of data for both client and server
+// TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
 // TODO: send data with size -1 will trigger Invalid Argument error
-
 // TODO: connect->close->connect->close cycle for TcpCLient
-
 // TODO: simultaneous connect attempts (multiple connect calls)
-
 // TODO: unit test invalid address
