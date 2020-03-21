@@ -1752,74 +1752,109 @@ TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
 // TODO: disabled because each platform has different results here
 //       currently it is working on LINUX
 TEST_F(TcpClientServerTest, DISABLED_connect_to_other_server_in_receive_callback) {
-    io::EventLoop loop;
+    static const std::size_t SERVER_DATA_SIZE = 64 * 1024 * 1024;
 
-    const std::size_t SERVER_DATA_SIZE = 5 * 1024 * 1024;
+    std::thread server_1_thread([this](){
+        io::EventLoop loop;
 
-    std::size_t server_on_new_connection_count = 0;
-    std::size_t server_on_send_count = 0;
+        std::size_t server_on_new_connection_count = 0;
+        std::size_t server_on_send_count = 0;
+        std::size_t server_on_close_client_count = 0;
 
-    std::size_t server_1_on_close_client_count = 0;
-    std::size_t server_2_on_close_client_count = 0;
+        auto server_on_new_client = [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_new_connection_count;
 
-    std::size_t client_on_new_connection_count = 0;
-
-    io::TcpServer* server_1 = nullptr;
-    io::TcpServer* server_2 = nullptr;
-
-    int buf_value = 0;
-    auto server_on_new_client = [&](io::TcpConnectedClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
-        ++server_on_new_connection_count;
-
-        std::shared_ptr<char> buf(new char[SERVER_DATA_SIZE], std::default_delete<char[]>());
-        std::memset(buf.get(), buf_value, SERVER_DATA_SIZE);
-        client.send_data(buf, SERVER_DATA_SIZE,
-            [&](io::TcpConnectedClient& client, const io::Error& error) {
-                ++server_on_send_count;
-                if (&client.server() == server_1) {
+            std::shared_ptr<char> buf(new char[SERVER_DATA_SIZE], std::default_delete<char[]>());
+            std::memset(buf.get(), 0, SERVER_DATA_SIZE);
+            client.send_data(buf, SERVER_DATA_SIZE,
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_EQ(0, server_on_close_client_count);
+                    ++server_on_send_count;
                     EXPECT_TRUE(error) << error.string();
                     EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
-                } else {
-                    EXPECT_FALSE(error) << error.string();
+                    client.server().schedule_removal();
                 }
+            );
+        };
 
-                client.server().schedule_removal();
-            }
-        );
-        ++buf_value;
-    };
-
-    auto server_on_client_close = [&](io::TcpConnectedClient& client, const io::Error& error) {
-        if (&client.server() == server_1) {
+        auto server_on_client_close = [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
+            ++server_on_close_client_count;
             EXPECT_EQ(1, client.pending_write_requesets());
-        } else {
+        };
+
+        auto server = new io::TcpServer(loop);
+        auto listen_error = server->listen(
+            {m_default_addr, m_default_port},
+            server_on_new_client,
+            nullptr,
+            server_on_client_close);
+        EXPECT_FALSE(listen_error);
+
+        EXPECT_EQ(0, server_on_new_connection_count);
+        EXPECT_EQ(0, server_on_send_count);
+        EXPECT_EQ(0, server_on_close_client_count);
+
+        ASSERT_EQ(0, loop.run());
+
+        EXPECT_EQ(1, server_on_new_connection_count);
+        EXPECT_EQ(1, server_on_send_count);
+        EXPECT_EQ(1, server_on_close_client_count);
+    });
+
+    std::thread server_2_thread([this](){
+        io::EventLoop loop;
+
+        std::size_t server_on_new_connection_count = 0;
+        std::size_t server_on_send_count = 0;
+        std::size_t server_on_close_client_count = 0;
+
+        auto server_on_new_client = [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_new_connection_count;
+
+            std::shared_ptr<char> buf(new char[SERVER_DATA_SIZE], std::default_delete<char[]>());
+            std::memset(buf.get(), 1, SERVER_DATA_SIZE);
+            client.send_data(buf, SERVER_DATA_SIZE,
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    ++server_on_send_count;
+                    EXPECT_FALSE(error) << error.string();
+                    client.server().schedule_removal();
+                }
+            );
+        };
+
+        auto server_on_client_close = [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
+            ++server_on_close_client_count;
             EXPECT_EQ(0, client.pending_write_requesets());
-        }
+        };
 
-        *reinterpret_cast<std::size_t*>(client.server().user_data()) += 1;
-    };
+        auto server = new io::TcpServer(loop);
+        auto listen_error = server->listen(
+            {m_default_addr, std::uint16_t(m_default_port + 1)},
+            server_on_new_client,
+            nullptr,
+            server_on_client_close);
+        EXPECT_FALSE(listen_error);
 
-    server_1 = new io::TcpServer(loop);
-    server_1->set_user_data(&server_1_on_close_client_count);
-    auto listen_error_1 = server_1->listen(
-        {m_default_addr, m_default_port},
-        server_on_new_client,
-        nullptr,
-        server_on_client_close);
-    EXPECT_FALSE(listen_error_1);
+        EXPECT_EQ(0, server_on_new_connection_count);
+        EXPECT_EQ(0, server_on_send_count);
+        EXPECT_EQ(0, server_on_close_client_count);
 
-    server_2 = new io::TcpServer(loop);
-    server_2->set_user_data(&server_2_on_close_client_count);
-    auto listen_error_2 = server_2->listen(
-        {m_default_addr, std::uint16_t(m_default_port + 1)},
-        server_on_new_client,
-        nullptr,
-        server_on_client_close);
-    EXPECT_FALSE(listen_error_2);
+        ASSERT_EQ(0, loop.run());
+
+        EXPECT_EQ(1, server_on_new_connection_count);
+        EXPECT_EQ(1, server_on_send_count);
+        EXPECT_EQ(1, server_on_close_client_count);
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    io::EventLoop loop;
+    std::size_t client_on_new_connection_count = 0;
 
     std::uint16_t port = m_default_port;
 
@@ -1852,19 +1887,11 @@ TEST_F(TcpClientServerTest, DISABLED_connect_to_other_server_in_receive_callback
     auto client = new io::TcpClient(loop);
     client->connect({m_default_addr, port}, client_on_connect, client_on_receive, client_on_close);
 
-    EXPECT_EQ(0, server_on_new_connection_count);
-    EXPECT_EQ(0, server_on_send_count);
-    EXPECT_EQ(0, server_1_on_close_client_count);
-    EXPECT_EQ(0, server_2_on_close_client_count);
-
     EXPECT_EQ(0, client_on_new_connection_count);
 
     ASSERT_EQ(0, loop.run());
-
-    EXPECT_EQ(2, server_on_new_connection_count);
-    EXPECT_EQ(2, server_on_send_count);
-    EXPECT_EQ(1, server_1_on_close_client_count);
-    EXPECT_EQ(1, server_2_on_close_client_count);
+    server_1_thread.join();
+    server_2_thread.join();
 
     EXPECT_EQ(2, client_on_new_connection_count);
 }
