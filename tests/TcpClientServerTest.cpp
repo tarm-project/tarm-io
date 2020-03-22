@@ -19,6 +19,13 @@ protected:
 
     void test_impl_server_disconnect_client_from_data_receive_callback(
         std::function<void(io::TcpConnectedClient& client)> close_variant);
+
+    void test_impl_client_double_close(
+        std::function<void(io::TcpClient& client)> close_variant);
+
+    void test_impl_server_double_close(
+        std::function<void(io::TcpServer& server,
+                           std::function<void(io::TcpServer&, const io::Error& error)> callback)> close_variant);
 };
 
 TEST_F(TcpClientServerTest, server_constructor) {
@@ -1229,14 +1236,14 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
     EXPECT_EQ(1, client_close_call_count);
 }
 
-TEST_F(TcpClientServerTest, shutdown_from_client) {
+TEST_F(TcpClientServerTest, client_shutdown_in_connect) {
     io::EventLoop loop;
 
     const std::string message = "Hello world!";
 
-    bool server_any_data_received = false;
-    bool server_closed_from_client_side = false;
-    bool client_shutdown_complete = false;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+    std::size_t client_on_close_count = 0;
 
     auto server = new io::TcpServer(loop);
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
@@ -1244,24 +1251,28 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
         EXPECT_FALSE(error);
     },
     [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-        server_any_data_received = true;
+        ++server_on_receive_count;
     },
     [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
-        server_closed_from_client_side = true;
+        ++server_on_close_count;
         server->schedule_removal();
     });
 
     ASSERT_FALSE(listen_error);
 
     auto client = new io::TcpClient(loop);
-    client->connect({m_default_addr,m_default_port}, [&](io::TcpClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
-        EXPECT_TRUE(client.is_open());
-
-        client.shutdown([&](io::TcpClient& client, const io::Error& error) {
+    client->connect({m_default_addr,m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            client_shutdown_complete = true;
+            EXPECT_TRUE(client.is_open());
+
+            client.shutdown();
+        },
+        nullptr,
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_close_count = true;
             EXPECT_FALSE(client.is_open());
             client.schedule_removal();
 
@@ -1270,13 +1281,18 @@ TEST_F(TcpClientServerTest, shutdown_from_client) {
                 EXPECT_TRUE(error);
                 EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
             });
-        });
-    },
-    nullptr);
+        }
+    );
+
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+    EXPECT_EQ(0, client_on_close_count);
 
     ASSERT_EQ(0, loop.run());
-    EXPECT_FALSE(server_any_data_received);
-    EXPECT_TRUE(server_closed_from_client_side);
+
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(1, server_on_close_count);
+    EXPECT_EQ(1, client_on_close_count);
 }
 
 TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
@@ -2245,7 +2261,140 @@ TEST_F(TcpClientServerTest, server_schedule_removal_during_large_chunk_send) {
     EXPECT_EQ(1, client_on_close_count);
 }
 
-// TODO: double shutdown test
+void TcpClientServerTest::test_impl_client_double_close(
+    std::function<void(io::TcpClient& client)> close_variant) {
+
+    io::EventLoop loop;
+
+    std::size_t client_on_close_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen(
+        {m_default_addr, m_default_port},
+        nullptr,
+        nullptr,
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_close_count;
+            server->schedule_removal();
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            close_variant(client);
+
+            auto timer = new io::Timer(loop);
+            timer->start(200,
+                [&](io::Timer& timer){
+                    timer.schedule_removal();
+                    client.schedule_removal();
+                }
+            );
+        },
+        nullptr,
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            close_variant(client); // Note: close inside close callback is NOP
+            ++client_on_close_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(1, server_on_close_count);
+}
+
+TEST_F(TcpClientServerTest, client_double_close) {
+    test_impl_client_double_close(
+        [](io::TcpClient& client) {
+            client.close();
+        }
+    );
+}
+
+TEST_F(TcpClientServerTest, client_double_shutdown) {
+    test_impl_client_double_close(
+        [](io::TcpClient& client) {
+            client.shutdown();
+        }
+    );
+}
+
+void TcpClientServerTest::test_impl_server_double_close(
+    std::function<void(io::TcpServer& server,
+                       std::function<void(io::TcpServer&, const io::Error& error)> callback)> close_variant) {
+
+    io::EventLoop loop;
+
+    std::size_t client_on_close_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen(
+        {m_default_addr, m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            close_variant(*server, [&](io::TcpServer&, const io::Error& error) {
+                ++server_on_close_count;
+                EXPECT_FALSE(error);
+                close_variant(*server, [&](io::TcpServer& server, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    ++server_on_close_count;
+                    server.schedule_removal();
+                });
+            });
+        },
+        nullptr,
+        nullptr
+    );
+    EXPECT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        nullptr,
+        nullptr,
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_on_close_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(2, server_on_close_count);
+}
+
+TEST_F(TcpClientServerTest, server_double_close) {
+    test_impl_server_double_close(
+        [&](io::TcpServer& server,
+            std::function<void(io::TcpServer&, const io::Error& error)> callback) {
+            server.close(callback);
+        }
+    );
+}
+
+TEST_F(TcpClientServerTest, server_double_shutdown) {
+    test_impl_server_double_close(
+        [&](io::TcpServer& server,
+            std::function<void(io::TcpServer&, const io::Error& error)> callback) {
+            server.shutdown(callback);
+        }
+    );
+}
+
 // TODO: shutdown not connected test
 // TODO: simultaneous send/receive large ammount of data for both client and server
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c

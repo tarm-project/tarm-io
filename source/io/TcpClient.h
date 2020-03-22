@@ -45,7 +45,7 @@ public:
 
     IO_DLL_PUBLIC std::size_t pending_write_requesets() const;
 
-    IO_DLL_PUBLIC void shutdown(CloseCallback callback = nullptr);
+    IO_DLL_PUBLIC void shutdown();
 
     IO_DLL_PUBLIC void delay_send(bool enabled);
     IO_DLL_PUBLIC bool is_delay_send() const;

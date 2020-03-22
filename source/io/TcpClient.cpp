@@ -26,7 +26,7 @@ public:
 
     void set_close_callback(CloseCallback callback);
 
-    void shutdown(CloseCallback callback);
+    void shutdown();
 
     EventLoop* loop();
 
@@ -127,12 +127,10 @@ void TcpClient::Impl::connect_impl(const Endpoint& endpoint,
 
 }
 
-void TcpClient::Impl::shutdown(CloseCallback callback) {
+void TcpClient::Impl::shutdown() {
     if (!is_open()) {
         return;
     }
-
-    m_close_callback = callback;
 
     auto shutdown_req = new uv_shutdown_t;
     shutdown_req->data = this;
@@ -187,7 +185,10 @@ void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int uv_status) {
     }
 
     this_.m_is_open = false;
-    uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
+
+    if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(this_.m_tcp_stream))) {
+        uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
+    }
 
     delete req;
 }
@@ -331,8 +332,8 @@ std::size_t TcpClient::pending_write_requesets() const {
     return m_impl->pending_write_requests();
 }
 
-void TcpClient::shutdown(CloseCallback callback) {
-    return m_impl->shutdown(callback);
+void TcpClient::shutdown() {
+    return m_impl->shutdown();
 }
 
 void TcpClient::delay_send(bool enabled) {

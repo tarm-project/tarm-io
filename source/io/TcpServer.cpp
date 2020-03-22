@@ -32,6 +32,8 @@ public:
 protected:
     void close_impl();
 
+    bool is_open() const;
+
     // statics
     static void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 
@@ -148,9 +150,17 @@ void TcpServer::Impl::close(CloseServerCallback close_callback) {
 }
 
 void TcpServer::Impl::close_impl() {
-    if (m_server_handle && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_server_handle))) {
+    if (is_open()) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
+    } else {
+        if (m_end_server_callback) {
+            m_end_server_callback(*m_parent, Error(io::StatusCode::SOCKET_IS_NOT_CONNECTED));
+        }
     }
+}
+
+bool TcpServer::Impl::is_open() const {
+    return m_server_handle && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_server_handle));
 }
 
 void TcpServer::Impl::remove_client_connection(TcpConnectedClient* client) {
@@ -170,7 +180,7 @@ bool TcpServer::Impl::schedule_removal() {
         auto end_server_callback_copy = m_end_server_callback;
 
         this->close([this, end_server_callback_copy] (TcpServer& server, const Error& error) {
-            if (end_server_callback_copy) {
+            if (end_server_callback_copy && is_open()) {
                 end_server_callback_copy(server, error);
             }
         });
