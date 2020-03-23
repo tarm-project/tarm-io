@@ -154,7 +154,9 @@ void TcpServer::Impl::close_impl() {
         uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
     } else {
         if (m_end_server_callback) {
-            m_end_server_callback(*m_parent, Error(io::StatusCode::SOCKET_IS_NOT_CONNECTED));
+            m_loop->schedule_callback([=]() {
+                m_end_server_callback(*m_parent, Error(io::StatusCode::SOCKET_IS_NOT_CONNECTED));
+            });
         }
     }
 }

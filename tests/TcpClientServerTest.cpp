@@ -2395,7 +2395,118 @@ TEST_F(TcpClientServerTest, server_double_shutdown) {
     );
 }
 
-// TODO: shutdown not connected test
+TEST_F(TcpClientServerTest, client_shutdown_not_connected_1) {
+    io::EventLoop loop;
+
+    auto client = new io::TcpClient(loop);
+    client->shutdown();
+
+    ASSERT_EQ(0, loop.run());
+}
+
+TEST_F(TcpClientServerTest, client_shutdown_not_connected_2) {
+    io::EventLoop loop;
+
+    std::size_t client_on_close_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen(
+        {m_default_addr, m_default_port},
+        nullptr,
+        nullptr,
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            server->schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.shutdown();
+        },
+        nullptr,
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.shutdown();
+            ++client_on_close_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_close_count);
+}
+
+TEST_F(TcpClientServerTest, server_shutdown_not_listening_1) {
+    io::EventLoop loop;
+
+    std::size_t server_on_close_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    server->shutdown();
+    server->shutdown([&](io::TcpServer&, const io::Error& error) {
+        EXPECT_TRUE(error);
+        server->schedule_removal();
+        ++server_on_close_count;
+    });
+
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_close_count);
+}
+
+TEST_F(TcpClientServerTest, server_shutdown_not_listening_2) {
+    io::EventLoop loop;
+
+    std::size_t server_on_shutdown_1_count = 0;
+    std::size_t server_on_shutdown_2_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen(
+        {m_default_addr, m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            server->shutdown([&](io::TcpServer&, const io::Error& error) {
+                ++server_on_shutdown_1_count;
+                EXPECT_FALSE(error);
+                server->shutdown([&](io::TcpServer&, const io::Error& error) {
+                    ++server_on_shutdown_2_count;
+                    EXPECT_TRUE(error);
+                    server->schedule_removal();
+                });
+            });
+        },
+        nullptr,
+        nullptr
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        nullptr,
+        nullptr,
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_shutdown_1_count);
+    EXPECT_EQ(0, server_on_shutdown_2_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_shutdown_1_count);
+    EXPECT_EQ(1, server_on_shutdown_2_count);
+}
+
 // TODO: simultaneous send/receive large ammount of data for both client and server
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
 // TODO: connect->close->connect->close cycle for TcpCLient
