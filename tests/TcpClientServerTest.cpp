@@ -2507,6 +2507,7 @@ TEST_F(TcpClientServerTest, server_shutdown_not_listening_2) {
     EXPECT_EQ(1, server_on_shutdown_2_count);
 }
 
+// TODO: send huge number of data and schedule removal in ON SEND callback. INVESTIGATE: what ammount of data is received by client
 // TODO: simultaneous send/receive large ammount of data for both client and server
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
 // TODO: connect->close->connect->close cycle for TcpCLient
