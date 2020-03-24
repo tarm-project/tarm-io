@@ -2509,8 +2509,60 @@ TEST_F(TcpClientServerTest, server_shutdown_not_listening_2) {
     EXPECT_EQ(1, server_on_shutdown_1_count);
     EXPECT_EQ(1, server_on_shutdown_2_count);
 }
+// TODO: the same test for server
+TEST_F(TcpClientServerTest, client_schedule_removal_in_on_send_callback) {
+    // Note: in this test we check that server is able to receive all the data
+    //       if removal is scheduled in on_send callback
+    // DOC: successfull on_send callback does not mean that data was received by other side. It only means that data was
+    //      successfully transfered to OS protocol factilities.
 
-// TODO: send huge number of data and schedule removal in ON SEND callback. INVESTIGATE: what ammount of data is received by client
+    const std::size_t DATA_SIZE = 32 * 1024 * 1024;
+
+    std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
+    std::memset(buf.get(), 0, DATA_SIZE);
+
+    io::EventLoop loop;
+
+    std::size_t server_received_size = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            server_received_size += data.size;
+        },
+        [&](io::TcpConnectedClient& /*client*/, const io::Error& error) {
+            EXPECT_FALSE(error);
+            server->schedule_removal();
+        }
+    );
+    EXPECT_FALSE(listen_error);
+
+    auto client_ptr = new io::TcpClient(loop);
+    client_ptr->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.send_data(buf, DATA_SIZE,
+                [&](io::TcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    client.schedule_removal();
+                }
+            );
+        },
+        nullptr,
+        nullptr
+    );
+
+    EXPECT_EQ(0, server_received_size);
+
+    EXPECT_FALSE(loop.run());
+
+    EXPECT_EQ(DATA_SIZE, server_received_size);
+}
+
 // TODO: simultaneous send/receive large ammount of data for both client and server
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
 // TODO: connect->close->connect->close cycle for TcpCLient
