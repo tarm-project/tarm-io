@@ -2509,7 +2509,7 @@ TEST_F(TcpClientServerTest, server_shutdown_not_listening_2) {
     EXPECT_EQ(1, server_on_shutdown_1_count);
     EXPECT_EQ(1, server_on_shutdown_2_count);
 }
-// TODO: the same test for server
+
 TEST_F(TcpClientServerTest, client_schedule_removal_in_on_send_callback) {
     // Note: in this test we check that server is able to receive all the data
     //       if removal is scheduled in on_send callback
@@ -2518,28 +2518,42 @@ TEST_F(TcpClientServerTest, client_schedule_removal_in_on_send_callback) {
 
     const std::size_t DATA_SIZE = 32 * 1024 * 1024;
 
+    std::thread server_thread([&]{
+        io::EventLoop loop;
+
+        std::size_t server_received_size = 0;
+
+        auto server = new io::TcpServer(loop);
+        auto listen_error = server->listen({m_default_addr, m_default_port},
+            [&](io::TcpConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+            },
+            [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error);
+                server_received_size += data.size;
+            },
+            [&](io::TcpConnectedClient& /*client*/, const io::Error& error) {
+                EXPECT_FALSE(error);
+                server->schedule_removal();
+            }
+        );
+        EXPECT_FALSE(listen_error);
+
+        EXPECT_EQ(0, server_received_size);
+
+        EXPECT_FALSE(loop.run());
+
+        EXPECT_EQ(DATA_SIZE, server_received_size);
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
     std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
     std::memset(buf.get(), 0, DATA_SIZE);
 
+    std::size_t client_on_send_counter = 0;
+
     io::EventLoop loop;
-
-    std::size_t server_received_size = 0;
-
-    auto server = new io::TcpServer(loop);
-    auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TcpConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
-        },
-        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error);
-            server_received_size += data.size;
-        },
-        [&](io::TcpConnectedClient& /*client*/, const io::Error& error) {
-            EXPECT_FALSE(error);
-            server->schedule_removal();
-        }
-    );
-    EXPECT_FALSE(listen_error);
 
     auto client_ptr = new io::TcpClient(loop);
     client_ptr->connect({m_default_addr, m_default_port},
@@ -2548,6 +2562,7 @@ TEST_F(TcpClientServerTest, client_schedule_removal_in_on_send_callback) {
             client.send_data(buf, DATA_SIZE,
                 [&](io::TcpClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
+                    ++client_on_send_counter;
                     client.schedule_removal();
                 }
             );
@@ -2556,11 +2571,80 @@ TEST_F(TcpClientServerTest, client_schedule_removal_in_on_send_callback) {
         nullptr
     );
 
-    EXPECT_EQ(0, server_received_size);
+    EXPECT_EQ(0, client_on_send_counter);
 
     EXPECT_FALSE(loop.run());
+    server_thread.join();
 
-    EXPECT_EQ(DATA_SIZE, server_received_size);
+    EXPECT_EQ(1, client_on_send_counter);
+}
+
+TEST_F(TcpClientServerTest, server_schedule_removal_in_on_send_callback) {
+    const std::size_t DATA_SIZE = 32 * 1024 * 1024;
+
+    std::thread server_thread([&]{
+        io::EventLoop loop;
+
+        std::size_t server_on_send_counter = 0;
+
+        std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
+        std::memset(buf.get(), 0, DATA_SIZE);
+
+        auto server = new io::TcpServer(loop);
+        auto listen_error = server->listen({m_default_addr, m_default_port},
+            [&](io::TcpConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+                client.send_data(buf, DATA_SIZE,
+                    [&](io::TcpConnectedClient& client, const io::Error& error) {
+                        EXPECT_FALSE(error);
+                        ++server_on_send_counter;
+                        client.server().schedule_removal();
+                    }
+                );
+            },
+            [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error);
+            },
+            [&](io::TcpConnectedClient& /*client*/, const io::Error& error) {
+                EXPECT_FALSE(error);
+            }
+        );
+        EXPECT_FALSE(listen_error);
+
+        EXPECT_EQ(0, server_on_send_counter);
+
+        EXPECT_FALSE(loop.run());
+
+        EXPECT_EQ(1, server_on_send_counter);
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    io::EventLoop loop;
+
+    std::size_t client_received_size = 0;
+
+    auto client_ptr = new io::TcpClient(loop);
+    client_ptr->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        },
+        [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client_received_size += data.size;
+        },
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_received_size);
+
+    EXPECT_FALSE(loop.run());
+    server_thread.join();
+
+    EXPECT_EQ(DATA_SIZE, client_received_size);
 }
 
 // TODO: simultaneous send/receive large ammount of data for both client and server
