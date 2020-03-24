@@ -2400,6 +2400,7 @@ TEST_F(TcpClientServerTest, client_shutdown_not_connected_1) {
 
     auto client = new io::TcpClient(loop);
     client->shutdown();
+    client->schedule_removal();
 
     ASSERT_EQ(0, loop.run());
 }
@@ -2429,9 +2430,10 @@ TEST_F(TcpClientServerTest, client_shutdown_not_connected_2) {
         },
         nullptr,
         [&](io::TcpClient& client, const io::Error& error) {
+            ++client_on_close_count;
             EXPECT_FALSE(error);
             client.shutdown();
-            ++client_on_close_count;
+            client.schedule_removal();
         }
     );
 
@@ -2451,8 +2453,9 @@ TEST_F(TcpClientServerTest, server_shutdown_not_listening_1) {
     server->shutdown();
     server->shutdown([&](io::TcpServer&, const io::Error& error) {
         EXPECT_TRUE(error);
-        server->schedule_removal();
         ++server_on_close_count;
+        // DOC: schedule_removal should be last command related to this object or this callback
+        server->schedule_removal();
     });
 
     EXPECT_EQ(0, server_on_close_count);
