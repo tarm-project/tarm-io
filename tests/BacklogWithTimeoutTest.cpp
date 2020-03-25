@@ -13,10 +13,15 @@ struct BacklogWithTimeoutTest : public testing::Test,
 public:
     void add_fake_timer(FakeTimer* timer) {
         m_fake_timers.push_back(timer);
+        m_time_getter_count = 0;
     }
 
     // advance monothonic clock and execute times if any
     void advance_clock(std::uint64_t time_ms);
+
+    static void add_time_getter_count() {
+        ++m_time_getter_count;
+    }
 
 protected:
     BacklogWithTimeoutTest() {
@@ -33,12 +38,19 @@ protected:
 
     ~BacklogWithTimeoutTest();
 
+    static std::size_t time_getter_count() {
+        return m_time_getter_count;
+    }
+
 private:
     static std::uint64_t m_fake_clock;
     std::vector<FakeTimer*> m_fake_timers;
+
+    static std::size_t m_time_getter_count;
 };
 
 std::uint64_t BacklogWithTimeoutTest::m_fake_clock = 0;
+std::size_t BacklogWithTimeoutTest::m_time_getter_count = 0;
 
 namespace {
 
@@ -50,6 +62,7 @@ struct TestItem {
     std::uint64_t time = 0;
 
     std::uint64_t time_getter() const {
+        BacklogWithTimeoutTest::add_time_getter_count();
         return time;
     }
 };
@@ -203,6 +216,39 @@ TEST_F(BacklogWithTimeoutTest, multiple_elements_at_the_same_time) {
     advance_clock(250);
 
     EXPECT_EQ(ELEMENTS_COUNT, expired_counter);
+}
+
+TEST_F(BacklogWithTimeoutTest, multiple_elements_with_time_near_timeout) {
+    // Note: in this test we check that elements which are updated recently will use the largest available timer interval
+
+    const std::uint64_t START_TIME = 250 * std::uint64_t(10000000);
+    reset_fake_monothonic_clock(START_TIME);
+
+    const std::size_t ELEMENTS_COUNT = 10;
+
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer>&, const TestItem& item) {
+        EXPECT_EQ(expired_counter, item.id);
+        ++expired_counter;
+    };
+
+    FakeLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer> backlog(
+        loop, 2500, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    for (std::size_t i = 0; i < ELEMENTS_COUNT; ++i) {
+        TestItem item(i);
+        item.time = START_TIME - i * 10000;
+        ASSERT_TRUE(backlog.add_item(item)) << i;
+    }
+
+    advance_clock(5000);
+
+    EXPECT_EQ(ELEMENTS_COUNT, expired_counter);
+
+    // Time getter is called 2 times: 1 time during adding element and 2 time on timeout before expired callback
+    EXPECT_EQ(ELEMENTS_COUNT * 2, this->time_getter_count());
 }
 
 TEST_F(BacklogWithTimeoutTest, multiple_elements_in_distinct_time) {

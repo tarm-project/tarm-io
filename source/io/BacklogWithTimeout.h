@@ -127,8 +127,12 @@ protected:
     std::size_t bucket_index_from_time(std::uint64_t time) const {
         assert(!m_timers.empty());
 
+        if (m_timers.front()->timeout_ms() - (time / 1000000) <= m_timers.back()->timeout_ms()) {
+            return 0;
+        }
+
         // Linear search on tiny sets is much more faster than tricks with logarithms or unordered map
-        for(std::size_t i = 0; i < m_timers.size(); ++i) {
+        for(std::size_t i = 1; i < m_timers.size(); ++i) {
             if (time >= m_timers[i]->timeout_ms() * 1000000) {
                 return i;
             }
