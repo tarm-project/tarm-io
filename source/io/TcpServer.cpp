@@ -27,6 +27,8 @@ public:
 
     void remove_client_connection(TcpConnectedClient* client);
 
+    const Endpoint& endpoint() const;
+
     bool schedule_removal();
 
 protected:
@@ -58,6 +60,8 @@ private:
     // TODO: unordered set???
     std::set<TcpConnectedClient*> m_client_connections;
 
+    Endpoint m_endpoint;
+
     // Made as unique_ptr because boost::pool has no move constructor defined
     //std::unique_ptr<boost::pool<>> m_pool;
 };
@@ -81,6 +85,8 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
         return Error(StatusCode::INVALID_ARGUMENT);
     }
 
+    m_endpoint = endpoint;
+
     m_server_handle = new uv_tcp_t;
     const auto init_status = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
     m_server_handle->data = this;
@@ -101,7 +107,7 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
     setsockopt(handle, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
     */
 
-    const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(endpoint.raw_endpoint()), 0);
+    const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(m_endpoint.raw_endpoint()), 0);
     if (bind_status < 0) {
         IO_LOG(m_loop, ERROR, m_parent, "Bind failed:", uv_strerror(bind_status));
         return bind_status;
@@ -116,6 +122,10 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
     }
 
     return listen_status;
+}
+
+const Endpoint& TcpServer::Impl::endpoint() const {
+    return m_endpoint;
 }
 
 void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
@@ -314,6 +324,10 @@ std::size_t TcpServer::connected_clients_count() const {
 
 void TcpServer::remove_client_connection(TcpConnectedClient* client) {
     return m_impl->remove_client_connection(client);
+}
+
+const Endpoint& TcpServer::endpoint() const {
+    return m_impl->endpoint();
 }
 
 void TcpServer::schedule_removal() {

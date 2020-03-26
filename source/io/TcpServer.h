@@ -52,6 +52,8 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
+    IO_DLL_PUBLIC const Endpoint& endpoint() const;
+
 protected:
     IO_DLL_PUBLIC ~TcpServer();
 

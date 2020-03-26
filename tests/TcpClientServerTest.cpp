@@ -1683,6 +1683,124 @@ TEST_F(TcpClientServerTest, reuse_client_connection_after_disconnect_from_server
     EXPECT_EQ(2, client_close_counter);
 }
 
+TEST_F(TcpClientServerTest, client_communicate_with_multiple_servers_in_threads) {
+    // Note: as messages are very short and distinct here, we do not need to care about message boundaries.
+    //       But in general such practice should be avoided.
+
+    std::vector<std::thread> server_threads;
+
+    const std::size_t SERVERS_COUNT = 10;
+    const std::string client_hello = "who_you_are";
+    const std::string client_ask_next = "next_server";
+    const std::string client_ask_shutdown = "shutdown_please";
+    const std::string client_final_message = "hooray";
+    const std::string server_unknow_message = "unknown";
+
+    const std::string target_server_name = "server_" + std::string(1, 'a' + SERVERS_COUNT - 1);
+
+    for (std::size_t i = 0; i < SERVERS_COUNT; ++i) {
+        server_threads.emplace_back([&, i](std::string server_name){
+            io::EventLoop loop;
+
+            auto server = new io::TcpServer(loop);
+            auto listen_error = server->listen({m_default_addr, std::uint16_t(m_default_port + i)},
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                },
+                [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    const std::string received_message(data.buf.get(), data.size);
+
+                    if (received_message == client_hello) {
+                        client.send_data(server_name);
+                    } else if (received_message == client_ask_next) {
+                        client.send_data(std::to_string(server->endpoint().port() + 1));
+                    } else if (received_message == client_ask_shutdown) {
+                        server->schedule_removal();
+                    } else {
+                        client.send_data(server_unknow_message);
+                    }
+                },
+                nullptr
+            );
+            ASSERT_FALSE(listen_error);
+
+            ASSERT_EQ(0, loop.run());
+
+        }, std::string("server_") + std::string(1, 'a' + i));
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_server_found_count = 0;
+
+    io::EventLoop loop;
+
+    std::function<void(io::TcpClient&, const io::Error&)> client_on_connect;
+    std::function<void(io::TcpClient&, const io::DataChunk&, const io::Error&)> client_on_receive;
+    std::function<void(io::TcpClient&, const io::Error&)> client_on_close;
+
+    client_on_connect = [&](io::TcpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+        ++client_on_connect_count;
+        client.send_data(client_hello);
+    };
+
+    client_on_receive = [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+        const std::string received_message(data.buf.get(), data.size);
+
+        if (received_message.find("server_") == 0) {
+            if (received_message == target_server_name) {
+                ++client_server_found_count;
+                client.send_data(client_final_message);
+            } else {
+                client.send_data(client_ask_next);
+            }
+        } else if (received_message == server_unknow_message) {
+            client.send_data(client_ask_shutdown);
+            client.close();
+        } else {
+            auto new_port = static_cast<std::uint16_t>(std::stoi(received_message));
+            ASSERT_NE(0, new_port);
+            client.send_data(client_ask_shutdown,
+                [&](io::TcpClient& client, const io::Error& error) {
+                    client.connect({m_default_addr, new_port},
+                        client_on_connect,
+                        client_on_receive,
+                        client_on_close
+                    );
+                }
+            );
+        }
+    };
+
+    client_on_close = [&](io::TcpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+        client.schedule_removal();
+    };
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        client_on_connect,
+        client_on_receive,
+        client_on_close
+    );
+
+    EXPECT_EQ(0, client_server_found_count);
+    EXPECT_EQ(0, client_on_connect_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_server_found_count);
+    EXPECT_EQ(SERVERS_COUNT, client_on_connect_count);
+
+    for (auto& t : server_threads) {
+        t.join();
+    }
+}
+
 TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
     io::EventLoop loop;
 
@@ -2649,5 +2767,5 @@ TEST_F(TcpClientServerTest, server_schedule_removal_in_on_send_callback) {
 
 // TODO: simultaneous send/receive large ammount of data for both client and server
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
-// TODO: connect->close->connect->close cycle for TcpCLient
 // TODO: simultaneous connect attempts (multiple connect calls)
+// TODO: listen on the same port by different servers. Port is arready in use error.
