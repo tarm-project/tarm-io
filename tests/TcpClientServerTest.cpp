@@ -2292,8 +2292,6 @@ TEST_F(TcpClientServerTest, connected_client_write_after_close_in_server_receive
     EXPECT_EQ(1, server_on_send_count);
     EXPECT_EQ(1, server_on_receive_count);
     EXPECT_EQ(0, client_on_receive_count);
-
-
 }
 
 TEST_F(TcpClientServerTest, client_schedule_removal_during_large_chunk_send) {
@@ -2765,7 +2763,92 @@ TEST_F(TcpClientServerTest, server_schedule_removal_in_on_send_callback) {
     EXPECT_EQ(DATA_SIZE, client_received_size);
 }
 
+TEST_F(TcpClientServerTest, multiple_connect_calls_to_server) {
+    io::EventLoop loop;
+
+    const std::size_t CLIENTS_COUNT = 128;
+
+    std::size_t server_on_connect_counter = 0;
+    std::size_t server_on_close_counter = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_connect_counter;
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            client.close();
+        },
+        [&](io::TcpConnectedClient& /*client*/, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_close_counter;
+            if (server_on_close_counter == CLIENTS_COUNT) {
+                server->schedule_removal();
+            }
+        },
+        CLIENTS_COUNT
+    );
+    EXPECT_FALSE(listen_error);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    std::vector<std::thread> client_threads;
+    for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
+        client_threads.emplace_back([this](std::size_t index){
+            io::EventLoop loop;
+
+            std::size_t client_on_connect_count = 0;
+            std::size_t client_on_read_count = 0;
+            std::size_t client_on_close_count = 0;
+
+            auto client_ptr = new io::TcpClient(loop);
+            client_ptr->connect({m_default_addr, m_default_port},
+                [&](io::TcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error.string() << ", index: " << index;
+                    ++client_on_connect_count;
+                    client.send_data("close");
+                },
+                [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+                    EXPECT_FALSE(error) << error.string() << ", index: " << index;
+                    ++client_on_read_count;
+                },
+                [&](io::TcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error.string() << ", index: " << index;
+                    ++client_on_close_count;
+                    client.schedule_removal();
+                }
+            );
+
+            EXPECT_EQ(0, client_on_connect_count);
+            EXPECT_EQ(0, client_on_read_count);
+            EXPECT_EQ(0, client_on_close_count);
+
+            EXPECT_FALSE(loop.run());
+
+            EXPECT_EQ(1, client_on_connect_count) << "index: " << index;
+            EXPECT_EQ(0, client_on_read_count) << "index: " << index;
+            EXPECT_EQ(1, client_on_close_count) << "index: " << index;
+        },
+        i);
+    };
+
+    EXPECT_EQ(0, server_on_connect_counter);
+    EXPECT_EQ(0, server_on_close_counter);
+
+    EXPECT_FALSE(loop.run());
+
+    std::for_each(client_threads.begin(), client_threads.end(), [](std::thread& t){t.join();});
+
+    EXPECT_EQ(CLIENTS_COUNT, server_on_connect_counter);
+    EXPECT_EQ(CLIENTS_COUNT, server_on_close_counter);
+}
+
 // TODO: simultaneous send/receive large ammount of data for both client and server
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
-// TODO: simultaneous connect attempts (multiple connect calls)
 // TODO: listen on the same port by different servers. Port is arready in use error.
+// TODO: close client in server on_close callback
+
+// TODO: Get backlog size on doifferent platforms???
+// http://veithen.io/2014/01/01/how-tcp-backlog-works-in-linux.html
