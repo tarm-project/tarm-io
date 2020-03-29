@@ -2910,9 +2910,7 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
 
         ASSERT_FALSE(loop.run());
 
-        for (std::size_t i = 0; i < CLIENT_SEND_DATA_SIZE; ++i) {
-            ASSERT_EQ(client_send_buf.get()[i], receive_buf.get()[i]) << " i=" << i;
-        }
+        EXPECT_EQ(0, std::memcmp(client_send_buf.get(), receive_buf.get(), CLIENT_SEND_DATA_SIZE));
     });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -2961,9 +2959,7 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
 
         ASSERT_FALSE(loop.run());
 
-        for (std::size_t i = 0; i < SERVER_SEND_DATA_SIZE; ++i) {
-            ASSERT_EQ(server_send_buf.get()[i], receive_buf.get()[i]) << " i=" << i;
-        }
+        EXPECT_EQ(0, std::memcmp(server_send_buf.get(), receive_buf.get(), SERVER_SEND_DATA_SIZE));
     });
 
     server_thread.join();
