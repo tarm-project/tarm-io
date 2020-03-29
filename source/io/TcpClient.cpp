@@ -248,11 +248,13 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
     if (!error) {
         if (this_.m_receive_callback) {
             const auto prev_use_count = this_.m_read_buf.use_count();
-            this_.m_receive_callback(*this_.m_parent, {this_.m_read_buf,  std::size_t(nread)}, Error(0));
+            this_.m_receive_callback(*this_.m_parent, {this_.m_read_buf,  std::size_t(nread), this_.m_data_offset}, Error(0));
             if (prev_use_count != this_.m_read_buf.use_count()) { // user made a copy
                 this_.m_read_buf.reset(); // will reallocate new one on demand
             }
         }
+
+        this_.m_data_offset += static_cast<std::size_t>(nread);
     } else {
         IO_LOG(&loop, TRACE, "Closed from other side. Reason:", error.string());
 

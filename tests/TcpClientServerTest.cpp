@@ -6,9 +6,10 @@
 #include "io/Timer.h"
 
 #include <cstdint>
+#include <cstdlib>
+#include <memory>
 #include <thread>
 #include <vector>
-#include <memory>
 
 struct TcpClientServerTest : public testing::Test,
                              public LogRedirector {
@@ -2845,7 +2846,130 @@ TEST_F(TcpClientServerTest, multiple_connect_calls_to_server) {
     EXPECT_EQ(CLIENTS_COUNT, server_on_close_counter);
 }
 
-// TODO: simultaneous send/receive large ammount of data for both client and server
+TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_other) {
+    const std::size_t SERVER_SEND_DATA_SIZE = 64 * 1000 * 1000;
+    const std::size_t CLIENT_SEND_DATA_SIZE = 64 * 1024 * 1024;
+
+    static_assert(SERVER_SEND_DATA_SIZE % sizeof(int) == 0, "");
+    static_assert(CLIENT_SEND_DATA_SIZE % sizeof(int) == 0, "");
+
+    std::shared_ptr<char> server_send_buf(new char[SERVER_SEND_DATA_SIZE], std::default_delete<char[]>());
+    for(std::size_t i = 0; i < SERVER_SEND_DATA_SIZE; i += sizeof(int)) {
+        *reinterpret_cast<int*>(server_send_buf.get() + i) = rand();
+    }
+
+    std::shared_ptr<char> client_send_buf(new char[CLIENT_SEND_DATA_SIZE], std::default_delete<char[]>());
+    for(std::size_t i = 0; i < CLIENT_SEND_DATA_SIZE; i += sizeof(int)) {
+        *reinterpret_cast<int*>(client_send_buf.get() + i) = rand();
+    }
+
+    std::thread server_thread([&](){
+        std::shared_ptr<char> receive_buf(new char[CLIENT_SEND_DATA_SIZE], std::default_delete<char[]>());
+        std::memset(receive_buf.get(), 0, CLIENT_SEND_DATA_SIZE);
+
+        bool data_sent = false;
+        bool data_received = false;
+
+        auto close_if_required = [&](io::TcpConnectedClient& client) {
+            if (data_sent && data_received) {
+                client.close();
+            }
+        };
+
+        io::EventLoop loop;
+
+        auto server = new io::TcpServer(loop);
+        auto listen_error = server->listen({m_default_addr, m_default_port},
+            [&](io::TcpConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+                client.send_data(server_send_buf, SERVER_SEND_DATA_SIZE,
+                    [&](io::TcpConnectedClient& client, const io::Error& error) {
+                        data_sent = true;
+                        close_if_required(client);
+                    }
+                );
+            },
+            [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error);
+                ASSERT_LE(data.offset + data.size, CLIENT_SEND_DATA_SIZE);
+                if (data.offset + data.size == CLIENT_SEND_DATA_SIZE) {
+                    data_received = true;
+                    close_if_required(client);
+                };
+
+                EXPECT_EQ((client_send_buf.get() + data.offset)[0], data.buf.get()[0]);
+
+                memcpy(receive_buf.get() + data.offset, data.buf.get(), data.size);
+            },
+            [&](io::TcpConnectedClient&, const io::Error& error) {
+                EXPECT_FALSE(error);
+                server->schedule_removal();
+            }
+        );
+        EXPECT_FALSE(listen_error);
+
+        ASSERT_FALSE(loop.run());
+
+        for (std::size_t i = 0; i < CLIENT_SEND_DATA_SIZE; ++i) {
+            ASSERT_EQ(client_send_buf.get()[i], receive_buf.get()[i]) << " i=" << i;
+        }
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    std::thread client_thread([&](){
+        std::shared_ptr<char> receive_buf(new char[SERVER_SEND_DATA_SIZE], std::default_delete<char[]>());
+        std::memset(receive_buf.get(), 0, SERVER_SEND_DATA_SIZE);
+
+        bool data_sent = false;
+        bool data_received = false;
+
+        auto close_if_required = [&](io::TcpClient& client) {
+            if (data_sent && data_received) {
+                client.close();
+            }
+        };
+
+        io::EventLoop loop;
+
+        auto client_ptr = new io::TcpClient(loop);
+        client_ptr->connect({m_default_addr, m_default_port},
+            [&](io::TcpClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                client.send_data(client_send_buf, CLIENT_SEND_DATA_SIZE,
+                    [&](io::TcpClient& client, const io::Error& error) {
+                        data_sent = true;
+                        close_if_required(client);
+                    }
+                );
+            },
+            [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                ASSERT_LE(data.offset + data.size, SERVER_SEND_DATA_SIZE);
+                if (data.offset + data.size == SERVER_SEND_DATA_SIZE) {
+                    data_received = true;
+                    close_if_required(client);
+                };
+
+                memcpy(receive_buf.get() + data.offset, data.buf.get(), data.size);
+            },
+            [&](io::TcpClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                client.schedule_removal();
+            }
+        );
+
+        ASSERT_FALSE(loop.run());
+
+        for (std::size_t i = 0; i < SERVER_SEND_DATA_SIZE; ++i) {
+            ASSERT_EQ(server_send_buf.get()[i], receive_buf.get()[i]) << " i=" << i;
+        }
+    });
+
+    server_thread.join();
+    client_thread.join();
+}
+
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
 // TODO: listen on the same port by different servers. Port is arready in use error.
 // TODO: close client in server on_close callback
