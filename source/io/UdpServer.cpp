@@ -56,7 +56,8 @@ Error UdpServer::Impl::bind(const Endpoint& endpoint) {
         return Error(StatusCode::INVALID_ARGUMENT);
     }
 
-    auto uv_status = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const struct sockaddr*>(endpoint.raw_endpoint()), UV_UDP_REUSEADDR);
+    // TODO: UV_UDP_REUSEADDR ????
+    auto uv_status = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const struct sockaddr*>(endpoint.raw_endpoint()), 0);
     return Error(uv_status);
 }
 

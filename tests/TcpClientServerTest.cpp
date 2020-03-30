@@ -96,6 +96,24 @@ TEST_F(TcpClientServerTest, bind_privileged) {
 }
 #endif
 
+TEST_F(TcpClientServerTest, address_in_use) {
+    io::EventLoop loop;
+
+    auto server_1 = new io::TcpServer(loop);
+    auto listen_error_1 = server_1->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
+    EXPECT_FALSE(listen_error_1);
+
+    auto server_2 = new io::TcpServer(loop);
+    auto listen_error_2 = server_2->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
+    EXPECT_TRUE(listen_error_2);
+    EXPECT_EQ(io::StatusCode::ADDRESS_ALREADY_IN_USE, listen_error_2.code());
+
+    server_1->schedule_removal();
+    server_2->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
 TEST_F(TcpClientServerTest, client_connect_to_invalid_address) {
     io::EventLoop loop;
 
@@ -2967,7 +2985,6 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
 }
 
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
-// TODO: listen on the same port by different servers. Port is arready in use error.
 // TODO: close client in server on_close callback
 
 // TODO: Get backlog size on doifferent platforms???

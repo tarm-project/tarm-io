@@ -58,6 +58,24 @@ TEST_F(UdpClientServerTest, bind_privileged) {
 }
 #endif
 
+TEST_F(UdpClientServerTest, address_in_use) {
+    io::EventLoop loop;
+
+    auto server_1 = new io::UdpServer(loop);
+    auto listen_error_1 = server_1->start_receive({m_default_addr, m_default_port}, nullptr);
+    EXPECT_FALSE(listen_error_1);
+
+    auto server_2 = new io::UdpServer(loop);
+    auto listen_error_2 = server_2->start_receive({m_default_addr, m_default_port}, nullptr);
+    EXPECT_TRUE(listen_error_2);
+    EXPECT_EQ(io::StatusCode::ADDRESS_ALREADY_IN_USE, listen_error_2.code());
+
+    server_1->schedule_removal();
+    server_2->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
 TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     io::EventLoop loop;
 
