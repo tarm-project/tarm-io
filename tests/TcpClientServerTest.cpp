@@ -96,7 +96,7 @@ TEST_F(TcpClientServerTest, bind_privileged) {
 }
 #endif
 
-TEST_F(TcpClientServerTest, address_in_use) {
+TEST_F(TcpClientServerTest, server_address_in_use) {
     io::EventLoop loop;
 
     auto server_1 = new io::TcpServer(loop);

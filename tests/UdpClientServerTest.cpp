@@ -58,7 +58,7 @@ TEST_F(UdpClientServerTest, bind_privileged) {
 }
 #endif
 
-TEST_F(UdpClientServerTest, address_in_use) {
+TEST_F(UdpClientServerTest, server_address_in_use) {
     io::EventLoop loop;
 
     auto server_1 = new io::UdpServer(loop);

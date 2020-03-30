@@ -142,6 +142,24 @@ TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
     EXPECT_EQ(1, client_on_connect_count);
 }
 
+TEST_F(TlsTcpClientServerTest, server_address_in_use) {
+    io::EventLoop loop;
+
+    auto server_1 = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto listen_error_1 = server_1->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
+    EXPECT_FALSE(listen_error_1);
+
+    auto server_2 = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto listen_error_2 = server_2->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
+    EXPECT_TRUE(listen_error_2);
+    EXPECT_EQ(io::StatusCode::ADDRESS_ALREADY_IN_USE, listen_error_2.code());
+
+    server_1->schedule_removal();
+    server_2->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+
 TEST_F(TlsTcpClientServerTest, DISABLED_client_send_without_connect_no_callback) {
     io::EventLoop loop;
 
