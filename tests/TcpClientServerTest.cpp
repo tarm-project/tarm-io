@@ -3050,7 +3050,6 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
 }
 
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
-// TODO: close client in server on_close callback
 
 // TODO: Get backlog size on different platforms???
 // http://veithen.io/2014/01/01/how-tcp-backlog-works-in-linux.html
