@@ -557,8 +557,6 @@ TEST_F(TcpClientServerTest, server_close_callback) {
 
     ASSERT_FALSE(listen_error);
 
-    bool data_sent = false;
-
     auto client = new io::TcpClient(loop);
     client->connect({m_default_addr, m_default_port},
     [&](io::TcpClient& client, const io::Error& error) {
@@ -818,6 +816,73 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
     EXPECT_EQ(1, client_receive_callback_count);
     EXPECT_EQ(1, connected_client_close_callback_count);
     EXPECT_EQ(1, client_close_callback_count);
+}
+
+TEST_F(TcpClientServerTest, close_in_server_on_close_callback) {
+    io::EventLoop loop;
+
+    std::size_t on_server_close_call_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            std::string message(data.buf.get(), data.size);
+            if (message == "close") {
+                client.close();
+            } else {
+                client.shutdown();
+            }
+        },
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++on_server_close_call_count;
+            client.close();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error.string();
+
+    auto client_on_connect = [&](io::TcpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+        client.send_data(client.user_data_as_ptr<char>(),
+                [&](io::TcpClient& client, const io::Error& error) {
+                EXPECT_FALSE(error);
+                client.schedule_removal();
+            }
+        );
+    };
+
+    auto client_1 = new io::TcpClient(loop);
+    std::string command_1("close");
+    client_1->set_user_data(&command_1[0]);
+    client_1->connect({m_default_addr, m_default_port},
+        client_on_connect,
+        nullptr
+    );
+
+    auto client_2 = new io::TcpClient(loop);
+    std::string command_2("shutdown");
+    client_2->set_user_data(&command_2[0]);
+    client_2->connect({m_default_addr, m_default_port},
+        client_on_connect,
+        nullptr
+    );
+
+    (new io::Timer(loop))->start(100,
+        [&](io::Timer& timer) {
+            server->schedule_removal();
+            timer.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, on_server_close_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(2, on_server_close_call_count);
 }
 
 TEST_F(TcpClientServerTest, server_schedule_remove_after_send) {
@@ -2987,6 +3052,6 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
 // TODO: investigate from libuv: test-tcp-write-to-half-open-connection.c
 // TODO: close client in server on_close callback
 
-// TODO: Get backlog size on doifferent platforms???
+// TODO: Get backlog size on different platforms???
 // http://veithen.io/2014/01/01/how-tcp-backlog-works-in-linux.html
 // https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/listen.2.html

@@ -18,6 +18,16 @@ public:
     IO_DLL_PUBLIC void set_user_data(void* data);
     IO_DLL_PUBLIC void* user_data();
 
+    template<typename T>
+    T* user_data_as_ptr() {
+        return reinterpret_cast<T*>(user_data());
+    }
+
+    template<typename T>
+    T& user_data_as_ref() {
+        return *reinterpret_cast<T*>(user_data());
+    }
+
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
