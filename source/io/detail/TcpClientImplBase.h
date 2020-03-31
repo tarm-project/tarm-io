@@ -16,6 +16,7 @@ public:
 
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
+    void send_data(std::string&& message, typename ParentType::EndSendCallback callback);
 
     void set_ipv4_addr(std::uint32_t value);
     void set_port(std::uint16_t value);
@@ -33,7 +34,54 @@ public:
     bool is_delay_send() const;
 
 protected:
+    const char* raw_buffer_getter(const std::string& s) {
+        return s.c_str();
+    }
+
+    const char* raw_buffer_getter(const std::shared_ptr<const char>& p) {
+        return p.get();
+    }
+
+    template<typename T>
+    void send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+        if (!is_open()) {
+            // TODO: revise this. User do not need to know about sockets.
+            //       Error like NOT_CONNECTED would sound much better.
+            if (callback) {
+                callback(*m_parent, io::Error(StatusCode::SOCKET_IS_NOT_CONNECTED));
+            }
+            return;
+        }
+
+        if (size == 0 || raw_buffer_getter(buffer) == nullptr) {
+            if (callback) {
+                callback(*m_parent, io::Error(StatusCode::INVALID_ARGUMENT));
+            }
+            return;
+        }
+
+        auto req = new WriteRequest<T>;
+        req->end_send_callback = callback;
+        req->data = this;
+        req->buf = std::move(buffer);
+        // const_cast is a workaround for lack of constness support in uv_buf_t
+        req->uv_buf = uv_buf_init(const_cast<char*>(raw_buffer_getter(req->buf)), size);
+
+        const Error write_error = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write<T>);
+        if (write_error) {
+            IO_LOG(m_loop, ERROR, m_parent, "Error:", write_error.string());
+            if (callback) {
+                callback(*m_parent, write_error);
+            }
+            delete req;
+            return;
+        }
+
+        ++m_pending_write_requests;
+    }
+
     // statics
+    template<typename T>
     static void after_write(uv_write_t* req, int status);
     static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 
@@ -61,10 +109,11 @@ protected:
     typename ParentType::CloseCallback m_close_callback = nullptr;
 
 private:
+    template<typename T>
     struct WriteRequest : public uv_write_t {
         uv_buf_t uv_buf;
-        std::shared_ptr<const char> buf;
         typename ParentType::EndSendCallback end_send_callback;
+        T buf;
     };
 };
 
@@ -93,40 +142,8 @@ void TcpClientImplBase<ParentType, ImplType>::init_stream() {
 
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
-    if (!is_open()) {
-        // TODO: revise this. User do not need to know about sockets.
-        //       Error like NOT_CONNECTED would sound much better.
-        if (callback) {
-            callback(*m_parent, io::Error(StatusCode::SOCKET_IS_NOT_CONNECTED));
-        }
-        return;
-    }
 
-    if (size == 0 || buffer == nullptr) {
-        if (callback) {
-            callback(*m_parent, io::Error(StatusCode::INVALID_ARGUMENT));
-        }
-        return;
-    }
-
-    auto req = new WriteRequest;
-    req->end_send_callback = callback;
-    req->data = this;
-    req->buf = buffer;
-    // const_cast is a workaround for lack of constness support in uv_buf_t
-    req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
-
-    const Error write_error = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write);
-    if (write_error) {
-        IO_LOG(m_loop, ERROR, m_parent, "Error:", write_error.string());
-        if (callback) {
-            callback(*m_parent, write_error);
-        }
-        delete req;
-        return;
-    }
-
-    ++m_pending_write_requests;
+    send_data_impl(buffer, size, callback);
 }
 
 template<typename ParentType, typename ImplType>
@@ -134,6 +151,12 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(const std::string& messa
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
     send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::send_data(std::string&& message, typename ParentType::EndSendCallback callback) {
+    const auto size = message.size();
+    send_data_impl(std::move(message), size, callback);
 }
 
 template<typename ParentType, typename ImplType>
@@ -179,14 +202,15 @@ bool TcpClientImplBase<ParentType, ImplType>::is_delay_send() const {
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 template<typename ParentType, typename ImplType>
+template<typename T>
 void TcpClientImplBase<ParentType, ImplType>::after_write(uv_write_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<ImplType*>(req->data);
 
     assert(this_.m_pending_write_requests >= 1);
     --this_.m_pending_write_requests;
 
-    auto request = reinterpret_cast<WriteRequest*>(req);
-    std::unique_ptr<WriteRequest> guard(request);
+    auto request = reinterpret_cast<WriteRequest<T>*>(req);
+    std::unique_ptr<WriteRequest<T>> guard(request);
 
     Error error(uv_status);
     if (error) {

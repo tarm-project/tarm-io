@@ -217,6 +217,10 @@ void TcpConnectedClient::send_data(const std::string& message, EndSendCallback c
     return m_impl->send_data(message, callback);
 }
 
+void TcpConnectedClient::send_data(std::string&& message, EndSendCallback callback) {
+    return m_impl->send_data(std::move(message), callback);
+}
+
 std::size_t TcpConnectedClient::pending_write_requesets() const {
     return m_impl->pending_write_requests();
 }

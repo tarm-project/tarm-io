@@ -35,6 +35,7 @@ public:
     // global TODO: add send_data which accepts char* and size
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);
 
     // TODO: rename as pending_send_requesets??? Because name is inconsistent.
     IO_DLL_PUBLIC std::size_t pending_write_requesets() const;
