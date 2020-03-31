@@ -40,6 +40,63 @@ TEST_F(DtlsClientServerTest, server_without_actions) {
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(DtlsClientServerTest, server_with_invalid_address) {
+    io::EventLoop loop;
+
+    std::size_t server_on_new_connection_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto error = server->listen({"", m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_new_connection_count;
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_receive_count;
+        },
+        1000 * 100,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            ++server_on_close_count;
+        }
+    );
+
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+
+    server->schedule_removal();
+
+    EXPECT_EQ(0, server_on_new_connection_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, server_on_new_connection_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+}
+
+#if defined(__APPLE__) || defined(__linux__)
+// Windows does not have privileged ports
+TEST_F(DtlsClientServerTest, bind_privileged) {
+    io::EventLoop loop;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen({m_default_addr, 100},
+        nullptr
+    );
+    EXPECT_TRUE(listen_error);
+    EXPECT_EQ(io::StatusCode::PERMISSION_DENIED, listen_error.code());
+
+    server->schedule_removal();
+
+    ASSERT_EQ(0, loop.run());
+}
+#endif
+
 TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     io::EventLoop loop;
 
@@ -1074,43 +1131,4 @@ TEST_F(DtlsClientServerTest, client_with_invalid_address_and_no_connect_callback
     client->schedule_removal();
 
     ASSERT_EQ(0, loop.run());
-}
-
-TEST_F(DtlsClientServerTest, server_with_invalid_address) {
-    io::EventLoop loop;
-
-    std::size_t server_on_new_connection_count = 0;
-    std::size_t server_on_receive_count = 0;
-    std::size_t server_on_close_count = 0;
-
-    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    auto error = server->listen({"", m_default_port},
-        [&](io::DtlsConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
-            ++server_on_new_connection_count;
-        },
-        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error);
-            ++server_on_receive_count;
-        },
-        1000 * 100,
-        [&](io::DtlsConnectedClient& client, const io::Error& error) {
-            ++server_on_close_count;
-        }
-    );
-
-    EXPECT_TRUE(error);
-    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
-
-    server->schedule_removal();
-
-    EXPECT_EQ(0, server_on_new_connection_count);
-    EXPECT_EQ(0, server_on_receive_count);
-    EXPECT_EQ(0, server_on_close_count);
-
-    ASSERT_EQ(0, loop.run());
-
-    EXPECT_EQ(0, server_on_new_connection_count);
-    EXPECT_EQ(0, server_on_receive_count);
-    EXPECT_EQ(0, server_on_close_count);
 }
