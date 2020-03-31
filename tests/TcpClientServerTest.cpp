@@ -1849,7 +1849,7 @@ TEST_F(TcpClientServerTest, client_communicate_with_multiple_servers_in_threads)
             auto new_port = static_cast<std::uint16_t>(std::stoi(received_message));
             ASSERT_NE(0, new_port);
             client.send_data(client_ask_shutdown,
-                [&](io::TcpClient& client, const io::Error& error) {
+                [&, new_port](io::TcpClient& client, const io::Error& error) {
                     client.connect({m_default_addr, new_port},
                         client_on_connect,
                         client_on_receive,
