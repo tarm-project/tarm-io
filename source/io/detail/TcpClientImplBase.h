@@ -34,51 +34,11 @@ public:
     bool is_delay_send() const;
 
 protected:
-    const char* raw_buffer_getter(const std::string& s) {
-        return s.c_str();
-    }
-
-    const char* raw_buffer_getter(const std::shared_ptr<const char>& p) {
-        return p.get();
-    }
+    const char* raw_buffer_getter(const std::string& s) const;
+    const char* raw_buffer_getter(const std::shared_ptr<const char>& p) const;
 
     template<typename T>
-    void send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
-        if (!is_open()) {
-            // TODO: revise this. User do not need to know about sockets.
-            //       Error like NOT_CONNECTED would sound much better.
-            if (callback) {
-                callback(*m_parent, io::Error(StatusCode::SOCKET_IS_NOT_CONNECTED));
-            }
-            return;
-        }
-
-        if (size == 0 || raw_buffer_getter(buffer) == nullptr) {
-            if (callback) {
-                callback(*m_parent, io::Error(StatusCode::INVALID_ARGUMENT));
-            }
-            return;
-        }
-
-        auto req = new WriteRequest<T>;
-        req->end_send_callback = callback;
-        req->data = this;
-        req->buf = std::move(buffer);
-        // const_cast is a workaround for lack of constness support in uv_buf_t
-        req->uv_buf = uv_buf_init(const_cast<char*>(raw_buffer_getter(req->buf)), size);
-
-        const Error write_error = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write<T>);
-        if (write_error) {
-            IO_LOG(m_loop, ERROR, m_parent, "Error:", write_error.string());
-            if (callback) {
-                callback(*m_parent, write_error);
-            }
-            delete req;
-            return;
-        }
-
-        ++m_pending_write_requests;
-    }
+    void send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
 
     // statics
     template<typename T>
@@ -138,6 +98,55 @@ void TcpClientImplBase<ParentType, ImplType>::init_stream() {
     m_tcp_stream = new uv_tcp_t;
     uv_tcp_init(m_uv_loop, m_tcp_stream);
     m_tcp_stream->data = this;
+}
+
+template<typename ParentType, typename ImplType>
+const char* TcpClientImplBase<ParentType, ImplType>::raw_buffer_getter(const std::string& s) const {
+    return s.c_str();
+}
+
+template<typename ParentType, typename ImplType>
+const char* TcpClientImplBase<ParentType, ImplType>::raw_buffer_getter(const std::shared_ptr<const char>& p) const  {
+    return p.get();
+}
+
+template<typename ParentType, typename ImplType>
+template<typename T>
+void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+    if (!is_open()) {
+        // TODO: revise this. User do not need to know about sockets.
+        //       Error like NOT_CONNECTED would sound much better.
+        if (callback) {
+            callback(*m_parent, io::Error(StatusCode::SOCKET_IS_NOT_CONNECTED));
+        }
+        return;
+    }
+
+    if (size == 0 || raw_buffer_getter(buffer) == nullptr) {
+        if (callback) {
+            callback(*m_parent, io::Error(StatusCode::INVALID_ARGUMENT));
+        }
+        return;
+    }
+
+    auto req = new WriteRequest<T>;
+    req->end_send_callback = callback;
+    req->data = this;
+    req->buf = std::move(buffer);
+    // const_cast is a workaround for lack of constness support in uv_buf_t
+    req->uv_buf = uv_buf_init(const_cast<char*>(raw_buffer_getter(req->buf)), size);
+
+    const Error write_error = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write<T>);
+    if (write_error) {
+        IO_LOG(m_loop, ERROR, m_parent, "Error:", write_error.string());
+        if (callback) {
+            callback(*m_parent, write_error);
+        }
+        delete req;
+        return;
+    }
+
+    ++m_pending_write_requests;
 }
 
 template<typename ParentType, typename ImplType>
@@ -226,15 +235,15 @@ template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<ImplType*>(handle->data);
 
-    //if (this_.m_read_buf == nullptr) {
+    if (this_.m_read_buf == nullptr) {
         default_alloc_buffer(handle, suggested_size, buf);
 
         this_.m_read_buf.reset(buf->base, std::default_delete<char[]>());
         this_.m_read_buf_size = buf->len;
-    /*} else {
+    } else {
         buf->base =  this_.m_read_buf.get();
         buf->len = static_cast<decltype(uv_buf_t::len)>(this_.m_read_buf_size);
-    }*/
+    }
 }
 
 } // namespace detail
