@@ -27,14 +27,13 @@ public:
     IO_FORBID_MOVE(UdpClient);
 
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
-    IO_DLL_PUBLIC UdpClient(EventLoop& loop, const Endpoint& endpoint);
 
     IO_DLL_PUBLIC Error start_receive(DataReceivedCallback receive_callback);
     IO_DLL_PUBLIC Error start_receive(DataReceivedCallback receive_callback,
                                       std::size_t timeout_ms,
                                       TimeoutCallback timeout_callback);
 
-    IO_DLL_PUBLIC void set_destination(const Endpoint& endpoint);
+    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint);
 
     IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
     IO_DLL_PUBLIC std::uint16_t port() const;

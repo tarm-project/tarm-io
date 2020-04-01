@@ -24,7 +24,7 @@ public:
     bool close_with_removal();
     bool close(CloseHandler handler);
 
-    void set_destination(const Endpoint& endpoint);
+    Error set_destination(const Endpoint& endpoint);
 
     std::uint32_t ipv4_addr() const;
     std::uint16_t port() const;
@@ -56,11 +56,6 @@ UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     };
 }
 
-UdpClient::Impl::Impl(EventLoop& loop, const Endpoint& endpoint, UdpClient& parent) :
-    Impl(loop, parent) {
-    set_destination(endpoint);
-}
-
 Error UdpClient::Impl::start_receive(DataReceivedCallback receive_callback) {
     m_receive_callback = receive_callback;
     return start_receive_impl();
@@ -80,17 +75,23 @@ UdpClient::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, m_parent, "Deleted UdpClient");
 }
 
-void UdpClient::Impl::set_destination(const Endpoint& endpoint) {
-    // TODO: invalid endpoint handling
+Error UdpClient::Impl::set_destination(const Endpoint& endpoint) {
+    if (endpoint.type() == Endpoint::UNDEFINED) {
+        return Error(StatusCode::INVALID_ARGUMENT);
+    }
 
     if ((m_udp_handle.get()->flags & IO_UV_HANDLE_BOUND) == 0) {
         ::sockaddr_storage storage{0};
         storage.ss_family = endpoint.type() == Endpoint::IP_V4 ? AF_INET : AF_INET6;
-        Error bind_error = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const ::sockaddr*>(&storage), UV_UDP_REUSEADDR);
-        // TODO: error handling
+        const Error bind_error = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const ::sockaddr*>(&storage), UV_UDP_REUSEADDR);
+        if (bind_error) {
+            return bind_error;
+        }
     }
 
     m_destination_endpoint = endpoint;
+
+    return Error(0);
 }
 
 bool UdpClient::Impl::close_with_removal() {
@@ -192,11 +193,6 @@ UdpClient::UdpClient(EventLoop& loop) :
     m_impl(new UdpClient::Impl(loop, *this)) {
 }
 
-UdpClient::UdpClient(EventLoop& loop, const Endpoint& endpoint) :
-    Removable(loop),
-    m_impl(new UdpClient::Impl(loop, endpoint, *this)) {
-}
-
 UdpClient::~UdpClient() {
 }
 
@@ -210,7 +206,7 @@ Error UdpClient::start_receive(DataReceivedCallback receive_callback,
     return m_impl->start_receive(receive_callback, timeout_ms, timeout_callback);
 }
 
-void UdpClient::set_destination(const Endpoint& endpoint) {
+Error UdpClient::set_destination(const Endpoint& endpoint) {
     return m_impl->set_destination(endpoint);
 }
 

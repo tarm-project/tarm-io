@@ -38,7 +38,8 @@ TEST_F(ConfigurationTest, buffer_size) {
 
     // TODO: move this test to Udp
     io::EventLoop loop;
-    auto client = new io::UdpClient(loop, {"127.0.0.1", 1500});
+    auto client = new io::UdpClient(loop);
+    EXPECT_FALSE(client->set_destination({"127.0.0.1", 1500}));
     auto error = client->set_receive_buffer_size(io::global::max_receive_buffer_size());
     EXPECT_FALSE(error) << error.string();
 
