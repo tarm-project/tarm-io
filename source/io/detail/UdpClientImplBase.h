@@ -55,17 +55,25 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
         return;
     }
 
-    this->set_last_packet_time(::uv_hrtime());
-
     if (!UdpImplBase<ParentType, ImplType>::is_open()) {
         if (callback) {
             UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=]() {
                 callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(StatusCode::OPERATION_CANCELED));
             });
-            return;
         }
         return;
     }
+
+    if (UdpImplBase<ParentType, ImplType>::m_destination_endpoint.type() == Endpoint::UNDEFINED) {
+        if (callback) {
+            UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=]() {
+                callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(StatusCode::DESTINATION_ADDRESS_REQUIRED));
+            });
+        }
+        return;
+    }
+
+    this->set_last_packet_time(::uv_hrtime());
 
     auto req = new SendRequest;
     req->end_send_callback = callback;

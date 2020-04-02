@@ -18,7 +18,7 @@ protected:
     std::string m_default_addr = "127.0.0.1";
 };
 
-TEST_F(UdpClientServerTest, client_default_constructor) {
+TEST_F(UdpClientServerTest, client_default_state) {
     io::EventLoop loop;
     auto client = new io::UdpClient(loop);
 
@@ -26,7 +26,7 @@ TEST_F(UdpClientServerTest, client_default_constructor) {
     ASSERT_EQ(0, loop.run());
 }
 
-TEST_F(UdpClientServerTest, server_default_constructor) {
+TEST_F(UdpClientServerTest, server_default_state) {
     io::EventLoop loop;
     auto server = new io::UdpServer(loop);
 
@@ -137,6 +137,28 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     ASSERT_EQ(0, loop.run());
     EXPECT_TRUE(data_sent);
     EXPECT_TRUE(data_received);
+}
+
+TEST_F(UdpClientServerTest, client_send_data_without_destination) {
+    io::EventLoop loop;
+
+    std::size_t on_send_call_count = 0;
+
+    auto client = new io::UdpClient(loop);
+    client->send_data("No way!",
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::DESTINATION_ADDRESS_REQUIRED, error.code());
+            ++on_send_call_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, on_send_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, on_send_call_count);
 }
 
 TEST_F(UdpClientServerTest, client_get_buffer_size_1) {
@@ -1878,7 +1900,6 @@ TEST_F(UdpClientServerTest, send_data_of_size_0) {
     EXPECT_EQ(0, client_on_receive_count);
 }
 
-// TODO: UDP client sending test with no destination set
 // TODO: check address of UDP peer
 
 // TODO: set_destination with ipv4 address athan with ipv6

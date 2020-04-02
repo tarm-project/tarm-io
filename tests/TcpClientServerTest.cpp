@@ -2209,7 +2209,7 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
 
     for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
         client_threads.emplace_back([&](std::size_t thread_id) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
             std::size_t client_on_data_receive_bytes_count = 0;
 
