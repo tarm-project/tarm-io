@@ -31,6 +31,15 @@ protected:
     static void on_send(uv_udp_send_t* req, int status);
 
     RefCounted* m_ref_counted = nullptr;
+
+private:
+    void schedule_send_error(const typename ParentType::EndSendCallback& callback, const Error& error) {
+        if (callback) {
+            UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=](){
+                callback(*UdpImplBase<ParentType, ImplType>::m_parent, error);
+            });
+        }
+    }
 };
 
 template<typename ParentType, typename ImplType>
@@ -47,29 +56,17 @@ UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, Pare
 template<typename ParentType, typename ImplType>
 void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
     if (size == 0) {
-        if (callback) {
-            UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=](){
-                callback(*UdpImplBase<ParentType, ImplType>::m_parent, io::Error(StatusCode::INVALID_ARGUMENT));
-            });
-        }
+        schedule_send_error(callback, Error(StatusCode::INVALID_ARGUMENT));
         return;
     }
 
     if (!UdpImplBase<ParentType, ImplType>::is_open()) {
-        if (callback) {
-            UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=]() {
-                callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(StatusCode::OPERATION_CANCELED));
-            });
-        }
+        schedule_send_error(callback, Error(StatusCode::OPERATION_CANCELED));
         return;
     }
 
     if (UdpImplBase<ParentType, ImplType>::m_destination_endpoint.type() == Endpoint::UNDEFINED) {
-        if (callback) {
-            UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=]() {
-                callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(StatusCode::DESTINATION_ADDRESS_REQUIRED));
-            });
-        }
+        schedule_send_error(callback, Error(StatusCode::DESTINATION_ADDRESS_REQUIRED));
         return;
     }
 
