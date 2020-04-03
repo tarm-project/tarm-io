@@ -23,7 +23,8 @@ Error::Error(StatusCode status_code, const std::string& custom_error_message) :
 StatusCode Error::code() const {
     return m_status_code;
 }
-
+// TODO: string() should return correct values for Error constructed with
+//       `Error::Error(StatusCode status_code)` consturctor
 std::string Error::string() const {
     switch (m_status_code) {
         case StatusCode::OK:

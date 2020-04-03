@@ -43,15 +43,26 @@ Endpoint::Impl::Impl(const Impl& other) :
 
 Endpoint::Impl::Impl(const std::string& address, std::uint16_t port) :
     Impl() {
-    auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
 
-    Error address_error = uv_ip4_addr(address.c_str(), port, addr);
-    if (address_error) {
+    if (address.empty()) {
         return;
     }
 
-    // TODO: IPV6
-    m_type = IP_V4;
+    if (address.find(":") != std::string::npos) {
+        auto addr = reinterpret_cast<::sockaddr_in6*>(&m_address_storage);
+        Error address_error = uv_ip6_addr(address.c_str(), port, addr);
+        if (address_error) {
+            return;
+        }
+        m_type = IP_V6;
+    } else {
+        auto addr = reinterpret_cast<::sockaddr_in*>(&m_address_storage);
+        Error address_error = uv_ip4_addr(address.c_str(), port, addr);
+        if (address_error) {
+            return;
+        }
+        m_type = IP_V4;
+    }
 }
 
 Endpoint::Impl::Impl(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port) :
@@ -80,18 +91,34 @@ Endpoint::Impl::Impl(std::uint32_t address, std::uint16_t port) :
 }
 
 std::string Endpoint::Impl::address_string() const {
+    if (m_type == UNDEFINED) {
+        return "";
+    }
+
     if (m_type == IP_V4) {
         const auto addr = reinterpret_cast<const ::sockaddr_in*>(&m_address_storage);
         return ip4_addr_to_string(network_to_host(addr->sin_addr.s_addr));
     }
 
-    return "";
+    // Assuming IPv6
+    char buf[INET6_ADDRSTRLEN];
+    Error convert_error = uv_inet_ntop(AF_INET6, &m_address_storage, buf, INET6_ADDRSTRLEN);
+    if (convert_error) {
+        return "";
+    }
+
+    return buf;
 }
 
 std::uint16_t Endpoint::Impl::port() const {
-    // TODO: IPV6?
-    auto addr = reinterpret_cast<const ::sockaddr_in*>(&m_address_storage);
-    return network_to_host(addr->sin_port);
+    if (m_address_storage.ss_family == AF_INET) {
+        const auto addr = reinterpret_cast<const ::sockaddr_in*>(&m_address_storage);
+        return network_to_host(addr->sin_port);
+    }
+
+    // Assuming IPv6
+    const auto addr = reinterpret_cast<const ::sockaddr_in6*>(&m_address_storage);
+    return network_to_host(addr->sin6_port);
 }
 
 Endpoint::Type Endpoint::Impl::type() const {

@@ -75,6 +75,7 @@ UdpClient::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, m_parent, "Deleted UdpClient");
 }
 
+// TODO: use uv_udp_connect if libuv version is >= 1.27.0
 Error UdpClient::Impl::set_destination(const Endpoint& endpoint) {
     if (endpoint.type() == Endpoint::UNDEFINED) {
         return Error(StatusCode::INVALID_ARGUMENT);

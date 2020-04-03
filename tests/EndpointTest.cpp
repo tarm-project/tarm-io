@@ -63,3 +63,13 @@ TEST_F(EndpointTest, empty_inplace_address) {
     EXPECT_EQ("", endpoint.address_string());
     EXPECT_EQ(1234, endpoint.port());
 }
+
+// TODO: init from bytes
+TEST_F(EndpointTest, ipv6) {
+    io::Endpoint endpoint("::1", 1234);
+
+    EXPECT_EQ(io::Endpoint::IP_V6, endpoint.type());
+    // TODO: FIXME
+    //EXPECT_EQ("::1", endpoint.address_string());
+    EXPECT_EQ(1234, endpoint.port());
+}

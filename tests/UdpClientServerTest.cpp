@@ -1900,7 +1900,68 @@ TEST_F(UdpClientServerTest, send_data_of_size_0) {
     EXPECT_EQ(0, client_on_receive_count);
 }
 
+TEST_F(UdpClientServerTest, ipv6_address) {
+    io::EventLoop loop;
+
+    const std::string client_message = "client";
+    const std::string server_message = "server";
+
+    std::size_t client_on_receive_count = 0;
+    std::size_t server_on_receive_count = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto server_listen_error = server->start_receive({"::", m_default_port},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+            EXPECT_EQ(server, &peer.server());
+
+            ++server_on_receive_count;
+
+            const std::string s(data.buf.get(), data.size);
+            EXPECT_EQ(client_message, s);
+
+            peer.send_data(server_message,
+                [&](io::UdpPeer& peer, const io::Error& error) {
+                    EXPECT_FALSE(error) << error.string();
+                    server->schedule_removal();
+                }
+            );
+        }
+    );
+    EXPECT_FALSE(server_listen_error) << server_listen_error.string();
+
+    auto client = new io::UdpClient(loop);
+    EXPECT_FALSE(client->set_destination({"::1", m_default_port}));
+    client->send_data(client_message,
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        }
+    );
+
+    auto client_listen_error = client->start_receive(
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_on_receive_count;
+
+            const std::string s(data.buf.get(), data.size);
+            EXPECT_EQ(server_message, s);
+            client.schedule_removal();
+        }
+    );
+    EXPECT_FALSE(client_listen_error) << client_listen_error.string();
+
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, server_on_receive_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_receive_count);
+    EXPECT_EQ(1, server_on_receive_count);
+}
+
 // TODO: check address of UDP peer
 
 // TODO: set_destination with ipv4 address athan with ipv6
 // TODO: null send buf
+
+// TODO: client start receive without destination set???? Allow receive from any peer????
