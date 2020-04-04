@@ -14,6 +14,7 @@ namespace io {
 class Endpoint::Impl {
 public:
     Impl();
+    Impl(const ::sockaddr* address);
     Impl(const std::string& address, std::uint16_t port);
     Impl(std::uint32_t address, std::uint16_t port);
     Impl(const std::uint8_t* address_bytes, std::size_t _address_size, std::uint16_t port);
@@ -39,6 +40,18 @@ Endpoint::Impl::Impl() {
 Endpoint::Impl::Impl(const Impl& other) :
    m_address_storage(other.m_address_storage),
    m_type(other.m_type) {
+}
+
+Endpoint::Impl::Impl(const ::sockaddr* address) :
+    Impl() {
+
+    if (address->sa_family == AF_INET) {
+        m_type = IP_V4;
+        std::memcpy(&m_address_storage, reinterpret_cast<const ::sockaddr_in*>(address), sizeof(::sockaddr_in));
+    } else if (address->sa_family == AF_INET6) {
+        m_type = IP_V6;
+        std::memcpy(&m_address_storage, reinterpret_cast<const ::sockaddr_in6*>(address), sizeof(::sockaddr_in6));
+    }
 }
 
 Endpoint::Impl::Impl(const std::string& address, std::uint16_t port) :
@@ -165,6 +178,10 @@ Endpoint::Endpoint(std::uint8_t (&address_bytes)[4], std::uint16_t port) :
 
 Endpoint::Endpoint(std::uint8_t (&address_bytes)[16], std::uint16_t port) :
     m_impl(new Impl(address_bytes, 16, port)) {
+}
+
+Endpoint::Endpoint(const void* raw_address) :
+    m_impl(new Impl(reinterpret_cast<const ::sockaddr*>(raw_address))) {
 }
 
 Endpoint::~Endpoint() {

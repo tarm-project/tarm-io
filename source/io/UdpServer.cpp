@@ -186,10 +186,14 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
 
         if (!error) {
             if (addr && nread) {
-                const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
+                std::uint64_t peer_id = 0;
 
-                // TODO: ipv6
-                const std::uint64_t peer_id = std::uint64_t(address->sin_port) << 32 | std::uint64_t(address->sin_addr.s_addr);
+                if (addr->sa_family == AF_INET) {
+                    const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
+                    peer_id = std::uint64_t(address->sin_port) << 32 | std::uint64_t(address->sin_addr.s_addr);
+                } else {
+                    // TODO: ipv6
+                }
 
                 DataChunk data_chunk(buf, std::size_t(nread));
                 if (this_.peer_bookkeeping_enabled()) {
@@ -206,8 +210,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                         peer_ptr.reset(new UdpPeer(*this_.m_loop,
                                                    *this_.m_parent,
                                                    this_.m_udp_handle.get(),
-                                                   { network_to_host(address->sin_addr.s_addr),
-                                                     network_to_host(address->sin_port) } ),
+                                                   {addr}),
                                        free_udp_peer); // Ref count is == 1 here
 
                         peer_ptr->set_last_packet_time(::uv_hrtime());
@@ -230,8 +233,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                     auto peer = new UdpPeer(*this_.m_loop,
                                  *this_.m_parent,
                                  this_.m_udp_handle.get(),
-                                 { network_to_host(address->sin_addr.s_addr),
-                                   network_to_host(address->sin_port) } ); // Ref count is == 1 here
+                                 {addr}); // Ref count is == 1 here
                     this_.m_data_receive_callback(*peer, data_chunk, error);
                     peer->unref();
                 }
