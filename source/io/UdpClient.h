@@ -45,9 +45,10 @@ public:
     IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
     IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
 
-    // Return 0 on error
+    // Returns 0 on error
     IO_DLL_PUBLIC std::uint16_t bound_port() const;
 
+    // TODO: r-value std::string for send data
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
 

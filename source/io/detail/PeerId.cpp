@@ -12,9 +12,14 @@ PeerId::PeerId(const void* address) {
         const auto& address = reinterpret_cast<const struct sockaddr_in*>(generic_address);
         address_low = address->sin_addr.s_addr;
         port = address->sin_port;
-    } else {
-        // TODO: ipv6
+    } else if (generic_address->sa_family == AF_INET6) {
+        const auto& address = reinterpret_cast<const struct sockaddr_in6*>(generic_address);
+        address_high = *reinterpret_cast<const std::uint64_t*>(reinterpret_cast<const char*>(&address->sin6_addr));
+        address_low = *reinterpret_cast<const std::uint64_t*>(reinterpret_cast<const char*>(&address->sin6_addr) + 8);
+        port = address->sin6_port;
     }
+
+    // else default empty values
 }
 
 } // namespace detail

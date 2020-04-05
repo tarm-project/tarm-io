@@ -1959,11 +1959,137 @@ TEST_F(UdpClientServerTest, ipv6_address) {
     EXPECT_EQ(1, server_on_receive_count);
 }
 
+TEST_F(UdpClientServerTest, ipv6_peer_identity) {
+    io::EventLoop loop;
+
+    std::size_t server_on_timeout_count = 0;
+
+    const io::UdpPeer* peer_1 = nullptr;
+    const io::UdpPeer* peer_2 = nullptr;
+    const io::UdpPeer* peer_3 = nullptr;
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive({"::", m_default_port},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            auto peer_id = std::stoi(std::string(data.buf.get(), data.size));
+            switch (peer_id) {
+                case 1: {
+                    if (peer_1 == nullptr) {
+                        peer_1 = &peer;
+                        (new io::Timer(loop))->start(
+                            {100, 100, 100, 100, 100},
+                            [&](io::Timer& timer) {
+                                if (timer.callback_call_counter() == 4) {
+                                    peer.send_data("close");
+                                    timer.schedule_removal();
+                                } else {
+                                    peer.send_data("!");
+                                }
+                            }
+                        );
+                    } else {
+                        EXPECT_EQ(peer_1, &peer);
+                    }
+                    break;
+                }
+
+                case 2: {
+                    if (peer_2 == nullptr) {
+                        peer_2 = &peer;
+                    } else {
+                        EXPECT_EQ(peer_2, &peer);
+                    }
+                    break;
+                }
+
+                case 3: {
+                    if (peer_3 == nullptr) {
+                        peer_3 = &peer;
+                    } else {
+                        EXPECT_EQ(peer_3, &peer);
+                    }
+                    break;
+                }
+
+                default:
+                    FAIL() << "Unexpected peer ID";
+                    break;
+            }
+        },
+        200,
+        [&](io::UdpPeer& peer, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_timeout_count;
+            if (server_on_timeout_count == 3) {
+                server->schedule_removal();
+            }
+        }
+    );
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    auto client_1 = new io::UdpClient(loop);
+    client_1->set_destination({"::1", m_default_port});
+    client_1->start_receive(
+        [&](io::UdpClient& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+
+            if (std::string(data.buf.get(), data.size) == "close") {
+                client_1->send_data("1",
+                    [](io::UdpClient& client, const io::Error& error) {
+                        EXPECT_FALSE(error) << error.string();
+                        client.schedule_removal();
+                    }
+                );
+            }
+        }
+    );
+    client_1->send_data("1");
+
+    auto client_2 = new io::UdpClient(loop);
+    client_2->set_destination({"::1", m_default_port});
+    client_2->start_receive(
+        [&](io::UdpClient& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        }
+    );
+    (new io::Timer(loop))->start(
+        {100, 100, 100, 100, 100},
+        [&](io::Timer& timer) {
+            client_2->send_data("2");
+            if (timer.callback_call_counter() == 4) {
+                timer.schedule_removal();
+                client_2->schedule_removal();
+            }
+        }
+    );
+
+    auto client_3 = new io::UdpClient(loop);
+    client_3->set_destination({"::1", m_default_port});
+    client_3->send_data("3",
+        [](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_timeout_count);
+    EXPECT_FALSE(peer_1);
+    EXPECT_FALSE(peer_2);
+    EXPECT_FALSE(peer_3);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(3, server_on_timeout_count);
+    EXPECT_TRUE(peer_1);
+    EXPECT_TRUE(peer_2);
+    EXPECT_TRUE(peer_3);
+}
+
 // TODO: check address of UDP peer
 
 // TODO: set_destination with ipv4 address athan with ipv6
 // TODO: null send buf
 
 // TODO: client start receive without destination set???? Allow receive from any peer????
-
-// TOOD: test ipv6 peer identity
