@@ -2,10 +2,11 @@
 
 #include "BacklogWithTimeout.h"
 #include "ByteSwap.h"
-#include "detail/Common.h"
 #include "Timer.h"
 #include "UdpPeer.h"
 
+#include "detail/Common.h"
+#include "detail/PeerId.h"
 #include "detail/UdpImplBase.h"
 
 #include <iostream>
@@ -42,8 +43,8 @@ private:
     DataReceivedCallback m_data_receive_callback = nullptr;
     PeerTimeoutCallback m_peer_timeout_callback = nullptr;
 
-    std::unordered_map<std::uint64_t, std::shared_ptr<UdpPeer>> m_peers;
-    std::unordered_map<std::uint64_t, std::unique_ptr<Timer, typename Timer::DefaultDelete>> m_inactive_peers;
+    std::unordered_map<detail::PeerId, std::shared_ptr<UdpPeer>> m_peers;
+    std::unordered_map<detail::PeerId, std::unique_ptr<Timer, typename Timer::DefaultDelete>> m_inactive_peers;
     std::unique_ptr<BacklogWithTimeout<std::shared_ptr<UdpPeer>>> m_peers_backlog;
 };
 
@@ -186,31 +187,27 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
 
         if (!error) {
             if (addr && nread) {
-                std::uint64_t peer_id = 0;
-
-                if (addr->sa_family == AF_INET) {
-                    const auto& address = reinterpret_cast<const struct sockaddr_in*>(addr);
-                    peer_id = std::uint64_t(address->sin_port) << 32 | std::uint64_t(address->sin_addr.s_addr);
-                } else {
-                    // TODO: ipv6
-                }
+                detail::PeerId peer_id{addr};
 
                 DataChunk data_chunk(buf, std::size_t(nread));
                 if (this_.peer_bookkeeping_enabled()) {
                     auto inative_peer_it = this_.m_inactive_peers.find(peer_id);
                     if (inative_peer_it != this_.m_inactive_peers.end()) {
-                        IO_LOG(this_.m_loop, TRACE, &parent, "Peer", peer_id, "is inactive, ignoring packet");
+                        // TODO: fixme log output
+                        //IO_LOG(this_.m_loop, TRACE, &parent, "Peer", peer_id, "is inactive, ignoring packet");
                         return;
                     }
 
                     auto& peer_ptr = this_.m_peers[peer_id];
                     if (!peer_ptr.get()) {
-                        IO_LOG(this_.m_loop, TRACE, &parent, "New tracked peer id:", peer_id);
+                        // TODO: fixme log output
+                        //IO_LOG(this_.m_loop, TRACE, &parent, "New tracked peer id:", peer_id);
 
                         peer_ptr.reset(new UdpPeer(*this_.m_loop,
                                                    *this_.m_parent,
                                                    this_.m_udp_handle.get(),
-                                                   {addr}),
+                                                   {addr},
+                                                   peer_id),
                                        free_udp_peer); // Ref count is == 1 here
 
                         peer_ptr->set_last_packet_time(::uv_hrtime());
@@ -226,14 +223,16 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                     // This should be the last because peer may be reseted in callback
                     this_.m_data_receive_callback(*peer_ptr, data_chunk, error);
                 } else {
-                    IO_LOG(this_.m_loop, TRACE, &parent, "New untracked peer id:", peer_id);
+                    // TODO: fixme log output
+                    //IO_LOG(this_.m_loop, TRACE, &parent, "New untracked peer id:", peer_id);
 
                     // Ref/Unref semantics here was added to prolong lifetime of oneshot UdpPeer objects
                     // and to allow call send data in receive callback for UdpServer without peers tracking.
                     auto peer = new UdpPeer(*this_.m_loop,
                                  *this_.m_parent,
                                  this_.m_udp_handle.get(),
-                                 {addr}); // Ref count is == 1 here
+                                 {addr},
+                                 peer_id); // Ref count is == 1 here
                     this_.m_data_receive_callback(*peer, data_chunk, error);
                     peer->unref();
                 }
@@ -241,7 +240,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
         } else {
             DataChunk data(nullptr, 0);
             // TODO: could address be available here???
-            UdpPeer peer(*this_.m_loop, *this_.m_parent, this_.m_udp_handle.get(), Endpoint{0u, 0u});
+            UdpPeer peer(*this_.m_loop, *this_.m_parent, this_.m_udp_handle.get(), Endpoint{0u, 0u}, 0);
 
             IO_LOG(this_.m_loop, ERROR, &parent, "failed to receive UDP packet", error.string());
             this_.m_data_receive_callback(peer, data, error);

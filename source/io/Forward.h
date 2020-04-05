@@ -22,4 +22,10 @@ class UdpPeer;
 class RefCounted;
 class Removable;
 
-}
+namespace detail {
+
+struct PeerId;
+
+} // namespace detail
+
+} // namespace io

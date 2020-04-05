@@ -11,6 +11,7 @@ list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
         io/detail/Common.cpp
         io/detail/OpenSslInitHelper.cpp
+        io/detail/PeerId.cpp
         io/global/Configuration.cpp
         io/global/Version.cpp
         io/path_impl/CodecvtErrorCategory.cpp

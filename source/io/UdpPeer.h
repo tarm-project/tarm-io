@@ -52,9 +52,9 @@ protected:
     IO_DLL_PUBLIC ~UdpPeer();
 
 private:
-    IO_DLL_PUBLIC UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint);
+    IO_DLL_PUBLIC UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id);
     IO_DLL_PUBLIC void set_last_packet_time(std::uint64_t time);
-    std::uint64_t id();
+    const detail::PeerId& id() const;
 
     class Impl;
     std::unique_ptr<Impl> m_impl;

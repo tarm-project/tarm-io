@@ -4,6 +4,7 @@
 
 #include "ByteSwap.h"
 #include "detail/UdpClientImplBase.h"
+#include "detail/PeerId.h"
 
 #include "detail/Common.h"
 
@@ -11,7 +12,7 @@ namespace io {
 
 class UdpPeer::Impl : public detail::UdpClientImplBase<UdpPeer, UdpPeer::Impl> {
 public:
-    Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, UdpPeer& parent);
+    Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id, UdpPeer& parent);
 
     std::uint32_t address();
     std::uint16_t port();
@@ -21,15 +22,17 @@ public:
 
     void close(std::size_t inactivity_timeout_ms);
 
-    std::uint64_t id();
+    const detail::PeerId& id() const;
 
 private:
     UdpServer* m_server = nullptr;
+    const detail::PeerId m_id;
 };
 
-UdpPeer::Impl::Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, UdpPeer& parent) :
+UdpPeer::Impl::Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id, UdpPeer& parent) :
     UdpClientImplBase(loop, parent, parent, reinterpret_cast<uv_udp_t*>(udp_handle)),
-    m_server(&server) {
+    m_server(&server),
+    m_id(id) {
     m_destination_endpoint = endpoint;
 }
 
@@ -57,15 +60,15 @@ void UdpPeer::Impl::close(std::size_t inactivity_timeout_ms) {
     m_udp_handle = nullptr;
 }
 
-std::uint64_t UdpPeer::Impl::id() {
-    return std::uint64_t(host_to_network(port())) << 32 | std::uint64_t(host_to_network(address()));
+const detail::PeerId& UdpPeer::Impl::id() const {
+    return m_id;
 }
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-UdpPeer::UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint) :
+UdpPeer::UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id) :
     RefCounted(loop),
-    m_impl(new Impl(loop, server, udp_handle, endpoint, *this)) {
+    m_impl(new Impl(loop, server, udp_handle, endpoint, id, *this)) {
 }
 
 UdpPeer::~UdpPeer() {
@@ -111,7 +114,7 @@ void UdpPeer::close(std::size_t inactivity_timeout_ms) {
     return m_impl->close(inactivity_timeout_ms);
 }
 
-std::uint64_t UdpPeer::id() {
+const detail::PeerId& UdpPeer::id() const {
     return m_impl->id();
 }
 
