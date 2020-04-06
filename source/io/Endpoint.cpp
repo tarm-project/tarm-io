@@ -115,7 +115,8 @@ std::string Endpoint::Impl::address_string() const {
 
     // Assuming IPv6
     char buf[INET6_ADDRSTRLEN];
-    Error convert_error = uv_inet_ntop(AF_INET6, &m_address_storage, buf, INET6_ADDRSTRLEN);
+    const auto addr = reinterpret_cast<const ::sockaddr_in6*>(&m_address_storage);
+    Error convert_error = uv_inet_ntop(AF_INET6, &addr->sin6_addr, buf, INET6_ADDRSTRLEN);
     if (convert_error) {
         return "";
     }
