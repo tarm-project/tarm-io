@@ -48,7 +48,7 @@ public:
     IO_DLL_PUBLIC Endpoint(std::initializer_list<std::uint8_t> address_bytes, std::uint16_t port);
     IO_DLL_PUBLIC Endpoint(std::uint8_t (&address_bytes)[4], std::uint16_t port);
     IO_DLL_PUBLIC Endpoint(std::uint8_t (&address_bytes)[16], std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(const void* raw_address); // TODO: test this // TODO: replace void* with cutom empty struct to prevent occasional pointer casts???
+    IO_DLL_PUBLIC Endpoint(const void* raw_address); // TODO: replace void* with cutom empty struct to prevent occasional pointer casts???
     IO_DLL_PUBLIC ~Endpoint();
 
     IO_DLL_PUBLIC std::string address_string() const;
