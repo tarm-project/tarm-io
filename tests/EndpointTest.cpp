@@ -61,14 +61,25 @@ TEST_F(EndpointTest, empty_inplace_address) {
 
     EXPECT_EQ(io::Endpoint::UNDEFINED, endpoint.type());
     EXPECT_EQ("", endpoint.address_string());
-    EXPECT_EQ(1234, endpoint.port());
+    EXPECT_EQ(0, endpoint.port());
 }
 
-// TODO: init from bytes
-TEST_F(EndpointTest, ipv6) {
+TEST_F(EndpointTest, ipv6_from_string) {
     io::Endpoint endpoint("::1", 1234);
 
     EXPECT_EQ(io::Endpoint::IP_V6, endpoint.type());
     EXPECT_EQ("::1", endpoint.address_string());
     EXPECT_EQ(1234, endpoint.port());
 }
+
+TEST_F(EndpointTest, ipv6_init_from_array) {
+    std::uint8_t array[16] = {0, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+    io::Endpoint endpoint(array, sizeof(array), 1234);
+    EXPECT_EQ("7f::1", endpoint.address_string());
+}
+
+TEST_F(EndpointTest, ipv6_init_from_initializer_list) {
+    io::Endpoint endpoint({0, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, 1234);
+    EXPECT_EQ("7f::1", endpoint.address_string());
+}
+
