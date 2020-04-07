@@ -223,4 +223,17 @@ const void* Endpoint::raw_endpoint() const {
     return m_impl->raw_endpoint();
 }
 
+///////////////////////////////////////// functions ///////////////////////////////////////////
+
+std::ostream& operator <<(std::ostream& o, const Endpoint& e) {
+    // see RFC 3986 (3.2.3) for details
+    if (e.type() == Endpoint::IP_V4) {
+        return o << e.address_string() << ":" << e.port();
+    } else if (e.type() == Endpoint::IP_V6) {
+        return o << "[" << e.address_string() << "]:" << e.port();
+    }
+
+    return o;
+}
+
 } // namespace io

@@ -500,6 +500,7 @@ TEST_F(UdpClientServerTest, peer_identity_without_preservation_on_server) {
 }
 
 TEST_F(UdpClientServerTest, peer_identity_with_preservation_on_server) {
+    this->log_to_stdout();
     io::EventLoop loop;
 
     const std::string client_message_1 = "message_1";

@@ -8,6 +8,8 @@
     #include <netinet/in.h>
 #endif
 
+#include <sstream>
+
 struct EndpointTest : public testing::Test,
                       public LogRedirector {
 };
@@ -87,6 +89,27 @@ TEST_F(EndpointTest, ipv6_init_from_array) {
 TEST_F(EndpointTest, ipv6_init_from_initializer_list) {
     io::Endpoint endpoint({0, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, 1234);
     EXPECT_EQ("7f::1", endpoint.address_string());
+}
+
+TEST_F(EndpointTest, ostream_1) {
+    io::Endpoint endpoint;
+    std::ostringstream oss;
+    oss << endpoint;
+    EXPECT_EQ("", oss.str());
+}
+
+TEST_F(EndpointTest, ostream_2) {
+    io::Endpoint endpoint({127, 2, 2, 1}, 1234);
+    std::ostringstream oss;
+    oss << endpoint;
+    EXPECT_EQ("127.2.2.1:1234", oss.str());
+}
+
+TEST_F(EndpointTest, ostream_3) {
+    io::Endpoint endpoint({0, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, 1234);
+    std::ostringstream oss;
+    oss << endpoint;
+    EXPECT_EQ("[7f::1]:1234", oss.str());
 }
 
 #if defined(__APPLE__) || defined(__linux__)

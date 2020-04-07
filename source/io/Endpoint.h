@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -63,5 +64,8 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
+
+IO_DLL_PUBLIC
+std::ostream& operator <<(std::ostream& o, const Endpoint& e);
 
 } // namespace io

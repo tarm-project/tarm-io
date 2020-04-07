@@ -118,4 +118,8 @@ const detail::PeerId& UdpPeer::id() const {
     return m_impl->id();
 }
 
+const Endpoint& UdpPeer::endpoint() const {
+    return m_impl->endpoint();
+}
+
 } // namespace io

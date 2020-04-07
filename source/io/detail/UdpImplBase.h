@@ -31,6 +31,8 @@ public:
     Error set_receive_buffer_size(std::size_t size);
     Error set_send_buffer_size(std::size_t size);
 
+    const Endpoint& endpoint() const;
+
 protected:
     Error check_buffer_size_value(std::size_t size) const;
 
@@ -175,6 +177,11 @@ Error UdpImplBase<ParentType, ImplType>::set_send_buffer_size(std::size_t size) 
     }
 
     return Error(0);
+}
+
+template<typename ParentType, typename ImplType>
+const Endpoint& UdpImplBase<ParentType, ImplType>::endpoint() const {
+    return m_destination_endpoint;
 }
 
 } // namespace detail
