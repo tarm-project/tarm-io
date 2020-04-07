@@ -173,8 +173,10 @@ TEST_F(UdpClientServerTest, client_get_buffer_size_1) {
     const auto send_buffer_1 = client->send_buffer_size();
     EXPECT_TRUE(send_buffer_1.error);
 
-    // TODO: double set_destination in a row
-    client->set_destination({0x7F000001u, m_default_port});
+    auto destination_error = client->set_destination({0x7F000001u, m_default_port});
+    ASSERT_FALSE(destination_error);
+    destination_error = client->set_destination({0x7F000001u, m_default_port});
+    ASSERT_FALSE(destination_error);
 
     const auto receive_buffer_2 = client->receive_buffer_size();
     EXPECT_FALSE(receive_buffer_2.error);
