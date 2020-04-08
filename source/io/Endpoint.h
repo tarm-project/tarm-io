@@ -13,13 +13,6 @@
 
 namespace io {
 
-// TODO: private details in public domain
-namespace detail {
-    template<typename ParentType, typename ImplType>
-    class UdpClientImplBase;
-}
-
-
 class Endpoint {
 public:
     friend class TcpClient;

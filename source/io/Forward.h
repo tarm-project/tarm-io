@@ -22,9 +22,14 @@ class UdpPeer;
 class RefCounted;
 class Removable;
 
+// ------------------------------- private details -------------------------------
+
 namespace detail {
 
 struct PeerId;
+
+template<typename ParentType, typename ImplType>
+class UdpClientImplBase;
 
 } // namespace detail
 
