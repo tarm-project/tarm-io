@@ -250,7 +250,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
         if (error == SSL_ERROR_WANT_READ) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_READ");
 
-            internal_read_from_sll_and_send(nullptr);
+            internal_read_from_sll_and_send(nullptr); // TODO: if send of this handshake fail we will not know, as example set invalid address of UDP raw endpoint and run test Udp*.client_and_server_send_message_each_other
         } else if (error == SSL_ERROR_WANT_WRITE) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_WRITE");
         } else {

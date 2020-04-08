@@ -91,7 +91,7 @@ Error UdpClient::Impl::set_destination(const Endpoint& endpoint) {
     }
 
     m_destination_endpoint = endpoint;
-    m_raw_endpoint = endpoint.raw_endpoint();
+    m_raw_endpoint = m_destination_endpoint.raw_endpoint();
 
     return Error(0);
 }

@@ -4,6 +4,7 @@
 #include "io/DtlsClient.h"
 #include "io/DtlsServer.h"
 #include "io/ScopeExitGuard.h"
+#include "io/Timer.h"
 #include "io/global/Version.h"
 
 #include <thread>
@@ -112,7 +113,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     std::size_t client_data_send_counter = 0;
 
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    server->listen({m_default_addr, m_default_port},
+    auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(server, &client.server());
@@ -133,6 +134,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
             );
         }
     );
+    ASSERT_FALSE(listen_error) << listen_error.string();
 
     auto client = new io::DtlsClient(loop);
     client->connect({m_default_addr, m_default_port},
