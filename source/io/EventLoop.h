@@ -9,6 +9,8 @@
 #include <memory>
 #include <limits>
 
+// TODO: memory pool for objects allocations???
+
 // DOC: calling some loop methods and not calling run() will result in memory leak
 
 namespace io {

@@ -303,7 +303,6 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<cons
         return;
     }
 
-    // TODO: not allocate memory on each write???
     const std::size_t SIZE = BIO_pending(m_ssl_write_bio);
     std::shared_ptr<char> ptr(new char[SIZE], [](const char* p) { delete[] p;});
 

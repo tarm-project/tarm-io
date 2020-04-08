@@ -2,6 +2,7 @@
 
 #include "CommonMacros.h"
 #include "Export.h"
+#include "Forward.h"
 
 #include <array>
 #include <cstdint>
