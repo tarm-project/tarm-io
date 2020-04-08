@@ -34,6 +34,7 @@ UdpPeer::Impl::Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const 
     m_server(&server),
     m_id(id) {
     m_destination_endpoint = endpoint;
+    m_raw_endpoint = endpoint.raw_endpoint();
 }
 
 // TODO: ipv6

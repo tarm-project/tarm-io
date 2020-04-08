@@ -46,6 +46,7 @@ protected:
 
     std::unique_ptr<uv_udp_t, std::function<void(uv_udp_t*)>> m_udp_handle;
     Endpoint m_destination_endpoint;
+    const void* m_raw_endpoint = nullptr;
 
 private:
     std::uint64_t m_last_packet_time_ns = 0;

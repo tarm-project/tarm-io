@@ -5,6 +5,7 @@
 #include "Endpoint.h"
 #include "EventLoop.h"
 #include "Export.h"
+#include "Forward.h"
 #include "DataChunk.h"
 #include "Removable.h"
 #include "Error.h"
@@ -26,7 +27,6 @@ public:
     IO_FORBID_MOVE(UdpServer);
 
     IO_DLL_PUBLIC UdpServer(EventLoop& loop);
-    //IO_DLL_PUBLIC UdpServer(EventLoop& loop, std::size_t receive_buffer_size, std::size_t send_buffer_size);
 
     IO_DLL_PUBLIC void schedule_removal() override;
 

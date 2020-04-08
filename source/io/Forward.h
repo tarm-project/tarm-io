@@ -28,9 +28,6 @@ namespace detail {
 
 struct PeerId;
 
-template<typename ParentType, typename ImplType>
-class UdpClientImplBase;
-
 } // namespace detail
 
 } // namespace io

@@ -21,9 +21,6 @@ public:
     friend class UdpPeer;
     friend class UdpServer;
 
-    template<typename ParentType, typename ImplType>
-    friend class detail::UdpClientImplBase;
-
     IO_ALLOW_MOVE(Endpoint);
 
     IO_DLL_PUBLIC Endpoint& operator=(const Endpoint& other);
