@@ -61,7 +61,8 @@ void Removable::Impl::schedule_removal() {
     m_removal_scheduled = true;
 
     if (!m_loop->is_running()) {
-        IO_LOG(m_loop, ERROR, "Scheduling removal after the loop finished run. This may lead to memory leaks or memory corruption.");
+        // TODO: remove this????
+        //IO_LOG(m_loop, ERROR, "Scheduling removal after the loop finished run. This may lead to memory leaks or memory corruption.");
     }
 
     IO_LOG(m_loop, TRACE, m_parent, "");
