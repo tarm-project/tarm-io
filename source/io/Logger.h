@@ -13,7 +13,7 @@
 //#define __func__ __FUNCTION__
 #endif
 
-#define IO_LOG(LOGGER_PTR, SEVERITY, ...) (LOGGER_PTR)->log_with_compile_context(io::Logger::Severity::SEVERITY, ::io::detail::extract_file_name_from_path(__FILE__), __LINE__, __func__, __VA_ARGS__);
+#define IO_LOG(LOGGER_PTR, SEVERITY, ...) (LOGGER_PTR)->log_with_compile_context(io::Logger::Severity::SEVERITY, ::io::detail::extract_file_name_from_path(__FILE__), __LINE__, __func__, __VA_ARGS__)
 
 namespace io {
 
