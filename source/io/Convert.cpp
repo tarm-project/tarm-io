@@ -6,6 +6,7 @@
 
 namespace io {
 
+// IPv4
 namespace {
 
 void push_byte_as_str(std::string& s, std::uint8_t byte) {
@@ -53,5 +54,32 @@ Error string_to_ip4_addr(const std::string& string_address, std::uint32_t& uint_
     uint_address = network_to_host(addr.sin_addr.s_addr);
     return Error(0);
 }
+
+// IPv6
+std::string ip6_addr_to_string(const std::uint8_t* address_bytes) {
+    if (address_bytes == nullptr) {
+        return "";
+    }
+
+    char buf[INET6_ADDRSTRLEN];
+    // Not handling error here because this function returns error when no spece left
+    uv_inet_ntop(AF_INET6, address_bytes, buf, INET6_ADDRSTRLEN);
+
+    return buf;
+}
+
+std::string ip6_addr_to_string(std::initializer_list<std::uint8_t> address_bytes) {
+    return ip6_addr_to_string(&*address_bytes.begin());
+}
+
+Error string_to_ip6_addr(const std::string& string_address, std::array<std::uint8_t, 16>& bytes) {
+    const Error convert_error = uv_inet_pton(AF_INET6, string_address.c_str(), bytes.data());
+    if (convert_error) {
+        return convert_error;
+    }
+
+    return Error(0);
+}
+
 
 } // namespace io

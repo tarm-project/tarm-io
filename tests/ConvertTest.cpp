@@ -55,3 +55,42 @@ TEST_F(ConvertTest, string_to_ip4_addr_empty) {
     EXPECT_TRUE(error);
     EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
 }
+
+TEST_F(ConvertTest, ip6_addr_to_string_nullptr) {
+    const auto string = io::ip6_addr_to_string(nullptr);
+    EXPECT_TRUE(string.empty());
+}
+
+TEST_F(ConvertTest, ip6_addr_to_string_single_conversion) {
+    const auto string = io::ip6_addr_to_string({0, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1});
+    EXPECT_EQ("7f::1", string);
+}
+
+TEST_F(ConvertTest, string_to_ip6_addr_invalid) {
+    std::array<std::uint8_t, 16> arr;
+    auto error = io::string_to_ip6_addr("10.100.11.3", arr);
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+}
+
+TEST_F(ConvertTest, string_to_ip6_addr_single) {
+    std::array<std::uint8_t, 16> arr = {};
+    auto error = io::string_to_ip6_addr("AABB::ccdd", arr);
+    EXPECT_FALSE(error);
+    EXPECT_EQ(0xAA, arr[0]);
+    EXPECT_EQ(0xBB, arr[1]);
+    EXPECT_EQ(0x00, arr[2]);
+    EXPECT_EQ(0x00, arr[3]);
+    EXPECT_EQ(0x00, arr[4]);
+    EXPECT_EQ(0x00, arr[5]);
+    EXPECT_EQ(0x00, arr[6]);
+    EXPECT_EQ(0x00, arr[7]);
+    EXPECT_EQ(0x00, arr[8]);
+    EXPECT_EQ(0x00, arr[9]);
+    EXPECT_EQ(0x00, arr[10]);
+    EXPECT_EQ(0x00, arr[11]);
+    EXPECT_EQ(0x00, arr[12]);
+    EXPECT_EQ(0x00, arr[13]);
+    EXPECT_EQ(0xCC, arr[14]);
+    EXPECT_EQ(0xDD, arr[15]);
+}
