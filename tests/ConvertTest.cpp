@@ -12,7 +12,7 @@ TEST_F(ConvertTest, ip4_addr_to_string_single_conversion) {
 
 TEST_F(ConvertTest, ip4_addr_to_string_batch_conversion) {
     // Test description: just more complicated test to cover more values and cases
-    const std::size_t SIZE = 2000;
+    const std::size_t SIZE = 200000;
 
     for (std::size_t i = 0; i < SIZE; ++i) {
         const std::uint32_t addr = i * 2000000 + i;
@@ -37,13 +37,21 @@ TEST_F(ConvertTest, ip4_addr_to_string_batch_conversion) {
 }
 
 TEST_F(ConvertTest, string_to_ip4_addr) {
-    EXPECT_EQ(0x7F000001, io::string_to_ip4_addr("127.0.0.1"));
+    std::uint32_t address = 0;
+    EXPECT_FALSE(io::string_to_ip4_addr("127.0.0.1", address));
+    EXPECT_EQ(0x7F000001, address);
 }
 
 TEST_F(ConvertTest, string_to_ip4_addr_invalid_value) {
-    EXPECT_EQ(0, io::string_to_ip4_addr("127.0."));
+    std::uint32_t address = 0;
+    auto error = io::string_to_ip4_addr("127.0.", address);
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
 }
 
 TEST_F(ConvertTest, string_to_ip4_addr_empty) {
-    EXPECT_EQ(0, io::string_to_ip4_addr(""));
+    std::uint32_t address = 0;
+    auto error = io::string_to_ip4_addr("", address);
+    EXPECT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
 }

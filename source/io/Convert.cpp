@@ -27,6 +27,7 @@ void push_byte_as_str(std::string& s, std::uint8_t byte) {
 // result += std::to_string((addr & 0xFF000000u) >> 24);
 // result += ".";
 // ...
+// And this works about x4 times faster than uv_inet_ntop
 std::string ip4_addr_to_string(std::uint32_t addr) {
     std::string result;
 
@@ -42,10 +43,15 @@ std::string ip4_addr_to_string(std::uint32_t addr) {
     return result;
 }
 
-std::uint32_t string_to_ip4_addr(const std::string& address) {
+Error string_to_ip4_addr(const std::string& string_address, std::uint32_t& uint_address) {
     struct sockaddr_in addr;
-    uv_ip4_addr(address.c_str(), 0, &addr); // TODO: error handling (not return 0 on error because it is valid address)
-    return network_to_host(addr.sin_addr.s_addr);
+    const Error convert_error = uv_ip4_addr(string_address.c_str(), 0, &addr);
+    if (convert_error) {
+        return convert_error;
+    }
+
+    uint_address = network_to_host(addr.sin_addr.s_addr);
+    return Error(0);
 }
 
 } // namespace io
