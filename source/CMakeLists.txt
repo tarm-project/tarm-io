@@ -1,6 +1,36 @@
 include(TestBigEndian)
 TEST_BIG_ENDIAN(IO_IS_BIG_ENDIAN)
 
+# Openssl
+if (NOT BUILD_SHARED_LIBS)
+    set(OPENSSL_USE_STATIC_LIBS ON)
+endif()
+
+set(IO_OPENSSL_FOUND FALSE PARENT_SCOPE)
+# TODO: look like this is not required, need to check some older systems
+#if (LINUX)
+#    find_package(PkgConfig REQUIRED)
+#    pkg_check_modules(SSL libssl)
+#    pkg_check_modules(CRYPTO libcrypto)
+#
+#    if (SSL_FOUND AND CRYPTO_FOUND)
+#        set(IO_OPENSSL_FOUND TRUE)
+#        target_include_directories(io PUBLIC $<BUILD_INTERFACE:${SSL_INCLUDEDIR}>)
+#        target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CRYPTO_INCLUDEDIR}>)
+#        target_link_libraries(io PUBLIC ${SSL_LIBRARIES})
+#        target_link_libraries(io PUBLIC ${CRYPTO_LIBRARIES})
+#    endif()
+#else()
+    message(STATUS "Searching for OpenSSL...")
+    find_package(OpenSSL)
+
+    if (OpenSSL_FOUND)
+        set(IO_OPENSSL_FOUND TRUE PARENT_SCOPE)
+        set(IO_OPENSSL_FOUND TRUE)
+    endif()
+#endif()
+
+# Files
 FILE(GLOB IO_HEADERS_LIST
         io/*.h
         io/global/*.h
@@ -48,6 +78,12 @@ list(APPEND IO_SOURCE_LIST
         io/UserDataHolder.cpp
 )
 
+set(IO_SOURCE_EXCLUDE_PATTERN "=") # '=' is just a placeholder value which will definately will not be used for paths.
+if (NOT IO_OPENSSL_FOUND)
+    set(IO_SOURCE_EXCLUDE_PATTERN Tls.*|Dtls.*|OpenSsl.*|Version\..*)
+    list(FILTER IO_SOURCE_LIST EXCLUDE REGEX ${IO_SOURCE_EXCLUDE_PATTERN})
+endif()
+
 if (${CMAKE_VERSION} VERSION_LESS "3.8.2")
     source_group(io FILES ${IO_SOURCE_LIST})
 else()
@@ -55,8 +91,13 @@ else()
 endif()
 
 add_library(io ${IO_SOURCE_LIST})
-
 target_link_libraries(io PUBLIC ${LIBUV_LIB_DEPS})
+
+if (IO_OPENSSL_FOUND)
+    target_link_libraries(io PUBLIC OpenSSL::SSL)
+    target_link_libraries(io PUBLIC OpenSSL::Crypto)
+    target_compile_definitions(io PRIVATE IO_HAS_OPENSSL)
+endif()
 
 if (IO_USE_EXTERNAL_LIBUV)
     target_link_libraries(io PUBLIC LibUV::LibUV)
@@ -91,34 +132,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
 #    target_compile_options(io PRIVATE -fno-exceptions)
 endif()
 
-# Openssl
-# TODO: make optional
-if (NOT BUILD_SHARED_LIBS)
-    set(OPENSSL_USE_STATIC_LIBS ON)
-endif()
-
-if (Linux)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(SSL REQUIRED libssl)
-    pkg_check_modules(CRYPTO REQUIRED libcrypto)
-
-    target_include_directories(io PUBLIC $<BUILD_INTERFACE:${SSL_INCLUDEDIR}>)
-    target_include_directories(io PUBLIC $<BUILD_INTERFACE:${CRYPTO_INCLUDEDIR}>)
-    target_link_libraries(io PUBLIC ${SSL_LIBRARIES})
-    target_link_libraries(io PUBLIC ${CRYPTO_LIBRARIES})
-else()
-    find_package(OpenSSL REQUIRED)
-
-    target_link_libraries(io PUBLIC OpenSSL::SSL)
-    target_link_libraries(io PUBLIC OpenSSL::Crypto)
-endif()
-
 # installation
 # Unfortunately can not use target property PUBLIC_HEADER here
 # because of https://gitlab.kitware.com/cmake/cmake/issues/16739
 install(DIRECTORY io DESTINATION include
    FILES_MATCHING PATTERN *.h
-   PATTERN detail EXCLUDE)
+   PATTERN detail EXCLUDE
+   REGEX "${IO_SOURCE_EXCLUDE_PATTERN}" EXCLUDE)
 
 install(TARGETS io EXPORT ioTargets
     LIBRARY

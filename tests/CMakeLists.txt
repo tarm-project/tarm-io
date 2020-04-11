@@ -1,6 +1,6 @@
-message("-- Searching for GTest")
+message(STATUS "Searching for GTest")
 find_package(GTest REQUIRED CONFIG HINTS ${GTEST_ROOT})
-message("-- Found GTest target config in ${GTest_DIR}.")
+message(STATUS "Found GTest target config in ${GTest_DIR}.")
 
 #cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_INSTALL_PREFIX=E:\projects\thirdparty\gtest\install ..\googletest-release-1.8.1
 #cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DBOOST_ROOT="E:\projects\thirdparty\boost\install\include\boost-1_70" -DBOOST_LIBRARYDIR="E:\projects\thirdparty\boost\install\lib" -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT=E:\projects\thirdparty\gtest\install ..
@@ -59,17 +59,20 @@ list(APPEND TESTS_LIST
     DtlsClientServerTest.cpp
 )
 
+if (NOT DEFINED IO_OPENSSL_FOUND)
+    message(FATAL_ERROR "IO CMake sctipts internal error, IO_OPENSSL_FOUND is not defined.")
+endif()
+
+if (NOT IO_OPENSSL_FOUND)
+    list(FILTER TESTS_LIST EXCLUDE REGEX Tls.*)
+    list(FILTER TESTS_LIST EXCLUDE REGEX Dtls.*)
+    list(FILTER TESTS_LIST EXCLUDE REGEX VersionTest\.cpp)
+endif()
+
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${GTEST_INCLUDE_DIRS}
 )
-
-# Added to prevent warning
-# ld: warning: direct access in XXX to global weak symbol YYY means the weak symbol cannot be overridden at runtime. This was likely caused by different translation units being compiled with different visibility settings.
-# TODO: this needed only if linking with static libs
-#if(APPLE)
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
-#endif()
 
 set(RUN_TEST_ENV) # TODO: currently this is unused but may be utilized with sanitizers
 set(TESTS_EXE_NAME tests)
@@ -167,7 +170,7 @@ function(print_target_properties tgt)
     endforeach(prop)
 endfunction(print_target_properties)
 
-print_target_properties(GTest::gtest)
+#print_target_properties(GTest::gtest)
 
 # get_cmake_property(_variableNames VARIABLES)
 # list (SORT _variableNames)

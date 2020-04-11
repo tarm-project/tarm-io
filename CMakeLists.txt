@@ -16,10 +16,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 
 if(UNIX AND NOT APPLE)
+    message(STATUS "Platform is: Linux")
     set(LINUX TRUE)
 endif()
 
 if(WIN32)
+    message(STATUS "Platform is: Windows")
     if (MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP") # Multicore building
     endif()
@@ -27,6 +29,7 @@ endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
+    message(STATUS "Platform is: Mac OS X")
 endif()
 
 if (NOT MSVC AND NOT DEFINED IO_SANITIZER)
@@ -73,6 +76,9 @@ add_subdirectory("samples")
 if (IO_ENABLE_TESTS)
     add_subdirectory(tests)
 endif()
+
+message("================ Configuration summary ================")
+message("IO_OPENSSL_FOUND ${IO_OPENSSL_FOUND}")
 
 #############################################################
 # get_cmake_property(_variableNames VARIABLES)
