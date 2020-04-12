@@ -96,6 +96,7 @@ void TcpClientImplBase<ParentType, ImplType>::init_stream() {
     assert (m_tcp_stream == nullptr);
 
     m_tcp_stream = new uv_tcp_t;
+    // TODO: error handling
     uv_tcp_init(m_uv_loop, m_tcp_stream);
     m_tcp_stream->data = this;
 }

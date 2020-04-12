@@ -88,12 +88,12 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
     m_endpoint = endpoint;
 
     m_server_handle = new uv_tcp_t;
-    const auto init_status = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
+    const Error init_error = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
     m_server_handle->data = this;
 
-    if (init_status < 0) {
-        IO_LOG(m_loop, ERROR, m_parent, uv_strerror(init_status));
-        return init_status;
+    if (init_error) {
+        IO_LOG(m_loop, ERROR, m_parent, init_error.string());
+        return init_error;
     }
 
     /*
