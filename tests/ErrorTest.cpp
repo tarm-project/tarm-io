@@ -24,3 +24,12 @@ TEST_F(ErrorTest, create_from_status_code) {
     EXPECT_EQ(io::StatusCode::UNDEFINED, error_2.code());
     EXPECT_EQ("Unknown error", error_2.string());
 }
+
+TEST_F(ErrorTest, all_status_codes_have_text) {
+    for (std::size_t i = static_cast<std::size_t>(io::StatusCode::FIRST);
+         i <= static_cast<std::size_t>(io::StatusCode::LAST);
+         ++i) {
+        io::Error error(static_cast<io::StatusCode>(i));
+        ASSERT_FALSE(error.string().empty()) << "i= " << i;
+    }
+}

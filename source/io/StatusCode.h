@@ -107,6 +107,8 @@ namespace io {
 #define X(PARAM) PARAM,
 enum class StatusCode : uint32_t {
   IO_LIST_OF_STATUS_CODES
+  FIRST = OK,
+  LAST = INAPPROPRIATE_FILE_TYPE_OR_FORMAT
 };
 #undef X
 
