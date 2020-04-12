@@ -34,10 +34,11 @@ endif()
 FILE(GLOB TESTS_LIST *.h)
 list(APPEND TESTS_LIST
     Main.cpp
+    UTCommon.cpp
     LogRedirector.cpp
     ConstexprStringTest.cpp
     ByteSwapTest.cpp
-    UTCommon.cpp
+    ErrorTest.cpp
     ConvertTest.cpp
     UserDataHolderTest.cpp
     LoggerTest.cpp

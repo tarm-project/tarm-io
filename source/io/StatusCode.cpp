@@ -161,6 +161,14 @@ StatusCode convert_from_uv(std::int64_t libuv_code) {
             return StatusCode::NO_SUCH_DEVICE_OR_ADDRESS;
         case UV_EMLINK:
             return StatusCode::TOO_MANY_LINKS;
+        case UV_EHOSTDOWN:
+            return StatusCode::HOST_IS_DOWN;
+        case UV_EREMOTEIO:
+            return StatusCode::REMOTE_IO_ERROR;
+        case UV_ENOTTY:
+            return StatusCode::INAPPROPRIATE_IOCTL_FOR_DEVICE;
+        case UV_EFTYPE:
+            return StatusCode::INAPPROPRIATE_FILE_TYPE_OR_FORMAT;
     }
 
     return StatusCode::UNDEFINED;

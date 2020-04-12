@@ -7,6 +7,8 @@
 
 namespace io {
 
+// Note: do not forget to revise this list on bundled libuv version update
+
 // X-Macro idiom, for details see
 // https://en.wikibooks.org/wiki/C_Programming/Preprocessor_directives_and_macros#X-Macros
 #define IO_LIST_OF_STATUS_CODES \
@@ -97,7 +99,10 @@ namespace io {
     X(END_OF_FILE) \
     X(NO_SUCH_DEVICE_OR_ADDRESS) \
     X(TOO_MANY_LINKS) \
-
+    X(HOST_IS_DOWN) \
+    X(REMOTE_IO_ERROR) \
+    X(INAPPROPRIATE_IOCTL_FOR_DEVICE) \
+    X(INAPPROPRIATE_FILE_TYPE_OR_FORMAT)
 
 #define X(PARAM) PARAM,
 enum class StatusCode : uint32_t {
