@@ -2,6 +2,7 @@
 
 #include "CommonMacros.h"
 #include "DataChunk.h"
+#include "Endpoint.h"
 #include "EventLoop.h"
 #include "Export.h"
 #include "Error.h"
@@ -25,8 +26,7 @@ public:
     IO_FORBID_COPY(TcpConnectedClient);
     IO_FORBID_MOVE(TcpConnectedClient);
 
-    IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
-    IO_DLL_PUBLIC std::uint16_t port() const;
+    IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
     IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC void shutdown();
@@ -56,8 +56,7 @@ private:
     void start_read(DataReceiveCallback data_receive_callback);
     void* tcp_client_stream();
 
-    void set_ipv4_addr(std::uint32_t value);
-    void set_port(std::uint16_t value);
+    void set_endpoint(const Endpoint& endpoint);
 
     class Impl;
     std::unique_ptr<Impl> m_impl;

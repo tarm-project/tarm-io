@@ -149,16 +149,20 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
     [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
-        EXPECT_EQ(client.ipv4_addr(), 0x7F000001);
-        EXPECT_NE(client.port(), 0);
-        EXPECT_NE(client.port(), m_default_port);
+        const auto& endpoint = client.endpoint();
+        ASSERT_EQ(io::Endpoint::IP_V4, endpoint.type());
+        EXPECT_EQ(endpoint.ipv4_addr(), 0x7F000001);
+        EXPECT_NE(endpoint.port(), 0);
+        EXPECT_NE(endpoint.port(), m_default_port);
     },
     [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         EXPECT_TRUE(client.is_open());
 
-        EXPECT_EQ(client.ipv4_addr(), 0x7F000001);
-        EXPECT_NE(client.port(), 0);
-        EXPECT_NE(client.port(), m_default_port);
+        const auto& endpoint = client.endpoint();
+        ASSERT_EQ(io::Endpoint::IP_V4, endpoint.type());
+        EXPECT_EQ(endpoint.ipv4_addr(), 0x7F000001);
+        EXPECT_NE(endpoint.port(), 0);
+        EXPECT_NE(endpoint.port(), m_default_port);
 
         data_received = true;
         std::string received_message(data.buf.get(), data.size);

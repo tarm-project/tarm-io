@@ -234,9 +234,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
                                                      reinterpret_cast<struct sockaddr*>(&info),
                                                      &info_len);
         if (!getpeername_error) {
-            auto addr_info = reinterpret_cast<sockaddr_in*>(&info);
-            tcp_client->set_port(network_to_host(addr_info->sin_port));
-            tcp_client->set_ipv4_addr(network_to_host(addr_info->sin_addr.s_addr));
+            tcp_client->set_endpoint(io::Endpoint(&info));
 
             this_.m_client_connections.insert(tcp_client);
 

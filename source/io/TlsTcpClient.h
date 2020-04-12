@@ -30,8 +30,7 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
-    IO_DLL_PUBLIC std::uint16_t port() const;
+    IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
     IO_DLL_PUBLIC
     void connect(const Endpoint endpoint,

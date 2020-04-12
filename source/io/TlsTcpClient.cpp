@@ -18,8 +18,7 @@ public:
     Impl(EventLoop& loop, TlsVersionRange version_range, TlsTcpClient& parent);
     ~Impl();
 
-    std::uint32_t ipv4_addr() const;
-    std::uint16_t port() const;
+    const Endpoint& endpoint() const;
 
     void connect(const Endpoint endpoint,
                  ConnectCallback connect_callback,
@@ -54,12 +53,8 @@ TlsTcpClient::Impl::Impl(EventLoop& loop, TlsVersionRange version_range, TlsTcpC
     m_openssl_context(loop, parent) {
 }
 
-std::uint32_t TlsTcpClient::Impl::ipv4_addr() const {
-    return m_client->ipv4_addr();
-}
-
-std::uint16_t TlsTcpClient::Impl::port() const {
-    return m_client->port();
+const Endpoint& TlsTcpClient::Impl::endpoint() const {
+    return m_client->endpoint();
 }
 
 void TlsTcpClient::Impl::connect(const Endpoint endpoint,
@@ -197,12 +192,8 @@ void TlsTcpClient::schedule_removal() {
     }
 }
 
-std::uint32_t TlsTcpClient::ipv4_addr() const {
-    return m_impl->ipv4_addr();
-}
-
-std::uint16_t TlsTcpClient::port() const {
-    return m_impl->port();
+const Endpoint& TlsTcpClient::endpoint() const {
+    return m_impl->endpoint();
 }
 
 void TlsTcpClient::connect(const Endpoint endpoint,

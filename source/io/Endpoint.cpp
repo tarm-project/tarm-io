@@ -28,6 +28,8 @@ public:
     void* raw_endpoint();
     const void* raw_endpoint() const;
 
+    std::uint32_t ipv4_addr() const;
+
 private:
     ::sockaddr_storage m_address_storage;
     Type m_type = UNDEFINED;
@@ -153,7 +155,18 @@ const void* Endpoint::Impl::raw_endpoint() const {
     return &m_address_storage;
 }
 
+std::uint32_t Endpoint::Impl::ipv4_addr() const {
+    if (m_type != IP_V4) {
+        return 0;
+    }
+
+    const auto addr = reinterpret_cast<const ::sockaddr_in*>(&m_address_storage);
+    return network_to_host(addr->sin_addr.s_addr);
+}
+
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
+
+IO_DEFINE_DEFAULT_MOVE(Endpoint);
 
 Endpoint::Endpoint() :
     m_impl(new Impl()) {
@@ -221,6 +234,10 @@ void* Endpoint::raw_endpoint() {
 
 const void* Endpoint::raw_endpoint() const {
     return m_impl->raw_endpoint();
+}
+
+std::uint32_t Endpoint::ipv4_addr() const {
+    return m_impl->ipv4_addr();
 }
 
 ///////////////////////////////////////// functions ///////////////////////////////////////////

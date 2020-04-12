@@ -97,6 +97,8 @@ void TcpClient::Impl::connect_impl(const Endpoint& endpoint,
         return;
     }
 
+    m_destination_endpoint = endpoint;
+
     if (m_connect_req == nullptr) {
         m_connect_req = new uv_connect_t;
         m_connect_req->data = this;
@@ -104,10 +106,7 @@ void TcpClient::Impl::connect_impl(const Endpoint& endpoint,
 
     auto addr = reinterpret_cast<const ::sockaddr_in*>(raw_endpoint);
 
-    m_port = endpoint.port();
-    m_ipv4_addr = network_to_host(addr->sin_addr.s_addr);
-
-    IO_LOG(m_loop, DEBUG, m_parent, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", m_port);
+    IO_LOG(m_loop, DEBUG, m_parent, "endpoint:", endpoint);
 
     init_stream();
     m_connect_callback = connect_callback;
@@ -138,7 +137,7 @@ void TcpClient::Impl::shutdown() {
 }
 
 bool TcpClient::Impl::schedule_removal() {
-    IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
+    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", m_destination_endpoint);
 
     m_want_delete_object = true;
 
@@ -150,7 +149,7 @@ bool TcpClient::Impl::close() {
         return true; // allow to remove object
     }
 
-    IO_LOG(m_loop, TRACE, "address:", io::ip4_addr_to_string(m_ipv4_addr), ":", port());
+    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", m_destination_endpoint);
 
     m_is_open = false;
 
@@ -177,7 +176,7 @@ bool TcpClient::Impl::close() {
 void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(req->data);
 
-    IO_LOG(this_.m_loop, TRACE, "address:", io::ip4_addr_to_string(this_.m_ipv4_addr), ":", this_.port());
+    IO_LOG(this_.m_loop, TRACE, this_.m_parent, "endpoint:", this_.m_destination_endpoint);
 
     Error error(uv_status);
     if (this_.m_close_callback && error) {
@@ -210,10 +209,6 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
     }
 
     uv_read_start(req->handle, alloc_read_buffer, on_read);
-
-    //TODO: set ip and port
-    this_.set_ipv4_addr(0);
-    this_.set_port(0);
 }
 
 void TcpClient::Impl::on_close(uv_handle_t* handle) {
@@ -229,8 +224,8 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
             this_.m_close_callback(*this_.m_parent, Error(0));
         }
 
-        this_.m_port = 0;
-        this_.m_ipv4_addr = 0;
+        // TODO: replace with endpoint.clear();
+        this_.m_destination_endpoint = Endpoint();
 
         if (should_delete) {
             this_.m_parent->schedule_removal();
@@ -299,12 +294,8 @@ void TcpClient::schedule_removal() {
     }
 }
 
-std::uint32_t TcpClient::ipv4_addr() const {
-    return m_impl->ipv4_addr();
-}
-
-std::uint16_t TcpClient::port() const {
-    return m_impl->port();
+const Endpoint& TcpClient::endpoint() const {
+    return m_impl->endpoint();
 }
 
 void TcpClient::connect(const Endpoint& endpoint,

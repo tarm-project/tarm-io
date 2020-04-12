@@ -21,7 +21,7 @@ public:
     friend class UdpPeer;
     friend class UdpServer;
 
-    IO_ALLOW_MOVE(Endpoint);
+    IO_DECLARE_DLL_PUBLIC_MOVE(Endpoint);;
 
     IO_DLL_PUBLIC Endpoint& operator=(const Endpoint& other);
     IO_DLL_PUBLIC Endpoint(const Endpoint& other);
@@ -47,6 +47,9 @@ public:
     IO_DLL_PUBLIC std::uint16_t port() const;
 
     IO_DLL_PUBLIC Type type() const;
+
+    // TODO: unit test this;
+    IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
 
 private:
     void* raw_endpoint();

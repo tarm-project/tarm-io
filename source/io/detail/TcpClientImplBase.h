@@ -14,15 +14,11 @@ public:
     TcpClientImplBase(EventLoop& loop, ParentType& parent);
     ~TcpClientImplBase();
 
+    const Endpoint& endpoint() const;
+
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
     void send_data(std::string&& message, typename ParentType::EndSendCallback callback);
-
-    void set_ipv4_addr(std::uint32_t value);
-    void set_port(std::uint16_t value);
-
-    std::uint32_t ipv4_addr() const;
-    std::uint16_t port() const;
 
     std::size_t pending_write_requests() const;
 
@@ -50,11 +46,10 @@ protected:
     uv_loop_t* m_uv_loop;
     ParentType* m_parent;
 
+    Endpoint m_destination_endpoint;
+
     uv_tcp_t* m_tcp_stream = nullptr;
     std::size_t m_pending_write_requests = 0;
-
-    std::uint32_t m_ipv4_addr = 0;
-    std::uint16_t m_port = 0;
 
     std::shared_ptr<char> m_read_buf;
     std::size_t m_read_buf_size = 0;
@@ -89,6 +84,11 @@ TcpClientImplBase<ParentType, ImplType>::TcpClientImplBase(EventLoop& loop, Pare
 template<typename ParentType, typename ImplType>
 TcpClientImplBase<ParentType, ImplType>::~TcpClientImplBase() {
     m_read_buf.reset();
+}
+
+template<typename ParentType, typename ImplType>
+const Endpoint& TcpClientImplBase<ParentType, ImplType>::endpoint() const {
+    return m_destination_endpoint;
 }
 
 template<typename ParentType, typename ImplType>
@@ -172,26 +172,6 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(std::string&& message, t
 template<typename ParentType, typename ImplType>
 std::size_t TcpClientImplBase<ParentType, ImplType>::pending_write_requests() const {
     return m_pending_write_requests;
-}
-
-template<typename ParentType, typename ImplType>
-std::uint32_t TcpClientImplBase<ParentType, ImplType>::ipv4_addr() const {
-    return m_ipv4_addr;
-}
-
-template<typename ParentType, typename ImplType>
-std::uint16_t TcpClientImplBase<ParentType, ImplType>::port() const {
-    return m_port;
-}
-
-template<typename ParentType, typename ImplType>
-void TcpClientImplBase<ParentType, ImplType>::set_ipv4_addr(std::uint32_t value) {
-    m_ipv4_addr = value;
-}
-
-template<typename ParentType, typename ImplType>
-void TcpClientImplBase<ParentType, ImplType>::set_port(std::uint16_t value) {
-    m_port = value;
 }
 
 template<typename ParentType, typename ImplType>
