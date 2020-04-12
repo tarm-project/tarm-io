@@ -31,6 +31,8 @@ std::string Error::string() const {
             return "No error. Status OK";
         case StatusCode::FILE_NOT_OPEN:
             return "File is not opened";
+        case StatusCode::TRANSPORT_INIT_FAILURE:
+            return "Failed to init underlying transport or protocol";
         case StatusCode::TLS_CERTIFICATE_FILE_NOT_EXIST:
             return "Certificate error. File does not exist";
         case StatusCode::TLS_PRIVATE_KEY_FILE_NOT_EXIST:
