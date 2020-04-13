@@ -21,6 +21,7 @@ protected:
 TEST_F(UdpClientServerTest, client_default_state) {
     io::EventLoop loop;
     auto client = new io::UdpClient(loop);
+    EXPECT_EQ(io::Endpoint::UNDEFINED, client->endpoint().type());
 
     client->schedule_removal();
     ASSERT_EQ(0, loop.run());
@@ -107,15 +108,18 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
 
     const std::string message = "Hello world!";
 
-    bool data_sent = false;
-    bool data_received = false;
+    std::size_t server_on_data_receive_count = 0;
+    std::size_t client_on_data_send_count = 0;
 
     auto server = new io::UdpServer(loop);
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(server, &peer.server());
-            data_received = true;
+            EXPECT_EQ("127.0.0.1", peer.endpoint().address_string());
+            EXPECT_NE(0, peer.endpoint().port());
+
+            ++server_on_data_receive_count;
             std::string s(data.buf.get(), data.size);
             EXPECT_EQ(message, s);
             server->schedule_removal();
@@ -126,17 +130,23 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
 
     auto client = new io::UdpClient(loop);
     EXPECT_FALSE(client->set_destination({0x7F000001u, m_default_port}));
+    EXPECT_EQ("127.0.0.1", client->endpoint().address_string());
+    EXPECT_EQ(m_default_port, client->endpoint().port());
     client->send_data(message,
         [&](io::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            data_sent = true;
+            ++client_on_data_send_count;
             client.schedule_removal();
         }
     );
 
+    EXPECT_EQ(0, server_on_data_receive_count);
+    EXPECT_EQ(0, client_on_data_send_count);
+
     ASSERT_EQ(0, loop.run());
-    EXPECT_TRUE(data_sent);
-    EXPECT_TRUE(data_received);
+
+    EXPECT_EQ(1, server_on_data_receive_count);
+    EXPECT_EQ(1, client_on_data_send_count);
 }
 
 TEST_F(UdpClientServerTest, client_send_data_without_destination) {

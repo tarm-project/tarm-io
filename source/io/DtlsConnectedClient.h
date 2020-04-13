@@ -3,6 +3,7 @@
 #include "CommonMacros.h"
 #include "DataChunk.h"
 #include "DtlsVersion.h"
+#include "Endpoint.h"
 #include "EventLoop.h"
 #include "Error.h"
 #include "Export.h"
@@ -30,6 +31,8 @@ public:
 
     IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC bool is_open() const;
+
+    IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);

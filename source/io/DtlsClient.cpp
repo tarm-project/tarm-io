@@ -19,9 +19,6 @@ public:
     Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClient& parent);
     ~Impl();
 
-    std::uint32_t ipv4_addr() const;
-    std::uint16_t port() const;
-
     void connect(const Endpoint& endpoint,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
@@ -55,14 +52,6 @@ DtlsClient::Impl::Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClie
     m_version_range(version_range),
     m_openssl_context(loop, parent) {
     IO_LOG(m_loop, TRACE, m_parent, "New DtlsClient");
-}
-
-std::uint32_t DtlsClient::Impl::ipv4_addr() const {
-    return m_client->ipv4_addr();
-}
-
-std::uint16_t DtlsClient::Impl::port() const {
-    return m_client->port();
 }
 
 void DtlsClient::Impl::connect(const Endpoint& endpoint,
@@ -188,12 +177,8 @@ void DtlsClient::schedule_removal() {
     }
 }
 
-std::uint32_t DtlsClient::ipv4_addr() const {
-    return m_impl->ipv4_addr();
-}
-
-std::uint16_t DtlsClient::port() const {
-    return m_impl->port();
+const Endpoint& DtlsClient::endpoint() const {
+    return m_impl->endpoint();
 }
 
 void DtlsClient::connect(const Endpoint& endpoint,

@@ -37,17 +37,6 @@ UdpPeer::Impl::Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const 
     m_raw_endpoint = m_destination_endpoint.raw_endpoint();
 }
 
-// TODO: ipv6
-std::uint32_t UdpPeer::Impl::address() {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(m_destination_endpoint.raw_endpoint());
-    return network_to_host(unix_addr.sin_addr.s_addr);
-}
-
-std::uint16_t UdpPeer::Impl::port() {
-    auto& unix_addr = *reinterpret_cast<sockaddr_in*>(m_destination_endpoint.raw_endpoint());
-    return network_to_host(unix_addr.sin_port);
-}
-
 UdpServer& UdpPeer::Impl::server() {
     return *m_server;
 }
@@ -81,14 +70,6 @@ void UdpPeer::set_last_packet_time(std::uint64_t time) {
 
 std::uint64_t UdpPeer::last_packet_time() const {
     return m_impl->last_packet_time();
-}
-
-std::uint32_t UdpPeer::address() const {
-    return m_impl->address();
-}
-
-std::uint16_t UdpPeer::port() const {
-    return m_impl->port();
 }
 
 void UdpPeer::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {

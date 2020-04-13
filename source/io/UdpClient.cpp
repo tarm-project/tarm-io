@@ -26,9 +26,6 @@ public:
 
     Error set_destination(const Endpoint& endpoint);
 
-    std::uint32_t ipv4_addr() const;
-    std::uint16_t port() const;
-
 protected:
     Error start_receive_impl();
 
@@ -126,17 +123,6 @@ Error UdpClient::Impl::start_receive_impl() {
     return Error(0);
 }
 
-// TODO: ipv6
-std::uint32_t UdpClient::Impl::ipv4_addr() const {
-    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(m_destination_endpoint.raw_endpoint());
-    return network_to_host(unix_addr.sin_addr.s_addr);
-}
-
-std::uint16_t UdpClient::Impl::port() const {
-    const auto& unix_addr = *reinterpret_cast<const sockaddr_in*>(m_destination_endpoint.raw_endpoint());
-    return network_to_host(unix_addr.sin_port);
-}
-
 ///////////////////////////////////////////  static  ////////////////////////////////////////////
 
 void UdpClient::Impl::on_data_received(uv_udp_t* handle,
@@ -150,7 +136,6 @@ void UdpClient::Impl::on_data_received(uv_udp_t* handle,
 
     this_.set_last_packet_time(::uv_hrtime());
 
-    // TODO: need some mechanism to reuse memory
     std::shared_ptr<const char> buf(uv_buf->base, std::default_delete<char[]>());
 
     if (!this_.m_receive_callback) {
@@ -231,12 +216,8 @@ std::uint16_t UdpClient::bound_port() const {
     return m_impl->bound_port();
 }
 
-std::uint32_t UdpClient::ipv4_addr() const {
-    return m_impl->ipv4_addr();
-}
-
-std::uint16_t UdpClient::port() const {
-    return m_impl->port();
+const Endpoint& UdpClient::endpoint() const {
+    return m_impl->endpoint();
 }
 
 bool UdpClient::is_open() const {

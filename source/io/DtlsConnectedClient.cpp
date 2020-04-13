@@ -99,13 +99,6 @@ const DtlsServer& DtlsConnectedClient::Impl::server() const {
     return *m_dtls_server;
 }
 
-/*
-
-void DtlsConnectedClient::Impl::ssl_set_versions() {
-    this->set_dtls_version(std::get<0>(m_dtls_context.dtls_version_range), std::get<1>(m_dtls_context.dtls_version_range));
-}
-*/
-
 void DtlsConnectedClient::Impl::ssl_set_state() {
     SSL_set_accept_state(this->ssl());
 }
@@ -191,6 +184,10 @@ DtlsServer& DtlsConnectedClient::server() {
 
 const DtlsServer& DtlsConnectedClient::server() const {
     return m_impl->server();
+}
+
+const Endpoint& DtlsConnectedClient::endpoint() const {
+    return m_impl->endpoint();
 }
 
 } // namespace io

@@ -48,6 +48,8 @@ public:
     TlsVersion negotiated_tls_version() const;
     DtlsVersion negotiated_dtls_version() const;
 
+    const Endpoint& endpoint() const;
+
 protected:
     void internal_read_from_sll_and_send(typename ParentType::UnderlyingClientType::EndSendCallback on_send);
 
@@ -398,6 +400,11 @@ void OpenSslClientImplBase<ParentType, ImplType>::ssl_state_callback(const SSL* 
             this_.on_alert(ret & 0xFF);
         }
     }
+}
+
+template<typename ParentType, typename ImplType>
+const Endpoint& OpenSslClientImplBase<ParentType, ImplType>::endpoint() const {
+    return m_client->endpoint();
 }
 
 } // namespace detail

@@ -35,8 +35,7 @@ public:
 
     IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint);
 
-    IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
-    IO_DLL_PUBLIC std::uint16_t port() const;
+    IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
     IO_DLL_PUBLIC  bool is_open() const;
 

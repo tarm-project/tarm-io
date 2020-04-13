@@ -30,10 +30,6 @@ public:
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
 
-    // TODO: remove address() method
-    IO_DLL_PUBLIC std::uint32_t address() const;
-    IO_DLL_PUBLIC std::uint16_t port() const;
-
     IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
     IO_DLL_PUBLIC std::uint64_t last_packet_time() const;
