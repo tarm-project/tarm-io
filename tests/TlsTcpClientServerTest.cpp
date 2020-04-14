@@ -180,12 +180,16 @@ TEST_F(TlsTcpClientServerTest, server_address_in_use) {
     ASSERT_EQ(0, loop.run());
 }
 
-// TODO:
-TEST_F(TlsTcpClientServerTest, DISABLED_client_send_without_connect_no_callback) {
+TEST_F(TlsTcpClientServerTest, client_send_without_connect_no_callback) {
     io::EventLoop loop;
 
     auto client = new io::TlsTcpClient(loop);
-    client->send_data("Hello"); // Just do nothing and hope for miracle
+    client->send_data("Hello", // Just do nothing and hope for miracle
+        [](io::TlsTcpClient& client, const io::Error& error){
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
+        }
+    );
     client->schedule_removal();
 
     ASSERT_EQ(0, loop.run());
