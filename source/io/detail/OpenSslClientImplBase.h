@@ -217,8 +217,9 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
         int code = SSL_get_error(m_ssl.get(), decrypted_size);
         if (code != SSL_ERROR_WANT_READ) {
             const auto openssl_error_code = ERR_get_error();
-            IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size. Error code:", openssl_error_code, "message:", ERR_reason_error_string(openssl_error_code));
-            on_ssl_read({nullptr, 0}, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
+            const char* str = ERR_reason_error_string(openssl_error_code);
+            IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size. Error code:", openssl_error_code, "message:", str ? str : "");
+            on_ssl_read({nullptr, 0}, Error(StatusCode::OPENSSL_ERROR, str ? str : ""));
             return;
         }
     }
@@ -252,17 +253,25 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
         if (error == SSL_ERROR_WANT_READ) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_READ");
 
-            internal_read_from_sll_and_send(nullptr); // TODO: if send of this handshake fail we will not know, as example set invalid address of UDP raw endpoint and run test Udp*.client_and_server_send_message_each_other
+            internal_read_from_sll_and_send(
+                [this](typename ParentType::UnderlyingClientType& client, const io::Error& error) {
+                    if (error) {
+                        on_handshake_failed(SSL_R_PEER_ERROR, error);
+                    }
+                }
+            );
         } else if (error == SSL_ERROR_WANT_WRITE) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_WRITE");
         } else {
             const auto openssl_error_code = ERR_get_error();
             IO_LOG(m_loop, ERROR, m_parent, "Handshake error:", openssl_error_code);
             if (write_pending) {
+                // Just notification for other side without care about result
                 internal_read_from_sll_and_send(nullptr);
             }
 
-            on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
+            const char* str = ERR_reason_error_string(openssl_error_code);
+            on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, str ? str : ""));
         }
     } else if (handshake_result == 1) {
         IO_LOG(m_loop, DEBUG, m_parent, "Connected!");
@@ -280,8 +289,9 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
         }
     } else {
         const auto openssl_error_code = ERR_get_error();
-        IO_LOG(m_loop, ERROR, m_parent, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol. Error code:", openssl_error_code, "message:", ERR_reason_error_string(openssl_error_code));
-        on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
+        const char* str = ERR_reason_error_string(openssl_error_code);
+        IO_LOG(m_loop, ERROR, m_parent, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol. Error code:", openssl_error_code, "message:", str ? str : "");
+        on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, str ? str : ""));
     }
 }
 
@@ -299,7 +309,8 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<cons
 
         const auto openssl_error_code = ERR_get_error();
         if (callback) {
-            callback(*m_parent, Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code)));
+            const char* str = ERR_reason_error_string(openssl_error_code);
+            callback(*m_parent, Error(StatusCode::OPENSSL_ERROR, str ? str : ""));
         }
 
         return;
@@ -380,7 +391,8 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_shutdown(typename ParentT
     auto return_code = SSL_shutdown(m_ssl.get());
     if (return_code < 0) {
         const auto openssl_error_code = ERR_get_error();
-        return Error(StatusCode::OPENSSL_ERROR, ERR_reason_error_string(openssl_error_code));
+        const char* str = ERR_reason_error_string(openssl_error_code);
+        return Error(StatusCode::OPENSSL_ERROR, str ? str : "");
     }
 
     const auto write_pending = BIO_pending(m_ssl_write_bio);
