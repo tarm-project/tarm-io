@@ -2,6 +2,8 @@
 
 #include "detail/Common.h"
 
+#include <assert.h>
+
 namespace io {
 
 Error::Error(std::int64_t libuv_code) {
