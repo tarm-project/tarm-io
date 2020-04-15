@@ -63,9 +63,12 @@ DtlsConnectedClient::Impl::Impl(EventLoop& loop,
     m_close_callback(close_callback) {
     m_client = &udp_client;
     m_client->set_user_data(&parent);
+
+    IO_LOG(m_loop, TRACE, m_parent, "New DtlsConnectedClient");
 }
 
 DtlsConnectedClient::Impl::~Impl() {
+    IO_LOG(m_loop, TRACE, m_parent, "Delete DtlsConnectedClient");
 }
 
 Error DtlsConnectedClient::Impl::init_ssl() {

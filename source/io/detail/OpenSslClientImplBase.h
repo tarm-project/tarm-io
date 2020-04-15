@@ -31,6 +31,7 @@ public:
     virtual void on_ssl_read(const DataChunk& data, const Error& error) = 0;
 
     void do_handshake();
+    void finish_handshake();
     virtual void on_handshake_complete() = 0;
     virtual void on_handshake_failed(long openssl_error_code, const Error& error) = 0;
 
@@ -274,15 +275,19 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
             on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, str ? str : ""));
         }
     } else if (handshake_result == 1) {
-        IO_LOG(m_loop, DEBUG, m_parent, "Connected!");
-
         if (write_pending) {
-            internal_read_from_sll_and_send(nullptr);
+            internal_read_from_sll_and_send(
+                [this](typename ParentType::UnderlyingClientType& client, const io::Error& error) {
+                    if (error) {
+                        on_handshake_failed(SSL_R_PEER_ERROR, error);
+                    } else {
+                        finish_handshake();
+                    }
+                }
+            );
+        } else {
+            finish_handshake();
         }
-
-        m_ssl_handshake_complete = true;
-
-        on_handshake_complete();
 
         if (read_pending) {
             read_from_ssl();
@@ -293,6 +298,13 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
         IO_LOG(m_loop, ERROR, m_parent, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol. Error code:", openssl_error_code, "message:", str ? str : "");
         on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, str ? str : ""));
     }
+}
+
+template<typename ParentType, typename ImplType>
+void OpenSslClientImplBase<ParentType, ImplType>::finish_handshake() {
+    IO_LOG(m_loop, DEBUG, m_parent, "Connected!");
+    m_ssl_handshake_complete = true;
+    on_handshake_complete();
 }
 
 template<typename ParentType, typename ImplType>
