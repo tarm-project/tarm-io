@@ -1367,7 +1367,7 @@ TEST_F(TcpClientServerTest, client_shutdown_in_connect) {
             // sending data after shutdown -> error
             client.send_data("ololo", [](io::TcpClient& client, const io::Error& error) {
                 EXPECT_TRUE(error);
-                EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
+                EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
             });
         }
     );
@@ -1590,7 +1590,7 @@ TEST_F(TcpClientServerTest, client_send_without_connect_with_callback) {
     client->send_data("Hello",
         [](io::TcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
-            EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
+            EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
             client.schedule_removal();
         }
     );
@@ -2340,7 +2340,7 @@ TEST_F(TcpClientServerTest, connected_client_write_after_close_in_server_receive
                 [&](io::TcpConnectedClient& client, const io::Error& error) {
                     EXPECT_TRUE(error);
                     ++server_on_send_count;
-                    EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
+                    EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
                 }
             );
         },

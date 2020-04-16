@@ -165,7 +165,7 @@ void TcpServer::Impl::close_impl() {
     } else {
         if (m_end_server_callback) {
             m_loop->schedule_callback([=]() {
-                m_end_server_callback(*m_parent, Error(io::StatusCode::SOCKET_IS_NOT_CONNECTED));
+                m_end_server_callback(*m_parent, Error(io::StatusCode::NOT_CONNECTED));
             });
         }
     }

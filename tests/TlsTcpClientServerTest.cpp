@@ -110,7 +110,7 @@ TEST_F(TlsTcpClientServerTest, client_send_without_connect_with_callback) {
     client->send_data("Hello",
         [](io::TlsTcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
-            EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
+            EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
             client.schedule_removal();
         }
     );
@@ -187,7 +187,7 @@ TEST_F(TlsTcpClientServerTest, client_send_without_connect_no_callback) {
     client->send_data("Hello", // Just do nothing and hope for miracle
         [](io::TlsTcpClient& client, const io::Error& error){
             EXPECT_TRUE(error);
-            EXPECT_EQ(io::StatusCode::SOCKET_IS_NOT_CONNECTED, error.code());
+            EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
         }
     );
     client->schedule_removal();

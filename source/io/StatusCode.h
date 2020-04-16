@@ -22,6 +22,7 @@ namespace io {
     X(TLS_CERTIFICATE_INVALID) \
     X(TLS_PRIVATE_KEY_INVALID) \
     X(TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH) \
+    X(NOT_CONNECTED) \
     /* compound error which usually includes custom message string */ \
     X(OPENSSL_ERROR) \
     /*libuv codes*/ \

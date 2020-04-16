@@ -46,6 +46,8 @@ std::string Error::string() const {
             return "Private key error. Private key is invalid or corrupted";
         case StatusCode::TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH:
             return "Private key and certificate do not match";
+        case StatusCode::NOT_CONNECTED:
+            return "Not connected";
         case StatusCode::OPENSSL_ERROR:
             return "Openssl error: " + m_custom_error_message;
 

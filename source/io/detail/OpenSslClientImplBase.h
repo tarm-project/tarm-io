@@ -311,7 +311,7 @@ template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
 
     if (!is_open()) {
-        callback(*m_parent, Error(StatusCode::SOCKET_IS_NOT_CONNECTED));
+        callback(*m_parent, Error(StatusCode::NOT_CONNECTED));
         return;
     }
 
