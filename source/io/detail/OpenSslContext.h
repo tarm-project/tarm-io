@@ -9,11 +9,6 @@
 
 #include <memory>
 
-// TODO: move to common macro
-#define IO_MAKE_LOGGED_ERROR(LOOP, ADDRESS, STATUS_CODE, MESSAGE) \
-            (IO_LOG(LOOP, ERROR, ADDRESS, MESSAGE)),              \
-            ::io::Error(STATUS_CODE, MESSAGE)
-
 namespace io {
 namespace detail {
 
