@@ -99,16 +99,22 @@ void TcpClient::Impl::connect_impl(const Endpoint& endpoint,
 
     m_destination_endpoint = endpoint;
 
+    const Error init_error = init_stream();
+    if (init_error) {
+        if (connect_callback) {
+            connect_callback(*m_parent, Error(StatusCode::INVALID_ARGUMENT));
+        }
+        return;
+    }
+
     if (m_connect_req == nullptr) {
         m_connect_req = new uv_connect_t;
         m_connect_req->data = this;
     }
 
     auto addr = reinterpret_cast<const ::sockaddr_in*>(raw_endpoint);
-
     IO_LOG(m_loop, DEBUG, m_parent, "endpoint:", endpoint);
 
-    init_stream();
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;
     m_close_callback = close_callback;

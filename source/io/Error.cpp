@@ -229,4 +229,9 @@ bool operator!=(const Error& s1, const Error& s2) {
     return !operator==(s1, s2);
 }
 
+std::ostream& operator<<(std::ostream& os, const Error& err) {
+    os << err.string();
+    return os;
+}
+
 } // namespace io

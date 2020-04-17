@@ -53,6 +53,7 @@ protected:
     IO_DLL_PUBLIC void schedule_removal() override;
 
 private:
+    Error init_stream();
     void start_read(DataReceiveCallback data_receive_callback);
     void* tcp_client_stream();
 

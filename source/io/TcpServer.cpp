@@ -204,18 +204,11 @@ bool TcpServer::Impl::schedule_removal() {
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
     assert(server && "server should be not null");
+    assert(server->data && "server should have user data set");
 
     auto& this_ = *reinterpret_cast<TcpServer::Impl*>(server->data);
 
     IO_LOG(this_.m_loop, TRACE, this_.m_parent, "");
-
-    if (status < 0) {
-        // TODO: error handling
-        // TODO: need to find better error reporting solution in case when TOO_MANY_OPEN_FILES_ERROR
-        //       because it spams log. For example, could record last error and log only when last error != current one
-        IO_LOG(this_.m_loop, ERROR, "error:", uv_strerror(status));
-        return;
-    }
 
     auto on_client_close_callback = [&this_](TcpConnectedClient& client, const Error& error) {
         if (this_.m_close_connection_callback) {
@@ -224,6 +217,25 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
     };
 
     auto tcp_client = new TcpConnectedClient(*this_.m_loop, *this_.m_parent, on_client_close_callback);
+    const auto init_error = tcp_client->init_stream();
+    if (init_error) {
+        IO_LOG(this_.m_loop, ERROR, this_.m_parent, "init_error");
+        if (this_.m_new_connection_callback) {
+            this_.m_new_connection_callback(*tcp_client, init_error);
+        }
+        tcp_client->schedule_removal(); // TODO: use some smart pointer instead of manual scheduling???
+        return;
+    }
+
+    const Error error(status);
+    if (error) {
+        IO_LOG(this_.m_loop, ERROR, this_.m_parent, error);
+        if (this_.m_new_connection_callback) {
+            this_.m_new_connection_callback(*tcp_client, error);
+        }
+        tcp_client->schedule_removal();
+        return;
+    }
 
     auto accept_status = uv_accept(server, reinterpret_cast<uv_stream_t*>(tcp_client->tcp_client_stream()));
     if (accept_status == 0) {

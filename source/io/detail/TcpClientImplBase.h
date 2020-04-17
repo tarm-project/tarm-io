@@ -22,7 +22,7 @@ public:
 
     std::size_t pending_write_requests() const;
 
-    void init_stream();
+    Error init_stream();
 
     bool is_open() const;
 
@@ -92,13 +92,19 @@ const Endpoint& TcpClientImplBase<ParentType, ImplType>::endpoint() const {
 }
 
 template<typename ParentType, typename ImplType>
-void TcpClientImplBase<ParentType, ImplType>::init_stream() {
+Error TcpClientImplBase<ParentType, ImplType>::init_stream() {
     assert (m_tcp_stream == nullptr);
 
     m_tcp_stream = new uv_tcp_t;
-    // TODO: error handling
-    uv_tcp_init(m_uv_loop, m_tcp_stream);
+    m_tcp_stream->data = nullptr;
+
+    Error init_error = uv_tcp_init(m_uv_loop, m_tcp_stream);
+    if (init_error) {
+        return init_error;
+    }
     m_tcp_stream->data = this;
+
+    return Error(0);
 }
 
 template<typename ParentType, typename ImplType>

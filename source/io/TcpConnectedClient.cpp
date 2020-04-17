@@ -41,8 +41,6 @@ private:
 TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, CloseCallback cloase_callback) :
     TcpClientImplBase(loop, parent),
     m_server(&server) {
-    init_stream();
-    m_is_open = true;
     m_close_callback = cloase_callback;
 }
 
@@ -55,6 +53,7 @@ TcpConnectedClient::Impl::~Impl() {
 
 void TcpConnectedClient::Impl::set_endpoint(const Endpoint& endpoint) {
     m_destination_endpoint = endpoint;
+    m_is_open = true;
 }
 
 void TcpConnectedClient::Impl::shutdown() {
@@ -82,11 +81,8 @@ void TcpConnectedClient::Impl::close() {
 
     m_is_open = false;
 
-    //if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
-        uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
-        //m_tcp_stream->data = nullptr;
-        //m_tcp_stream = nullptr;
-    //}
+    // TODO: check uv_is_closing???
+    uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
 }
 
 void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callback) {
@@ -257,6 +253,10 @@ const TcpServer& TcpConnectedClient::server() const {
 
 void TcpConnectedClient::set_endpoint(const Endpoint& endpoint) {
     return m_impl->set_endpoint(endpoint);
+}
+
+Error TcpConnectedClient::init_stream() {
+    return m_impl->init_stream();
 }
 
 } // namespace io

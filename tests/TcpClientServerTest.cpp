@@ -126,8 +126,8 @@ TEST_F(TcpClientServerTest, client_connect_to_invalid_address) {
             EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
             EXPECT_FALSE(client.is_open());
 
-            client.schedule_removal();
             ++client_on_connect_count;
+            client.schedule_removal();
         }
     );
 

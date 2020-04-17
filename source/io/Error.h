@@ -4,6 +4,7 @@
 #include "Export.h"
 #include "StatusCode.h"
 
+#include <ostream>
 #include <string>
 
 namespace io {
@@ -33,5 +34,8 @@ bool operator==(const Error& s1, const Error& s2);
 
 IO_DLL_PUBLIC
 bool operator!=(const Error& s1, const Error& s2);
+
+IO_DLL_PUBLIC
+std::ostream& operator<<(std::ostream& os, const Error& err);
 
 } // namespace io
