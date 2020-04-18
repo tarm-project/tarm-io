@@ -56,6 +56,12 @@ UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, Pare
 
 template<typename ParentType, typename ImplType>
 void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+    const auto handle_init_error = UdpImplBase<ParentType, ImplType>::ensure_handle_inited();
+    if (handle_init_error) {
+        schedule_send_error(callback, handle_init_error);
+        return;
+    }
+
     if (size == 0) {
         schedule_send_error(callback, Error(StatusCode::INVALID_ARGUMENT));
         return;

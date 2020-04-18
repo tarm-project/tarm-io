@@ -74,6 +74,11 @@ UdpClient::Impl::~Impl() {
 
 // TODO: use uv_udp_connect if libuv version is >= 1.27.0
 Error UdpClient::Impl::set_destination(const Endpoint& endpoint) {
+    const auto handle_init_error = ensure_handle_inited();
+    if (handle_init_error) {
+        return handle_init_error;
+    }
+
     if (endpoint.type() == Endpoint::UNDEFINED) {
         return Error(StatusCode::INVALID_ARGUMENT);
     }
@@ -115,6 +120,11 @@ bool UdpClient::Impl::close(CloseHandler handler) {
 }
 
 Error UdpClient::Impl::start_receive_impl() {
+    const auto handle_init_error = ensure_handle_inited();
+    if (handle_init_error) {
+        return handle_init_error;
+    }
+
     Error recv_start_error = uv_udp_recv_start(m_udp_handle.get(), detail::default_alloc_buffer, on_data_received);
     if (recv_start_error) {
         return recv_start_error;

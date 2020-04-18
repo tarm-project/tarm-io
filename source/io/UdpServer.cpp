@@ -57,6 +57,11 @@ Error UdpServer::Impl::bind(const Endpoint& endpoint) {
         return Error(StatusCode::INVALID_ARGUMENT);
     }
 
+    const auto handle_init_error = ensure_handle_inited();
+    if (handle_init_error) {
+        return handle_init_error;
+    }
+
     // TODO: UV_UDP_REUSEADDR ????
     auto uv_status = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const struct sockaddr*>(endpoint.raw_endpoint()), 0);
     return Error(uv_status);
@@ -121,7 +126,7 @@ void UdpServer::Impl::close() {
 }
 
 bool UdpServer::Impl::close_with_removal() {
-    if (m_udp_handle->data) {
+    if (is_open()) {
         Error error = uv_udp_recv_stop(m_udp_handle.get());
         uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), on_close_with_removal);
         return false; // not ready to remove

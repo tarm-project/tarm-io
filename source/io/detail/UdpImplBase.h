@@ -3,6 +3,7 @@
 #include "io/BufferSizeResult.h"
 #include "io/Endpoint.h"
 #include "io/EventLoop.h"
+#include "io/Logger.h"
 
 #include "Common.h"
 
@@ -20,6 +21,7 @@ public:
     UdpImplBase(EventLoop& loop, ParentType& parent);
     UdpImplBase(EventLoop& loop, ParentType& parent, uv_udp_t* udp_handle);
 
+    Error ensure_handle_inited();
     bool is_open() const;
 
     void set_last_packet_time(std::uint64_t time);
@@ -32,6 +34,7 @@ public:
     Error set_send_buffer_size(std::size_t size);
 
     const Endpoint& endpoint() const;
+
 
 protected:
     Error check_buffer_size_value(std::size_t size) const;
@@ -50,6 +53,7 @@ protected:
 
 private:
     std::uint64_t m_last_packet_time_ns = 0;
+    bool m_udp_handle_inited = false;
 };
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
@@ -62,15 +66,9 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_udp_handle(new uv_udp_t, std::default_delete<uv_udp_t>()) {
 
     m_udp_handle.get()->u.fd = 0;
+    m_udp_handle->data = this;
 
     this->set_last_packet_time(::uv_hrtime());
-
-    auto status = uv_udp_init(m_uv_loop, m_udp_handle.get());
-    if (status < 0) {
-        // TODO: check status
-    }
-
-    m_udp_handle->data = this;
 }
 
 template<typename ParentType, typename ImplType>
@@ -81,6 +79,23 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_udp_handle(udp_handle, [](uv_udp_t*){}) {
         m_udp_handle->data = udp_handle->data;
         this->set_last_packet_time(::uv_hrtime());
+        m_udp_handle_inited = true;
+}
+
+template<typename ParentType, typename ImplType>
+Error UdpImplBase<ParentType, ImplType>::ensure_handle_inited() {
+    if (m_udp_handle_inited) {
+        return Error(0);
+    }
+
+    const Error init_error = uv_udp_init(m_uv_loop, m_udp_handle.get());
+    if (init_error) {
+        IO_LOG(m_loop, ERROR, this->m_parent, init_error);
+        return init_error;
+    }
+
+    m_udp_handle_inited = true;
+    return Error(0);
 }
 
 template<typename ParentType, typename ImplType>
@@ -94,7 +109,9 @@ void UdpImplBase<ParentType, ImplType>::on_close_with_removal(uv_handle_t* handl
 
 template<typename ParentType, typename ImplType>
 bool UdpImplBase<ParentType, ImplType>::is_open() const {
-    return m_udp_handle ? !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_udp_handle.get())) : false;
+    return m_udp_handle_inited ?
+           (m_udp_handle ? !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_udp_handle.get())) : false) :
+           false;
 }
 
 template<typename ParentType, typename ImplType>
@@ -109,6 +126,10 @@ std::uint64_t UdpImplBase<ParentType, ImplType>::last_packet_time() const {
 
 template<typename ParentType, typename ImplType>
 BufferSizeResult UdpImplBase<ParentType, ImplType>::receive_buffer_size() const {
+    if (!is_open()) {
+        return {Error(StatusCode::PROTOCOL_NOT_AVAILABLE), 0};
+    }
+
     int receive_size = 0;
     const Error error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
 #if defined(__linux__)
@@ -122,6 +143,10 @@ BufferSizeResult UdpImplBase<ParentType, ImplType>::receive_buffer_size() const 
 
 template<typename ParentType, typename ImplType>
 BufferSizeResult UdpImplBase<ParentType, ImplType>::send_buffer_size() const {
+    if (!is_open()) {
+        return {Error(StatusCode::PROTOCOL_NOT_AVAILABLE), 0};
+    }
+
     int receive_size = 0;
     const Error error = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
 #if defined(__linux__)
@@ -150,6 +175,11 @@ Error UdpImplBase<ParentType, ImplType>::check_buffer_size_value(std::size_t siz
 
 template<typename ParentType, typename ImplType>
 Error UdpImplBase<ParentType, ImplType>::set_receive_buffer_size(std::size_t size) {
+    const auto handle_init_error = ensure_handle_inited();
+    if (handle_init_error) {
+        return handle_init_error;
+    }
+
     auto parameter_error = check_buffer_size_value(size);
     if (parameter_error) {
         return parameter_error;
@@ -166,6 +196,11 @@ Error UdpImplBase<ParentType, ImplType>::set_receive_buffer_size(std::size_t siz
 
 template<typename ParentType, typename ImplType>
 Error UdpImplBase<ParentType, ImplType>::set_send_buffer_size(std::size_t size) {
+    const auto handle_init_error = ensure_handle_inited();
+    if (handle_init_error) {
+        return handle_init_error;
+    }
+
     auto parameter_error = check_buffer_size_value(size);
     if (parameter_error) {
         return parameter_error;

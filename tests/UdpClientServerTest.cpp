@@ -425,14 +425,15 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
     EXPECT_FALSE(server->set_receive_buffer_size(min_receive_buffer_size + 16));
 
     auto client = new io::UdpClient(loop);
-    EXPECT_FALSE(client->set_destination({0x7F000001u, m_default_port}));
-    client->start_receive(
+        EXPECT_FALSE(client->set_destination({0x7F000001u, m_default_port}));
+    auto client_receive_start_error = client->start_receive(
         [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++client_on_receive_counter;
             client.schedule_removal();
         }
     );
+    EXPECT_FALSE(client_receive_start_error);
     EXPECT_FALSE(client->set_send_buffer_size(min_send_buffer_size));
     EXPECT_FALSE(client->set_receive_buffer_size(min_receive_buffer_size + 16));
 
