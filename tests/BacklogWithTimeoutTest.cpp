@@ -92,7 +92,7 @@ public:
     using Callback = std::function<void(FakeTimer&)>;
 
     IO_FORBID_COPY(FakeTimer);
-    IO_ALLOW_MOVE(FakeTimer);
+    IO_FORBID_MOVE(FakeTimer);
 
     FakeTimer(FakeLoop& loop) {
         auto& test_suite = *reinterpret_cast<BacklogWithTimeoutTest*>(loop.user_data());
@@ -480,6 +480,76 @@ TEST_F(BacklogWithTimeoutTest, remove_multiple_items) {
     }
 
     EXPECT_EQ(ELEMENTS_COUNT / 2, expired_counter);
+}
+
+TEST_F(BacklogWithTimeoutTest, move_constructor) {
+    using BacklogType = io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer>;
+
+    BacklogType* backlog_ptr = nullptr;
+
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](BacklogType& backlog, const TestItem& item) {
+        EXPECT_EQ(&backlog, backlog_ptr);
+        EXPECT_EQ(0, item.id);
+        ++expired_counter;
+    };
+
+    FakeLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer> backlog(
+        loop, 250, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    TestItem item_1(0);
+    EXPECT_TRUE(backlog.add_item(item_1));
+
+    auto backlog2 = std::move(backlog);
+    backlog_ptr = &backlog2;
+
+    EXPECT_EQ(0, expired_counter);
+
+    advance_clock(250);
+
+    EXPECT_EQ(1, expired_counter);
+}
+
+TEST_F(BacklogWithTimeoutTest, move_assignment) {
+    using BacklogType = io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer>;
+
+    BacklogType* backlog_ptr = nullptr;
+
+    std::size_t expired_counter = 0;
+    auto on_expired = [&](BacklogType& backlog, const TestItem& item) {
+        EXPECT_EQ(&backlog, backlog_ptr);
+        EXPECT_EQ(0, item.id);
+        ++expired_counter;
+    };
+
+    FakeLoop loop;
+    loop.set_user_data(this);
+    io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer> backlog(
+        loop, 250, on_expired, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    TestItem item_1(0);
+    EXPECT_TRUE(backlog.add_item(item_1));
+
+    // on_expired_2 will not be called because it will be replaced by moved callback from other backlog
+    std::size_t expired_counter_2 = 0;
+    auto on_expired_2 = [&](BacklogType& backlog, const TestItem& item) {
+        ++expired_counter_2;
+    };
+    io::BacklogWithTimeout<TestItem, FakeLoop, FakeTimer> backlog2(
+        loop, 500, on_expired_2, &TestItem::time_getter, &BacklogWithTimeoutTest::fake_monothonic_clock);
+
+    backlog2 = std::move(backlog);
+    backlog_ptr = &backlog2;
+
+    EXPECT_EQ(0, expired_counter);
+    EXPECT_EQ(0, expired_counter_2);
+
+    advance_clock(250);
+
+    EXPECT_EQ(1, expired_counter);
+    EXPECT_EQ(0, expired_counter_2);
 }
 
 // --- real loop and timer ---
