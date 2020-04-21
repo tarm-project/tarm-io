@@ -4,40 +4,31 @@
 
 namespace io {
 
-enum class DirectoryEntryType {
-    UNKNOWN = 0,
-    FILE,
-    DIR,
-    LINK,
-    FIFO,
-    SOCKET,
-    CHAR,
-    BLOCK
-};
+#define IO_LIST_OF_DIRECTORY_ENTRY_TYPES \
+    X(UNKNOWN) \
+    X(FILE) \
+    X(DIR) \
+    X(LINK) \
+    X(FIFO) \
+    X(SOCKET) \
+    X(CHAR) \
+    X(BLOCK)
 
-// TODO: reuse X macro like for error types
-inline
-std::ostream& operator<< (std::ostream& os, DirectoryEntryType type) {
-    switch (type) {
-        case DirectoryEntryType::UNKNOWN:
-            return os << "UNKNOWN";
-        case DirectoryEntryType::FILE:
-            return os << "FILE";
-        case DirectoryEntryType::DIR:
-            return os << "DIR";
-        case DirectoryEntryType::LINK:
-            return os << "LINK";
-        case DirectoryEntryType::FIFO:
-            return os << "FIFO";
-        case DirectoryEntryType::SOCKET:
-            return os << "SOCKET";
-        case DirectoryEntryType::CHAR:
-            return os << "CHAR";
-        case DirectoryEntryType::BLOCK:
-            return os << "BLOCK";
-        // omit default case to trigger compiler warning for missing cases
-    };
-    return os << static_cast<std::uint64_t>(type);
+#define X(PARAM) PARAM,
+enum class DirectoryEntryType {
+    IO_LIST_OF_DIRECTORY_ENTRY_TYPES
+};
+#undef X
+
+inline std::ostream& operator<< (std::ostream& out, DirectoryEntryType type) {
+    switch(type) {
+#define X(PARAM) case DirectoryEntryType::PARAM: return out << #PARAM; break;
+    IO_LIST_OF_DIRECTORY_ENTRY_TYPES
+#undef X
+    default:
+        assert(false);
+        return out << static_cast<std::uint64_t>(type);
+    }
 }
 
 

@@ -22,7 +22,7 @@ protected:
     boost::filesystem::path m_tmp_test_dir;
 };
 
-TEST_F(DirTest, default_constructor) {
+TEST_F(DirTest, default_state) {
     io::EventLoop loop;
 
     auto dir = new io::Dir(loop);
@@ -33,6 +33,12 @@ TEST_F(DirTest, default_constructor) {
     dir->schedule_removal();
 }
 
+TEST_F(DirTest, directory_entry_type_to_ostream) {
+    // Just basic check that it works
+    std::stringstream ss;
+    ss << io::DirectoryEntryType::FILE;
+    EXPECT_EQ("FILE", ss.str());
+}
 
 TEST_F(DirTest, open_then_close) {
     io::EventLoop loop;
