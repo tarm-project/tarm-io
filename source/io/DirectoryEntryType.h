@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ostream>
+#include <assert.h>
 
 namespace io {
 
