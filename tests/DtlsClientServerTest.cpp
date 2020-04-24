@@ -7,9 +7,10 @@
 #include "io/Timer.h"
 #include "io/global/Version.h"
 
+#include <chrono>
+#include <string>
 #include <thread>
 #include <vector>
-#include <string>
 
 struct DtlsClientServerTest : public testing::Test,
                               public LogRedirector {
@@ -1135,5 +1136,90 @@ TEST_F(DtlsClientServerTest, client_with_invalid_address_and_no_connect_callback
     ASSERT_EQ(0, loop.run());
 }
 
+TEST_F(DtlsClientServerTest, client_timeout) {
+    io::EventLoop loop;
+
+    const std::size_t COMMON_TIMEOUT_MS = 200;
+    const std::size_t SEND_TIMEOUT_MS = 150;
+
+    const auto start_time = std::chrono::system_clock::now();
+
+    std::size_t client_on_close_callback_count = 0;
+    std::size_t server_on_close_callback_count = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            // Note: here we capture client by reference in Timer's callback. This should not
+            //       be done in production code because it is impossible to track lifetime of
+            //       server-size objects outside of the server callbacks.
+            (new io::Timer(loop))->start(SEND_TIMEOUT_MS,
+                [&](io::Timer& timer) {
+                    client.send_data("!");
+                    timer.schedule_removal();
+                }
+            );
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+
+            client.close();
+        },
+        COMMON_TIMEOUT_MS,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_close_callback_count;
+
+            const auto end_time = std::chrono::system_clock::now();
+            EXPECT_GE(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count(),
+                      2 * SEND_TIMEOUT_MS);
+
+            server->schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error.string();
+
+    auto client = new io::DtlsClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+
+            (new io::Timer(loop))->start(SEND_TIMEOUT_MS,
+                [&](io::Timer& timer) {
+                    client.send_data("!");
+                    timer.schedule_removal();
+                }
+            );
+        },
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_on_close_callback_count;
+
+            const auto end_time = std::chrono::system_clock::now();
+            EXPECT_GE(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count(),
+                      2 * SEND_TIMEOUT_MS);
+
+            client.schedule_removal();
+        },
+        COMMON_TIMEOUT_MS
+    );
+
+    EXPECT_EQ(0, client_on_close_callback_count);
+    EXPECT_EQ(0, server_on_close_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_close_callback_count);
+    EXPECT_EQ(1, server_on_close_callback_count);
+}
 
 // TODO: key and certificate mismatch
+// TODO: send data to server after connection timeout
+// TODO: send data to client after connection timeout
+// TODO: as UDP send trash data
+// TODO: client timeout from server side should call close callback from client side
+// TODO: schedulre client for removal and at the same time send data from server (client should not call receive callback)

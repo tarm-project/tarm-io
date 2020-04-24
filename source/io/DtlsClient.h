@@ -19,8 +19,6 @@ public:
     using ConnectCallback = std::function<void(DtlsClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(DtlsClient&, const DataChunk&, const Error&)>;
-
-    // TODO: timeout on timer????
     using CloseCallback = std::function<void(DtlsClient&, const Error&)>;
 
     IO_FORBID_COPY(DtlsClient);
@@ -36,7 +34,8 @@ public:
     void connect(const Endpoint& endpoint,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback = nullptr,
-                 CloseCallback close_callback = nullptr);
+                 CloseCallback close_callback = nullptr,
+                 std::size_t timeout_ms = 1000);
     IO_DLL_PUBLIC void close();
 
     IO_DLL_PUBLIC bool is_open() const;

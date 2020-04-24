@@ -22,7 +22,8 @@ public:
     void connect(const Endpoint& endpoint,
                  ConnectCallback connect_callback,
                  DataReceiveCallback receive_callback,
-                 CloseCallback close_callback);
+                 CloseCallback close_callback,
+                 std::size_t timeout_ms);
     void close();
 
 protected:
@@ -57,7 +58,8 @@ DtlsClient::Impl::Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClie
 void DtlsClient::Impl::connect(const Endpoint& endpoint,
                                ConnectCallback connect_callback,
                                DataReceiveCallback receive_callback,
-                               CloseCallback close_callback) {
+                               CloseCallback close_callback,
+                               std::size_t timeout_ms) {
     if (endpoint.type() == Endpoint::UNDEFINED) {
         if (connect_callback) {
             m_loop->schedule_callback([=]() {
@@ -98,7 +100,14 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
 
     auto listen_error = m_client->start_receive(
         [this](UdpClient&, const DataChunk& chunk, const Error&) {
+            // TODO: error handling here
             this->on_data_receive(chunk.buf.get(), chunk.size);
+        },
+        timeout_ms,
+        [this](UdpClient&, const Error& error) {
+            if (m_close_callback) {
+                m_close_callback(*m_parent, error);
+            }
         }
     );
     if (listen_error) {
@@ -159,7 +168,7 @@ void DtlsClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const Er
 }
 
 void DtlsClient::Impl::on_alert(int code) {
-    IO_LOG(m_loop, DEBUG, m_parent, "");
+    IO_LOG(m_loop, DEBUG, m_parent, "code:", code);
 
     if (code == SSL3_AD_CLOSE_NOTIFY) {
         if (m_close_callback) {
@@ -194,8 +203,9 @@ const Endpoint& DtlsClient::endpoint() const {
 void DtlsClient::connect(const Endpoint& endpoint,
                          ConnectCallback connect_callback,
                          DataReceiveCallback receive_callback,
-                         CloseCallback close_callback) {
-    return m_impl->connect(endpoint, connect_callback, receive_callback, close_callback);
+                         CloseCallback close_callback,
+                         std::size_t timeout_ms) {
+    return m_impl->connect(endpoint, connect_callback, receive_callback, close_callback, timeout_ms);
 }
 
 void DtlsClient::close() {
