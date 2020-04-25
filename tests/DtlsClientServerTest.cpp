@@ -1136,7 +1136,7 @@ TEST_F(DtlsClientServerTest, client_with_invalid_address_and_no_connect_callback
     ASSERT_EQ(0, loop.run());
 }
 
-TEST_F(DtlsClientServerTest, client_timeout) {
+TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
     io::EventLoop loop;
 
     const std::size_t COMMON_TIMEOUT_MS = 200;
@@ -1217,9 +1217,126 @@ TEST_F(DtlsClientServerTest, client_timeout) {
     EXPECT_EQ(1, server_on_close_callback_count);
 }
 
+TEST_F(DtlsClientServerTest, client_timeout_cause_server_peer_close) {
+    io::EventLoop loop;
+
+    const std::size_t SERVER_TIMEOUT_MS = 300;
+    const std::size_t CLIENT_TIMEOUT_MS = 200;
+
+    std::size_t client_on_close_callback_count = 0;
+    std::size_t server_on_close_callback_count = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        SERVER_TIMEOUT_MS,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+
+            EXPECT_EQ(1, client_on_close_callback_count);
+            EXPECT_EQ(0, server_on_close_callback_count);
+            ++server_on_close_callback_count;
+
+            server->schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error.string();
+
+    auto client = new io::DtlsClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+
+            EXPECT_EQ(0, client_on_close_callback_count);
+            EXPECT_EQ(0, server_on_close_callback_count);
+            ++client_on_close_callback_count;
+
+            client.schedule_removal();
+        },
+        CLIENT_TIMEOUT_MS
+    );
+
+    EXPECT_EQ(0, client_on_close_callback_count);
+    EXPECT_EQ(0, server_on_close_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_close_callback_count);
+    EXPECT_EQ(1, server_on_close_callback_count);
+}
+
+TEST_F(DtlsClientServerTest, server_peer_timeout_cause_client_close) {
+    io::EventLoop loop;
+
+    const std::size_t SERVER_TIMEOUT_MS = 200;
+    const std::size_t CLIENT_TIMEOUT_MS = 300;
+
+    std::size_t client_on_close_callback_count = 0;
+    std::size_t server_on_close_callback_count = 0;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        SERVER_TIMEOUT_MS,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+
+            EXPECT_EQ(0, client_on_close_callback_count);
+            EXPECT_EQ(0, server_on_close_callback_count);
+            ++server_on_close_callback_count;
+
+            server->schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error.string();
+
+    auto client = new io::DtlsClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+
+            EXPECT_EQ(0, client_on_close_callback_count);
+            EXPECT_EQ(1, server_on_close_callback_count);
+            ++client_on_close_callback_count;
+
+            client.schedule_removal();
+        },
+        CLIENT_TIMEOUT_MS
+    );
+
+    EXPECT_EQ(0, client_on_close_callback_count);
+    EXPECT_EQ(0, server_on_close_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, client_on_close_callback_count);
+    EXPECT_EQ(1, server_on_close_callback_count);
+}
+
 // TODO: key and certificate mismatch
 // TODO: send data to server after connection timeout
 // TODO: send data to client after connection timeout
 // TODO: as UDP send trash data
-// TODO: client timeout from server side should call close callback from client side
 // TODO: schedulre client for removal and at the same time send data from server (client should not call receive callback)
