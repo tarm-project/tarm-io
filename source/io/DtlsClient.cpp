@@ -99,9 +99,14 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
     }
 
     auto listen_error = m_client->start_receive(
-        [this](UdpClient&, const DataChunk& chunk, const Error&) {
-            // TODO: error handling here
-            this->on_data_receive(chunk.buf.get(), chunk.size);
+        [this](UdpClient&, const DataChunk& chunk, const Error& error) {
+            if (error) {
+                if (m_receive_callback) {
+                    m_receive_callback(*m_parent, {nullptr, 0}, error);
+                }
+            } else {
+                on_data_receive(chunk.buf.get(), chunk.size);
+            }
         },
         timeout_ms,
         [this](UdpClient&, const Error& error) {
