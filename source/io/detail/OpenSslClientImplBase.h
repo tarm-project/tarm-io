@@ -230,6 +230,11 @@ template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::internal_read_from_sll_and_send(typename ParentType::UnderlyingClientType::EndSendCallback on_send) {
 
     const auto write_pending = BIO_pending(m_ssl_write_bio);
+    if (write_pending == 0) {
+        IO_LOG(m_loop, WARNING, m_parent, "No data to read from OpenSSL BIO");
+        return;
+    }
+
     std::shared_ptr<char> buf(new char[write_pending], [](const char* p) { delete[] p; });
     const auto size = BIO_read(m_ssl_write_bio, buf.get(), write_pending);
 
@@ -249,10 +254,15 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
     IO_LOG(m_loop, TRACE, m_parent, "read_pending:", read_pending);
 
     if (handshake_result < 0) {
-        auto error = SSL_get_error(m_ssl.get(), handshake_result);
+        auto ssl_error = SSL_get_error(m_ssl.get(), handshake_result);
 
-        if (error == SSL_ERROR_WANT_READ) {
+        if (ssl_error == SSL_ERROR_WANT_READ) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_READ");
+            if (write_pending == 0) {
+                IO_LOG(m_loop, TRACE, m_parent, "Handshake failed because no data to read from OpenSSL BIO");
+                on_handshake_failed(SSL_R_BAD_DATA, Error(StatusCode::OPENSSL_ERROR, "Handshake failed, invalid data"));
+                return;
+            }
 
             internal_read_from_sll_and_send(
                 [this](typename ParentType::UnderlyingClientType& client, const io::Error& error) {
@@ -261,7 +271,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
                     }
                 }
             );
-        } else if (error == SSL_ERROR_WANT_WRITE) {
+        } else if (ssl_error == SSL_ERROR_WANT_WRITE) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_WRITE");
         } else {
             const auto openssl_error_code = ERR_get_error();
@@ -370,6 +380,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* bu
     } else {
         const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
         if (write_size <= 0) {
+            // TODO: on handshake failed here???
             IO_LOG(m_loop, ERROR, m_parent, "BIO_write failed with code:", write_size);
             return;
         }

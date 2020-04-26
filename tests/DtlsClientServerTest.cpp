@@ -5,6 +5,8 @@
 #include "io/DtlsServer.h"
 #include "io/ScopeExitGuard.h"
 #include "io/Timer.h"
+#include "io/UdpClient.h"
+#include "io/UdpServer.h"
 #include "io/global/Version.h"
 
 #include <chrono>
@@ -1333,6 +1335,69 @@ TEST_F(DtlsClientServerTest, server_peer_timeout_cause_client_close) {
 
     EXPECT_EQ(1, client_on_close_callback_count);
     EXPECT_EQ(1, server_on_close_callback_count);
+}
+
+TEST_F(DtlsClientServerTest, client_send_invalid_data_before_handshake) {
+    std::size_t server_on_connect_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    std::size_t udp_on_receive_count = 0;
+
+    io::EventLoop loop;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+
+            ++server_on_connect_count;
+
+            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            server->schedule_removal();
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_receive_count;
+        },
+        100000,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_close_count;
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error.string();
+
+    auto client = new io::UdpClient(loop);
+    ASSERT_FALSE(client->set_destination({m_default_addr, m_default_port}));
+    auto client_receive_start_error = client->start_receive(
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++udp_on_receive_count;
+        }
+    );
+    ASSERT_FALSE(client_receive_start_error);
+
+    client->send_data("!!!");
+
+    (new io::Timer(loop))->start(100,
+        [&](io::Timer& timer){
+            client->schedule_removal();
+            timer.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_connect_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+    EXPECT_EQ(0, udp_on_receive_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_connect_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+    EXPECT_EQ(0, udp_on_receive_count);
 }
 
 // TODO: key and certificate mismatch

@@ -433,7 +433,7 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
             client.schedule_removal();
         }
     );
-    EXPECT_FALSE(client_receive_start_error);
+    ASSERT_FALSE(client_receive_start_error);
     EXPECT_FALSE(client->set_send_buffer_size(min_send_buffer_size));
     EXPECT_FALSE(client->set_receive_buffer_size(min_receive_buffer_size + 16));
 
