@@ -259,7 +259,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
         if (ssl_error == SSL_ERROR_WANT_READ) {
             IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_READ");
             if (write_pending == 0) {
-                IO_LOG(m_loop, TRACE, m_parent, "Handshake failed because no data to read from OpenSSL BIO");
+                IO_LOG(m_loop, TRACE, m_parent, "Handshake failed because there is no valid data to read from OpenSSL BIO");
                 on_handshake_failed(SSL_R_BAD_DATA, Error(StatusCode::OPENSSL_ERROR, "Handshake failed, invalid data"));
                 return;
             }
