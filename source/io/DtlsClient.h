@@ -45,6 +45,9 @@ public:
 
     IO_DLL_PUBLIC DtlsVersion negotiated_dtls_version() const;
 
+    // Returns 0 on error
+    IO_DLL_PUBLIC std::uint16_t bound_port() const;
+
 protected:
     IO_DLL_PUBLIC ~DtlsClient();
 

@@ -26,6 +26,8 @@ public:
                  std::size_t timeout_ms);
     void close();
 
+    std::uint16_t bound_port() const;
+
 protected:
     void ssl_set_state() override;
     const SSL_METHOD* ssl_method();
@@ -182,6 +184,10 @@ void DtlsClient::Impl::on_alert(int code) {
     }
 }
 
+std::uint16_t DtlsClient::Impl::bound_port() const {
+    return m_client ? m_client->bound_port() : 0;
+}
+
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 
@@ -231,6 +237,10 @@ void DtlsClient::send_data(const std::string& message, EndSendCallback callback)
 
 DtlsVersion DtlsClient::negotiated_dtls_version() const {
     return m_impl->negotiated_dtls_version();
+}
+
+std::uint16_t DtlsClient::bound_port() const {
+    return m_impl->bound_port();
 }
 
 } // namespace io
