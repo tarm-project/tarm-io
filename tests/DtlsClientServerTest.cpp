@@ -15,6 +15,7 @@
 #include <thread>
 #include <vector>
 
+// Just to include platform-specific networking headers
 #include <uv.h>
 
 struct DtlsClientServerTest : public testing::Test,
@@ -1496,6 +1497,8 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_during_handshake) {
 }
 
 TEST_F(DtlsClientServerTest, client_send_invalid_data_after_handshake) {
+    // Note:  in this test we make regular handshake and then bind UDP socket with SO_REUSEADDR
+    //        and send trash data.
     std::size_t server_on_connect_count = 0;
     std::size_t server_on_receive_count = 0;
     std::size_t server_on_close_count = 0;
@@ -1526,49 +1529,42 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_after_handshake) {
     );
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    char invalid_message = '!';
-
     auto client = new io::DtlsClient(loop);
     client->connect({m_default_addr, m_default_port},
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++client_on_connect_count;
 
-            // Just raw libuv code to send UDP data
-            // TODO: looks like it could be rewritten with raw sockets
-            ::sockaddr_in sock_addr{0};
-            sock_addr.sin_family = AF_INET;
-            sock_addr.sin_port = io::host_to_network(client.bound_port());
-            uv_udp_t udp_handle;
-            const io::Error init_error = uv_udp_init(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), &udp_handle);
+            auto socket_handle = ::socket(AF_INET, SOCK_DGRAM, 0);
+            ASSERT_GT(socket_handle, 0);
 
-            const io::Error bind_error = uv_udp_bind(&udp_handle, reinterpret_cast<const ::sockaddr*>(&sock_addr), UV_UDP_REUSEADDR);
-            if (bind_error) {
-                FAIL() << "bind error: " << bind_error.string();
-                return;
-            }
+            int result = 0;
+            int yes = 1;
+#ifdef SO_REUSEPORT
+            result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(int));
+#else
+            result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+#endif
+            ASSERT_NE(-1, result);
 
-            uv_udp_send_t send_request;
-            uv_buf_t uv_buf = uv_buf_init(&invalid_message, 1);
+            ::sockaddr_in source_addr{0};
+            source_addr.sin_family = AF_INET;
+            source_addr.sin_port = io::host_to_network(client.bound_port());
+            result = ::bind(socket_handle, reinterpret_cast<sockaddr*>(&source_addr), sizeof(source_addr));
+            ASSERT_NE(-1, result);
 
-            ::sockaddr_in destination{0};
-            destination.sin_family = AF_INET;
-            destination.sin_addr.s_addr = std::uint32_t(1) << 24 |
-                                          std::uint32_t(0) << 16 |
-                                          std::uint32_t(0) << 8  |
-                                          std::uint32_t(127);
-            destination.sin_port = io::host_to_network(m_default_port);
+            ::sockaddr_in dest_addr{0};
+            dest_addr.sin_family = AF_INET;
+            dest_addr.sin_addr.s_addr = std::uint32_t(1) << 24 | // 127.0.0.1
+                                        std::uint32_t(0) << 16 |
+                                        std::uint32_t(0) << 8  |
+                                        std::uint32_t(127);
+            dest_addr.sin_port = io::host_to_network(m_default_port);
 
-            int uv_status = uv_udp_send(&send_request,
-                                        &udp_handle,
-                                        &uv_buf,
-                                        1,
-                                        reinterpret_cast<const struct sockaddr*>(&destination),
-                                        nullptr);
-            if (uv_status < 0) {
-                FAIL() << "send error: " << io::Error(uv_status).string();
-                return;
-            }
+            result = ::sendto(socket_handle, "!!!", 3, 0, reinterpret_cast<sockaddr*>(&dest_addr), sizeof(dest_addr));
+            ASSERT_NE(-1, result);
+
+            ::close(socket_handle);
 
             // TODO: move to close when will be fixed
             client.schedule_removal();
