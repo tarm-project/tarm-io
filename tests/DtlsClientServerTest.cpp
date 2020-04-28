@@ -1535,12 +1535,50 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_after_handshake) {
             EXPECT_FALSE(error) << error.string();
             ++client_on_connect_count;
 
+            /*
+            // Just raw libuv code to send UDP data
+            // TODO: looks like it could be rewritten with raw sockets
+            ::sockaddr_in sock_addr{0};
+            sock_addr.sin_family = AF_INET;
+            sock_addr.sin_port = io::host_to_network(client.bound_port());
+            uv_udp_t udp_handle;
+            const io::Error init_error = uv_udp_init(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), &udp_handle);
+
+            const io::Error bind_error = uv_udp_bind(&udp_handle, reinterpret_cast<const ::sockaddr*>(&sock_addr), UV_UDP_REUSEADDR);
+            if (bind_error) {
+                FAIL() << "bind error: " << bind_error.string();
+                return;
+            }
+
+            uv_udp_send_t send_request;
+            uv_buf_t uv_buf = uv_buf_init(&invalid_message, 1);
+
+            ::sockaddr_in destination{0};
+            destination.sin_family = AF_INET;
+            destination.sin_addr.s_addr = std::uint32_t(1) << 24 |
+                                          std::uint32_t(0) << 16 |
+                                          std::uint32_t(0) << 8  |
+                                          std::uint32_t(127);
+            destination.sin_port = io::host_to_network(m_default_port);
+
+            int uv_status = uv_udp_send(&send_request,
+                                        &udp_handle,
+                                        &uv_buf,
+                                        1,
+                                        reinterpret_cast<const struct sockaddr*>(&destination),
+                                        nullptr); // add on_send, and close UDP handle there
+            if (uv_status < 0) {
+                FAIL() << "send error: " << io::Error(uv_status).string();
+                return;
+            }
+            */
+
             auto socket_handle = ::socket(AF_INET, SOCK_DGRAM, 0);
             ASSERT_GT(socket_handle, 0);
 
             int result = 0;
             int yes = 1;
-#ifdef SO_REUSEPORT
+#ifdef __APPLE__
             result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(int));
 #else
             result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
