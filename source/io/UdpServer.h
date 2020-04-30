@@ -23,6 +23,8 @@ public:
     using DataReceivedCallback = std::function<void(UdpPeer&, const DataChunk&, const Error&)>;
     using PeerTimeoutCallback = std::function<void(UdpPeer&, const Error&)>;
 
+    using CloseServerCallback = std::function<void(UdpServer&, const Error&)>;
+
     IO_FORBID_COPY(UdpServer);
     IO_FORBID_MOVE(UdpServer);
 
@@ -44,12 +46,15 @@ public:
                                       std::size_t timeout_ms,
                                       PeerTimeoutCallback timeout_callback);
 
-    IO_DLL_PUBLIC void close();
+    IO_DLL_PUBLIC void close(CloseServerCallback close_callback = nullptr);
 
     IO_DLL_PUBLIC BufferSizeResult receive_buffer_size() const;
     IO_DLL_PUBLIC BufferSizeResult send_buffer_size() const;
     IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
     IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
+
+    // TODO: peers count???
+    // TODO: method to iterate on peers???
 
 protected:
     IO_DLL_PUBLIC ~UdpServer();

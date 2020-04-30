@@ -900,6 +900,86 @@ TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
     EXPECT_EQ(1, peer_timeout_counter);
 }
 
+TEST_F(UdpClientServerTest, server_close) {
+    io::EventLoop loop;
+
+    std::size_t server_peer_timeout_call_count = 0;
+
+    std::size_t server_close_1_callback_call_count = 0;
+    std::size_t server_close_2_callback_call_count = 0;
+
+    auto server = new io::UdpServer(loop);
+    server->close(
+        [&](io::UdpServer& server, const io::Error& error) {
+            ++server_close_1_callback_call_count; // Should not be called
+        }
+    );
+
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
+        [&](io::UdpPeer& peer, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        },
+        10000,
+        [&](io::UdpPeer& peer, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_peer_timeout_call_count;
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::UdpClient(loop);
+    EXPECT_FALSE(client->set_destination({m_default_addr, m_default_port}));
+    client->send_data("!!!");
+
+    server->close(
+        [&](io::UdpServer& server, const io::Error& error) {
+            ++server_close_2_callback_call_count;
+            server.close();
+            server.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_peer_timeout_call_count);
+    EXPECT_EQ(0, server_close_1_callback_call_count);
+    EXPECT_EQ(0, server_close_2_callback_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(0, server_peer_timeout_call_count);
+    EXPECT_EQ(0, server_close_1_callback_call_count);
+    EXPECT_EQ(1, server_close_2_callback_call_count);
+}
+
+TEST_F(UdpClientServerTest, server_schedule_removal_in_close_callback) {
+    io::EventLoop loop;
+
+    std::size_t server_close_callback_call_count = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    server->close(
+        [&](io::UdpServer& server, const io::Error& error) {
+            ++server_close_callback_call_count; // Should not be called
+            server.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_close_callback_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_close_callback_call_count);
+}
+
 TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     io::EventLoop loop;
 
@@ -929,8 +1009,7 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
             }
         );
     });
-
-    EXPECT_FALSE(listen_error);
+    ASSERT_FALSE(listen_error);
 
     auto client = new io::UdpClient(loop);
     EXPECT_FALSE(client->set_destination({0x7F000001u, m_default_port}));
@@ -1046,7 +1125,7 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
     EXPECT_EQ(1, client_data_send_counter);
 }
 
-TEST_F(UdpClientServerTest, client_receive_data_only_from_it_target) {
+TEST_F(UdpClientServerTest, client_receive_data_only_from_its_target) {
     io::EventLoop loop;
 
     const std::string client_message = "I am client";

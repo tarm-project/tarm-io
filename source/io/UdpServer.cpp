@@ -23,12 +23,14 @@ public:
     Error start_receive(const Endpoint& endpoint, DataReceivedCallback data_receive_callback);
     Error start_receive(const Endpoint& endpoint, NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
 
-    void close();
+    void close(CloseServerCallback close_callback);
     bool close_with_removal();
 
     bool peer_bookkeeping_enabled() const;
 
     void close_peer(UdpPeer& peer, std::size_t inactivity_timeout_ms);
+
+    bool schedule_removal();
 
 protected:
     // statics
@@ -42,6 +44,8 @@ private:
     NewPeerCallback m_new_peer_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
     PeerTimeoutCallback m_peer_timeout_callback = nullptr;
+
+    CloseServerCallback m_server_close_callback = nullptr;
 
     std::unordered_map<detail::PeerId, std::shared_ptr<UdpPeer>> m_peers;
     std::unordered_map<detail::PeerId, std::unique_ptr<Timer, typename Timer::DefaultDelete>> m_inactive_peers;
@@ -118,11 +122,14 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
     return start_receive(endpoint, receive_callback);
 }
 
-void UdpServer::Impl::close() {
+void UdpServer::Impl::close(CloseServerCallback close_callback) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
-    uv_udp_recv_stop(m_udp_handle.get());
-    uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), nullptr);
+    if (is_open()) {
+        m_server_close_callback = close_callback;
+        uv_udp_recv_stop(m_udp_handle.get());
+        uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), on_close);
+    }
 }
 
 bool UdpServer::Impl::close_with_removal() {
@@ -134,6 +141,7 @@ bool UdpServer::Impl::close_with_removal() {
 
     m_peers.clear();
     m_inactive_peers.clear();
+    m_peers_backlog.reset();
 
     return true;
 }
@@ -144,7 +152,6 @@ bool UdpServer::Impl::peer_bookkeeping_enabled() const {
 
 void UdpServer::Impl::close_peer(UdpPeer& peer, std::size_t inactivity_timeout_ms) {
     IO_LOG(m_loop, TRACE, m_parent, "");
-
 
     const auto peer_id = peer.id();
 
@@ -250,7 +257,18 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
 }
 
 void UdpServer::Impl::on_close(uv_handle_t* handle) {
-    // do nothing
+    assert(handle);
+    auto& this_ = *reinterpret_cast<UdpServer::Impl*>(handle->data);
+    auto& parent = *this_.m_parent;
+
+    IO_LOG(this_.m_loop, TRACE, &parent, "");
+    if (this_.m_server_close_callback) {
+        this_.m_server_close_callback(parent, Error(0));
+    }
+
+    this_.m_peers.clear();
+    this_.m_inactive_peers.clear();
+    this_.m_peers_backlog.reset();
 }
 
 void UdpServer::Impl::free_udp_peer(UdpPeer* peer) {
@@ -279,8 +297,8 @@ Error UdpServer::start_receive(const Endpoint& endpoint, DataReceivedCallback re
     return m_impl->start_receive(endpoint, nullptr, receive_callback, timeout_ms, timeout_callback);
 }
 
-void UdpServer::close() {
-    return m_impl->close();
+void UdpServer::close(CloseServerCallback close_callback) {
+    return m_impl->close(close_callback);
 }
 
 void UdpServer::schedule_removal() {
