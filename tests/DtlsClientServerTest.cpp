@@ -1286,7 +1286,7 @@ TEST_F(DtlsClientServerTest, server_peer_timeout_cause_client_close) {
     io::EventLoop loop;
 
     const std::size_t SERVER_TIMEOUT_MS = 200;
-    const std::size_t CLIENT_TIMEOUT_MS = 300;
+    const std::size_t CLIENT_TIMEOUT_MS = 60000;
 
     std::size_t client_on_close_callback_count = 0;
     std::size_t server_on_close_callback_count = 0;
@@ -1701,6 +1701,95 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_after_handshake) {
     EXPECT_EQ(1, client_on_connect_count);
     EXPECT_EQ(0, client_on_receive_count);
     EXPECT_EQ(1, client_on_close_count);
+}
+
+TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout_at_server) {
+    std::size_t server_on_connect_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    io::EventLoop loop;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_connect_count;
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
+            ++server_on_receive_count;
+        },
+        200,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_close_count;
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error.string();
+
+    auto client = new io::DtlsClient(loop);
+        client->connect({m_default_addr, m_default_port},
+            [&](io::DtlsClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                ++client_on_connect_count;
+                (new io::Timer(loop))->start(400,
+                    [&](io::Timer& timer) {
+                        // TODO: currently this data will not be received because UDP peers at UDP server
+                        //       have inactivity timeout which is hardcoded in DTLS server and filters incoming data.
+                        //       Need to revise this/
+                        client.send_data("!!!");
+                        timer.schedule_removal();
+                    }
+                );
+
+                (new io::Timer(loop))->start(600,
+                    [&](io::Timer& timer) {
+                        client.schedule_removal();
+                        server->schedule_removal();
+                        timer.schedule_removal();
+                    }
+                );
+            },
+            [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                ++client_on_receive_count;
+            },
+            [&](io::DtlsClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                EXPECT_EQ(0, client_on_close_count);
+                EXPECT_EQ(1, server_on_close_count);
+                ++client_on_close_count;
+            },
+            100000
+        );
+
+    EXPECT_EQ(0, server_on_connect_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_connect_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(1, server_on_close_count);
+
+    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(1, client_on_close_count);
+}
+
+TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout_at_client) {
+    // TODO:
 }
 
 // TODO: key and certificate mismatch

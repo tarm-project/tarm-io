@@ -134,8 +134,10 @@ void DtlsServer::Impl::on_timeout(UdpPeer& udp_peer, const Error& error) {
 
     IO_LOG(this->m_loop, TRACE, &dtls_client, "Removing DTLS client due to timeout");
 
-    udp_peer.set_on_schedule_removal(nullptr);
+    //udp_peer.set_on_schedule_removal(nullptr);
+    dtls_client.close();
 
+    /*
     remove_client(dtls_client);
 
     if (m_connection_close_callback) {
@@ -143,6 +145,7 @@ void DtlsServer::Impl::on_timeout(UdpPeer& udp_peer, const Error& error) {
     }
 
     delete &dtls_client;
+    */
 }
 
 Error DtlsServer::Impl::listen(const Endpoint& endpoint,
