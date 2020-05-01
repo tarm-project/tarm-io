@@ -932,7 +932,12 @@ TEST_F(UdpClientServerTest, server_close) {
 
     auto client = new io::UdpClient(loop);
     EXPECT_FALSE(client->set_destination({m_default_addr, m_default_port}));
-    client->send_data("!!!");
+    client->send_data("!!!",
+        [](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            client.schedule_removal();
+        }
+    );
 
     server->close(
         [&](io::UdpServer& server, const io::Error& error) {
