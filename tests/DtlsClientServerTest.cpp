@@ -1341,6 +1341,74 @@ TEST_F(DtlsClientServerTest, server_peer_timeout_cause_client_close) {
     EXPECT_EQ(1, server_on_close_callback_count);
 }
 
+TEST_F(DtlsClientServerTest, server_schedule_removal_cause_client_close) {
+    std::size_t server_on_connect_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    io::EventLoop loop;
+
+    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_connect_count;
+        },
+        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_receive_count;
+            server->schedule_removal();
+        },
+        100000,
+        [&](io::DtlsConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_close_count;
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error.string();
+
+    auto client = new io::DtlsClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            client.send_data("Hello!");
+            ++client_on_connect_count;
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_on_receive_count;
+        },
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_on_close_count;
+            client.schedule_removal();
+        },
+        100000
+    );
+
+    EXPECT_EQ(0, server_on_connect_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, server_on_connect_count);
+    EXPECT_EQ(1, server_on_receive_count);
+    EXPECT_EQ(1, server_on_close_count);
+
+    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(1, client_on_close_count);
+}
+
 TEST_F(DtlsClientServerTest, client_send_invalid_data_before_handshake) {
     std::size_t server_on_connect_count = 0;
     std::size_t server_on_receive_count = 0;
@@ -1603,9 +1671,6 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_after_handshake) {
             ASSERT_NE(-1, result);
 
             ::close(socket_handle);
-
-            // TODO: move to close when will be fixed
-            client.schedule_removal();
         },
         [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1614,6 +1679,7 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_after_handshake) {
         [&](io::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++client_on_close_count;
+            client.schedule_removal();
         },
         100000
     );
@@ -1630,12 +1696,11 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_after_handshake) {
 
     EXPECT_EQ(1, server_on_connect_count);
     EXPECT_EQ(1, server_on_receive_count);
-    EXPECT_EQ(0, server_on_close_count);
+    EXPECT_EQ(1, server_on_close_count);
 
     EXPECT_EQ(1, client_on_connect_count);
     EXPECT_EQ(0, client_on_receive_count);
-    // TODO: server schedule removal should cause clients close
-    //EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(1, client_on_close_count);
 }
 
 // TODO: key and certificate mismatch

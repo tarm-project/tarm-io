@@ -12,9 +12,10 @@
 #include <openssl/ec.h>
 #include <openssl/bn.h>
 
+#include <cstdio>
 #include <iostream>
 #include <memory>
-#include <cstdio>
+#include <unordered_set>
 
 namespace io {
 
@@ -29,11 +30,15 @@ public:
                  std::size_t timeout_ms,
                  CloseConnectionCallback close_callback);
 
-    void close();
+    void close(CloseServerCallback callback);
 
     std::size_t connected_clients_count() const;
 
     bool certificate_and_key_match();
+
+    void remove_client(DtlsConnectedClient& client);
+
+    bool schedule_removal();
 
 protected:
     const SSL_METHOD* ssl_method();
@@ -41,7 +46,7 @@ protected:
     // callbacks
     void on_new_peer(UdpPeer& udp_client, const io::Error& error);
     void on_data_receive(UdpPeer& udp_client, const DataChunk& data, const Error& error);
-    void on_timeout(UdpPeer& udp_client, const Error& error);
+    void on_timeout(UdpPeer& udp_peer, const Error& error);
 
 private:
     using X509Ptr = std::unique_ptr<::X509, decltype(&::X509_free)>;
@@ -63,6 +68,10 @@ private:
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
     CloseConnectionCallback m_connection_close_callback = nullptr;
+
+    CloseServerCallback m_close_server_callback = nullptr;
+
+    std::unordered_set<DtlsConnectedClient*> m_clients;
 };
 
 DtlsServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent) :
@@ -100,6 +109,7 @@ void DtlsServer::Impl::on_new_peer(UdpPeer& udp_client, const io::Error& error) 
     DtlsConnectedClient* dtls_client =
         new DtlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, m_connection_close_callback, udp_client, &context);
     dtls_client->set_user_data(&udp_client);
+    m_clients.insert(dtls_client);
     udp_client.set_on_schedule_removal(
         [=](const Removable&) {
             delete dtls_client;
@@ -119,12 +129,14 @@ void DtlsServer::Impl::on_data_receive(UdpPeer& udp_client, const DataChunk& dat
     dtls_client.on_data_receive(data.buf.get(), data.size);
 }
 
-void DtlsServer::Impl::on_timeout(UdpPeer& udp_client, const Error& error) {
-    auto& dtls_client = *reinterpret_cast<DtlsConnectedClient*>(udp_client.user_data());
+void DtlsServer::Impl::on_timeout(UdpPeer& udp_peer, const Error& error) {
+    auto& dtls_client = *reinterpret_cast<DtlsConnectedClient*>(udp_peer.user_data());
 
     IO_LOG(this->m_loop, TRACE, &dtls_client, "Removing DTLS client due to timeout");
 
-    udp_client.set_on_schedule_removal(nullptr);
+    udp_peer.set_on_schedule_removal(nullptr);
+
+    remove_client(dtls_client);
 
     if (m_connection_close_callback) {
         m_connection_close_callback(dtls_client, error);
@@ -195,25 +207,28 @@ Error DtlsServer::Impl::listen(const Endpoint& endpoint,
                                        std::bind(&DtlsServer::Impl::on_timeout, this, _1, _2));
 }
 
-void DtlsServer::Impl::close() {
-    // TODO: test this
-    return m_udp_server->close();
+void DtlsServer::Impl::close(CloseServerCallback callback) {
+    std::unordered_set<DtlsConnectedClient*> clients;
+    clients.swap(m_clients);
+
+    for (auto& c : clients) {
+        c->close();
+    }
+
+    m_close_server_callback = callback;
+
+    return m_udp_server->close(
+        [this](UdpServer&, const Error& error) {
+            if (m_close_server_callback) {
+                m_close_server_callback(*m_parent, error);
+            }
+        }
+    );
 }
 
 std::size_t DtlsServer::Impl::connected_clients_count() const {
-    //return m_udp_server->connected_clients_count();
-    // TODO: fixme
-    return 0;
+    return m_clients.size();
 }
-
-namespace {
-
-//int ssl_key_type(::EVP_PKEY* pkey) {
-//    assert(pkey);
-//    return pkey ? EVP_PKEY_type(pkey->type) : NID_undef;
-//}
-
-} // namespace
 
 bool DtlsServer::Impl::certificate_and_key_match() {
     assert(m_certificate);
@@ -229,6 +244,25 @@ const SSL_METHOD* DtlsServer::Impl::ssl_method() {
 #else
     return DTLS_server_method();
 #endif
+}
+
+void DtlsServer::Impl::remove_client(DtlsConnectedClient& client) {
+    auto it = m_clients.find(&client);
+    if (it != m_clients.end()) {
+        m_clients.erase(it);
+    }
+}
+
+bool DtlsServer::Impl::schedule_removal() {
+    if (m_clients.empty()) {
+        return true;
+    }
+
+    close([this](DtlsServer& server, const Error&) {
+        server.schedule_removal();
+    });
+
+    return false;
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
@@ -260,12 +294,23 @@ Error DtlsServer::listen(const Endpoint& endpoint,
     return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, timeout_ms, close_callback);
 }
 
-void DtlsServer::close() {
-    return m_impl->close();
+void DtlsServer::close(CloseServerCallback callback) {
+    return m_impl->close(callback);
 }
 
 std::size_t DtlsServer::connected_clients_count() const {
     return m_impl->connected_clients_count();
+}
+
+void DtlsServer::remove_client(DtlsConnectedClient& client) {
+    return m_impl->remove_client(client);
+}
+
+void DtlsServer::schedule_removal() {
+    const bool ready_to_remove = m_impl->schedule_removal();
+    if (ready_to_remove) {
+        Removable::schedule_removal();
+    }
 }
 
 } // namespace io

@@ -1,6 +1,7 @@
 #include "DtlsConnectedClient.h"
 
 #include "Convert.h"
+#include "DtlsServer.h"
 #include "UdpPeer.h"
 #include "detail/DtlsContext.h"
 #include "detail/ConstexprString.h"
@@ -80,12 +81,18 @@ void DtlsConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback ca
 }
 
 void DtlsConnectedClient::Impl::close() {
+    if (!this->is_open()) {
+        return;
+    }
+
     const auto error = this->ssl_shutdown([this](io::UdpPeer& client, const io::Error& error) {
         if (m_close_callback) {
             m_close_callback(*m_parent, Error(0));
         }
         m_client->close(1000); // TODO: hardcode
     });
+
+    m_dtls_server->remove_client(*m_parent);
 
     if (error) {
         if (m_close_callback) {
@@ -128,6 +135,8 @@ void DtlsConnectedClient::Impl::on_alert(int code) {
     IO_LOG(m_loop, DEBUG, m_parent, "");
 
     if (code == SSL3_AD_CLOSE_NOTIFY) {
+        m_dtls_server->remove_client(*m_parent);
+
         if (m_close_callback) {
             m_close_callback(*m_parent, Error(0));
         }

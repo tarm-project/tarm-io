@@ -160,7 +160,7 @@ template<typename ParentType, typename ImplType>
 
 template<typename ParentType, typename ImplType>
 bool OpenSslClientImplBase<ParentType, ImplType>::is_open() const {
-    return m_client && m_client->is_open();
+    return m_client && m_client->is_open() && m_ssl_handshake_complete;
 }
 
 template<typename ParentType, typename ImplType>

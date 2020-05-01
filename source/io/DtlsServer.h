@@ -19,9 +19,13 @@ namespace io {
 class DtlsServer : public Removable,
                    public UserDataHolder {
 public:
+    friend class DtlsConnectedClient;
+
     using NewConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(DtlsConnectedClient&, const DataChunk&, const Error&)>;
     using CloseConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
+
+    using CloseServerCallback = std::function<void(DtlsServer&, const Error&)>;
 
     static const std::size_t DEFAULT_TIMEOUT_MS = 1000;
 
@@ -49,14 +53,18 @@ public:
                 std::size_t timeout_ms,
                 CloseConnectionCallback close_callback);
 
-    IO_DLL_PUBLIC void close();
+    IO_DLL_PUBLIC void close(CloseServerCallback callback = nullptr);
 
     IO_DLL_PUBLIC std::size_t connected_clients_count() const;
+
+    IO_DLL_PUBLIC void schedule_removal() override;
 
 protected:
     IO_DLL_PUBLIC ~DtlsServer();
 
 private:
+    void remove_client(DtlsConnectedClient& client);
+
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
