@@ -1,0 +1,11 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+FROM tarmio/builders:ubuntu20.04-gcc9.3.0
+
+LABEL maintainer="av@tcloud.pro"
+
+RUN apt -y install libboost1.71-dev \
+                   libboost-system1.71-dev \
+                   libboost-filesystem1.71-dev

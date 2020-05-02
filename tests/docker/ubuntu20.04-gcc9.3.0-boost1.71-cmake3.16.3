@@ -1,0 +1,10 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+FROM tarmio/builders:ubuntu20.04-gcc9.3.0-boost1.71
+
+LABEL maintainer="av@tcloud.pro"
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt -y install cmake						
