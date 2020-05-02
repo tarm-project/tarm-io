@@ -18,7 +18,7 @@
 std::atomic<bool> stop_watchdog(false);
 
 void hanged_tests_watchdog() {
-    const auto LIMIT = std::chrono::minutes(5);
+    const auto LIMIT = std::chrono::minutes(10);
 
     auto seconds_counter = std::chrono::seconds(0);
     while(!stop_watchdog) {
