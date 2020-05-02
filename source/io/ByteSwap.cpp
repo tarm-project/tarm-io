@@ -23,17 +23,20 @@
     #include <netinet/in.h>
     #ifdef __APPLE__
         #include <machine/endian.h>
-    #else
-        #include <endian.h>
-    #endif
 
-    #if __BYTE_ORDER == __BIG_ENDIAN
-        #define IO_NTOHLL(x) (x)
-        #define IO_HTONLL(x) (x)
-    #else
-        #if __BYTE_ORDER == __LITTLE_ENDIAN
-            #define IO_NTOHLL(x) be64toh(x)
-            #define IO_HTONLL(x) htobe64(x)
+        #define IO_NTOHLL(x) ntohll(x)
+        #define IO_HTONLL(x) htonll(x)
+    #else // assuming Linux
+        #include <endian.h>
+
+        #if __BYTE_ORDER == __BIG_ENDIAN
+            #define IO_NTOHLL(x) (x)
+            #define IO_HTONLL(x) (x)
+        #else
+            #if __BYTE_ORDER == __LITTLE_ENDIAN
+                #define IO_NTOHLL(x) be64toh(x)
+                #define IO_HTONLL(x) htobe64(x)
+            #endif
         #endif
     #endif
 #endif
