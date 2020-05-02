@@ -1,3 +1,8 @@
+/*----------------------------------------------------------------------------------------------
+ *  Copyright (c) 2020 - present Alexander Voitenko
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *----------------------------------------------------------------------------------------------*/
+
 #include "HashRange.h"
 
 namespace io {
@@ -13,8 +18,7 @@ void hash_combine_impl(std::size_t& h, std::uint64_t k) {
     h ^= k;
     h *= m;
 
-    // Completely arbitrary number, to prevent 0's
-    // from hashing to 0.
+    // Completely arbitrary number, to prevent 0's from hashing to 0.
     h += 0xe6546b64;
 }
 

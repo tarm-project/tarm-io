@@ -1,3 +1,8 @@
+/*----------------------------------------------------------------------------------------------
+ *  Copyright (c) 2020 - present Alexander Voitenko
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *----------------------------------------------------------------------------------------------*/
+
 //  Copyright Beman Dawes 2002-2005, 2009
 //  Copyright Vladimir Prus 2002
 //  Distributed under the Boost Software License, Version 1.0.

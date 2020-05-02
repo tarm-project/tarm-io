@@ -1,3 +1,8 @@
+/*----------------------------------------------------------------------------------------------
+ *  Copyright (c) 2020 - present Alexander Voitenko
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *----------------------------------------------------------------------------------------------*/
+
 // Copyright Vladimir Prus 2004.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt

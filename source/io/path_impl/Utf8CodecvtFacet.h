@@ -1,3 +1,8 @@
+/*----------------------------------------------------------------------------------------------
+ *  Copyright (c) 2020 - present Alexander Voitenko
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *----------------------------------------------------------------------------------------------*/
+
 // Copyright (c) 2001 Ronald Garcia, Indiana University (garcia@osl.iu.edu)
 // Andrew Lumsdaine, Indiana University (lums@osl.iu.edu).
 // Distributed under the Boost Software License, Version 1.0. (See accompany-

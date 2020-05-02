@@ -1,3 +1,8 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
 # Refined solution from here
 # Source: https://gitlab.kitware.com/cmake/cmake/commit/e56aa462976f80762712519a4cf653b8c45bf3db
 

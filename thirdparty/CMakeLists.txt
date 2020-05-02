@@ -1,3 +1,8 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
 # Solution from here https://gitlab.kitware.com/cmake/cmake/issues/17645
