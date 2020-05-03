@@ -134,6 +134,7 @@ void TlsTcpConnectedClient::Impl::on_handshake_complete() {
 }
 
 void TlsTcpConnectedClient::Impl::on_handshake_failed(long openssl_error_code, const Error& error) {
+    // TODO: is it done via SSL_shotdown? Need to recheck it.
     if ((openssl_error_code & 0xFFF) == SSL_R_UNKNOWN_PROTOCOL) {
         // Sending version failed alert manually because OpensSSL does not do it.
         const std::size_t BUF_SIZE = 7;
