@@ -66,6 +66,8 @@ void TcpConnectedClient::Impl::shutdown() {
         return;
     }
 
+    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", this->endpoint());
+
     m_is_open = false;
 
     auto shutdown_req = new uv_shutdown_t;

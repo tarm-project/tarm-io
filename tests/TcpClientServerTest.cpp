@@ -521,8 +521,6 @@ TEST_F(TcpClientServerTest, server_shutdown_callback) {
 
     ASSERT_FALSE(listen_error);
 
-    bool data_sent = false;
-
     auto client = new io::TcpClient(loop);
     client->connect({m_default_addr, m_default_port},
     [&](io::TcpClient& client, const io::Error& error) {
@@ -620,7 +618,7 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
 
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::TcpConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             ++server_new_connection_callback_call_count;
 
             client.send_data(server_message,
@@ -634,9 +632,12 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
             EXPECT_EQ(1, server->connected_clients_count());
         },
         [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            EXPECT_TRUE(client.is_open());
             ++server_receive_callback_call_count;
         },
         [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
             EXPECT_EQ(0, server->connected_clients_count());
         }
     );
@@ -645,11 +646,12 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
     auto client = new io::TcpClient(loop);
     client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             client.send_data(client_message);
+            client.send_data(client_message); // Should not be received
         },
         [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             EXPECT_EQ(std::string(data.buf.get(), data.size), server_message);
             ++client_receive_callback_call_count;
         },
@@ -955,15 +957,17 @@ void TcpClientServerTest::test_impl_server_disconnect_client_from_data_receive_c
     auto server = new io::TcpServer(loop);
     auto listen_error = server->listen({m_default_addr, m_default_port},
     [&](io::TcpConnectedClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
+        EXPECT_FALSE(error) << error.string();
     },
     [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_TRUE(client.is_open());
+        EXPECT_FALSE(error) << error.string();
         EXPECT_EQ(std::string(data.buf.get(), data.size), client_message);
         close_variant(client);
         EXPECT_EQ(1, server->connected_clients_count()); // not closed yet
     },
     [&](io::TcpConnectedClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
+        EXPECT_FALSE(error) << error.string();
         EXPECT_EQ(0, server->connected_clients_count());
     });
     EXPECT_FALSE(listen_error);
@@ -1025,11 +1029,11 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
 
     auto server = new io::TcpServer(server_loop);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-    [&connections_counter](io::TcpConnectedClient& client, const io::Error& error) {
+    [&](io::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
         ++connections_counter;
     },
-    [&clinets_data_log, &server_reads_counter, NUMBER_OF_CLIENTS](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+    [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         ++server_reads_counter;
         ASSERT_EQ(sizeof(std::size_t), data.size);
         const auto value = *reinterpret_cast<const std::size_t*>(data.buf.get());
@@ -1294,9 +1298,10 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
     auto client = new io::TcpClient(loop);
     client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
-            ++client_connect_call_count;
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             EXPECT_EQ(0, client.pending_write_requesets());
+            ++client_connect_call_count;
+
             client.send_data("H");
             client.send_data("e");
             client.send_data("l");
@@ -1311,10 +1316,10 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
             EXPECT_EQ(6, client.pending_write_requesets());
         },
         [](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
         },
         [&](io::TcpClient& client, const io::Error& error) { // on close
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             ++client_close_call_count;
             client.schedule_removal();
         }
