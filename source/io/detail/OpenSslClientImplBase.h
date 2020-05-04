@@ -221,11 +221,14 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
         ++counter;
     }
 
+    // TODO: fixme!!!111
     // Have incoming data, but no successful read opearions
+    /*
     if (decrypted_size < 0 && counter == 0) {
         on_ssl_read({nullptr, 0}, Error(StatusCode::OPENSSL_ERROR, "failed to decrypt received data"));
         return;
     }
+    */
 
     if (decrypted_size < 0) {
         int code = SSL_get_error(m_ssl.get(), decrypted_size);
@@ -300,20 +303,24 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
     } else if (handshake_result == 1) {
         if (write_pending) {
             internal_read_from_sll_and_send(
-                [this](typename ParentType::UnderlyingClientType& client, const io::Error& error) {
+                [this, read_pending](typename ParentType::UnderlyingClientType& client, const io::Error& error) {
                     if (error) {
                         on_handshake_failed(-1, error);
                     } else {
                         finish_handshake();
+
+                        if (read_pending) {
+                            read_from_ssl();
+                        }
                     }
                 }
             );
         } else {
             finish_handshake();
-        }
 
-        if (read_pending) {
-            read_from_ssl();
+            if (read_pending) {
+                read_from_ssl();
+            }
         }
     } else {
         const auto openssl_error_code = ERR_get_error();

@@ -201,6 +201,7 @@ TEST_F(TlsTcpClientServerTest, client_send_without_connect_no_callback) {
 }
 
 TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
+    this->log_to_stdout();
     const std::string message = "Hello!";
     std::size_t client_on_connect_callback_count = 0;
     std::size_t client_on_send_callback_count = 0;
@@ -212,11 +213,13 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
     auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             ++server_on_connect_callback_count;
+            EXPECT_EQ(0, server_on_receive_callback_count);
         },
         [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
+            EXPECT_EQ(1, server_on_connect_callback_count);
             ++server_on_receive_callback_count;
 
             EXPECT_EQ(message.size(), data.size);
