@@ -567,6 +567,8 @@ TEST_F(TlsTcpClientServerTest, server_send_simultaneous_multiple_chunks_to_clien
 }
 
 TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
+    this->log_to_stdout();
+
     const std::size_t DATA_SIZE = 1024 * 1024;
     static_assert(DATA_SIZE % 4 == 0, "Data size should be divisible by 4");
 
@@ -595,6 +597,8 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
             [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
                 ++server_on_connect_callback_count;
+                EXPECT_EQ(0, server_data_receive_size);
+
                 client.send_data(server_buf, DATA_SIZE,
                     [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
                         ++server_on_data_send_callback_count;

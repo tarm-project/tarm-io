@@ -112,7 +112,7 @@ void TlsTcpClient::Impl::connect(const Endpoint endpoint,
         [this](TcpClient& client, const Error& error) {
             IO_LOG(m_loop, TRACE, this->m_parent, "Close", error.code());
 
-            if (!this->m_ssl_handshake_complete) {
+            if (this->m_ssl_handshake_state != HandshakeState::FINISHED) {
                 return;
             }
 

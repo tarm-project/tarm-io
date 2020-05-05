@@ -71,7 +71,15 @@ protected:
     BIO* m_ssl_read_bio = nullptr;
     BIO* m_ssl_write_bio = nullptr;
 
-    bool m_ssl_handshake_complete = false;
+    // TODO: move
+    enum HandshakeState {
+        NONE = 0,
+        IN_PROGRESS,
+        FINISHING,
+        FINISHED
+    };
+
+    HandshakeState m_ssl_handshake_state = HandshakeState::NONE;
 
     // Removal is scheduled in 2 steps. First underlying connection is removed, then secure one.
     bool m_ready_schedule_removal = false;
@@ -108,7 +116,7 @@ TlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_tls_version()
         return TlsVersion::UNKNOWN;
     }
 
-    if (!m_ssl_handshake_complete) {
+    if (m_ssl_handshake_state < HandshakeState::FINISHING) {
         return TlsVersion::UNKNOWN;
     }
 
@@ -140,7 +148,7 @@ DtlsVersion OpenSslClientImplBase<ParentType, ImplType>::negotiated_dtls_version
         return DtlsVersion::UNKNOWN;
     }
 
-    if (!m_ssl_handshake_complete) {
+    if (m_ssl_handshake_state < HandshakeState::FINISHING) {
         return DtlsVersion::UNKNOWN;
     }
 
@@ -165,7 +173,7 @@ template<typename ParentType, typename ImplType>
 
 template<typename ParentType, typename ImplType>
 bool OpenSslClientImplBase<ParentType, ImplType>::is_open() const {
-    return m_client && m_client->is_open() && m_ssl_handshake_complete;
+    return m_client && m_client->is_open() && m_ssl_handshake_state == HandshakeState::FINISHED;
 }
 
 template<typename ParentType, typename ImplType>
@@ -262,6 +270,11 @@ template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
     IO_LOG(m_loop, DEBUG, m_parent, "Doing handshake");
 
+    if (m_ssl_handshake_state == HandshakeState::FINISHING) {
+        IO_LOG(m_loop, TRACE, m_parent, "Handshake is in FINISHING state, return");
+        return;
+    }
+
     auto handshake_result = SSL_do_handshake(m_ssl.get());
 
     int write_pending = BIO_pending(m_ssl_write_bio);
@@ -302,6 +315,8 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
         }
     } else if (handshake_result == 1) {
         if (write_pending) {
+            m_ssl_handshake_state = HandshakeState::FINISHING;
+
             internal_read_from_sll_and_send(
                 [this, read_pending](typename ParentType::UnderlyingClientType& client, const io::Error& error) {
                     if (error) {
@@ -333,7 +348,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::finish_handshake() {
     IO_LOG(m_loop, DEBUG, m_parent, "Connected!");
-    m_ssl_handshake_complete = true;
+    m_ssl_handshake_state = HandshakeState::FINISHED;
     on_handshake_complete();
 }
 
@@ -389,7 +404,7 @@ template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* buf, std::size_t size) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
-    if (m_ssl_handshake_complete) {
+    if (m_ssl_handshake_state == HandshakeState::FINISHED) {
         const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
         if (write_size < 0) {
             IO_LOG(m_loop, ERROR, m_parent, "BIO_write failed with code:", write_size);
