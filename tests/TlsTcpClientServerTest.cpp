@@ -201,7 +201,6 @@ TEST_F(TlsTcpClientServerTest, client_send_without_connect_no_callback) {
 }
 
 TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
-    this->log_to_stdout();
     const std::string message = "Hello!";
     std::size_t client_on_connect_callback_count = 0;
     std::size_t client_on_send_callback_count = 0;
@@ -567,8 +566,6 @@ TEST_F(TlsTcpClientServerTest, server_send_simultaneous_multiple_chunks_to_clien
 }
 
 TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
-    this->log_to_stdout();
-
     const std::size_t DATA_SIZE = 1024 * 1024;
     static_assert(DATA_SIZE % 4 == 0, "Data size should be divisible by 4");
 
