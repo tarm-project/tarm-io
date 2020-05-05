@@ -1016,11 +1016,11 @@ TEST_F(TlsTcpClientServerTest, server_with_restricted_tls_version) {
         io::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             ++server_on_connect_callback_count;
         },
         [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             ++server_on_receive_callback_count;
 
             EXPECT_EQ(message.size(), data.size);
@@ -1036,10 +1036,10 @@ TEST_F(TlsTcpClientServerTest, server_with_restricted_tls_version) {
 
     client->connect({m_default_addr, m_default_port},
         [&](io::TlsTcpClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             ++client_on_connect_callback_count;
             client.send_data(message, [&](io::TlsTcpClient& client, const io::Error& error) {
-                EXPECT_FALSE(error);
+                EXPECT_FALSE(error) << error.string();
                 ++client_on_send_callback_count;
                 client.schedule_removal();
             });
