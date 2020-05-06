@@ -23,6 +23,9 @@ docker pull "${IMAGE_TO_EXECUTE}" || true
 echo "Running image ${IMAGE_TO_EXECUTE}"
 
 DOCKER_TERMINAL_OPTIONS="-it"
+if [ ! -z ${GITHUB_ACTION:-} ]; then
+    DOCKER_TERMINAL_OPTIONS=""
+fi
 
 # Domain socket (needed for tests)
 CREATE_DOMAIN_SOCKET_COMMAND="python -c \"import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/var/run/somesocket')\""
