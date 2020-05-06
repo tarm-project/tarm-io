@@ -95,11 +95,20 @@ target_link_libraries(${TESTS_EXE_NAME}
 
 add_dependencies(${TESTS_EXE_NAME} io)
 
-add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/data
-            ${CMAKE_BINARY_DIR}/tests/$<$<OR:$<PLATFORM_ID:Windows>,$<PLATFORM_ID:Darwin>>:$<CONFIG>>
-)
+# TODO: need to improve this somehow
+if (${CMAKE_GENERATOR} MATCHES "Unix Makefiles")
+    add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_CURRENT_SOURCE_DIR}/data
+                ${CMAKE_BINARY_DIR}/tests
+    )
+else()
+    add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_CURRENT_SOURCE_DIR}/data
+                ${CMAKE_BINARY_DIR}/tests/$<$<OR:$<PLATFORM_ID:Windows>,$<PLATFORM_ID:Darwin>>:$<CONFIG>>
+    )
+endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
     include(CodeCoverage)

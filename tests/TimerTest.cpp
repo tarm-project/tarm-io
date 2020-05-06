@@ -293,7 +293,7 @@ TEST_F(TimerTest, multiple_intervals) {
 
     ASSERT_EQ(3, durations.size());
     for (std::size_t i = 0 ; i < durations.size(); ++i) {
-        EXPECT_NEAR(durations[i].count(), intervals[i], 25); // Making test valgrind-friendly // TODO: need to revise this
+        EXPECT_NEAR(durations[i].count(), intervals[i], 30); // Making test valgrind-friendly // TODO: need to revise this
     }
 
     timer->schedule_removal();
