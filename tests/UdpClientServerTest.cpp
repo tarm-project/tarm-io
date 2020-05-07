@@ -838,9 +838,9 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
 TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
     io::EventLoop loop;
 
-    const std::deque<std::uint64_t> send_timeouts = {50, 50, 50, 50, 50, 50};
-    const std::size_t TIMEOUT_MS = 100;
-    const std::size_t EXPECTED_ELAPSED_TIME_MS = 300 + TIMEOUT_MS;
+    const std::deque<std::uint64_t> send_timeouts = {100, 100, 100, 100, 100, 100};
+    const std::size_t TIMEOUT_MS = 400;
+    const std::size_t EXPECTED_ELAPSED_TIME_MS = 600 + TIMEOUT_MS;
 
     std::size_t peer_timeout_counter = 0;
     std::size_t server_data_send_counter = 0;
