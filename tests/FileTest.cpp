@@ -872,3 +872,6 @@ TEST_F(FileTest, try_open_dir) {
 
     ASSERT_EQ(0, loop.run());
 }
+
+// TODO: test copy file larger than 4 GB
+// For details see https://github.com/libuv/libuv/commit/2bbf7d5c8cd070cc8541698fe72136328bc18eae
