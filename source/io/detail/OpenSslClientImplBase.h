@@ -57,6 +57,13 @@ public:
     const Endpoint& endpoint() const;
 
 protected:
+    enum HandshakeState {
+        NONE = 0,
+        IN_PROGRESS,
+        FINISHING,
+        FINISHED
+    };
+
     void internal_read_from_sll_and_send(typename ParentType::UnderlyingClientType::EndSendCallback on_send);
 
     ParentType* m_parent;
@@ -70,14 +77,6 @@ protected:
 
     BIO* m_ssl_read_bio = nullptr;
     BIO* m_ssl_write_bio = nullptr;
-
-    // TODO: move
-    enum HandshakeState {
-        NONE = 0,
-        IN_PROGRESS,
-        FINISHING,
-        FINISHED
-    };
 
     HandshakeState m_ssl_handshake_state = HandshakeState::NONE;
 
