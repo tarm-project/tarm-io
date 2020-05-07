@@ -414,8 +414,8 @@ void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* bu
     } else {
         const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
         if (write_size <= 0) {
-            // TODO: on handshake failed here???
             IO_LOG(m_loop, ERROR, m_parent, "BIO_write failed with code:", write_size);
+            on_handshake_failed(-1, Error(StatusCode::OPENSSL_ERROR, "Handshake failed, invalid data"));
             return;
         }
 
