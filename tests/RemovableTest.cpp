@@ -16,8 +16,7 @@ struct RemovableTest : public testing::Test,
 
 namespace {
 
-bool g_disposed_1 = false;
-bool g_disposed_2 = false;
+bool g_disposed = false;
 
 class TestRemovable : public io::Removable {
 public:
@@ -40,7 +39,7 @@ private:
 TEST_F(RemovableTest, schedule_removal) {
     io::EventLoop loop;
 
-    auto td = new TestRemovable(loop, g_disposed_2);
+    auto td = new TestRemovable(loop, g_disposed);
     EXPECT_FALSE(td->is_removal_scheduled());
     td->schedule_removal();
     EXPECT_TRUE(td->is_removal_scheduled());
@@ -51,7 +50,7 @@ TEST_F(RemovableTest, schedule_removal) {
 
     ASSERT_EQ(0, loop.run());
 
-    ASSERT_TRUE(g_disposed_2);
+    ASSERT_TRUE(g_disposed);
 }
 
 TEST_F(RemovableTest, callback) {

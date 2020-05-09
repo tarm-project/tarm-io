@@ -268,7 +268,7 @@ bool DtlsServer::Impl::schedule_removal() {
         return true;
     }
 
-    close([this](DtlsServer& server, const Error&) {
+    close([](DtlsServer& server, const Error&) {
         server.schedule_removal();
     });
 

@@ -14,7 +14,7 @@ namespace io {
 class RefCounted : public Removable {
 public:
     IO_FORBID_COPY(RefCounted);
-    IO_ALLOW_MOVE(RefCounted);
+    IO_FORBID_MOVE(RefCounted);
 
     IO_DLL_PUBLIC
     RefCounted(EventLoop& loop);

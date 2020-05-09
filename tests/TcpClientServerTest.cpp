@@ -406,7 +406,7 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
         }
     });
 
-    std::thread client_thread([this, CHUNK_SIZE, CHUNKS_COUNT]() {
+    std::thread client_thread([&]() {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         std::size_t counter = 0;
@@ -467,8 +467,6 @@ TEST_F(TcpClientServerTest, null_send_buf) {
         nullptr
     );
     ASSERT_FALSE(listen_error);
-
-    bool data_sent = false;
 
     auto client = new io::TcpClient(loop);
     client->connect({m_default_addr, m_default_port},
