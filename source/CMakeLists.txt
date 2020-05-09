@@ -30,6 +30,9 @@ set(IO_OPENSSL_FOUND FALSE PARENT_SCOPE)
     find_package(OpenSSL)
 
     if (OpenSSL_FOUND)
+        # DOC: warn of danger of having openssl installed in /usr/local/include
+        # https://langui.sh/2015/07/24/osx-clang-include-lib-search-paths/
+        message(STATUS "OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
         set(IO_OPENSSL_FOUND TRUE PARENT_SCOPE)
         set(IO_OPENSSL_FOUND TRUE)
     endif()
@@ -102,6 +105,10 @@ if (IO_OPENSSL_FOUND)
     target_link_libraries(io PUBLIC OpenSSL::SSL)
     target_link_libraries(io PUBLIC OpenSSL::Crypto)
     target_compile_definitions(io PRIVATE IO_HAS_OPENSSL)
+
+    if (OPENSSL_ROOT_DIR)
+        target_include_directories(io PUBLIC ${OPENSSL_ROOT_DIR}/include)
+    endif()
 endif()
 
 if (IO_USE_EXTERNAL_LIBUV)

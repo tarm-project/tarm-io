@@ -75,23 +75,24 @@ if (NOT IO_OPENSSL_FOUND)
     list(FILTER TESTS_LIST EXCLUDE REGEX VersionTest\.cpp)
 endif()
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${GTEST_INCLUDE_DIRS}
-)
-
 set(RUN_TEST_ENV) # TODO: currently this is unused but may be utilized with sanitizers
 set(TESTS_EXE_NAME tests)
 
 add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
-target_include_directories(${TESTS_EXE_NAME} PUBLIC "${CMAKE_SOURCE_DIR}/source")
-target_include_directories(${TESTS_EXE_NAME} PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>>)
 target_link_libraries(${TESTS_EXE_NAME}
     io
     GTest::gtest
     Boost::system
     Boost::filesystem
 )
+
+# TODO: remove????
+#target_include_directories(${TESTS_EXE_NAME} PUBLIC
+#    "${CMAKE_CURRENT_SOURCE_DIR}"
+#    "${CMAKE_SOURCE_DIR}/source"
+#    $<BUILD_INTERFACE:$<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>>
+#    ${GTEST_INCLUDE_DIRS}
+#)
 
 add_dependencies(${TESTS_EXE_NAME} io)
 
