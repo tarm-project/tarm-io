@@ -59,6 +59,13 @@ endif()
 
 # D:\uv_cpp\build>cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 -DCMAKE_GENERATOR_PLATFORM=Win32 -DBOOST_ROOT=D:\boost_1_70_0 -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT=D:\gtest_install -DOPENSSL_ROOT_DIR=D:\Build-OpenSSL-VC-32\ ..
 
+# ===================================================
+# MSVC 2017, W7 virtual machine
+# D:\tarm-io\build>cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DBOOST_ROOT=D:\boost_install -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT=D:\gtest_install  -DOPENSSL_ROOT_DIR=D:\openssl_install ..
+#
+# cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_INSTALL_PREFIX=D:\gtest_install ..
+# ===================================================
+
 #find_package(PkgConfig REQUIRED)
 #pkg_check_modules(LIBUV REQUIRED libuv)
 

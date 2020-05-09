@@ -1659,6 +1659,8 @@ TEST_F(DtlsClientServerTest, DISABLED_client_send_invalid_data_after_handshake) 
             int yes = 1;
 #ifdef __APPLE__
             result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(int));
+#elif defined(_WIN32)
+			result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), sizeof(int));
 #else
             result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 #endif
