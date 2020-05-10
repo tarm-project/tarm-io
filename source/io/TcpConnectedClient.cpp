@@ -129,9 +129,10 @@ void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 
 void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
     auto loop_ptr = reinterpret_cast<EventLoop*>(handle->loop->data);
-    IO_LOG(loop_ptr, TRACE, "");
-
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
+
+    IO_LOG(loop_ptr, TRACE, this_.m_parent);
+
     this_.m_server->remove_client_connection(this_.m_parent);
 
     if (this_.m_close_callback) {
@@ -152,7 +153,7 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
     if (nread >= 0) {
         IO_LOG(this_.m_loop, TRACE, this_.m_parent, "Received data, size:", nread);
     } else {
-        IO_LOG(this_.m_loop, TRACE, this_.m_parent, "Receive error:", uv_strerror(nread));
+        IO_LOG(this_.m_loop, TRACE, this_.m_parent, "Receive error:", Error(nread));
     }
 
     Error error(nread);

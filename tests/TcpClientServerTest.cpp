@@ -1017,6 +1017,8 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback_
 }
 
 TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
+    //this->log_to_stdout();
+
     io::EventLoop server_loop;
 
     std::size_t connections_counter = 0;

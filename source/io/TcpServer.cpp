@@ -79,6 +79,7 @@ TcpServer::Impl::Impl(EventLoop& loop, TcpServer& parent) :
 }
 
 TcpServer::Impl::~Impl() {
+    IO_LOG(m_loop, TRACE, m_parent);
 }
 
 Error TcpServer::Impl::listen(const Endpoint& endpoint,
@@ -134,6 +135,8 @@ const Endpoint& TcpServer::Impl::endpoint() const {
 }
 
 void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
+    IO_LOG(m_loop, TRACE, m_parent);
+
     m_end_server_callback = shutdown_callback;
 
     for (auto& client : m_client_connections) {

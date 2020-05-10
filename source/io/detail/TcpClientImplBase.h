@@ -173,7 +173,7 @@ void TcpClientImplBase<ParentType, ImplType>::send_data(const std::string& messa
 
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::send_data(std::string&& message, typename ParentType::EndSendCallback callback) {
-    const auto size = message.size();
+    const auto size = message.size(); // TODO: std::uint32_t here
     send_data_impl(std::move(message), size, callback);
 }
 
