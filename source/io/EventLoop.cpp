@@ -94,6 +94,7 @@ private:
     std::size_t m_sync_callbacks_executor_handle = 0;
     std::function<void()> m_sync_callbacks_executor_function;
     std::vector<std::function<void()>> m_sync_callbacks_queue;
+    bool m_have_active_sync_callbacks = false;
 };
 
 namespace {
@@ -110,11 +111,19 @@ EventLoop::Impl::Impl(EventLoop& loop) :
         uv_close(reinterpret_cast<uv_handle_t*>(async), on_async_close);
     }),
     m_sync_callbacks_executor_function([this]() {
-        for(auto&& v: m_sync_callbacks_queue) {
+        decltype(m_sync_callbacks_queue) queue_copy;
+        queue_copy.swap(m_sync_callbacks_queue);
+
+        for(auto&& v: queue_copy) {
             v();
         }
-        m_sync_callbacks_queue.clear();
-        stop_call_on_each_loop_cycle(m_sync_callbacks_executor_handle);
+
+        if (m_sync_callbacks_queue.empty()) {
+            // Stopping at the next loop cycle to give a chance to add more callbacks and
+            // not quit event loop if scheduled callbacks are the only what keeps it from exiting.
+            stop_call_on_each_loop_cycle(m_sync_callbacks_executor_handle);
+            m_have_active_sync_callbacks = false;
+        }
     }) {
 
     this->data = &loop;
@@ -165,8 +174,9 @@ EventLoop::Impl::~Impl() {
 }
 
 void EventLoop::Impl::schedule_callback(WorkCallback callback) {
-    if (m_sync_callbacks_queue.empty()) {
+    if (!m_have_active_sync_callbacks) {
         m_sync_callbacks_executor_handle = schedule_call_on_each_loop_cycle(m_sync_callbacks_executor_function);
+        m_have_active_sync_callbacks = true;
     }
 
     m_sync_callbacks_queue.push_back(callback);

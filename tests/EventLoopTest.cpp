@@ -389,22 +389,22 @@ TEST_F(EventLoopTest, schedule_callback_after_loop_run) {
     EXPECT_EQ(0, callback_counter);
 }
 
-TEST_F(EventLoopTest, schedule_multiple_callbacks) {
+TEST_F(EventLoopTest, schedule_multiple_callbacks_parallel) {
     io::EventLoop loop;
 
     std::size_t callback_counter_1 = 0;
     std::size_t callback_counter_2 = 0;
     std::size_t callback_counter_3 = 0;
 
-    auto callback_1  = [&]() {
+    auto callback_1 = [&]() {
         ++callback_counter_1;
     };
 
-    auto callback_2  = [&]() {
+    auto callback_2 = [&]() {
         ++callback_counter_2;
     };
 
-    auto callback_3  = [&]() {
+    auto callback_3 = [&]() {
         ++callback_counter_3;
     };
 
@@ -441,3 +441,39 @@ TEST_F(EventLoopTest, schedule_multiple_callbacks) {
     EXPECT_EQ(2, callback_counter_2);
     EXPECT_EQ(1, callback_counter_3);
 }
+
+TEST_F(EventLoopTest, schedule_multiple_callbacks_sequential) {
+    io::EventLoop loop;
+
+    std::size_t callback_counter_1 = 0;
+    std::size_t callback_counter_2 = 0;
+    std::size_t callback_counter_3 = 0;
+
+    auto callback_3 = [&]() {
+        ++callback_counter_3;
+    };
+
+    auto callback_2 = [&]() {
+        ++callback_counter_2;
+        loop.schedule_callback(callback_3);
+    };
+
+    auto callback_1 = [&]() {
+        ++callback_counter_1;
+
+        loop.schedule_callback(callback_2);
+    };
+
+    loop.schedule_callback(callback_1);
+
+    EXPECT_EQ(0, callback_counter_1);
+    EXPECT_EQ(0, callback_counter_2);
+    EXPECT_EQ(0, callback_counter_3);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, callback_counter_1);
+    EXPECT_EQ(1, callback_counter_2);
+    EXPECT_EQ(1, callback_counter_3);
+}
+
