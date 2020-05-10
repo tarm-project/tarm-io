@@ -290,6 +290,8 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 void TcpServer::Impl::on_close(uv_handle_t* handle) {
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpServer::Impl*>(handle->data);
+        IO_LOG(this_.m_loop, TRACE, this_.m_parent);
+
         if (this_.m_end_server_callback) {
             this_.m_end_server_callback(*this_.m_parent, Error(0));
         }
