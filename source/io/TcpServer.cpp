@@ -301,7 +301,7 @@ void TcpServer::Impl::on_close(uv_handle_t* handle) {
 
         if (this_.connected_clients_count() != 0) {
             // Waiting for all clients to be closed
-            this_.m_loop->schedule_callback([handle, this_]() {
+            this_.m_loop->schedule_callback([handle]() {
                     on_close(handle);
                 }
             );
