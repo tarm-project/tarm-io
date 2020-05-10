@@ -143,8 +143,6 @@ void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
         client->shutdown();
     }
 
-    m_client_connections.clear();
-
     // shutdown only works on connected sockets but m_server_handle does not connects to anyone
     /*
     auto shutdown_req = new uv_shutdown_t;
@@ -192,18 +190,26 @@ std::size_t TcpServer::Impl::connected_clients_count() const {
 }
 
 bool TcpServer::Impl::schedule_removal() {
+    IO_LOG(m_loop, TRACE, m_parent);
+
     const auto removal_scheduled = m_parent->is_removal_scheduled();
 
     if (!removal_scheduled) {
+        // TODO: this setter should be set via call of ->schedule_removal
         m_parent->set_removal_scheduled();
 
-        auto end_server_callback_copy = m_end_server_callback;
+        if (m_client_connections.empty()) {
+            auto end_server_callback_copy = m_end_server_callback;
 
-        this->close([this, end_server_callback_copy] (TcpServer& server, const Error& error) {
-            if (end_server_callback_copy && is_open()) {
-                end_server_callback_copy(server, error);
-            }
-        });
+            this->close([this, end_server_callback_copy](TcpServer& server, const Error& error) {
+                // TODO: revise this. Do we need such strange way of calling end server callback?
+                if (end_server_callback_copy && is_open()) {
+                    end_server_callback_copy(server, error);
+                }
+            });
+        } else {
+            this->close(nullptr);
+        }
     }
 
     return removal_scheduled || m_server_handle == nullptr;
@@ -216,9 +222,10 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
     auto& this_ = *reinterpret_cast<TcpServer::Impl*>(server->data);
 
-    IO_LOG(this_.m_loop, TRACE, this_.m_parent, "");
+    IO_LOG(this_.m_loop, TRACE, this_.m_parent);
 
     auto on_client_close_callback = [&this_](TcpConnectedClient& client, const Error& error) {
+        IO_LOG(this_.m_loop, TRACE, this_.m_parent, "is_removal_scheduled:", this_.m_parent->is_removal_scheduled()); // TODO: remove
         if (this_.m_close_connection_callback) {
             this_.m_close_connection_callback(client, error);
         }
@@ -291,6 +298,16 @@ void TcpServer::Impl::on_close(uv_handle_t* handle) {
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpServer::Impl*>(handle->data);
         IO_LOG(this_.m_loop, TRACE, this_.m_parent);
+
+        if (this_.connected_clients_count() != 0) {
+            // Waiting for all clients to be closed
+            this_.m_loop->schedule_callback([handle, this_]() {
+                    on_close(handle);
+                }
+            );
+            return;
+        }
+
 
         if (this_.m_end_server_callback) {
             this_.m_end_server_callback(*this_.m_parent, Error(0));

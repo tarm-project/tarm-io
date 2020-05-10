@@ -1017,37 +1017,42 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_data_receive_callback_
 }
 
 TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
-    //this->log_to_stdout();
-
     io::EventLoop server_loop;
 
-    std::size_t connections_counter = 0;
-    std::size_t server_reads_counter = 0;
+    std::size_t server_on_connect_counter = 0;
+    std::size_t server_on_data_receive_counter = 0;
+    std::size_t server_on_close_counter = 0;
 
     const std::size_t NUMBER_OF_CLIENTS = 100;
     std::vector<bool> clinets_data_log(NUMBER_OF_CLIENTS, false);
 
     auto server = new io::TcpServer(server_loop);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-    [&](io::TcpConnectedClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
-        ++connections_counter;
-    },
-    [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-        ++server_reads_counter;
-        ASSERT_EQ(sizeof(std::size_t), data.size);
-        const auto value = *reinterpret_cast<const std::size_t*>(data.buf.get());
-        ASSERT_LT(value, clinets_data_log.size());
-        clinets_data_log[value] = true;
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_connect_counter;
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_data_receive_counter;
+            ASSERT_EQ(sizeof(std::size_t), data.size);
+            const auto value = *reinterpret_cast<const std::size_t*>(data.buf.get());
+            ASSERT_LT(value, clinets_data_log.size());
+            clinets_data_log[value] = true;
 
-        if (server_reads_counter == NUMBER_OF_CLIENTS) {
-            client.server().shutdown([&](io::TcpServer& server, const io::Error& error) {
-                EXPECT_FALSE(error);
-                server.schedule_removal();
-            });
+            if (server_on_data_receive_counter == NUMBER_OF_CLIENTS) {
+                client.server().shutdown([&](io::TcpServer& server, const io::Error& error) {
+                    EXPECT_EQ(NUMBER_OF_CLIENTS, server_on_close_counter);
+                    EXPECT_FALSE(error);
+                    server.schedule_removal();
+                });
+            }
+        },
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++server_on_close_counter;
         }
-    },
-    nullptr);
+    );
     EXPECT_FALSE(listen_error);
 
     std::thread client_thread([this, NUMBER_OF_CLIENTS]() {
@@ -1093,9 +1098,13 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
         client_thread.join();
     });
 
+    EXPECT_EQ(0, server_on_connect_counter);
+    EXPECT_EQ(0, server_on_data_receive_counter);
+
     EXPECT_EQ(0, server_loop.run());
-    EXPECT_EQ(NUMBER_OF_CLIENTS, connections_counter);
-    EXPECT_EQ(NUMBER_OF_CLIENTS, server_reads_counter);
+
+    EXPECT_EQ(NUMBER_OF_CLIENTS, server_on_connect_counter);
+    EXPECT_EQ(NUMBER_OF_CLIENTS, server_on_data_receive_counter);
 
     for(std::size_t i = 0; i < NUMBER_OF_CLIENTS; ++i) {
         ASSERT_TRUE(clinets_data_log[i]) << " i= " << i;
@@ -3069,3 +3078,5 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
 
 
 // TODO: ipv6
+
+// TODO: test schedule of server removal when have no connections and try connect many clients right after removal is scheduled
