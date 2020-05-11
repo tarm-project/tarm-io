@@ -225,20 +225,23 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
     IO_LOG(this_.m_loop, TRACE, this_.m_parent);
 
     auto on_client_close_callback = [&this_](TcpConnectedClient& client, const Error& error) {
-        IO_LOG(this_.m_loop, TRACE, this_.m_parent, "is_removal_scheduled:", this_.m_parent->is_removal_scheduled()); // TODO: remove
         if (this_.m_close_connection_callback) {
             this_.m_close_connection_callback(client, error);
         }
     };
 
-    auto tcp_client = new TcpConnectedClient(*this_.m_loop, *this_.m_parent, on_client_close_callback);
+    std::unique_ptr<TcpConnectedClient, std::function<void(TcpConnectedClient*)>> tcp_client(
+        new TcpConnectedClient(*this_.m_loop, *this_.m_parent, on_client_close_callback),
+        [](TcpConnectedClient* c) {
+            c->schedule_removal();
+        }
+    );
     const auto init_error = tcp_client->init_stream();
     if (init_error) {
         IO_LOG(this_.m_loop, ERROR, this_.m_parent, "init_error");
         if (this_.m_new_connection_callback) {
             this_.m_new_connection_callback(*tcp_client, init_error);
         }
-        tcp_client->schedule_removal(); // TODO: use some smart pointer instead of manual scheduling???
         return;
     }
 
@@ -248,7 +251,6 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
         if (this_.m_new_connection_callback) {
             this_.m_new_connection_callback(*tcp_client, error);
         }
-        tcp_client->schedule_removal();
         return;
     }
 
@@ -263,7 +265,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
         if (!getpeername_error) {
             tcp_client->set_endpoint(io::Endpoint(&info));
 
-            this_.m_client_connections.insert(tcp_client);
+            this_.m_client_connections.insert(tcp_client.get());
 
             if (this_.m_new_connection_callback) {
                 this_.m_new_connection_callback(*tcp_client, Error(0));
@@ -272,6 +274,8 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
             if (tcp_client->is_open()) {
                 tcp_client->start_read(this_.m_data_receive_callback);
             }
+
+            tcp_client.release();
         } else {
             IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", getpeername_error.string());
             if (this_.m_new_connection_callback) {
@@ -289,8 +293,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
         }
     } else {
         this_.m_new_connection_callback(*tcp_client, Error(accept_status));
-        //uv_close(reinterpret_cast<uv_handle_t*>(tcp_client), nullptr/*on_close*/);
-        // TODO: schedule TcpConnectedClient removal here
+        return;
     }
 }
 
