@@ -1405,6 +1405,8 @@ TEST_F(TcpClientServerTest, client_shutdown_in_connect) {
 TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
     // Note: in this test server sends large cunk of data to client but in receive callback closes that connection
     //       which does not allow to complete that sending operation, thus it is cancelled
+    // Note2:on Windows send consumes all supplied buffer, so operation will not be cancelled and result will be OK
+    // TODO: need to revise or generalize this!
 
     const std::size_t DATA_SIZE = 64 * 1024 * 1024;
 
@@ -1560,7 +1562,9 @@ TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
                     // And this callback is called with "BROKEN_PIPE" error and than close.
                     // This error means that message was not delivered because peer closed connection.
                     // TODO: BROKEN_PIPE error name is not descriptiove enough. Convert all such errors into CONNECTION_RESET_BY_PEER????
-                    EXPECT_EQ(io::StatusCode::BROKEN_PIPE, error.code()) << error.string();
+                    // TODO: OPERATION_CANCELED is returned on Windows here. Need to generalize this?
+                    EXPECT_TRUE(io::StatusCode::BROKEN_PIPE == error.code() ||
+                                io::StatusCode::OPERATION_CANCELED == error.code()) << error.string();
                 }
 
                 send_data(client);
@@ -3080,3 +3084,4 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
 // TODO: ipv6
 
 // TODO: test schedule of server removal when have no connections and try connect many clients right after removal is scheduled
+// TODO: send large chunk of bytes and close connection right after close from sending side, ensure that client received not all data
