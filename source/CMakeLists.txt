@@ -144,6 +144,15 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
 #    target_compile_options(io PRIVATE -fno-exceptions)
 endif()
 
+if(WIN32 AND BUILD_SHARED_LIBS)
+    add_custom_command(TARGET io POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/tests/$<CONFIG>/"
+          COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              "${CMAKE_BINARY_DIR}/source/$<CONFIG>/io.dll"
+              "${CMAKE_BINARY_DIR}/tests/$<CONFIG>/"
+              )
+endif()
+
 # installation
 # Unfortunately can not use target property PUBLIC_HEADER here
 # because of https://gitlab.kitware.com/cmake/cmake/issues/16739
@@ -179,11 +188,3 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/ioConfig.cmake.in"
   "${config_file}" INSTALL_DESTINATION ${cmake_files_install_dir})
 install(FILES ${version_file} ${config_file}
   DESTINATION ${cmake_files_install_dir})
-
-if(WIN32 AND BUILD_SHARED_LIBS)
-    add_custom_command(TARGET io POST_BUILD
-          COMMAND ${CMAKE_COMMAND} -E copy_if_different
-              "${CMAKE_BINARY_DIR}/source/$<CONFIG>/io.dll"
-              "${CMAKE_BINARY_DIR}/tests/$<CONFIG>/"
-              )
-endif()
