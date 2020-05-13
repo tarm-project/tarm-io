@@ -60,7 +60,8 @@ public:
 
     IO_DLL_PUBLIC bool is_running() const;
 
-    // TODO: make private???
+    // Access to an internal libuv's event loop via void* pointer which allows you
+    // to schedule raw libuv operations using tarm-io library event loop.
     IO_DLL_PUBLIC void* raw_loop();
 
 private:
