@@ -226,12 +226,12 @@ TEST_F(EventLoopTest, dummy_idle) {
     io::EventLoop loop;
 
     // crash tests
-    loop.start_dummy_idle();
-    loop.start_dummy_idle();
-    loop.stop_dummy_idle();
-    loop.stop_dummy_idle();
-    loop.start_dummy_idle();
-    loop.stop_dummy_idle();
+    loop.start_block_loop_from_exit();
+    loop.start_block_loop_from_exit();
+    loop.stop_block_loop_from_exit();
+    loop.stop_block_loop_from_exit();
+    loop.start_block_loop_from_exit();
+    loop.stop_block_loop_from_exit();
 
     ASSERT_EQ(0, loop.run());
 }
@@ -291,7 +291,7 @@ TEST_F(EventLoopTest, execute_on_loop_thread_from_other_thread) {
     auto main_thread_id = std::this_thread::get_id();
     bool execute_on_loop_thread_called = false;
 
-    loop.start_dummy_idle(); // need to hold loop running
+    loop.start_block_loop_from_exit(); // need to hold loop running
 
     std::thread thread([&loop, &execute_on_loop_thread_called, &main_thread_id](){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -299,7 +299,7 @@ TEST_F(EventLoopTest, execute_on_loop_thread_from_other_thread) {
         loop.execute_on_loop_thread([&execute_on_loop_thread_called, &main_thread_id](io::EventLoop& loop){
             ASSERT_EQ(main_thread_id, std::this_thread::get_id());
             execute_on_loop_thread_called = true;
-            loop.stop_dummy_idle();
+            loop.stop_block_loop_from_exit();
         });
     });
 

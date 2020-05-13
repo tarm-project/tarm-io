@@ -50,9 +50,10 @@ public:
     IO_DLL_PUBLIC std::size_t schedule_call_on_each_loop_cycle(WorkCallback callback);
     IO_DLL_PUBLIC void stop_call_on_each_loop_cycle(std::size_t handle);
 
-    // TODO: explain this, rename
-    IO_DLL_PUBLIC void start_dummy_idle();
-    IO_DLL_PUBLIC void stop_dummy_idle();
+    // As loop exits when there is nothing to do, sometimes it is needed to postpone exiting.
+    // Do not forget to call 'stop_block_loop_from_exit' when you are sure that loop has enough work to do.
+    IO_DLL_PUBLIC void start_block_loop_from_exit();
+    IO_DLL_PUBLIC void stop_block_loop_from_exit();
 
     // TODO: handle(convert) error codes????
     IO_DLL_PUBLIC int run();

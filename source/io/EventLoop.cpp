@@ -50,8 +50,8 @@ public:
     std::size_t schedule_call_on_each_loop_cycle(WorkCallback callback);
     void stop_call_on_each_loop_cycle(std::size_t handle);
 
-    void start_dummy_idle();
-    void stop_dummy_idle();
+    void start_block_loop_from_exit();
+    void stop_block_loop_from_exit();
 
     Error init_async();
     int run();
@@ -308,7 +308,7 @@ void EventLoop::Impl::stop_call_on_each_loop_cycle(std::size_t handle) {
     uv_close(reinterpret_cast<uv_handle_t*>(it->second.get()), EventLoop::Impl::on_each_loop_cycle_handler_close);
 }
 
-void EventLoop::Impl::start_dummy_idle() {
+void EventLoop::Impl::start_block_loop_from_exit() {
     IO_LOG(m_parent, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
 
     if (m_dummy_idle_ref_counter++) {
@@ -325,7 +325,7 @@ void EventLoop::Impl::start_dummy_idle() {
     uv_timer_start(m_dummy_idle, on_dummy_idle_tick, 1, 1);
 }
 
-void EventLoop::Impl::stop_dummy_idle() {
+void EventLoop::Impl::stop_block_loop_from_exit() {
     IO_LOG(m_parent, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
 
     if (--m_dummy_idle_ref_counter) {
@@ -469,12 +469,12 @@ void EventLoop::stop_call_on_each_loop_cycle(std::size_t handle) {
     return m_impl->stop_call_on_each_loop_cycle(handle);
 }
 
-void EventLoop::start_dummy_idle() {
-    return m_impl->start_dummy_idle();
+void EventLoop::start_block_loop_from_exit() {
+    return m_impl->start_block_loop_from_exit();
 }
 
-void EventLoop::stop_dummy_idle() {
-    return m_impl->stop_dummy_idle();
+void EventLoop::stop_block_loop_from_exit() {
+    return m_impl->stop_block_loop_from_exit();
 }
 
 int EventLoop::run() {

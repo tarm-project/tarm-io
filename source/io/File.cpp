@@ -273,7 +273,7 @@ void File::Impl::schedule_read() {
 
 void File::Impl::schedule_read(ReadRequest& req) {
     m_read_in_progress = true;
-    m_loop->start_dummy_idle();
+    m_loop->start_block_loop_from_exit();
 
     if (req.raw_buf == nullptr) {
         req.raw_buf = new char[READ_BUF_SIZE];
@@ -284,7 +284,7 @@ void File::Impl::schedule_read(ReadRequest& req) {
         IO_LOG(this->m_loop, TRACE, this->m_path, "buffer freed");
 
         req.is_free = true;
-        m_loop->stop_dummy_idle();
+        m_loop->stop_block_loop_from_exit();
 
         if (this->m_need_reschedule_remove) {
             if (!has_read_buffers_in_use()) {
@@ -413,7 +413,7 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         req.buf.reset();
 
         //uv_print_all_handles(this_.m_uv_loop, stdout);
-        //this_.m_loop->stop_dummy_idle();
+        //this_.m_loop->stop_block_loop_from_exit();
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
             io::Error error(0);
