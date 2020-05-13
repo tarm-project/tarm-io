@@ -170,7 +170,7 @@ void TcpServer::Impl::close_impl() {
         uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
     } else {
         if (m_end_server_callback) {
-            m_loop->schedule_callback([=]() {
+            m_loop->schedule_callback([=](EventLoop&) {
                 m_end_server_callback(*m_parent, Error(io::StatusCode::NOT_CONNECTED));
             });
         }
@@ -304,7 +304,7 @@ void TcpServer::Impl::on_close(uv_handle_t* handle) {
 
         if (this_.connected_clients_count() != 0) {
             // Waiting for all clients to be closed
-            this_.m_loop->schedule_callback([handle]() {
+            this_.m_loop->schedule_callback([handle](EventLoop&) {
                     on_close(handle);
                 }
             );

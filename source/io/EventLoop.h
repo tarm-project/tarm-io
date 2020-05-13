@@ -21,10 +21,10 @@ namespace io {
 class EventLoop : public Logger,
                   public UserDataHolder {
 public:
-    using WorkCallback = std::function<void()>;
-    using WorkDoneCallback = std::function<void()>;
-    using WorkCallbackWithUserData = std::function<void*()>;
-    using WorkDoneCallbackWithUserData = std::function<void(void*)>;
+    using WorkCallback = std::function<void(EventLoop&)>;
+    using WorkDoneCallback = std::function<void(EventLoop&)>;
+    using WorkCallbackWithUserData = std::function<void*(EventLoop&)>;
+    using WorkDoneCallbackWithUserData = std::function<void(EventLoop&, void*)>;
 
     static const std::size_t INVALID_HANDLE = (std::numeric_limits<std::size_t>::max)();
 

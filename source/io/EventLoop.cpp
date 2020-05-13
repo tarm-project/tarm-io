@@ -27,7 +27,7 @@ namespace io {
 namespace {
 
 struct Idle : public uv_idle_t {
-    std::function<void()> callback = nullptr;
+    std::function<void(EventLoop&)> callback = nullptr;
     std::size_t id = 0;
 };
 
@@ -76,7 +76,7 @@ protected:
     static void on_dummy_idle_close(uv_handle_t* handle);
 
 private:
-    EventLoop* m_loop;
+    EventLoop* m_parent;
     // TODO: handle wrap around (looks like some randomized algorithm of IDs generation may help)
     std::size_t m_idle_it_counter = 0;
     std::unordered_map<size_t, std::unique_ptr<Idle>> m_each_loop_cycle_handlers;
@@ -85,15 +85,15 @@ private:
     std::int64_t m_dummy_idle_ref_counter = 0;
 
     std::unique_ptr<uv_async_t, std::function<void(uv_async_t*)>> m_async;
-    std::deque<std::function<void()>> m_async_callbacks_queue;
+    std::deque<std::function<void(EventLoop&)>> m_async_callbacks_queue;
     std::mutex m_async_callbacks_queue_mutex;
 
     bool m_is_running = false;
     bool m_run_called = false;
 
     std::size_t m_sync_callbacks_executor_handle = 0;
-    std::function<void()> m_sync_callbacks_executor_function;
-    std::vector<std::function<void()>> m_sync_callbacks_queue;
+    std::function<void(EventLoop&)> m_sync_callbacks_executor_function;
+    std::vector<std::function<void(EventLoop&)>> m_sync_callbacks_queue;
     bool m_have_active_sync_callbacks = false;
 };
 
@@ -105,17 +105,17 @@ void on_async_close(uv_handle_t* handle) {
 
 } // namespace
 
-EventLoop::Impl::Impl(EventLoop& loop) :
-    m_loop(&loop),
+EventLoop::Impl::Impl(EventLoop& parent) :
+    m_parent(&parent),
     m_async(nullptr, [](uv_async_t* async) {
         uv_close(reinterpret_cast<uv_handle_t*>(async), on_async_close);
     }),
-    m_sync_callbacks_executor_function([this]() {
+    m_sync_callbacks_executor_function([this](EventLoop&) {
         decltype(m_sync_callbacks_queue) queue_copy;
         queue_copy.swap(m_sync_callbacks_queue);
 
         for(auto&& v: queue_copy) {
-            v();
+            v(*m_parent);
         }
 
         if (m_sync_callbacks_queue.empty()) {
@@ -124,7 +124,7 @@ EventLoop::Impl::Impl(EventLoop& loop) :
         }
     }) {
 
-    this->data = &loop;
+    this->data = &parent;
 
     // This mutex was added because thread sanitizer complained about data race in epoll_create1
     // for test EventLoopTest.loop_in_thread
@@ -136,12 +136,12 @@ EventLoop::Impl::Impl(EventLoop& loop) :
 
     const auto async_init_error = init_async();
     if (async_init_error) {
-        IO_LOG(m_loop, ERROR, "uv's async init failed: ", async_init_error.string());
+        IO_LOG(m_parent, ERROR, "uv's async init failed: ", async_init_error.string());
     }
 }
 
 void EventLoop::Impl::finish() {
-    IO_LOG(m_loop, TRACE, "dummy_idle_ref_counter:", m_dummy_idle_ref_counter);
+    IO_LOG(m_parent, TRACE, "dummy_idle_ref_counter:", m_dummy_idle_ref_counter);
 
     {
         std::lock_guard<std::mutex> guard(m_async_callbacks_queue_mutex);
@@ -158,13 +158,13 @@ void EventLoop::Impl::finish() {
     m_sync_callbacks_queue.clear();
 
     if (status == UV_EBUSY) {
-        IO_LOG(m_loop, DEBUG, "loop returned EBUSY at close, running one more time");
+        IO_LOG(m_parent, DEBUG, "loop returned EBUSY at close, running one more time");
 
         // Making the last attemt to close everything and shut down gracefully
         status = uv_run(this, UV_RUN_ONCE);
 
         uv_loop_close(this);
-        IO_LOG(m_loop, DEBUG, "Done");
+        IO_LOG(m_parent, DEBUG, "Done");
     }
 }
 
@@ -200,36 +200,38 @@ namespace {
 
 template <typename WorkCallbackType, typename WorkDoneCallbackType>
 struct Work : public uv_work_t {
+    EventLoop* m_event_loop = nullptr;
     WorkCallbackType work_callback;
     WorkDoneCallbackType work_done_callback;
 
     void call_work_callback() {
         if (work_callback) {
-            work_callback();
+            work_callback(*m_event_loop);
         }
     }
 
     void call_work_done_callback() {
         if (work_done_callback) {
-            work_done_callback();
+            work_done_callback(*m_event_loop);
         }
     }
 };
 
 template <>
 struct Work<EventLoop::WorkCallbackWithUserData, EventLoop::WorkDoneCallbackWithUserData> : public uv_work_t {
+    EventLoop* m_event_loop = nullptr;
     EventLoop::WorkCallbackWithUserData work_callback;
     EventLoop::WorkDoneCallbackWithUserData work_done_callback;
 
     void call_work_callback() {
         if (work_callback) {
-            this->data = work_callback();
+            this->data = work_callback(*m_event_loop);
         }
     }
 
     void call_work_done_callback() {
         if (work_done_callback) {
-            work_done_callback(this->data);
+            work_done_callback(*m_event_loop, this->data);
         }
     }
 };
@@ -244,6 +246,7 @@ void EventLoop::Impl::add_work(WorkCallbackType work_callback,
     }
 
     auto work = new Work<WorkCallbackType, WorkDoneCallbackType>;
+    work->m_event_loop = m_parent;
     work->work_callback = work_callback;
     work->work_done_callback = work_done_callback;
     Error error = uv_queue_work(this,
@@ -306,13 +309,13 @@ void EventLoop::Impl::stop_call_on_each_loop_cycle(std::size_t handle) {
 }
 
 void EventLoop::Impl::start_dummy_idle() {
-    IO_LOG(m_loop, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
+    IO_LOG(m_parent, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
 
     if (m_dummy_idle_ref_counter++) {
         return; // idle is already running
     }
 
-    IO_LOG(m_loop, TRACE, "starting timer");
+    IO_LOG(m_parent, TRACE, "starting timer");
 
     m_dummy_idle = new uv_timer_t;
     std::memset(m_dummy_idle, 0, sizeof(uv_timer_t));
@@ -323,13 +326,13 @@ void EventLoop::Impl::start_dummy_idle() {
 }
 
 void EventLoop::Impl::stop_dummy_idle() {
-    IO_LOG(m_loop, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
+    IO_LOG(m_parent, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
 
     if (--m_dummy_idle_ref_counter) {
         return;
     }
 
-    IO_LOG(m_loop, TRACE, "closing timer");
+    IO_LOG(m_parent, TRACE, "closing timer");
 
     m_dummy_idle->data = nullptr;
     uv_timer_stop(m_dummy_idle);
@@ -351,7 +354,7 @@ bool EventLoop::Impl::is_running() const {
 }
 
 void EventLoop::Impl::execute_pending_callbacks() {
-    std::deque<std::function<void()>> callbacks_queue_copy;
+    std::deque<std::function<void(EventLoop&)>> callbacks_queue_copy;
 
     {
         std::lock_guard<decltype(m_async_callbacks_queue_mutex)> guard(m_async_callbacks_queue_mutex);
@@ -359,7 +362,7 @@ void EventLoop::Impl::execute_pending_callbacks() {
     }
 
     for(auto& callback : callbacks_queue_copy) {
-        callback();
+        callback(*m_parent);
     }
 }
 
@@ -386,8 +389,10 @@ void EventLoop::Impl::on_idle(uv_idle_t* handle) {
         return;
     }
 
+    auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
+
     if (idle.callback) {
-        idle.callback();
+        idle.callback(*this_.m_parent);
     }
 }
 
@@ -410,12 +415,12 @@ void EventLoop::Impl::on_async(uv_async_t* handle) {
 
 void EventLoop::Impl::on_dummy_idle_tick(uv_timer_t* handle) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
-    IO_LOG(this_.m_loop, TRACE, "_");
+    IO_LOG(this_.m_parent, TRACE, "_");
 }
 
 void EventLoop::Impl::on_dummy_idle_close(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->loop);
-    IO_LOG(this_.m_loop, TRACE, "_");
+    IO_LOG(this_.m_parent, TRACE, "_");
 
     delete reinterpret_cast<uv_timer_t*>(handle);
 }

@@ -44,7 +44,7 @@ TEST_F(RemovableTest, schedule_removal) {
     td->schedule_removal();
     EXPECT_TRUE(td->is_removal_scheduled());
 
-    loop.add_work([](){
+    loop.add_work([](io::EventLoop&){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     });
 

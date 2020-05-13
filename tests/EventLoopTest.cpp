@@ -30,7 +30,8 @@ TEST_F(EventLoopTest, work_no_work_done_callback) {
     bool callback_executed = false;
 
     io::EventLoop event_loop;
-    event_loop.add_work([&]() {
+    event_loop.add_work([&](io::EventLoop& loop) {
+        EXPECT_EQ(&loop, &event_loop);
         callback_executed = true;
     });
 
@@ -43,11 +44,12 @@ TEST_F(EventLoopTest, work_all_callbacks) {
     bool done_executed = false;
 
     io::EventLoop event_loop;
-    event_loop.add_work([&]() {
+    event_loop.add_work([&](io::EventLoop&) {
         callback_executed = true;
         ASSERT_FALSE(done_executed);
     },
-    [&]() {
+    [&](io::EventLoop& loop) {
+        EXPECT_EQ(&loop, &event_loop);
         done_executed = true;
     });
 
@@ -63,12 +65,15 @@ TEST_F(EventLoopTest, only_work_done_callback) {
     io::EventLoop event_loop;
     event_loop.add_work(
         nullptr,
-        [&]() {
+        [&](io::EventLoop&) {
             done_executed = true;
         }
     );
 
+    ASSERT_FALSE(done_executed);
+
     ASSERT_EQ(0, event_loop.run());
+
     ASSERT_FALSE(done_executed);
 }
 
@@ -78,11 +83,13 @@ TEST_F(EventLoopTest, work_with_user_data) {
 
     io::EventLoop event_loop;
     event_loop.add_work(
-        [&]() -> void* {
+        [&](io::EventLoop& loop) -> void* {
+            EXPECT_EQ(&loop, &event_loop);
             callback_executed = true;
             return new int(42);
         },
-        [&](void* user_data) {
+        [&](io::EventLoop& loop, void* user_data) {
+            EXPECT_EQ(&loop, &event_loop);
             done_executed = true;
             auto& value = *reinterpret_cast<int*>(user_data);
             EXPECT_EQ(42, value);
@@ -101,7 +108,7 @@ TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
     size_t counter = 0;
     size_t handle = io::EventLoop::INVALID_HANDLE;
 
-    handle = loop.schedule_call_on_each_loop_cycle([&handle, &counter, &loop]() {
+    handle = loop.schedule_call_on_each_loop_cycle([&handle, &counter](io::EventLoop& loop) {
         ++counter;
 
         if (counter == 500) {
@@ -131,7 +138,7 @@ TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
     size_t counter_3 = 0;
     size_t handle_3 = io::EventLoop::INVALID_HANDLE;
 
-    handle_1 = loop.schedule_call_on_each_loop_cycle([&handle_1, &counter_1, &loop]() {
+    handle_1 = loop.schedule_call_on_each_loop_cycle([&handle_1, &counter_1](io::EventLoop& loop) {
         ++counter_1;
 
         if (counter_1 == 500) {
@@ -139,7 +146,7 @@ TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
         }
     });
 
-    handle_2 = loop.schedule_call_on_each_loop_cycle([&handle_2, &counter_2, &loop]() {
+    handle_2 = loop.schedule_call_on_each_loop_cycle([&handle_2, &counter_2](io::EventLoop& loop) {
         ++counter_2;
 
         if (counter_2 == 200) {
@@ -147,7 +154,7 @@ TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
         }
     });
 
-    handle_3 = loop.schedule_call_on_each_loop_cycle([&handle_3, &counter_3, &loop]() {
+    handle_3 = loop.schedule_call_on_each_loop_cycle([&handle_3, &counter_3](io::EventLoop& loop) {
         ++counter_3;
 
         if (counter_3 == 300) {
@@ -167,9 +174,9 @@ TEST_F(EventLoopTest, is_running) {
     std::size_t callback_call_count = 0;
 
     std::size_t handle = io::EventLoop::INVALID_HANDLE;
-    handle = event_loop.schedule_call_on_each_loop_cycle([&]() {
-        EXPECT_TRUE(event_loop.is_running());
-        event_loop.stop_call_on_each_loop_cycle(handle);
+    handle = event_loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
+        EXPECT_TRUE(loop.is_running());
+        loop.stop_call_on_each_loop_cycle(handle);
         ++callback_call_count;
     });
 
@@ -185,10 +192,11 @@ TEST_F(EventLoopTest, loop_in_thread) {
     size_t combined_counter = 0;
 
     auto functor = [&combined_counter, &data_mutex]() {
-        io::EventLoop loop;
+        io::EventLoop event_loop;
         size_t counter = 0;
 
-        const size_t handle = loop.schedule_call_on_each_loop_cycle([&counter, &loop, &handle]() {
+        const size_t handle = event_loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
+            EXPECT_EQ(&event_loop, &loop);
             ++counter;
 
             if (counter == 200) {
@@ -196,7 +204,7 @@ TEST_F(EventLoopTest, loop_in_thread) {
             }
         });
 
-        loop.run();
+        event_loop.run();
 
         EXPECT_EQ(counter, 200);
         std::lock_guard<decltype(data_mutex)> guard(data_mutex);
@@ -234,7 +242,7 @@ TEST_F(EventLoopTest, execute_on_loop_thread_from_main_thread) {
     auto main_thread_id = std::this_thread::get_id();
     int execute_on_loop_thread_call_counter = 0;
 
-    loop.execute_on_loop_thread([&main_thread_id, &execute_on_loop_thread_call_counter](){
+    loop.execute_on_loop_thread([&main_thread_id, &execute_on_loop_thread_call_counter](io::EventLoop& loop){
         ASSERT_EQ(main_thread_id, std::this_thread::get_id());
         ++execute_on_loop_thread_call_counter;
     });
@@ -255,11 +263,11 @@ TEST_F(EventLoopTest, execute_on_loop_thread_nested) {
     int execute_on_loop_thread_call_counter_1 = 0;
     int execute_on_loop_thread_call_counter_2 = 0;
 
-    loop.execute_on_loop_thread([&]() {
+    loop.execute_on_loop_thread([&](io::EventLoop&) {
         ASSERT_EQ(main_thread_id, std::this_thread::get_id());
         ++execute_on_loop_thread_call_counter_1;
 
-        loop.execute_on_loop_thread([&]() {
+        loop.execute_on_loop_thread([&](io::EventLoop&) {
             ASSERT_EQ(main_thread_id, std::this_thread::get_id());
             ++execute_on_loop_thread_call_counter_2;
         });
@@ -288,7 +296,7 @@ TEST_F(EventLoopTest, execute_on_loop_thread_from_other_thread) {
     std::thread thread([&loop, &execute_on_loop_thread_called, &main_thread_id](){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        loop.execute_on_loop_thread([&loop, &execute_on_loop_thread_called, &main_thread_id](){
+        loop.execute_on_loop_thread([&execute_on_loop_thread_called, &main_thread_id](io::EventLoop& loop){
             ASSERT_EQ(main_thread_id, std::this_thread::get_id());
             execute_on_loop_thread_called = true;
             loop.stop_dummy_idle();
@@ -310,7 +318,7 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     int counter_2 = 0;
     int counter_3 = 0;
 
-    loop.execute_on_loop_thread([&]() {
+    loop.execute_on_loop_thread([&](io::EventLoop&) {
         ++counter_1;
     });
 
@@ -324,7 +332,7 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     EXPECT_EQ(0, counter_2);
     EXPECT_EQ(0, counter_3);
 
-    loop.execute_on_loop_thread([&]() {
+    loop.execute_on_loop_thread([&](io::EventLoop&) {
         ++counter_2;
     });
 
@@ -338,7 +346,7 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     EXPECT_EQ(1, counter_2);
     EXPECT_EQ(0, counter_3);
 
-    loop.execute_on_loop_thread([&]() {
+    loop.execute_on_loop_thread([&](io::EventLoop&) {
         ++counter_3;
     });
 
@@ -359,7 +367,7 @@ TEST_F(EventLoopTest, schedule_1_callback) {
     io::EventLoop loop;
 
     std::size_t callback_counter = 0;
-    loop.schedule_callback([&](){
+    loop.schedule_callback([&](io::EventLoop&){
         callback_counter++;
     });
 
@@ -382,7 +390,7 @@ TEST_F(EventLoopTest, schedule_callback_after_loop_run) {
 
     ASSERT_EQ(0, loop.run());
 
-    loop.schedule_callback([&](){
+    loop.schedule_callback([&](io::EventLoop&){
         callback_counter++;
     });
 
@@ -396,15 +404,15 @@ TEST_F(EventLoopTest, schedule_multiple_callbacks_parallel) {
     std::size_t callback_counter_2 = 0;
     std::size_t callback_counter_3 = 0;
 
-    auto callback_1 = [&]() {
+    auto callback_1 = [&](io::EventLoop&) {
         ++callback_counter_1;
     };
 
-    auto callback_2 = [&]() {
+    auto callback_2 = [&](io::EventLoop&) {
         ++callback_counter_2;
     };
 
-    auto callback_3 = [&]() {
+    auto callback_3 = [&](io::EventLoop&) {
         ++callback_counter_3;
     };
 
@@ -449,16 +457,16 @@ TEST_F(EventLoopTest, schedule_multiple_callbacks_sequential) {
     std::size_t callback_counter_2 = 0;
     std::size_t callback_counter_3 = 0;
 
-    auto callback_3 = [&]() {
+    auto callback_3 = [&](io::EventLoop&) {
         ++callback_counter_3;
     };
 
-    auto callback_2 = [&]() {
+    auto callback_2 = [&](io::EventLoop&) {
         ++callback_counter_2;
         loop.schedule_callback(callback_3);
     };
 
-    auto callback_1 = [&]() {
+    auto callback_1 = [&](io::EventLoop&) {
         ++callback_counter_1;
 
         loop.schedule_callback(callback_2);

@@ -67,7 +67,7 @@ TEST_F(TimerTest, zero_timeot) {
     std::size_t idle_counter = 0;
 
     std::size_t idle_handle = io::EventLoop::INVALID_HANDLE;
-    idle_handle = loop.schedule_call_on_each_loop_cycle([&]() {
+    idle_handle = loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
         ASSERT_EQ(1, timer_counter);
         ++idle_counter;
 

@@ -83,7 +83,7 @@ void TcpClient::Impl::connect(const Endpoint& endpoint,
         m_tcp_stream = nullptr;
     }
 
-    m_loop->schedule_callback([=]() {
+    m_loop->schedule_callback([=](EventLoop&) {
         const Endpoint e = endpoint;
         connect_impl(e, e.raw_endpoint(), connect_callback, receive_callback, close_callback);
     });

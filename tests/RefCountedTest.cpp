@@ -24,7 +24,7 @@ TEST_F(RefCountedTest, all_in_one_test) {
     EXPECT_EQ(1, ref_counted->ref_count());
 
     int idle_counter = 0;
-    std::size_t handle = loop.schedule_call_on_each_loop_cycle([&](){
+    std::size_t handle = loop.schedule_call_on_each_loop_cycle([&](io::EventLoop&){
         switch (idle_counter) {
             case 0: {
                 EXPECT_EQ(1, ref_counted->ref_count());
@@ -67,16 +67,4 @@ TEST_F(RefCountedTest, all_in_one_test) {
     ASSERT_EQ(0, loop.run());
 
     EXPECT_EQ(1, on_schedule_removal_call_count);
-
-    /*
-    auto td = new TestRemovable(loop, g_disposed_2);
-    td->schedule_removal();
-    loop.add_work([](){
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    });
-
-    ASSERT_EQ(0, loop.run());
-
-    ASSERT_TRUE(g_disposed_2);
-    */
 }

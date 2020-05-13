@@ -41,7 +41,7 @@ private:
     void schedule_send_error(const typename ParentType::EndSendCallback& callback, const Error& error) {
         if (callback) {
             auto parent = UdpImplBase<ParentType, ImplType>::m_parent; // Working around bug in GCC 4.8.4
-            UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=](){
+            UdpImplBase<ParentType, ImplType>::m_loop->schedule_callback([=](EventLoop&){
                 callback(*parent, error);
             });
         }

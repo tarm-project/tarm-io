@@ -313,7 +313,7 @@ struct RemoveDirStatusContext {
 
 using RemoveDirWorkData = std::vector<RemoveDirWorkEntry>;
 
-RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const io::Path& path, Path subpath, RemoveDirWorkData& work_data) {
+RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const Path& path, Path subpath, RemoveDirWorkData& work_data) {
     work_data.back().processed = true;
 
     const io::Path open_path = path / subpath;
@@ -366,8 +366,8 @@ RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const io::Path& path
     return {Error(0), ""};
 }
 
-void remove_dir_impl(EventLoop& loop, const io::Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
-    loop.add_work([&loop, path, progress_callback]() -> void* {
+void remove_dir_impl(EventLoop& loop, const Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
+    loop.add_work([path, progress_callback](EventLoop& loop) -> void* {
         auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
 
         RemoveDirWorkData work_data;
@@ -388,7 +388,7 @@ void remove_dir_impl(EventLoop& loop, const io::Path& path, RemoveDirCallback re
                     return new RemoveDirStatusContext(rmdir_error, rmdir_path);
                 } else {
                     if (progress_callback) {
-                        loop.execute_on_loop_thread([progress_callback, rmdir_path](){
+                        loop.execute_on_loop_thread([progress_callback, rmdir_path](EventLoop&){
                             progress_callback(rmdir_path.string().c_str()); // TODO: remove c_str in future
                         });
                     }
@@ -400,7 +400,7 @@ void remove_dir_impl(EventLoop& loop, const io::Path& path, RemoveDirCallback re
 
         return new RemoveDirStatusContext(Error(0), "");
     },
-    [remove_callback](void* user_data) {
+    [remove_callback](EventLoop&, void* user_data) {
         auto& status_context = *reinterpret_cast<RemoveDirStatusContext*>(user_data);
         remove_callback(status_context.error);
         delete &status_context;
@@ -411,7 +411,7 @@ void remove_dir(EventLoop& loop, const io::Path& path, RemoveDirCallback remove_
     if (loop.is_running()) {
         remove_dir_impl(loop, path, remove_callback, progress_callback);
     } else {
-        loop.execute_on_loop_thread([=, &loop](){
+        loop.execute_on_loop_thread([=](EventLoop& loop){
             remove_dir_impl(loop, path, remove_callback, progress_callback);
         });
     }

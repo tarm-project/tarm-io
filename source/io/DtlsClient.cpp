@@ -69,7 +69,7 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
                                std::size_t timeout_ms) {
     if (endpoint.type() == Endpoint::UNDEFINED) {
         if (connect_callback) {
-            m_loop->schedule_callback([=]() {
+            m_loop->schedule_callback([=](EventLoop&) {
                 connect_callback(*m_parent, Error(StatusCode::INVALID_ARGUMENT));
             });
         }
@@ -79,20 +79,20 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
     if (!is_ssl_inited()) {
         auto context_errror = m_openssl_context.init_ssl_context(ssl_method());
         if (context_errror) {
-            m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, context_errror); });
+            m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, context_errror); });
             return;
         }
 
         auto version_error = m_openssl_context.set_dtls_version(std::get<0>(m_version_range),
                                                                 std::get<1>(m_version_range));
         if (version_error) {
-            m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, version_error); });
+            m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, version_error); });
             return;
         }
 
         Error ssl_init_error = ssl_init(m_openssl_context.ssl_ctx());
         if (ssl_init_error) {
-            m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, ssl_init_error); });
+            m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, ssl_init_error); });
             return;
         }
     }
@@ -101,7 +101,7 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
 
     auto destination_error = m_client->set_destination(endpoint);
     if (destination_error) {
-        m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, destination_error); });
+        m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, destination_error); });
         return;
     }
 
@@ -123,7 +123,7 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
         }
     );
     if (listen_error) {
-        m_loop->schedule_callback([=]() { connect_callback(*this->m_parent, listen_error); });
+        m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, listen_error); });
         return;
     }
 
