@@ -44,10 +44,10 @@ public:
     template<typename WorkCallbackType, typename WorkDoneCallbackType>
     void add_work(WorkCallbackType work_callback, WorkDoneCallbackType work_done_callback);
 
-    void execute_on_loop_thread(AsyncCallback callback);
+    void execute_on_loop_thread(WorkCallback callback);
 
     // Warning: do not perform heavy calculations or blocking calls here
-    std::size_t schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback);
+    std::size_t schedule_call_on_each_loop_cycle(WorkCallback callback);
     void stop_call_on_each_loop_cycle(std::size_t handle);
 
     void start_dummy_idle();
@@ -119,8 +119,6 @@ EventLoop::Impl::Impl(EventLoop& loop) :
         }
 
         if (m_sync_callbacks_queue.empty()) {
-            // Stopping at the next loop cycle to give a chance to add more callbacks and
-            // not quit event loop if scheduled callbacks are the only what keeps it from exiting.
             stop_call_on_each_loop_cycle(m_sync_callbacks_executor_handle);
             m_have_active_sync_callbacks = false;
         }
@@ -223,17 +221,15 @@ struct Work<EventLoop::WorkCallbackWithUserData, EventLoop::WorkDoneCallbackWith
     EventLoop::WorkCallbackWithUserData work_callback;
     EventLoop::WorkDoneCallbackWithUserData work_done_callback;
 
-    void* user_data = nullptr;
-
     void call_work_callback() {
         if (work_callback) {
-            user_data = work_callback();
+            this->data = work_callback();
         }
     }
 
     void call_work_done_callback() {
         if (work_done_callback) {
-            work_done_callback(user_data);
+            work_done_callback(this->data);
         }
     }
 };
@@ -241,7 +237,8 @@ struct Work<EventLoop::WorkCallbackWithUserData, EventLoop::WorkDoneCallbackWith
 } // namespace
 
 template<typename WorkCallbackType, typename WorkDoneCallbackType>
-void EventLoop::Impl::add_work(WorkCallbackType work_callback, WorkDoneCallbackType work_done_callback) {
+void EventLoop::Impl::add_work(WorkCallbackType work_callback,
+                               WorkDoneCallbackType work_done_callback) {
     if (work_callback == nullptr) {
         return;
     }
@@ -250,9 +247,9 @@ void EventLoop::Impl::add_work(WorkCallbackType work_callback, WorkDoneCallbackT
     work->work_callback = work_callback;
     work->work_done_callback = work_done_callback;
     Error error = uv_queue_work(this,
-                                  work,
-                                  on_work<WorkCallbackType, WorkDoneCallbackType>,
-                                  on_after_work<WorkCallbackType, WorkDoneCallbackType>);
+                                work,
+                                on_work<WorkCallbackType, WorkDoneCallbackType>,
+                                on_after_work<WorkCallbackType, WorkDoneCallbackType>);
     if (error) {
         // TODO: error handling
     }
@@ -284,7 +281,7 @@ int EventLoop::Impl::run() {
     return run_status;
 }
 
-std::size_t EventLoop::Impl::schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback) {
+std::size_t EventLoop::Impl::schedule_call_on_each_loop_cycle(WorkCallback callback) {
     std::unique_ptr<Idle> ptr(new Idle);
     uv_idle_init(this, ptr.get());
     ptr->data = this;
@@ -340,7 +337,7 @@ void EventLoop::Impl::stop_dummy_idle() {
     m_dummy_idle = nullptr;
 }
 
-void EventLoop::Impl::execute_on_loop_thread(AsyncCallback callback) {
+void EventLoop::Impl::execute_on_loop_thread(WorkCallback callback) {
     {
         std::lock_guard<std::mutex> guard(m_async_callbacks_queue_mutex);
         m_async_callbacks_queue.push_back(callback);
@@ -445,19 +442,21 @@ EventLoop::~EventLoop() {
     m_impl->finish();
 }
 
-void EventLoop::execute_on_loop_thread(AsyncCallback callback) {
+void EventLoop::execute_on_loop_thread(WorkCallback callback) {
     m_impl->execute_on_loop_thread(callback);
 }
 
-void EventLoop::add_work(WorkCallback work_callback, WorkDoneCallback work_done_callback) {
-    return m_impl->add_work(work_callback, work_done_callback);
+void EventLoop::add_work(WorkCallback thread_pool_work_callback,
+                         WorkDoneCallback loop_thread_work_done_callback) {
+    return m_impl->add_work(thread_pool_work_callback, loop_thread_work_done_callback);
 }
 
-void EventLoop::add_work(WorkCallbackWithUserData work_callback, WorkDoneCallbackWithUserData work_done_callback) {
-    return m_impl->add_work(work_callback, work_done_callback);
+void EventLoop::add_work(WorkCallbackWithUserData thread_pool_work_callback,
+                         WorkDoneCallbackWithUserData loop_thread_work_done_callback) {
+    return m_impl->add_work(thread_pool_work_callback, loop_thread_work_done_callback);
 }
 
-std::size_t EventLoop::schedule_call_on_each_loop_cycle(EachLoopCycleCallback callback) {
+std::size_t EventLoop::schedule_call_on_each_loop_cycle(WorkCallback callback) {
     return m_impl->schedule_call_on_each_loop_cycle(callback);
 }
 
