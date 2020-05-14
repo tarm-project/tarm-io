@@ -53,8 +53,6 @@ constexpr const char* extract_file_name_from_path(char const* str) {
     return str + (rfind(str, '/', '\\') + 1);
 }
 
-// TODO: use in logger with 'constexpr const char* value = ...'
-
 // Proof that 'extract_file_name_from_path' works in compile time (because static_assert works only in compile time)
 #if defined( _MSC_VER) || defined(__clang__) || (__GNUC__ >= 7)
 // GCC versions 5 and 6 have known bug that (ptr + i) stops to become constexpr,
