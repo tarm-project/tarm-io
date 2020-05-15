@@ -1,0 +1,25 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
+FROM ubuntu:20.04
+
+LABEL maintainer="av@tarm.io"
+
+RUN apt -y update && \
+    apt -y upgrade && \
+    apt -y install \
+        nano \
+        python3 \
+        python3-pip \
+        sudo \
+        wget && \
+    pip3 install sphinx && \
+    pip3 install wild_sphinx_theme
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+#    /usr/local/lib/python3.8/dist-packages/wild_sphinx_theme/wild/static/wild.css_t
+       
+WORKDIR /source
