@@ -35,7 +35,7 @@ TlsVersion max_supported_tls_version() {
 }
 
 DtlsVersion min_supported_dtls_version() {
-#ifdef SSL_OP_NO_DTLSv1
+#ifdef DTLS1_VERSION
     return DtlsVersion::V1_0;
 #else
     return DtlsVersion::V1_2;
@@ -43,7 +43,7 @@ DtlsVersion min_supported_dtls_version() {
 }
 
 DtlsVersion max_supported_dtls_version() {
-#ifdef SSL_OP_NO_DTLSv1_2
+#ifdef DTLS1_2_VERSION
     return DtlsVersion::V1_2;
 #else
     return DtlsVersion::V1_0;
