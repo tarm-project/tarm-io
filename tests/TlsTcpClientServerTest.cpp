@@ -150,6 +150,7 @@ TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
 #if defined(__APPLE__) || defined(__linux__)
 // Windows does not have privileged ports
 TEST_F(TlsTcpClientServerTest, bind_privileged) {
+this->log_to_stdout();
     io::EventLoop loop;
 
     auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);

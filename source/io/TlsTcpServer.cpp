@@ -42,6 +42,8 @@ public:
 
     TlsVersionRange version_range() const;
 
+    bool schedule_removal();
+
 protected:
     const SSL_METHOD* ssl_method();
 
@@ -89,7 +91,27 @@ TlsTcpServer::Impl::Impl(EventLoop& loop,
 }
 
 TlsTcpServer::Impl::~Impl() {
-    m_tcp_server->schedule_removal();
+}
+
+bool TlsTcpServer::Impl::schedule_removal() {
+    IO_LOG(m_loop, TRACE, m_parent, "");
+
+    if (m_parent->is_removal_scheduled()) {
+        IO_LOG(m_loop, TRACE, m_parent, "is_removal_scheduled: true");
+        return true;
+    }
+
+    m_tcp_server->close([this](TcpServer& server, const Error& error) {
+        if (error.code() != StatusCode::NOT_CONNECTED) {
+            IO_LOG(this->m_loop, ERROR, error);
+        }
+
+        this->m_parent->schedule_removal();
+        server.schedule_removal();
+    });
+
+    m_parent->set_removal_scheduled();
+    return false;
 }
 
 const SSL_METHOD* TlsTcpServer::Impl::ssl_method() {
@@ -285,6 +307,13 @@ std::size_t TlsTcpServer::connected_clients_count() const {
 
 TlsVersionRange TlsTcpServer::version_range() const {
     return m_impl->version_range();
+}
+
+void TlsTcpServer::schedule_removal() {
+    const bool ready_to_remove = m_impl->schedule_removal();
+    if (ready_to_remove) {
+        Removable::schedule_removal();
+    }
 }
 
 } // namespace io

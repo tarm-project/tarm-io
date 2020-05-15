@@ -67,8 +67,7 @@ private:
 
     Endpoint m_endpoint;
 
-    // Made as unique_ptr because boost::pool has no move constructor defined
-    //std::unique_ptr<boost::pool<>> m_pool;
+    bool m_is_open = false;
 };
 
 TcpServer::Impl::Impl(EventLoop& loop, TcpServer& parent) :
@@ -127,6 +126,8 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
         IO_LOG(m_loop, ERROR, m_parent, "Listen failed:", uv_strerror(listen_status));
     }
 
+    m_is_open = true;
+
     return listen_status;
 }
 
@@ -156,6 +157,8 @@ void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
 }
 
 void TcpServer::Impl::close(CloseServerCallback close_callback) {
+    IO_LOG(m_loop, TRACE, m_parent, "");
+
     m_end_server_callback = close_callback;
 
     for (auto& client : m_client_connections) {
@@ -166,7 +169,9 @@ void TcpServer::Impl::close(CloseServerCallback close_callback) {
 }
 
 void TcpServer::Impl::close_impl() {
-    if (is_open()) {
+    IO_LOG(m_loop, TRACE, m_parent, "");
+
+    if (m_server_handle && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_server_handle))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
     } else {
         if (m_end_server_callback) {
@@ -175,10 +180,12 @@ void TcpServer::Impl::close_impl() {
             });
         }
     }
+
+    m_is_open = false;
 }
 
 bool TcpServer::Impl::is_open() const {
-    return m_server_handle && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_server_handle));
+    return m_is_open;
 }
 
 void TcpServer::Impl::remove_client_connection(TcpConnectedClient* client) {
@@ -194,25 +201,43 @@ bool TcpServer::Impl::schedule_removal() {
 
     const auto removal_scheduled = m_parent->is_removal_scheduled();
 
+    if (!removal_scheduled && m_server_handle) {
+        m_parent->set_removal_scheduled();
+        this->close(nullptr);
+        return false;
+    }
+
+    return true;
+
+    /*
+    const auto removal_scheduled = m_parent->is_removal_scheduled();
+    if (!removal_scheduled && !is_open() && m_server_handle == nullptr) {
+        return true;
+    }
+
     if (!removal_scheduled) {
         // TODO: this setter should be set via call of ->schedule_removal
         m_parent->set_removal_scheduled();
 
-        if (m_client_connections.empty()) {
-            auto end_server_callback_copy = m_end_server_callback;
 
-            this->close([this, end_server_callback_copy](TcpServer& server, const Error& error) {
-                // TODO: revise this. Do we need such strange way of calling end server callback?
-                if (end_server_callback_copy && is_open()) {
-                    end_server_callback_copy(server, error);
-                }
-            });
-        } else {
-            this->close(nullptr);
-        }
+        //if (m_client_connections.empty()) {
+        //    auto end_server_callback_copy = m_end_server_callback;
+//
+        //    this->close([this, end_server_callback_copy](TcpServer& server, const Error& error) {
+        //        // TODO: revise this. Do we need such strange way of calling end server callback?
+        //        if (end_server_callback_copy && is_open()) {
+        //            end_server_callback_copy(server, error);
+        //        }
+        //    });
+        //} else {
+        //    this->close(nullptr);
+        //}
+
+        this->close(nullptr);
     }
 
     return removal_scheduled || m_server_handle == nullptr;
+    */
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
@@ -298,30 +323,28 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 }
 
 void TcpServer::Impl::on_close(uv_handle_t* handle) {
-    if (handle->data) {
-        auto& this_ = *reinterpret_cast<TcpServer::Impl*>(handle->data);
-        IO_LOG(this_.m_loop, TRACE, this_.m_parent);
+    auto& this_ = *reinterpret_cast<TcpServer::Impl*>(handle->data);
+    IO_LOG(this_.m_loop, TRACE, this_.m_parent);
 
-        if (this_.connected_clients_count() != 0) {
-            // Waiting for all clients to be closed
-            this_.m_loop->schedule_callback([handle](EventLoop&) {
-                    on_close(handle);
-                }
-            );
-            return;
-        }
-
-
-        if (this_.m_end_server_callback) {
-            this_.m_end_server_callback(*this_.m_parent, Error(0));
-        }
-
-        if (this_.m_parent->is_removal_scheduled()) {
-            this_.m_parent->schedule_removal();
-        }
-
-        this_.m_server_handle = nullptr;
+    if (this_.connected_clients_count() != 0) {
+        // Waiting for all clients to be closed
+        this_.m_loop->schedule_callback([handle](EventLoop&) {
+                on_close(handle);
+            }
+        );
+        return;
     }
+
+
+    if (this_.m_end_server_callback) {
+        this_.m_end_server_callback(*this_.m_parent, Error(0));
+    }
+
+    if (this_.m_parent->is_removal_scheduled()) {
+        this_.m_parent->schedule_removal();
+    }
+
+    this_.m_server_handle = nullptr;
 
     delete reinterpret_cast<uv_tcp_t*>(handle);
 }

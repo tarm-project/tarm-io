@@ -537,7 +537,56 @@ TEST_F(TcpClientServerTest, server_shutdown_callback) {
     EXPECT_EQ(1, on_server_shutdown_call_count);
 }
 
-TEST_F(TcpClientServerTest, server_close_callback) {
+TEST_F(TcpClientServerTest, server_close_callback_1) {
+    std::size_t on_server_close_call_count = 0;
+
+    io::EventLoop loop;
+
+    auto server = new io::TcpServer(loop);
+    server->close([&](io::TcpServer& server, const io::Error& error) {
+        EXPECT_TRUE(error);
+        EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
+        ++on_server_close_call_count; // TODO: if put this line after schedule_removal it corrupts memory (see valgrind)
+        server.schedule_removal();
+    });
+
+    EXPECT_EQ(0, on_server_close_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, on_server_close_call_count);
+}
+
+TEST_F(TcpClientServerTest, server_close_callback_2) {
+    std::size_t on_server_close_call_count = 0;
+
+    io::EventLoop loop;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+    [&](io::TcpConnectedClient& client, const io::Error& error) {
+        EXPECT_FALSE(error);
+    },
+    [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+    },
+    nullptr);
+    ASSERT_FALSE(listen_error);
+
+    server->close([&](io::TcpServer& server, const io::Error& error) {
+        EXPECT_FALSE(error);
+        ++on_server_close_call_count;
+        server.schedule_removal();
+    });
+
+    EXPECT_EQ(0, on_server_close_call_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, on_server_close_call_count);
+}
+
+TEST_F(TcpClientServerTest, server_close_callback_3) {
     io::EventLoop loop;
 
     const std::string client_message = "Hello world!";

@@ -39,6 +39,8 @@ public:
                                const Path& private_key_path,
                                TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
+    IO_DLL_PUBLIC void schedule_removal() override;
+
     IO_DLL_PUBLIC
     Error listen(const Endpoint endpoint,
                  NewConnectionCallback new_connection_callback,
