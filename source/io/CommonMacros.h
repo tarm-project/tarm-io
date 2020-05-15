@@ -34,7 +34,3 @@
 #define IO_DEFINE_DEFAULT_MOVE(X)   \
     X::X(X&&) = default;            \
     X& X::operator=(X&&) = default;
-
-#define IO_MAKE_LOGGED_ERROR(LOOP, ADDRESS, STATUS_CODE, MESSAGE) \
-    (IO_LOG(LOOP, ERROR, ADDRESS, MESSAGE)),              \
-    ::io::Error(STATUS_CODE, MESSAGE)

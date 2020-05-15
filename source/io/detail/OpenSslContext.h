@@ -67,7 +67,9 @@ template<typename VersionType,
          void(OpenSslContext<ParentType, ImplType>::*DisableMethod)(VersionType)>
 Error OpenSslContext<ParentType, ImplType>::set_tls_dtls_version(VersionType version_min, VersionType version_max) {
     if (version_min > version_max) {
-        return IO_MAKE_LOGGED_ERROR(m_loop, m_parent, StatusCode::OPENSSL_ERROR, "Version mismatch. Minimum version is greater than maximum");
+        const auto message = "Version mismatch. Minimum version is greater than maximum";
+        IO_LOG(m_loop, ERROR, m_parent, message);
+        return Error(StatusCode::OPENSSL_ERROR, message);
     }
 
     if (version_min != VersionType::MIN) {
@@ -211,7 +213,9 @@ template<typename ParentType, typename ImplType>
 Error OpenSslContext<ParentType, ImplType>::init_ssl_context(const SSL_METHOD* method) {
     m_ssl_ctx.reset(SSL_CTX_new(method));
     if (m_ssl_ctx == nullptr) {
-        return IO_MAKE_LOGGED_ERROR(m_loop, m_parent, StatusCode::OPENSSL_ERROR, "Failed to init SSL context");
+        const auto message = "Failed to init SSL context";
+        IO_LOG(m_loop, ERROR, m_parent, message);
+        return Error(StatusCode::OPENSSL_ERROR, message);
     }
 
     SSL_CTX_set_verify(m_ssl_ctx.get(), SSL_VERIFY_NONE, NULL);
@@ -219,7 +223,9 @@ Error OpenSslContext<ParentType, ImplType>::init_ssl_context(const SSL_METHOD* m
 
     auto cipher_result = SSL_CTX_set_cipher_list(m_ssl_ctx.get(), global::ciphers_list().c_str());
     if (cipher_result == 0) {
-        return IO_MAKE_LOGGED_ERROR(m_loop, m_parent, StatusCode::OPENSSL_ERROR, "Failed to set ciphers list");
+        const auto message = "Failed to set ciphers list";
+        IO_LOG(m_loop, ERROR, m_parent, message);
+        return Error(StatusCode::OPENSSL_ERROR, message);
     }
 
     return StatusCode::OK;
@@ -229,17 +235,23 @@ template<typename ParentType, typename ImplType>
 Error OpenSslContext<ParentType, ImplType>::ssl_init_certificate_and_key(::X509* certificate, ::EVP_PKEY* key) {
     auto result = SSL_CTX_use_certificate(this->ssl_ctx(), certificate);
     if (!result) {
-        return IO_MAKE_LOGGED_ERROR(m_loop, m_parent, StatusCode::OPENSSL_ERROR, "Failed to load certificate");
+        const auto message = "Failed to load certificate";
+        IO_LOG(m_loop, ERROR, m_parent, message);
+        return Error(StatusCode::OPENSSL_ERROR, message);
     }
 
     result = SSL_CTX_use_PrivateKey(this->ssl_ctx(), key);
     if (!result) {
-        return IO_MAKE_LOGGED_ERROR(m_loop, m_parent, StatusCode::OPENSSL_ERROR, "Failed to load private key");
+        const auto message = "Failed to load private key";
+        IO_LOG(m_loop, ERROR, m_parent, message);
+        return Error(StatusCode::OPENSSL_ERROR, message);
     }
 
     result = SSL_CTX_check_private_key(this->ssl_ctx());
     if (!result) {
-        return IO_MAKE_LOGGED_ERROR(m_loop, m_parent, StatusCode::OPENSSL_ERROR, "Failed to check private key");
+        const auto message = "Failed to check private key";
+        IO_LOG(m_loop, ERROR, m_parent, message);
+        return Error(StatusCode::OPENSSL_ERROR, message);
     }
 
     return StatusCode::OK;
