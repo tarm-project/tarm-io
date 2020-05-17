@@ -17,3 +17,8 @@ div.warning {
     border: 1px solid #ffca66;
 }
 				
+div.sphinxsidebar #searchbox input[type="submit"] {
+    border: 1px solid #ccc;
+    margin-left: 20px;
+    margin-top: 1px;
+}
