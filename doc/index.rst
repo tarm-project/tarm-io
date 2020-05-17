@@ -1,13 +1,10 @@
 .. tarm-io documentation master file, created by
-   sphinx-quickstart on Fri May 15 20:28:30 2020.
-
-  
-
-.. warning::
-        The library is under heavy development, ETA is Q1 or Q2 2021.
+   sphinx-quickstart on Fri May 15 20:28:30 2020.  
 
 Welcome to tarm-io's documentation!
 ===================================
+.. warning::
+        The library is under heavy development, ETA is Q1 or Q2 2021.
 
 Overview
 --------
