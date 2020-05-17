@@ -60,7 +60,7 @@ html_static_path = ['static']
 
 html_style = 'custom.css'
 
-html_favicon = 'favicon.ico'
+html_favicon = 'static/favicon.ico'
 
 #html_css_files = [
 #    'static/custom.css'
