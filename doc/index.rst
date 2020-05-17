@@ -11,15 +11,6 @@ Overview
 
 tarm-io is a cross-platform general purpose event-driven C++11 input-output library project.
 
-Supported platforms
--------------------
-
-* Windows (Visual Studio 2015+) 
-* Linux (Ubuntu 14.04+, Cent OS 7.3+, Alpine and more) 
-* Mac (10.10+) 
-* iOS 
-* Android 
-
 Features
 --------
 * Full-featured event loop backed by epoll, kqueue, IOCP, event ports.
@@ -35,6 +26,14 @@ Features
 * Embedded data producer or consumer pacing
 * Guaranteed and auto-tested ABI compatibility between minor versions
 
+Supported platforms
+-------------------
+
+* Windows (Visual Studio 2015+) 
+* Linux (Ubuntu 14.04+, Cent OS 7.3+, Alpine and more) 
+* Mac (10.10+) 
+* iOS 
+* Android 
 
 .. toctree::
    :maxdepth: 2
