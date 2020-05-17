@@ -1,0 +1,15 @@
+@import 'wild.css';
+
+div.related {
+    background-color: #4A739B;
+}
+
+div.body h1 {
+    background-color: #C4EDFC;
+}
+
+div.warning {
+    background-color: #fde6d8;
+    border: 1px solid #ffca66;
+}
+				
