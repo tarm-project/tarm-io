@@ -444,6 +444,8 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
 void File::Impl::on_stat(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
 
+    Error error(req->result);
+    // TODO: error handling (need to expand StatCallback)
     if (this_.m_stat_callback) {
         this_.m_stat_callback(*this_.m_parent, *reinterpret_cast<StatData*>(&this_.m_stat_req.statbuf));
     }
