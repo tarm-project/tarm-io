@@ -22,3 +22,7 @@ div.sphinxsidebar #searchbox input[type="submit"] {
     margin-left: 20px;
     margin-top: 1px;
 }
+
+div.sphinxsidebarwrapper {
+	padding: 3px;
+}
