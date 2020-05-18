@@ -65,8 +65,6 @@ TEST_F(DirTest, open_then_close) {
     dir->schedule_removal();
 }
 
-// TODO: open dir which is file
-
 TEST_F(DirTest, open_not_existing) {
     io::EventLoop loop;
     auto dir = new io::Dir(loop);
@@ -353,7 +351,6 @@ TEST_F(DirTest, DISABLED_make_temp_dir_invalid_template) {
     EXPECT_TRUE(callback_called);
 }
 
-// TODO: directory creation permissions
 TEST_F(DirTest, make_dir) {
     io::EventLoop loop;
 
@@ -454,8 +451,6 @@ TEST_F(DirTest, make_dir_name_to_long_error) {
     EXPECT_TRUE(callback_called);
 }
 
-// TODO: check for error if creating without write permission in path components
-
 #if defined(__APPLE__) || defined(__linux__)
 TEST_F(DirTest, make_dir_root_dir_error) {
     io::EventLoop loop;
@@ -479,7 +474,7 @@ TEST_F(DirTest, make_dir_root_dir_error) {
 #endif
 
 TEST_F(DirTest, remove_dir) {
-    // TODO: need to check if directories creation succeeded
+    // If directory creation fail, exception will be thrown
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c" / "d");
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c" / "e");
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "f");
@@ -617,4 +612,7 @@ TEST_F(DirTest, remove_dir_not_exist_and_progress_callback) {
     EXPECT_EQ(0, progress_call_count);
 }
 
-// dir iterate not existing
+// TODO: dir iterate not existing
+// TODO: open dir which is file
+// TODO: directory creation permissions
+// TODO: check for error if creating without write permission in path components

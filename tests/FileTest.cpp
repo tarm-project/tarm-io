@@ -862,15 +862,22 @@ TEST_F(FileTest, stat_time) {
 
 TEST_F(FileTest, try_open_dir) {
 
+    std::size_t on_open_call_count = 0;
+
     io::EventLoop loop;
     auto file = new io::File(loop);
     file->open(m_tmp_test_dir, [&](io::File& file, const io::Error& error) {
         EXPECT_TRUE(error);
         EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, error.code());
+        ++on_open_call_count;
         file.schedule_removal();
     });
 
+    EXPECT_EQ(0, on_open_call_count);
+
     ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, on_open_call_count);
 }
 
 // TODO: test copy file larger than 4 GB

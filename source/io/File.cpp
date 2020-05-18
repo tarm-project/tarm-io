@@ -335,17 +335,31 @@ void File::Impl::on_open(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
 
     Error error(req->result > 0 ? 0 : req->result);
-    if (!error) {
+
+    if (error) {
+        if (this_.m_open_callback) {
+            this_.m_open_callback(*this_.m_parent, error);
+        }
+
+        this_.m_path.clear();
+        return;
+    } else {
         this_.m_file_handle = static_cast<uv_file>(req->result);
     }
 
-    if (this_.m_open_callback) {
-        this_.m_open_callback(*this_.m_parent, error);
-    }
-
-    if (error) {
-        this_.m_path.clear();
-    }
+    // Making stat here because Windows allows open directory as a file, so the call is successful on this
+    // platform. But Linux and Mac return errro immediately.
+    this_.stat([&this_](File& f, const StatData& d) {
+        if (this_.m_open_callback) {
+            if (d.mode & S_IFDIR) {
+                this_.m_open_callback(*this_.m_parent, StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY);
+                this_.m_path.clear();
+            }
+            else {
+                this_.m_open_callback(*this_.m_parent, StatusCode::OK);
+            }
+        }
+    });
 }
 
 void File::Impl::on_read_block(uv_fs_t* uv_req) {
