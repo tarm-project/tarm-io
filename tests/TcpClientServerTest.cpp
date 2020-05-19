@@ -1454,8 +1454,13 @@ TEST_F(TcpClientServerTest, client_shutdown_in_connect) {
 TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
     // Note: in this test server sends large cunk of data to client but in receive callback closes that connection
     //       which does not allow to complete that sending operation, thus it is cancelled
-    // Note2:on Windows send consumes all supplied buffer, so operation will not be cancelled and result will be OK
-    // TODO: need to revise or generalize this!
+
+    // Note2: on Windows send consumes all supplied buffer at once. And as we close connection from the client side,
+    //        when it is happened entire buffer was consumed and successfull callback returned,
+    //        so operation will not be cancelled and result will be OK.
+#ifdef WIN32
+    IO_TEST_SKIP();
+#endif // WIN32
 
     const std::size_t DATA_SIZE = 64 * 1024 * 1024;
 
@@ -1523,6 +1528,10 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
 TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
     // Note: in this test client sends large cunk of data to server but in receive callback closes that connection
     //       which does not allow to complete that sending operation, thus it is cancelled
+
+#ifdef WIN32
+    IO_TEST_SKIP();
+#endif // WIN32
 
     const std::size_t DATA_SIZE = 64 * 1024 * 1024;
 
