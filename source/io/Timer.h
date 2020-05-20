@@ -11,6 +11,7 @@
 #include "UserDataHolder.h"
 #include "Removable.h"
 
+#include <chrono>
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -48,6 +49,9 @@ public:
 
     IO_DLL_PUBLIC std::size_t callback_call_counter() const;
 
+    // As timeouts of timers are not precise you could call this to get real time passed
+    // This is not expected to be called outside of timer callback
+    IO_DLL_PUBLIC std::chrono::milliseconds real_time_passed_since_last_callback() const;
 protected:
     IO_DLL_PUBLIC ~Timer();
 

@@ -28,6 +28,8 @@ public:
 
     std::size_t callback_call_counter() const;
 
+    std::chrono::milliseconds real_time_passed_since_last_callback() const;
+
 protected:
     // statics
     static void on_timer(uv_timer_t* handle);
@@ -45,12 +47,15 @@ private:
     std::size_t m_call_counter = 0;
 
     bool m_state_was_reset = false;
+
+    std::uint64_t m_last_callback_time;
 };
 
 Timer::Impl::Impl(EventLoop& loop, Timer& parent) :
     m_parent(&parent),
     m_loop(&loop),
-    m_uv_timer(new uv_timer_t) {
+    m_uv_timer(new uv_timer_t),
+    m_last_callback_time(uv_hrtime()) {
     // TODO: check return value
     uv_timer_init(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), m_uv_timer);
     m_uv_timer->data = this;
@@ -84,6 +89,8 @@ void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, Callback c
 void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t repeat_ms, Callback callback) {
     m_call_counter = 0;
 
+    m_last_callback_time = uv_hrtime();
+
     if (callback == nullptr) {
         return;
     }
@@ -102,7 +109,7 @@ void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t r
 }
 
 void Timer::Impl::start_impl() {
-    // Return value may not be checked here because callback not nullptr is checked above
+    // libuv return value may not be checked here because callback != nullptr is checked above
     if (m_timeouts_ms.size() == 1) {
         uv_timer_start(m_uv_timer, on_timer, m_timeouts_ms.front(), m_repeat_ms);
     } else {
@@ -129,6 +136,11 @@ std::size_t Timer::Impl::callback_call_counter() const {
     return m_call_counter;
 }
 
+std::chrono::milliseconds Timer::Impl::real_time_passed_since_last_callback() const {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::nanoseconds(uv_hrtime() - m_last_callback_time));
+}
+
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 void Timer::Impl::on_timer(uv_timer_t* handle) {
     assert(handle->data);
@@ -140,6 +152,8 @@ void Timer::Impl::on_timer(uv_timer_t* handle) {
     if (this_.m_callback) {
         this_.m_callback(parent_);
     }
+
+    this_.m_last_callback_time = uv_hrtime();
 
     if (this_.m_state_was_reset) {
         return;
@@ -193,6 +207,10 @@ std::uint64_t Timer::repeat_ms() const {
 
 std::size_t Timer::callback_call_counter() const {
     return m_impl->callback_call_counter();
+}
+
+std::chrono::milliseconds Timer::real_time_passed_since_last_callback() const {
+    return m_impl->real_time_passed_since_last_callback();
 }
 
 } // namespace io
