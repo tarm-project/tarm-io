@@ -252,8 +252,7 @@ TEST_F(TimerTest, multiple_intervals) {
 
     const std::deque<std::uint64_t> intervals = {100, 200, 300};
 
-    using ElapsedDuration = std::chrono::duration<float, std::milli>;
-    std::deque<ElapsedDuration> durations;
+    std::deque<std::chrono::milliseconds> durations;
 
     auto timer = new io::Timer(loop);
     timer->start(intervals,
@@ -272,8 +271,7 @@ TEST_F(TimerTest, multiple_intervals) {
 
     ASSERT_EQ(3, durations.size());
     for (std::size_t i = 0 ; i < durations.size(); ++i) {
-        // TODO: need to revise this
-        EXPECT_NEAR(durations[i].count(), intervals[i], 30); // Making test valgrind-friendly
+        EXPECT_GE(durations[i].count(), intervals[i] - 10);
     }
 
     timer->schedule_removal();
