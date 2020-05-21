@@ -12,6 +12,7 @@
 #include "io/Timer.h"
 
 #include <cstdint>
+#include <numeric>
 #include <unordered_map>
 #include <thread>
 
@@ -1608,11 +1609,18 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
 
     io::EventLoop loop;
 
+    const std::deque<std::uint64_t> send_timeouts = { 50, 50, 50, 50, 50, 50 };
+    const auto min_sum_send_timeout = std::accumulate(send_timeouts.begin(), send_timeouts.end(), 0);
+
     const std::size_t CLIENT_TIMEOUT = 100;
-    const std::size_t EXPECTED_ELAPSED_TIME = CLIENT_TIMEOUT + 300;
+    const std::size_t EXPECTED_ELAPSED_TIME = CLIENT_TIMEOUT + min_sum_send_timeout;
 
     std::size_t client_on_timeout_count = 0;
     std::size_t client_send_counter = 0;
+
+    // As send timers most likely send data later than expected, we need to count overdue to compensate
+    // expected peer timeout time overdue on server.
+    std::chrono::milliseconds send_timers_overdue(0);
 
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -1627,7 +1635,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
 
             t2 = std::chrono::high_resolution_clock::now();
             EXPECT_NEAR(EXPECTED_ELAPSED_TIME,
-                        std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(),
+                        std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() - send_timers_overdue.count(),
                         EXPECTED_ELAPSED_TIME * 0.1);
 
             client.schedule_removal();
@@ -1635,12 +1643,11 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
     );
     EXPECT_FALSE(receive_error);
 
-    const std::deque<std::uint64_t> send_timeouts = {50, 50, 50, 50, 50, 50};
-
     auto timer = new io::Timer(loop);
     timer->start(
         send_timeouts,
         [&](io::Timer& timer) {
+            send_timers_overdue += timer.real_time_passed_since_last_callback() - std::chrono::milliseconds(timer.timeout_ms());
             client->send_data("!!!",
             [&](io::UdpClient& client, const io::Error& error) {
                 if (++client_send_counter == send_timeouts.size()) {
