@@ -1,6 +1,10 @@
 .. tarm-io documentation master file, created by
    sphinx-quickstart on Fri May 15 20:28:30 2020.  
 
+.. meta::
+   :yandex-verification: b8c1a29becd28cc4
+   :google-site-verification: uj3is7vssI50kvq-LLgzvEX5ls-MjbhtOg-zRPOrlHI
+
 Welcome to tarm-io's documentation!
 ===================================
 .. warning::
