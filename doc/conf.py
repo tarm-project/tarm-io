@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'tarm-io'
+project = 'tarm-io library'
 copyright = '2020, Alexander Voitenko'
 author = 'Alexander Voitenko'
 
@@ -51,7 +51,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 import wild_sphinx_theme
 html_theme = 'wild'
 html_theme_path = [wild_sphinx_theme.get_theme_dir()]
-html_logo = 'static/logo_200px.png'
+html_logo = 'static/logo.svg'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
