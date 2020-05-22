@@ -60,3 +60,27 @@ boost::filesystem::path exe_path() {
 
     return result;
 }
+
+namespace std {
+
+void PrintTo(const std::chrono::minutes& duration, std::ostream* os) {
+  *os << duration.count() << "m";
+}
+
+void PrintTo(const std::chrono::seconds& duration, std::ostream* os)  {
+  *os << duration.count() << "s";
+}
+
+void PrintTo(const std::chrono::milliseconds& duration, std::ostream* os) {
+  *os << duration.count() << "ms";
+}
+
+void PrintTo(const std::chrono::microseconds& duration, std::ostream* os) {
+  *os << duration.count() << "us";
+}
+
+void PrintTo(const std::chrono::nanoseconds& duration, std::ostream* os) {
+  *os << duration.count() << "ns";
+}
+
+} // namespace std
