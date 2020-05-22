@@ -91,10 +91,6 @@ void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t r
 
     m_last_callback_time = uv_hrtime();
 
-    if (callback == nullptr) {
-        return;
-    }
-
     if (timeouts_ms.empty()) {
         return;
     }

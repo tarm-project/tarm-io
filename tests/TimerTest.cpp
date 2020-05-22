@@ -37,9 +37,7 @@ TEST_F(TimerTest, schedule_with_no_repeat) {
     auto timer = new io::Timer(loop);
     timer->start(TIMEOUT_MS, 0, [&](io::Timer& timer) {
         ++call_counter;
-        // TODO: need to generalize -10 approach
-        // -10 because sometimes timer may wake up a bit earlier
-        EXPECT_GE(timer.real_time_passed_since_last_callback(), std::chrono::milliseconds(TIMEOUT_MS - 10));
+        EXPECT_TIMEOUT_MS(TIMEOUT_MS, timer.real_time_passed_since_last_callback());
     });
 
     ASSERT_EQ(0, loop.run());
@@ -70,7 +68,6 @@ TEST_F(TimerTest, zero_timeot) {
     timer->start(0, 0, [&](io::Timer& timer) {
         ASSERT_EQ(0, idle_counter);
         ++timer_counter;
-        EXPECT_LE(timer.real_time_passed_since_last_callback(), std::chrono::milliseconds(100));
     });
 
     ASSERT_EQ(0, loop.run());
@@ -89,9 +86,14 @@ TEST_F(TimerTest, no_callback) {
     auto timer = new io::Timer(loop);
     timer->start(100, nullptr);
 
+    auto t1 = std::chrono::high_resolution_clock::now();
+
     ASSERT_EQ(0, loop.run());
 
-    EXPECT_LE(timer->real_time_passed_since_last_callback(), std::chrono::milliseconds(100));
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    EXPECT_TIMEOUT_MS(0, timer->real_time_passed_since_last_callback());
+    EXPECT_TIMEOUT_MS(100, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
 
     timer->schedule_removal();
     ASSERT_EQ(0, loop.run());
@@ -193,10 +195,9 @@ TEST_F(TimerTest, schedule_with_repeat) {
 
     EXPECT_EQ(2, call_counter);
 
-    // -10 because sometime timer may wake up earlier
     EXPECT_GT(duration_1, duration_2);
-    EXPECT_GE(duration_1, std::chrono::milliseconds(TIMEOUT_MS - 10));
-    EXPECT_GE(duration_2, std::chrono::milliseconds(REPEAT_MS - 10));
+    EXPECT_TIMEOUT_MS(TIMEOUT_MS, duration_1);
+    EXPECT_TIMEOUT_MS(REPEAT_MS, duration_2);
 
     timer->schedule_removal();
     ASSERT_EQ(0, loop.run());
@@ -271,7 +272,7 @@ TEST_F(TimerTest, multiple_intervals) {
 
     ASSERT_EQ(3, durations.size());
     for (std::size_t i = 0 ; i < durations.size(); ++i) {
-        EXPECT_GE(durations[i].count(), intervals[i] - 10);
+        EXPECT_TIMEOUT_MS(intervals[i], durations[i].count()) << "i= " << i;
     }
 
     timer->schedule_removal();
@@ -499,7 +500,7 @@ TEST_F(TimerTest, multiple_starts) {
     });
 
     timer->start(TIMEOUT_2_MS, 0, [&](io::Timer& timer) {
-        EXPECT_GE(timer.real_time_passed_since_last_callback(), std::chrono::milliseconds(TIMEOUT_2_MS - 10));
+        EXPECT_TIMEOUT_MS(TIMEOUT_2_MS, timer.real_time_passed_since_last_callback());
         ++call_counter_2;
         timer.schedule_removal();
     });
