@@ -42,12 +42,12 @@ void PrintTo(const std::chrono::nanoseconds& duration, std::ostream* os);
 
 #define EXPECT_TIMEOUT_MS(EXPECTED_MS, ACTUAL_MS)                     \
     EXPECT_IN_RANGE(std::chrono::milliseconds(ACTUAL_MS),             \
-        std::chrono::milliseconds(std::int64_t(EXPECTED_MS * 0.95f)), \
-        std::chrono::milliseconds(std::int64_t(EXPECTED_MS * 1.1f)))
+        std::chrono::milliseconds(std::int64_t(EXPECTED_MS * 0.9f)), \
+        std::chrono::milliseconds(std::int64_t(EXPECTED_MS * 1.2f)))
 
 
 #define ASSERT_TIMEOUT_MS(EXPECTED_MS, ACTUAL_MS)                     \
     ASSERT_IN_RANGE(std::chrono::milliseconds(ACTUAL_MS),             \
-        std::chrono::milliseconds(std::int64_t(EXPECTED_MS * 0.95f)), \
-        std::chrono::milliseconds(std::int64_t(EXPECTED_MS * 1.1f)))
+        std::chrono::milliseconds(std::int64_t(EXPECTED_MS * 0.9f)), \
+        std::chrono::milliseconds(std::int64_t(EXPECTED_MS * 1.2f)))
 

@@ -1153,7 +1153,7 @@ TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
     const std::size_t COMMON_TIMEOUT_MS = 200;
     const std::size_t SEND_TIMEOUT_MS = 150;
 
-    const auto start_time = std::chrono::system_clock::now();
+    const auto start_time = std::chrono::high_resolution_clock::now();
 
     std::size_t client_on_close_callback_count = 0;
     std::size_t server_on_close_callback_count = 0;
@@ -1182,7 +1182,7 @@ TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
             EXPECT_FALSE(error) << error.string();
             ++server_on_close_callback_count;
 
-            const auto end_time = std::chrono::system_clock::now();
+            const auto end_time = std::chrono::high_resolution_clock::now();
             EXPECT_GE(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count(),
                       2 * SEND_TIMEOUT_MS);
 
@@ -1210,7 +1210,7 @@ TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
             EXPECT_FALSE(error) << error.string();
             ++client_on_close_callback_count;
 
-            const auto end_time = std::chrono::system_clock::now();
+            const auto end_time = std::chrono::high_resolution_clock::now();
             EXPECT_GE(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count(),
                       2 * SEND_TIMEOUT_MS);
 

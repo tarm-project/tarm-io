@@ -828,7 +828,7 @@ TEST_F(FileTest, stat_time) {
     // Note: unfortunately file creation time may differ by 5-20msec from time get by std::chrono
     // or ::gettimeofday so using fuzzy comparison
 
-    auto unix_time = std::chrono::system_clock::now().time_since_epoch();
+    auto unix_time = std::chrono::high_resolution_clock::now().time_since_epoch();
     const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(unix_time).count();
     const auto nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(unix_time).count() - seconds * 1000000000ll;
 

@@ -60,10 +60,10 @@ std::size_t BacklogWithTimeoutTest::m_time_getter_count = 0;
 namespace {
 
 struct TestItem {
-    TestItem(int id_) :
+    TestItem(std::size_t id_) :
         id(id_) {}
 
-    int id = 0;
+    std::size_t id = 0;
     std::uint64_t time = 0;
 
     std::uint64_t time_getter() const {

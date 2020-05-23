@@ -1562,7 +1562,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
     );
     EXPECT_FALSE(listen_error);
 
-    const std::size_t TIMEOUT = 100;
+    const std::size_t TIMEOUT = 200;
 
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -1575,7 +1575,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
         TIMEOUT,
         [&](io::UdpClient& client, const io::Error& error) {
             t2 = std::chrono::high_resolution_clock::now();
-            EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
+            EXPECT_TIMEOUT_MS(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
             client.send_data("!!!",
                 [&](io::UdpClient& client, const io::Error& error) {
                     EXPECT_TRUE(error);
@@ -1668,36 +1668,40 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
 }
 
 TEST_F(UdpClientServerTest, close_peer_from_server) {
+    // Note: UDP peer inactivity timeout test (similar to TIME_WAIT for TCP)
     io::EventLoop loop;
 
-    const std::size_t INACTIVE_TIMEOUT = 500;
+    const std::size_t INACTIVE_TIMEOUT_MS = 500;
 
     std::size_t server_on_data_receive_callback_count = 0;
     std::size_t server_on_new_peer_callback_count = 0;
     std::size_t server_on_peer_timeout_callback_count = 0;
 
-    std::chrono::system_clock::time_point t1;
-    std::chrono::system_clock::time_point t2;
+    std::chrono::high_resolution_clock::time_point t1;
+    std::chrono::high_resolution_clock::time_point t2;
 
     auto server = new io::UdpServer(loop);
     auto error = server->start_receive(
         { m_default_addr, m_default_port } ,
         [&] (io::UdpPeer&, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error.string();
             ++server_on_new_peer_callback_count;
         },
-        [&] (io::UdpPeer& peer, const io::DataChunk&, const io::Error&) {
-            peer.close(INACTIVE_TIMEOUT);
+        [&] (io::UdpPeer& peer, const io::DataChunk&, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            EXPECT_LE(server_on_data_receive_callback_count, 2);
+
+            peer.close(INACTIVE_TIMEOUT_MS);
 
             if (server_on_data_receive_callback_count == 0) {
-                t1 = std::chrono::system_clock::now();
+                t1 = std::chrono::high_resolution_clock::now();
             } else if (server_on_data_receive_callback_count == 1) {
-                t2 = std::chrono::system_clock::now();
+                t2 = std::chrono::high_resolution_clock::now();
             }
 
             ++server_on_data_receive_callback_count;
         },
-        1000 * 100,
+        100 * 1000,
         [&] (io::UdpPeer&, const io::Error&){
             ++server_on_peer_timeout_callback_count;
         }
@@ -1732,7 +1736,7 @@ TEST_F(UdpClientServerTest, close_peer_from_server) {
     EXPECT_EQ(0, server_on_peer_timeout_callback_count);
 
     const auto time_between_received_packets = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-    EXPECT_TIMEOUT_MS(INACTIVE_TIMEOUT, time_between_received_packets);
+    EXPECT_TIMEOUT_MS(INACTIVE_TIMEOUT_MS, time_between_received_packets);
 }
 
 TEST_F(UdpClientServerTest, closed_peer_from_server_has_no_timeout) {
