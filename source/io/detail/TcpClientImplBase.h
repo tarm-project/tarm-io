@@ -6,6 +6,7 @@
 #pragma once
 
 #include "io/EventLoop.h"
+#include "RawBufferGetter.h"
 
 #include <memory>
 #include <assert.h>
@@ -35,9 +36,6 @@ public:
     bool is_delay_send() const;
 
 protected:
-    const char* raw_buffer_getter(const std::string& s) const;
-    const char* raw_buffer_getter(const std::shared_ptr<const char>& p) const;
-
     template<typename T>
     void send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
 
@@ -112,16 +110,6 @@ Error TcpClientImplBase<ParentType, ImplType>::init_stream() {
 }
 
 template<typename ParentType, typename ImplType>
-const char* TcpClientImplBase<ParentType, ImplType>::raw_buffer_getter(const std::string& s) const {
-    return s.c_str();
-}
-
-template<typename ParentType, typename ImplType>
-const char* TcpClientImplBase<ParentType, ImplType>::raw_buffer_getter(const std::shared_ptr<const char>& p) const  {
-    return p.get();
-}
-
-template<typename ParentType, typename ImplType>
 template<typename T>
 void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
     if (!is_open()) {
@@ -131,7 +119,7 @@ void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint
         return;
     }
 
-    if (size == 0 || raw_buffer_getter(buffer) == nullptr) {
+    if (size == 0 || raw_buffer_get(buffer) == nullptr) {
         if (callback) {
             callback(*m_parent, io::Error(StatusCode::INVALID_ARGUMENT));
         }
@@ -143,7 +131,7 @@ void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint
     req->data = this;
     req->buf = std::move(buffer);
     // const_cast is a workaround for lack of constness support in uv_buf_t
-    req->uv_buf = uv_buf_init(const_cast<char*>(raw_buffer_getter(req->buf)), size);
+    req->uv_buf = uv_buf_init(const_cast<char*>(raw_buffer_get(req->buf)), size);
 
     const Error write_error = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write<T>);
     if (write_error) {
