@@ -1614,7 +1614,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
     const std::deque<std::uint64_t> send_timeouts = { 50, 50, 50, 50, 50, 50 };
     const auto min_sum_send_timeout = std::accumulate(send_timeouts.begin(), send_timeouts.end(), 0);
 
-    const std::size_t CLIENT_TIMEOUT = 100;
+    const std::size_t CLIENT_TIMEOUT = 400;
     const std::size_t EXPECTED_ELAPSED_TIME = CLIENT_TIMEOUT + min_sum_send_timeout;
 
     std::size_t client_on_timeout_count = 0;
