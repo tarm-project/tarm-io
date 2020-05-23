@@ -46,8 +46,9 @@ public:
     IO_DLL_PUBLIC UdpServer& server();
     IO_DLL_PUBLIC const UdpServer& server() const;
 
-    // DOC: timeout of inactivity as UDP is connectionless protocol
-    // TODO: hardcoded value
+    // DOC: as UDP is connectionless protocol and it may take a while when other side acknowledge end of connection,
+    //      use inactivity timeout to ignore all packets from that peer during a specified period of time.
+    //      After that if other side still continues to send packets it will be treated as new peer.
     // TODO: what about peers with no bookkeeping enabled? Do we need to enable bookkeeping by default???
     //       or enable it for peers which were closed only?
     IO_DLL_PUBLIC void close(std::size_t inactivity_timeout_ms = 1000);
