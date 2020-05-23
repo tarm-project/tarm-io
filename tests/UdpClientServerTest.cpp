@@ -1649,6 +1649,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
         send_timeouts,
         [&](io::Timer& timer) {
             send_timers_overdue += timer.real_time_passed_since_last_callback() - std::chrono::milliseconds(timer.timeout_ms());
+            ASSERT_EQ(0, client_on_timeout_count);
             client->send_data("!!!",
             [&](io::UdpClient& client, const io::Error& error) {
                 if (++client_send_counter == send_timeouts.size()) {
