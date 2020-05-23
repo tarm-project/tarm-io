@@ -3,11 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *----------------------------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------------------------
- *  Copyright (c) 2020 - present Alexander Voitenko
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *----------------------------------------------------------------------------------------------*/
-
 #include "UTCommon.h"
 
 #include "io/ByteSwap.h"
@@ -231,7 +226,7 @@ TEST_F(DtlsClientServerTest, connected_peer_timeout) {
             server->schedule_removal();
 
             t2 = std::chrono::high_resolution_clock::now();
-            EXPECT_LE(TIMEOUT_MS - 5, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count());
+            EXPECT_TIMEOUT_MS(TIMEOUT_MS, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
         }
     );
 

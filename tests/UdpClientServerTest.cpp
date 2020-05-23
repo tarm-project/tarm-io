@@ -871,9 +871,10 @@ TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
             ++peer_timeout_counter;
             EXPECT_FALSE(error);
             t2 = std::chrono::high_resolution_clock::now();
-            EXPECT_NEAR(EXPECTED_ELAPSED_TIME_MS,
-                        std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(),
-                        EXPECTED_ELAPSED_TIME_MS * 0.1);
+
+            EXPECT_TIMEOUT_MS(EXPECTED_ELAPSED_TIME_MS,
+                              std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
+
             server->schedule_removal();
         }
     );
@@ -1379,7 +1380,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
         std::function<void(io::UdpPeer&, const io::Error&)> on_server_send =
             [&](io::UdpPeer& client, const io::Error& error) {
                 EXPECT_FALSE(error);
-                //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
                 ++server_send_message_counter;
                 if (server_send_message_counter < SIZE) {
                     client.send_data(message, SIZE - server_send_message_counter, on_server_send);
@@ -1434,7 +1435,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
         std::function<void(io::UdpClient&, const io::Error&)> client_send =
             [&](io::UdpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
-                //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
                 ++client_send_message_counter;
                 if (client_send_message_counter < SIZE) {
                     client.send_data(message, SIZE - client_send_message_counter, client_send);
@@ -1542,7 +1543,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_1) {
 
     EXPECT_EQ(0, loop.run());
 
-    EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
+    EXPECT_TIMEOUT_MS(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
 }
 
 TEST_F(UdpClientServerTest, client_with_timeout_2) {
@@ -1601,7 +1602,8 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
 
     EXPECT_EQ(0, server_receive_counter);
     EXPECT_EQ(1, client_send_counter);
-    EXPECT_NEAR(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), TIMEOUT * 0.1);
+
+    EXPECT_TIMEOUT_MS(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
 }
 
 TEST_F(UdpClientServerTest, client_with_timeout_3) {
@@ -1634,9 +1636,8 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
             ++client_on_timeout_count;
 
             t2 = std::chrono::high_resolution_clock::now();
-            EXPECT_NEAR(EXPECTED_ELAPSED_TIME,
-                        std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() - send_timers_overdue.count(),
-                        EXPECTED_ELAPSED_TIME * 0.1);
+            EXPECT_TIMEOUT_MS(EXPECTED_ELAPSED_TIME,
+                              std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() - send_timers_overdue.count());
 
             client.schedule_removal();
         }
@@ -1731,7 +1732,7 @@ TEST_F(UdpClientServerTest, close_peer_from_server) {
     EXPECT_EQ(0, server_on_peer_timeout_callback_count);
 
     const auto time_between_received_packets = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-    EXPECT_GE(time_between_received_packets, INACTIVE_TIMEOUT - INACTIVE_TIMEOUT * 0.1);
+    EXPECT_TIMEOUT_MS(INACTIVE_TIMEOUT, time_between_received_packets);
 }
 
 TEST_F(UdpClientServerTest, closed_peer_from_server_has_no_timeout) {
