@@ -220,6 +220,10 @@ void UdpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size
     return m_impl->send_data(buffer, size, callback);
 }
 
+void UdpClient::send_data(std::string&& message, EndSendCallback callback) {
+    return m_impl->send_data(std::move(message), callback);
+}
+
 void UdpClient::schedule_removal() {
     const bool ready_to_remove = m_impl->close_with_removal();
     if (ready_to_remove) {

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "io/RefCounted.h"
+#include "RawBufferGetter.h"
 
 #include "UdpImplBase.h"
 
@@ -22,17 +23,23 @@ public:
 
     void send_data(const std::string& message, typename ParentType::EndSendCallback  callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback  callback);
+    void send_data(std::string&& message, typename ParentType::EndSendCallback callback);
 
     std::uint16_t bound_port() const;
 
 protected:
+    template<typename T>
     struct SendRequest : public uv_udp_send_t {
         uv_buf_t uv_buf;
-        std::shared_ptr<const char> buf;
         typename ParentType::EndSendCallback end_send_callback;
+        T buf;
     };
 
+    template<typename T>
+    void send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
+
     // statics
+    template<typename T>
     static void on_send(uv_udp_send_t* req, int status);
 
     RefCounted* m_ref_counted = nullptr;
@@ -60,7 +67,8 @@ UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, Pare
 }
 
 template<typename ParentType, typename ImplType>
-void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+template<typename T>
+void UdpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
     const auto handle_init_error = UdpImplBase<ParentType, ImplType>::ensure_handle_inited();
     if (handle_init_error) {
         schedule_send_error(callback, handle_init_error);
@@ -84,19 +92,19 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
 
     this->set_last_packet_time(::uv_hrtime());
 
-    auto req = new SendRequest;
+    auto req = new SendRequest<T>;
     req->end_send_callback = callback;
-    req->buf = buffer;
+    req->buf = std::move(buffer);
     req->data = this;
     // const_cast is a workaround for lack of constness support in uv_buf_t
-    req->uv_buf = uv_buf_init(const_cast<char*>(buffer.get()), size);
+    req->uv_buf = uv_buf_init(const_cast<char*>(raw_buffer_get(req->buf)), size);
 
     int uv_status = uv_udp_send(req,
                                 UdpImplBase<ParentType, ImplType>::m_udp_handle.get(),
                                 &req->uv_buf,
                                 1,
                                 reinterpret_cast<const sockaddr*>(UdpImplBase<ParentType, ImplType>::m_raw_endpoint),
-                                on_send);
+                                on_send<T>);
     if (uv_status < 0) {
         if (callback) {
             callback(*UdpImplBase<ParentType, ImplType>::m_parent, Error(uv_status));
@@ -109,6 +117,12 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const ch
 }
 
 template<typename ParentType, typename ImplType>
+void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+
+    send_data_impl(buffer, size, callback);
+}
+
+template<typename ParentType, typename ImplType>
 void UdpClientImplBase<ParentType, ImplType>::send_data(const std::string& message, typename ParentType::EndSendCallback callback) {
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::memcpy(ptr.get(), message.c_str(), message.size());
@@ -116,8 +130,15 @@ void UdpClientImplBase<ParentType, ImplType>::send_data(const std::string& messa
 }
 
 template<typename ParentType, typename ImplType>
+void UdpClientImplBase<ParentType, ImplType>::send_data(std::string&& message, typename ParentType::EndSendCallback callback) {
+    const std::uint32_t size = static_cast<std::uint32_t>(message.size());
+    send_data_impl(std::move(message), size, callback);
+}
+
+template<typename ParentType, typename ImplType>
+template<typename T>
 void UdpClientImplBase<ParentType, ImplType>::on_send(uv_udp_send_t* req, int uv_status) {
-    auto& request = *reinterpret_cast<SendRequest*>(req);
+    auto& request = *reinterpret_cast<SendRequest<T>*>(req);
     auto& this_ = *reinterpret_cast<ImplType*>(req->data);
     auto& parent = *this_.m_parent;
 
