@@ -366,7 +366,7 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
     auto& req = *reinterpret_cast<ReadBlockReq*>(uv_req);
     auto& this_ = *reinterpret_cast<File::Impl*>(req.data);
 
-    io::ScopeExitGuard req_guard([&req]() {
+    ScopeExitGuard req_guard([&req]() {
         delete &req;
     });
 
@@ -384,7 +384,7 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
         IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(static_cast<int>(req.result)));
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
-            io::Error error(0);
+            Error error(0);
             DataChunk data_chunk(req.buf, req.result, req.offset);
             this_.m_read_callback(*this_.m_parent, data_chunk, error);
         }
@@ -414,7 +414,7 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(static_cast<int>(req.result)));
 
         if (this_.m_read_callback) {
-            io::Error error(req.result);
+            Error error(req.result);
             this_.m_read_callback(*this_.m_parent, DataChunk(), error);
         }
     } else if (req.result == 0) {
@@ -430,7 +430,7 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         //this_.m_loop->stop_block_loop_from_exit();
     } else if (req.result > 0) {
         if (this_.m_read_callback) {
-            io::Error error(0);
+            Error error(0);
             DataChunk data_chunk(req.buf, req.result, this_.m_current_offset);
             this_.m_read_callback(*this_.m_parent, data_chunk, error);
             this_.m_current_offset += req.result;

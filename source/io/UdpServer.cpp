@@ -107,7 +107,7 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
     m_peer_timeout_callback = timeout_callback;
 
     // TODO: bind instead of lambdas
-    auto on_expired = [this](io::BacklogWithTimeout<std::shared_ptr<UdpPeer>>&, const std::shared_ptr<UdpPeer>& item) {
+    auto on_expired = [this](BacklogWithTimeout<std::shared_ptr<UdpPeer>>&, const std::shared_ptr<UdpPeer>& item) {
         m_peer_timeout_callback(*item, Error(0));
 
         auto it = m_peers.find(item->id());

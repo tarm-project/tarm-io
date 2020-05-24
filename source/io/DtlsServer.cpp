@@ -49,7 +49,7 @@ protected:
     const SSL_METHOD* ssl_method();
 
     // callbacks
-    void on_new_peer(UdpPeer& udp_client, const io::Error& error);
+    void on_new_peer(UdpPeer& udp_client, const Error& error);
     void on_data_receive(UdpPeer& udp_client, const DataChunk& data, const Error& error);
     void on_timeout(UdpPeer& udp_peer, const Error& error);
 
@@ -95,7 +95,7 @@ DtlsServer::Impl::~Impl() {
     m_udp_server->schedule_removal();
 }
 
-void DtlsServer::Impl::on_new_peer(UdpPeer& udp_client, const io::Error& error) {
+void DtlsServer::Impl::on_new_peer(UdpPeer& udp_client, const Error& error) {
     if (error) {
         if (m_new_connection_callback) {
             DtlsConnectedClient temporary_client(*m_loop, *m_parent, udp_client);

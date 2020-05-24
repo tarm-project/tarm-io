@@ -290,23 +290,23 @@ void make_dir(EventLoop& loop, const Path& path, MakeDirCallback callback) {
 namespace {
 
 struct RemoveDirWorkEntry {
-    RemoveDirWorkEntry(const io::Path& p) :
+    RemoveDirWorkEntry(const Path& p) :
         path(p),
         processed(false) {
     }
 
-    io::Path path;
+    Path path;
     bool processed;
 };
 
 struct RemoveDirStatusContext {
-    RemoveDirStatusContext(const Error& e, const io::Path& p) :
+    RemoveDirStatusContext(const Error& e, const Path& p) :
         error(e),
         path(p) {
     }
 
     Error error = 0;
-    io::Path path;
+    Path path;
 };
 
 } // namespace
@@ -316,7 +316,7 @@ using RemoveDirWorkData = std::vector<RemoveDirWorkEntry>;
 RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const Path& path, Path subpath, RemoveDirWorkData& work_data) {
     work_data.back().processed = true;
 
-    const io::Path open_path = path / subpath;
+    const Path open_path = path / subpath;
     uv_fs_t open_dir_req;
     Error open_error = uv_fs_opendir(uv_loop, &open_dir_req, open_path.string().c_str(), nullptr);
     if (open_error) {
@@ -407,7 +407,7 @@ void remove_dir_impl(EventLoop& loop, const Path& path, RemoveDirCallback remove
     });
 }
 
-void remove_dir(EventLoop& loop, const io::Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
+void remove_dir(EventLoop& loop, const Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
     if (loop.is_running()) {
         remove_dir_impl(loop, path, remove_callback, progress_callback);
     } else {

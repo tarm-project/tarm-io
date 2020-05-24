@@ -121,6 +121,6 @@ enum class StatusCode : uint32_t {
 StatusCode convert_from_uv(std::int64_t libuv_code);
 
 IO_DLL_PUBLIC
-std::ostream& operator<<(std::ostream& out, io::StatusCode code);
+std::ostream& operator<<(std::ostream& out, StatusCode code);
 
 } // namespace io

@@ -293,7 +293,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
             }
 
             internal_read_from_sll_and_send(
-                [this](typename ParentType::UnderlyingClientType& client, const io::Error& error) {
+                [this](typename ParentType::UnderlyingClientType& client, const Error& error) {
                     if (error) {
                         on_handshake_failed(-1, error);
                     }
@@ -317,7 +317,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
             m_ssl_handshake_state = HandshakeState::FINISHING;
 
             internal_read_from_sll_and_send(
-                [this, read_pending](typename ParentType::UnderlyingClientType& client, const io::Error& error) {
+                [this, read_pending](typename ParentType::UnderlyingClientType& client, const Error& error) {
                     if (error) {
                         on_handshake_failed(-1, error);
                     } else {

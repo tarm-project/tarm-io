@@ -176,7 +176,7 @@ void TcpServer::Impl::close_impl() {
     } else {
         if (m_end_server_callback) {
             m_loop->schedule_callback([=](EventLoop&) {
-                m_end_server_callback(*m_parent, Error(io::StatusCode::NOT_CONNECTED));
+                m_end_server_callback(*m_parent, Error(StatusCode::NOT_CONNECTED));
             });
         }
     }
@@ -288,7 +288,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
                                                      reinterpret_cast<struct sockaddr*>(&info),
                                                      &info_len);
         if (!getpeername_error) {
-            tcp_client->set_endpoint(io::Endpoint(&info));
+            tcp_client->set_endpoint(Endpoint(&info));
 
             this_.m_client_connections.insert(tcp_client.get());
 

@@ -114,14 +114,14 @@ template<typename T>
 void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
     if (!is_open()) {
         if (callback) {
-            callback(*m_parent, io::Error(StatusCode::NOT_CONNECTED));
+            callback(*m_parent, Error(StatusCode::NOT_CONNECTED));
         }
         return;
     }
 
     if (size == 0 || raw_buffer_get(buffer) == nullptr) {
         if (callback) {
-            callback(*m_parent, io::Error(StatusCode::INVALID_ARGUMENT));
+            callback(*m_parent, Error(StatusCode::INVALID_ARGUMENT));
         }
         return;
     }

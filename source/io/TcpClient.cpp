@@ -272,7 +272,7 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
             old_tcp_stream->data = nullptr;
             this_.m_tcp_stream = nullptr;
 
-            if (error.code() == io::StatusCode::END_OF_FILE) {
+            if (error.code() == StatusCode::END_OF_FILE) {
                 this_.m_close_callback(*this_.m_parent, Error(0)); // OK
             } else {
                 // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example

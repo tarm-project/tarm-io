@@ -105,7 +105,7 @@ void DtlsConnectedClient::Impl::close() {
         return;
     }
 
-    const auto error = this->ssl_shutdown([this](io::UdpPeer& client, const io::Error& error) {
+    const auto error = this->ssl_shutdown([this](UdpPeer& client, const Error& error) {
         if (m_close_callback) {
             m_close_callback(*m_parent, Error(0));
         }

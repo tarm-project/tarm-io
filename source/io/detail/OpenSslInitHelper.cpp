@@ -18,7 +18,7 @@ public:
         SSL_load_error_strings();
         const int result = SSL_library_init();
         if (!result) {
-            std::cerr << "io::detail::OpenSslInitHelper: Failed to init OpenSSL" << std::endl;
+            std::cerr << "OpenSslInitHelper: Failed to init OpenSSL" << std::endl;
         }
     }
 };

@@ -48,7 +48,7 @@ protected:
     const SSL_METHOD* ssl_method();
 
     // callbacks
-    void on_new_connection(TcpConnectedClient& tcp_client, const io::Error& error);
+    void on_new_connection(TcpConnectedClient& tcp_client, const Error& error);
     void on_data_receive(TcpConnectedClient& tcp_client, const DataChunk&, const Error&);
     void on_close(TcpConnectedClient& tcp_client, const Error& error);
 
@@ -122,7 +122,7 @@ TlsVersionRange TlsTcpServer::Impl::version_range() const {
     return m_version_range;
 }
 
-void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const io::Error& error) {
+void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const Error& error) {
     if (error) {
         //m_new_connection_callback(.......);
         // TODO: error handling here

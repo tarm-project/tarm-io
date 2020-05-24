@@ -30,8 +30,8 @@ inline bool operator==(const PeerId& lhs, const PeerId& rhs) {
 
 namespace std {
 template <>
-struct hash<io::detail::PeerId> {
-    std::size_t operator()(const io::detail::PeerId& id) const {
+struct hash<::io::detail::PeerId> {
+    std::size_t operator()(const ::io::detail::PeerId& id) const {
         return hash<std::uint64_t>()(id.address_high) ^
                hash<std::uint64_t>()(id.address_low) ^
                hash<std::uint16_t>()(id.port);
