@@ -1607,14 +1607,14 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
 }
 
 TEST_F(UdpClientServerTest, client_with_timeout_3) {
-    // Note: testing that sending data will delay timeout
+    // Note: testing that receiving data will delay peer timeout (prolong lifetime)
 
     io::EventLoop loop;
 
-    const std::deque<std::uint64_t> send_timeouts = { 50, 50, 50, 50, 50, 50 };
+    const std::deque<std::uint64_t> send_timeouts = { 100, 100, 100, 100, 100, 100 };
     const auto min_sum_send_timeout = std::accumulate(send_timeouts.begin(), send_timeouts.end(), 0);
 
-    const std::size_t CLIENT_TIMEOUT = 400;
+    const std::size_t CLIENT_TIMEOUT = 200;
     const std::size_t EXPECTED_ELAPSED_TIME = CLIENT_TIMEOUT + min_sum_send_timeout;
 
     std::size_t client_on_timeout_count = 0;
