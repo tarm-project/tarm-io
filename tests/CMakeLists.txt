@@ -86,6 +86,10 @@ target_link_libraries(${TESTS_EXE_NAME}
     Boost::filesystem
 )
 
+if (MSVC)
+    target_compile_definitions(${TESTS_EXE_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 # TODO: remove????
 #target_include_directories(${TESTS_EXE_NAME} PUBLIC
 #    "${CMAKE_CURRENT_SOURCE_DIR}"
