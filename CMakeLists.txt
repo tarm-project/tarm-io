@@ -66,6 +66,20 @@ endif()
 # cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_INSTALL_PREFIX=D:\gtest_install ..
 # ===================================================
 
+#32 bit
+#gtest
+#D:\googletest-release-1.10.0\build>cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 -DCMAKE_GENERATOR_PLATFORM=Win32 -DCMAKE_INSTALL_PREFIX=D:\gtest_install_32bit ..
+#cmake --build . --config Debug
+
+# Openssl build instructions
+# https://github.com/my-devices/sdk/wiki/Building-OpenSSL-on-Windows
+
+# boost
+# b2 --build-dir=build/x86 address-model=32 threading=multi --build-type=complete --stagedir=./stage/x86 -j 3
+
+#project
+#cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 -DCMAKE_GENERATOR_PLATFORM=Win32 -DBOOST_ROOT="F:\boost_install_32bit" -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT="D:\gtest_install_32bit" -DOPENSSL_ROOT_DIR=D:\openssl_install_32bit ..
+
 #find_package(PkgConfig REQUIRED)
 #pkg_check_modules(LIBUV REQUIRED libuv)
 
