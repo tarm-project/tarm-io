@@ -81,7 +81,7 @@ TEST_F(PathTest, constructors) {
     EXPECT_EQ(x0, L"");
     EXPECT_EQ(x0.native().size(), 0U);
 
-    Path x1(m_l.begin(), m_l.end());                       // iterator range char
+    Path x1(m_l.begin(), m_l.end());                   // iterator range char
     EXPECT_EQ(x1, L"string");
     EXPECT_EQ(x1.native().size(), 6U);
 
@@ -89,24 +89,24 @@ TEST_F(PathTest, constructors) {
     EXPECT_EQ(x2, L"string");
     EXPECT_EQ(x2.native().size(), 6U);
 
-    Path x3(m_wl.begin(), m_wl.end());                     // iterator range wchar_t
+    Path x3(m_wl.begin(), m_wl.end());                 // iterator range wchar_t
     EXPECT_EQ(x3, L"wstring");
     EXPECT_EQ(x3.native().size(), 7U);
 
     // contiguous containers
-    Path x4(std::string("std::string"));                    // std::string
+    Path x4(std::string("std::string"));               // std::string
     EXPECT_EQ(x4, L"std::string");
     EXPECT_EQ(x4.native().size(), 11U);
 
-    Path x5(std::wstring(L"std::wstring"));                 // std::wstring
+    Path x5(std::wstring(L"std::wstring"));            // std::wstring
     EXPECT_EQ(x5, L"std::wstring");
     EXPECT_EQ(x5.native().size(), 12U);
 
-    Path x4v(m_v);                                       // std::vector<char>
+    Path x4v(m_v);                                     // std::vector<char>
     EXPECT_EQ(x4v, L"fuz");
     EXPECT_EQ(x4v.native().size(), 3U);
 
-    Path x5v(m_wv);                                      // std::vector<wchar_t>
+    Path x5v(m_wv);                                    // std::vector<wchar_t>
     EXPECT_EQ(x5v, L"wfuz");
     EXPECT_EQ(x5v.native().size(), 4U);
 
@@ -130,63 +130,63 @@ TEST_F(PathTest, constructors) {
     EXPECT_EQ(x7o, L"big array wchar_t");
     EXPECT_EQ(x7o.native().size(), 17U);
 
-    Path x8(m_s.c_str());                                // const char* null terminated
+    Path x8(m_s.c_str());                              // const char* null terminated
     EXPECT_EQ(x8, L"string");
     EXPECT_EQ(x8.native().size(), 6U);
 
-    Path x9(m_ws.c_str());                               // const wchar_t* null terminated
+    Path x9(m_ws.c_str());                             // const wchar_t* null terminated
     EXPECT_EQ(x9, L"wstring");
     EXPECT_EQ(x9.native().size(), 7U);
 
-    Path x8nc(const_cast<char*>(m_s.c_str()));           // char* null terminated
+    Path x8nc(const_cast<char*>(m_s.c_str()));         // char* null terminated
     EXPECT_EQ(x8nc, L"string");
     EXPECT_EQ(x8nc.native().size(), 6U);
 
-    Path x9nc(const_cast<wchar_t*>(m_ws.c_str()));       // wchar_t* null terminated
+    Path x9nc(const_cast<wchar_t*>(m_ws.c_str()));     // wchar_t* null terminated
     EXPECT_EQ(x9nc, L"wstring");
     EXPECT_EQ(x9nc.native().size(), 7U);
 
     // non-contiguous containers
-    Path x10(m_l);                                       // std::list<char>
+    Path x10(m_l);                                     // std::list<char>
     EXPECT_EQ(x10, L"string");
     EXPECT_EQ(x10.native().size(), 6U);
 
-    Path xll(m_wl);                                      // std::list<wchar_t>
+    Path xll(m_wl);                                    // std::list<wchar_t>
     EXPECT_EQ(xll, L"wstring");
     EXPECT_EQ(xll.native().size(), 7U);
 }
 
 TEST_F(PathTest, assignments) {
-    m_x = Path("yet another path");                      // another path
+    m_x = Path("yet another path");                    // another path
     EXPECT_EQ(m_x, L"yet another path");
     EXPECT_EQ(m_x.native().size(), 16U);
 
-    m_x = m_x;                                             // self-assignment
+    m_x = m_x;                                         // self-assignment
     EXPECT_EQ(m_x, L"yet another path");
     EXPECT_EQ(m_x.native().size(), 16U);
 
-    m_x.assign(m_l.begin(), m_l.end());                      // iterator range char
+    m_x.assign(m_l.begin(), m_l.end());                // iterator range char
     EXPECT_EQ(m_x, L"string");
 
-    m_x.assign(m_wl.begin(), m_wl.end());                    // iterator range wchar_t
+    m_x.assign(m_wl.begin(), m_wl.end());              // iterator range wchar_t
     EXPECT_EQ(m_x, L"wstring");
 
-    m_x = std::string("std::string");                         // container char
+    m_x = std::string("std::string");                  // container char
     EXPECT_EQ(m_x, L"std::string");
 
-    m_x = std::wstring(L"std::wstring");                      // container wchar_t
+    m_x = std::wstring(L"std::wstring");               // container wchar_t
     EXPECT_EQ(m_x, L"std::wstring");
 
-    m_x = "array char";                                  // array char
+    m_x = "array char";                                // array char
     EXPECT_EQ(m_x, L"array char");
 
-    m_x = L"array wchar";                                // array wchar_t
+    m_x = L"array wchar";                              // array wchar_t
     EXPECT_EQ(m_x, L"array wchar");
 
-    m_x = m_s.c_str();                                     // const char* null terminated
+    m_x = m_s.c_str();                                 // const char* null terminated
     EXPECT_EQ(m_x, L"string");
 
-    m_x = m_ws.c_str();                                    // const wchar_t* null terminated
+    m_x = m_ws.c_str();                                // const wchar_t* null terminated
     EXPECT_EQ(m_x, L"wstring");
 }
 
@@ -2415,17 +2415,13 @@ TEST_F(PathTest, odr_use) {
     odr_use(Path::dot);
 }
 
-namespace {
-
-Path p1("fe/fi/fo/fum");
-Path p2(p1);
-Path p3;
-Path p4("foobar");
-Path p5;
-
-} // namespace
-
 TEST_F(PathTest, misc) {
+  Path p1("fe/fi/fo/fum");
+  Path p2(p1);
+  Path p3;
+  Path p4("foobar");
+  Path p5;
+
   EXPECT_TRUE(p1.string() != p3.string());
   p3 = p2;
   EXPECT_TRUE(p1.string() == p3.string());
