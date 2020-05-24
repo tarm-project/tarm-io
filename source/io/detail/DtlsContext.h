@@ -13,6 +13,9 @@ namespace io {
 namespace detail {
 
 struct DtlsContext {
+    DtlsContext() {
+    }
+
     DtlsContext(::X509* c, ::EVP_PKEY* k, ::SSL_CTX* ctx, DtlsVersionRange v) :
         certificate(c),
         private_key(k),

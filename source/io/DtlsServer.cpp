@@ -98,8 +98,8 @@ DtlsServer::Impl::~Impl() {
 void DtlsServer::Impl::on_new_peer(UdpPeer& udp_client, const io::Error& error) {
     if (error) {
         if (m_new_connection_callback) {
-            // TODO: fixme (callback requires alive DtlsConnectedClient object, but we create it later)
-            //m_new_connection_callback(udp_client, error);
+            DtlsConnectedClient temporary_client(*m_loop, *m_parent, udp_client);
+            m_new_connection_callback(temporary_client, error);
         }
         return;
     }

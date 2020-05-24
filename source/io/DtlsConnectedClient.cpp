@@ -19,6 +19,12 @@ namespace io {
 
 class DtlsConnectedClient::Impl : public detail::OpenSslClientImplBase<DtlsConnectedClient, DtlsConnectedClient::Impl> {
 public:
+    // Constructor for temporary DtlsConnectedClient objects just to signal an error
+    Impl(EventLoop& loop,
+         DtlsServer& dtls_server,
+         UdpPeer& udp_peer,
+         DtlsConnectedClient& parent);
+
     Impl(EventLoop& loop,
          DtlsServer& dtls_server,
          NewConnectionCallback new_connection_callback,
@@ -54,6 +60,15 @@ private:
     NewConnectionCallback m_new_connection_callback = nullptr;
     CloseCallback m_close_callback = nullptr;
 };
+
+DtlsConnectedClient::Impl::Impl(EventLoop& loop,
+                                DtlsServer& dtls_server,
+                                UdpPeer& udp_peer,
+                                DtlsConnectedClient& parent) :
+    OpenSslClientImplBase(loop, parent),
+    m_dtls_server(&dtls_server) {
+    m_client = &udp_peer;
+}
 
 DtlsConnectedClient::Impl::Impl(EventLoop& loop,
                                 DtlsServer& dtls_server,
@@ -154,10 +169,17 @@ DtlsConnectedClient::DtlsConnectedClient(EventLoop& loop,
                                          DtlsServer& dtls_server,
                                          NewConnectionCallback new_connection_callback,
                                          CloseCallback close_callback,
-                                         UdpPeer& udp_client,
+                                         UdpPeer& udp_peer,
                                          void* context) :
     Removable(loop),
-    m_impl(new Impl(loop, dtls_server, new_connection_callback, close_callback, udp_client, *reinterpret_cast<detail::DtlsContext*>(context), *this)) {
+    m_impl(new Impl(loop, dtls_server, new_connection_callback, close_callback, udp_peer, *reinterpret_cast<detail::DtlsContext*>(context), *this)) {
+}
+
+DtlsConnectedClient::DtlsConnectedClient(EventLoop& loop,
+                                         DtlsServer& dtls_server,
+                                         UdpPeer& udp_peer) :
+    Removable(loop),
+    m_impl(new Impl(loop, dtls_server, udp_peer, *this)) {
 }
 
 DtlsConnectedClient::~DtlsConnectedClient() {

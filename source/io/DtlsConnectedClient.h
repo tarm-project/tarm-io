@@ -53,6 +53,10 @@ protected:
 private:
     DtlsConnectedClient(EventLoop& loop,
                         DtlsServer& dtls_server,
+                        UdpPeer& udp_peer);
+
+    DtlsConnectedClient(EventLoop& loop,
+                        DtlsServer& dtls_server,
                         NewConnectionCallback new_connection_callback,
                         CloseCallback close_callback,
                         UdpPeer& udp_peer,
