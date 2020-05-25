@@ -1,22 +1,28 @@
 @import 'wild.css';
 
 div.related {
-    background-color: #4A739B;
+    background-color: #1f3a65;
 }
 
 div.body h1 {
-    background-color: #BED1EA;;
+    color: #080808;
+    background-color: #95cfff;
 }
 
 div.body h2 {
-    background-color: #BFE4F2;
+    color: #1d1a1a;
+    background-color: #c3eefd;
+}
+
+div.body h3 {
+    background-color: #e8f4Fd;
 }
 
 div.warning {
     background-color: #fde6d8;
     border: 1px solid #ffca66;
 }
-				
+
 div.sphinxsidebar #searchbox input[type="submit"] {
     border: 1px solid #ccc;
     margin-left: 20px;
@@ -24,5 +30,5 @@ div.sphinxsidebar #searchbox input[type="submit"] {
 }
 
 div.sphinxsidebarwrapper {
-	padding: 3px;
+    padding: 3px;
 }

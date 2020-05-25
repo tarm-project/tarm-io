@@ -43,7 +43,15 @@ Supported platforms
    :maxdepth: 2
    :caption: Contents:
 
+Downloads
+---------
 
+Tarm-io can be downloaded from `here <https://github.com/tarm-project/tarm-io>`_.
+
+.. Subsection test
+   ~~~~~~~~~~~~~~~
+
+   Level 3 text!
 
 Indices and tables
 ==================
