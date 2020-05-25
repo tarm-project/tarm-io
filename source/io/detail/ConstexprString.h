@@ -9,6 +9,7 @@
 
 #define IO_MSVC_MAX_MACRO_WORKAROUND
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -62,3 +63,4 @@ static_assert(extract_file_name_from_path(__FILE__) != nullptr, "");
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

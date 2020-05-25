@@ -15,6 +15,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+namespace tarm {
 namespace io {
 
 class DtlsConnectedClient::Impl : public detail::OpenSslClientImplBase<DtlsConnectedClient, DtlsConnectedClient::Impl> {
@@ -230,3 +231,4 @@ const Endpoint& DtlsConnectedClient::endpoint() const {
 }
 
 } // namespace io
+} // namespace tarm

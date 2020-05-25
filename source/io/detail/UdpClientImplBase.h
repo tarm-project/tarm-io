@@ -12,6 +12,7 @@
 
 #include <iostream>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -170,3 +171,4 @@ std::uint16_t  UdpClientImplBase<ParentType, ImplType>::bound_port() const  {
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

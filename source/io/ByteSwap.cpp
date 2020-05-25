@@ -41,6 +41,7 @@
     #endif
 #endif
 
+namespace tarm {
 namespace io {
 
 namespace {
@@ -116,3 +117,4 @@ unsigned long host_to_network(unsigned long v) { return HostToNetworkDispatcher<
 unsigned long long host_to_network(unsigned long long v) { return HostToNetworkDispatcher<unsigned long long>::convert(v); }
 
 } // namespace io
+} // namespace tarm

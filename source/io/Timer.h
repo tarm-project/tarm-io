@@ -17,6 +17,7 @@
 #include <functional>
 #include <memory>
 
+namespace tarm {
 namespace io {
 
 class Timer : public Removable,
@@ -61,3 +62,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

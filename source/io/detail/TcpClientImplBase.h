@@ -11,6 +11,7 @@
 #include <memory>
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -225,3 +226,4 @@ void TcpClientImplBase<ParentType, ImplType>::alloc_read_buffer(uv_handle_t* han
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

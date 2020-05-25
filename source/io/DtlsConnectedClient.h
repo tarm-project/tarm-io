@@ -17,6 +17,7 @@
 
 #include <memory>
 
+namespace tarm {
 namespace io {
 
 class DtlsConnectedClient : protected Removable,
@@ -70,5 +71,6 @@ private:
 };
 
 } // namespace io
+} // namespace tarm
 
 

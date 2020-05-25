@@ -22,6 +22,7 @@
 #include <memory>
 #include <unordered_set>
 
+namespace tarm {
 namespace io {
 
 class DtlsServer::Impl {
@@ -324,4 +325,5 @@ void DtlsServer::schedule_removal() {
 }
 
 } // namespace io
+} // namespace tarm
 

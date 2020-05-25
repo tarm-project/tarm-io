@@ -10,6 +10,7 @@
 
 #include <memory>
 
+namespace tarm {
 namespace io {
 
 class UserDataHolder {
@@ -39,3 +40,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

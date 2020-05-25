@@ -17,9 +17,10 @@
 
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 
-template<typename T, typename LoopType = ::io::EventLoop, typename TimerType = ::io::Timer>
+template<typename T, typename LoopType = ::tarm::io::EventLoop, typename TimerType = ::tarm::io::Timer>
 class BacklogWithTimeout {
 public:
     using OnItemExpiredCallback = std::function<void(BacklogWithTimeout<T, LoopType, TimerType>&, const T& item)>;
@@ -204,3 +205,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

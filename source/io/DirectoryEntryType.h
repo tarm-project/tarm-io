@@ -8,6 +8,7 @@
 #include <ostream>
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 
 #define IO_LIST_OF_DIRECTORY_ENTRY_TYPES \
@@ -39,3 +40,4 @@ inline std::ostream& operator<< (std::ostream& out, DirectoryEntryType type) {
 
 
 } // namespace io
+} // namespace tarm

@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <functional>
 
+namespace tarm {
 namespace io {
 
 IO_DLL_PUBLIC
@@ -41,3 +42,4 @@ inline void hash_range(std::size_t& seed, It first, It last) {
 }
 
 } // namespace io
+} // namespace tarm

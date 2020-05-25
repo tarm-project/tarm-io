@@ -5,6 +5,7 @@
 
 #include "UserDataHolder.h"
 
+namespace tarm {
 namespace io {
 
 class UserDataHolder::Impl {
@@ -46,3 +47,4 @@ void* UserDataHolder::user_data() {
 }
 
 } // namespace io
+} // namespace tarm

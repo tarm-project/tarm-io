@@ -17,6 +17,7 @@
 
 #include <string>
 
+namespace tarm {
 namespace io {
 
 class DtlsClient::Impl : public detail::OpenSslClientImplBase<DtlsClient, DtlsClient::Impl> {
@@ -249,3 +250,4 @@ std::uint16_t DtlsClient::bound_port() const {
 }
 
 } // namespace io
+} // namespace tarm

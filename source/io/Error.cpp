@@ -9,6 +9,7 @@
 
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 
 Error::Error(std::int64_t libuv_code) {
@@ -240,3 +241,4 @@ std::ostream& operator<<(std::ostream& os, const Error& err) {
 }
 
 } // namespace io
+} // namespace tarm

@@ -16,6 +16,7 @@
 
 #include <memory>
 
+namespace tarm {
 namespace io {
 
 class TcpClient : public Removable,
@@ -75,3 +76,4 @@ private:
 using TcpClientPtr = std::unique_ptr<TcpClient>;
 
 } // namespace io
+} // namespace tarm

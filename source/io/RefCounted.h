@@ -9,6 +9,7 @@
 #include "Export.h"
 #include "Removable.h"
 
+namespace tarm {
 namespace io {
 
 class RefCounted : public Removable {
@@ -33,3 +34,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

@@ -9,6 +9,7 @@
 
 #include <functional>
 
+namespace tarm {
 namespace io {
 
 class ScopeExitGuard {
@@ -33,3 +34,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

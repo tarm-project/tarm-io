@@ -22,6 +22,7 @@
 #include <system_error>
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 
 IO_DLL_PUBLIC const std::error_category& codecvt_error_category();
@@ -232,3 +233,4 @@ void dispatch(T* const& c_str, U& to) {
 
 } // namespace path_traits
 } // namespace io
+} // namespace tarm

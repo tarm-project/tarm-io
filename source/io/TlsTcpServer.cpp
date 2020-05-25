@@ -20,6 +20,7 @@
 #include <memory>
 #include <cstdio>
 
+namespace tarm {
 namespace io {
 
 class TlsTcpServer::Impl {
@@ -317,3 +318,4 @@ void TlsTcpServer::schedule_removal() {
 }
 
 } // namespace io
+} // namespace tarm

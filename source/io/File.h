@@ -21,6 +21,7 @@
 #include <memory>
 #include <cstring>
 
+namespace tarm {
 namespace io {
 
 class File : public Removable,
@@ -63,3 +64,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

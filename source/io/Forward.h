@@ -6,6 +6,7 @@
 #pragma once
 
 // Forward declarations of all user-level types
+namespace tarm {
 namespace io {
 
 class TcpServer;
@@ -36,3 +37,4 @@ struct PeerId;
 } // namespace detail
 
 } // namespace io
+} // namespace tarm

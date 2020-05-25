@@ -9,6 +9,7 @@
 
 #include <uv.h>
 
+namespace tarm {
 namespace io {
 
 // IPv4
@@ -88,3 +89,4 @@ Error string_to_ip6_addr(const std::string& string_address, std::array<std::uint
 
 
 } // namespace io
+} // namespace tarm

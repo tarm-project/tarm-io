@@ -24,7 +24,7 @@
     # include "path_impl/Utf8CodecvtFacet.h"
 #endif
 
-using io::Path;
+using tarm::io::Path;
 
 using std::string;
 using std::wstring;
@@ -91,8 +91,8 @@ namespace
 //                                                                                      //
 //--------------------------------------------------------------------------------------//
 
-namespace io
-{
+namespace tarm {
+namespace io {
 
   IO_DLL_PUBLIC Path& Path::operator/=(const Path& p)
   {
@@ -438,7 +438,8 @@ namespace io
     return temp;
   }
 
-}  // namespace io
+} // namespace io
+} // namespace tarm
 
 //--------------------------------------------------------------------------------------//
 //                                                                                      //
@@ -454,10 +455,10 @@ namespace
   bool is_root_separator(const string_type & str, size_type pos)
     // pos is position of the separator
   {
-    assert(!str.empty() && io::detail::is_directory_separator(str[pos]) && "precondition violation");
+    assert(!str.empty() && tarm::io::detail::is_directory_separator(str[pos]) && "precondition violation");
 
     // subsequent logic expects pos to be for leftmost slash of a set
-    while (pos > 0 && io::detail::is_directory_separator(str[pos-1]))
+    while (pos > 0 && tarm::io::detail::is_directory_separator(str[pos-1]))
       --pos;
 
     //  "/" [...]
@@ -471,8 +472,8 @@ namespace
 # endif
 
     //  "//" name "/"
-    if (pos < 3 || !io::detail::is_directory_separator(str[0])
-      || !io::detail::is_directory_separator(str[1]))
+    if (pos < 3 || !tarm::io::detail::is_directory_separator(str[0])
+      || !tarm::io::detail::is_directory_separator(str[1]))
       return false;
 
     return str.find_first_of(separators, 2) == pos;
@@ -486,11 +487,11 @@ namespace
   {
     // case: "//"
     if (end_pos == 2
-      && io::detail::is_directory_separator(str[0])
-      && io::detail::is_directory_separator(str[1])) return 0;
+      && tarm::io::detail::is_directory_separator(str[0])
+      && tarm::io::detail::is_directory_separator(str[1])) return 0;
 
     // case: ends in "/"
-    if (end_pos && io::detail::is_directory_separator(str[end_pos-1]))
+    if (end_pos && tarm::io::detail::is_directory_separator(str[end_pos-1]))
       return end_pos-1;
 
     // set pos to start of last element
@@ -502,7 +503,7 @@ namespace
 #   endif
 
     return (pos == string_type::npos // path itself must be a filename (or empty)
-      || (pos == 1 && io::detail::is_directory_separator(str[0]))) // or net
+      || (pos == 1 && tarm::io::detail::is_directory_separator(str[0]))) // or net
         ? 0 // so filename is entire string
         : pos + 1; // or starts after delimiter
   }
@@ -517,21 +518,21 @@ namespace
     // case "c:/"
     if (size > 2
       && path[1] == colon
-      && io::detail::is_directory_separator(path[2])) return 2;
+      && tarm::io::detail::is_directory_separator(path[2])) return 2;
 #   endif
 
     // case "//"
     if (size == 2
-      && io::detail::is_directory_separator(path[0])
-      && io::detail::is_directory_separator(path[1])) return string_type::npos;
+      && tarm::io::detail::is_directory_separator(path[0])
+      && tarm::io::detail::is_directory_separator(path[1])) return string_type::npos;
 
 #   ifdef IO_BUILD_FOR_WINDOWS
     // case "\\?\"
     if (size > 4
-      && io::detail::is_directory_separator(path[0])
-      && io::detail::is_directory_separator(path[1])
+      && tarm::io::detail::is_directory_separator(path[0])
+      && tarm::io::detail::is_directory_separator(path[1])
       && path[2] == questionmark
-      && io::detail::is_directory_separator(path[3]))
+      && tarm::io::detail::is_directory_separator(path[3]))
     {
       string_type::size_type pos(path.find_first_of(separators, 4));
         return pos < size ? pos : string_type::npos;
@@ -540,16 +541,16 @@ namespace
 
     // case "//net {/}"
     if (size > 3
-      && io::detail::is_directory_separator(path[0])
-      && io::detail::is_directory_separator(path[1])
-      && !io::detail::is_directory_separator(path[2]))
+      && tarm::io::detail::is_directory_separator(path[0])
+      && tarm::io::detail::is_directory_separator(path[1])
+      && !tarm::io::detail::is_directory_separator(path[2]))
     {
       string_type::size_type pos(path.find_first_of(separators, 2));
       return pos < size ? pos : string_type::npos;
     }
 
     // case "/"
-    if (size > 0 && io::detail::is_directory_separator(path[0])) return 0;
+    if (size > 0 && tarm::io::detail::is_directory_separator(path[0])) return 0;
 
     return string_type::npos;
   }
@@ -573,22 +574,22 @@ namespace
     string_type::size_type cur(0);
 
     // deal with // [network]
-    if (size >= 2 && io::detail::is_directory_separator(src[0])
-      && io::detail::is_directory_separator(src[1])
+    if (size >= 2 && tarm::io::detail::is_directory_separator(src[0])
+      && tarm::io::detail::is_directory_separator(src[1])
       && (size == 2
-        || !io::detail::is_directory_separator(src[2])))
+        || !tarm::io::detail::is_directory_separator(src[2])))
     {
       cur += 2;
       element_size += 2;
     }
 
     // leading (not non-network) separator
-    else if (io::detail::is_directory_separator(src[0]))
+    else if (tarm::io::detail::is_directory_separator(src[0]))
     {
       ++element_size;
       // bypass extra leading separators
       while (cur+1 < size
-        && io::detail::is_directory_separator(src[cur+1]))
+        && tarm::io::detail::is_directory_separator(src[cur+1]))
       {
         ++cur;
         ++element_pos;
@@ -604,7 +605,7 @@ namespace
 #     ifdef IO_BUILD_FOR_WINDOWS
       && src[cur] != colon
 #     endif
-      && !io::detail::is_directory_separator(src[cur]))
+      && !tarm::io::detail::is_directory_separator(src[cur]))
     {
       ++cur;
       ++element_size;
@@ -622,9 +623,8 @@ namespace
 
 }  // unnamed namespace
 
-
-namespace io
-{
+namespace tarm {
+namespace io {
   namespace detail
   {
     IO_DLL_PUBLIC
@@ -648,9 +648,9 @@ namespace io
     const Path&  dot_path()
     {
 #   ifdef IO_BUILD_FOR_WINDOWS
-      static const io::Path dot_pth(L".");
+      static const tarm::io::Path dot_pth(L".");
 #   else
-      static const io::Path dot_pth(".");
+      static const tarm::io::Path dot_pth(".");
 #   endif
       return dot_pth;
     }
@@ -659,9 +659,9 @@ namespace io
     const Path&  dot_dot_path()
     {
 #   ifdef IO_BUILD_FOR_WINDOWS
-      static const io::Path dot_dot(L"..");
+      static const tarm::io::Path dot_dot(L"..");
 #   else
-      static const io::Path dot_dot("..");
+      static const tarm::io::Path dot_dot("..");
 #   endif
       return dot_dot;
     }
@@ -786,7 +786,8 @@ namespace io
       it.m_element.m_pathname = separator_string;    // generic format; see docs
   }
 
-}  // namespace io
+} // namespace io
+} // namespace tarm
 
 namespace
 {
@@ -838,7 +839,7 @@ namespace
     // Many thanks to Peter Dimov for digging out the above references!
 
     std::locale global_loc = std::locale();
-    return std::locale(global_loc, new io::detail::utf8_codecvt_facet);
+    return std::locale(global_loc, new tarm::io::detail::utf8_codecvt_facet);
 # else  // Other POSIX
     // ISO C calls std::locale("") "the locale-specific native environment", and this
     // locale is the default for many POSIX-based operating systems such as Linux.
@@ -869,8 +870,8 @@ namespace
 //              Path::codecvt() and Path::imbue() implementation                        //
 //--------------------------------------------------------------------------------------//
 
-namespace io
-{
+namespace tarm {
+namespace io {
   // See comments above
 
   IO_DLL_PUBLIC const Path::codecvt_type& Path::codecvt() {
@@ -884,4 +885,5 @@ namespace io
     return temp;
   }
 
-}  // namespace io
+} // namespace io
+} // namespace tarm

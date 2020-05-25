@@ -15,6 +15,8 @@
 #include <iostream>
 #include <thread>
 
+using namespace tarm;
+
 std::atomic<bool> stop_watchdog(false);
 
 void hanged_tests_watchdog() {

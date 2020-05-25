@@ -17,6 +17,7 @@
 
 #include <memory>
 
+namespace tarm {
 namespace io {
 
 class TcpConnectedClient : protected Removable,
@@ -69,3 +70,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

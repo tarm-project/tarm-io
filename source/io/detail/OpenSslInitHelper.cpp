@@ -8,6 +8,7 @@
 
 #include <iostream>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -27,3 +28,4 @@ static OpenSslInitHelper openssl_init_helper;
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

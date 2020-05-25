@@ -5,6 +5,7 @@
 
 #include "Common.h"
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -15,3 +16,4 @@ void default_alloc_buffer(uv_handle_t* /*handle*/, std::size_t suggested_size, u
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

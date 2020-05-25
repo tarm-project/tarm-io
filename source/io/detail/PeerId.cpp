@@ -7,6 +7,7 @@
 
 #include <uv.h>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -29,3 +30,4 @@ PeerId::PeerId(const void* address) {
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

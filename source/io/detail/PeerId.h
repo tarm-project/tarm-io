@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <functional>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -27,11 +28,12 @@ inline bool operator==(const PeerId& lhs, const PeerId& rhs) {
 
 } // namespace detail
 } // namespace io
+} // namespace tarm
 
 namespace std {
 template <>
-struct hash<::io::detail::PeerId> {
-    std::size_t operator()(const ::io::detail::PeerId& id) const {
+struct hash<::tarm::io::detail::PeerId> {
+    std::size_t operator()(const ::tarm::io::detail::PeerId& id) const {
         return hash<std::uint64_t>()(id.address_high) ^
                hash<std::uint64_t>()(id.address_low) ^
                hash<std::uint16_t>()(id.port);

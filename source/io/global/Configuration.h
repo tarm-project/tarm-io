@@ -8,6 +8,7 @@
 #include "io/Export.h"
 #include "io/Logger.h"
 
+namespace tarm {
 namespace io {
 namespace global {
 
@@ -40,3 +41,4 @@ std::size_t max_send_buffer_size();
 
 } // namespace global
 } // namespace io
+} // namespace tarm

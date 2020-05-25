@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <tuple>
 
+namespace tarm {
 namespace io {
 
 // List all known versions of TLS. Some of them may be not available for some setups.
@@ -30,3 +31,4 @@ using TlsVersionRange = std::tuple<TlsVersion, TlsVersion>;
 const TlsVersionRange DEFAULT_TLS_VERSION_RANGE{TlsVersion::MIN, TlsVersion::MAX};
 
 } // namespace io
+} // namespace tarm

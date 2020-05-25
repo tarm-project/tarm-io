@@ -16,6 +16,7 @@
 
 // DOC: calling some loop methods and not calling run() will result in memory leak
 
+namespace tarm {
 namespace io {
 
 class EventLoop : public Logger,
@@ -70,3 +71,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

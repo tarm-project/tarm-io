@@ -18,13 +18,15 @@
 
 // Workaround for GTest printers bug and path
 // https://github.com/google/googlemock/issues/170
+namespace tarm {
 namespace io {
 
-void PrintTo(const io::Path& path, std::ostream* os) {
+void PrintTo(const tarm::io::Path& path, std::ostream* os) {
     *os << path;
 }
 
 } // namespace io
+} // namespace tarm
 
 #ifdef IO_BUILD_FOR_WINDOWS
 # define IO_TEST_DIR_SEP "\\"

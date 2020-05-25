@@ -11,6 +11,7 @@
 #include <memory>
 #include <functional>
 
+namespace tarm {
 namespace io {
 
 class IO_DLL_PUBLIC_CLASS_UNIX_ONLY Removable {
@@ -46,3 +47,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <unordered_map>
 
+namespace tarm {
 namespace io {
 
 class UdpServer::Impl : public detail::UdpImplBase<UdpServer, UdpServer::Impl>{
@@ -334,3 +335,4 @@ Error UdpServer::set_send_buffer_size(std::size_t size) {
 }
 
 } // namespace io
+} // namespace tarm

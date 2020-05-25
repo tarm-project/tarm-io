@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 
+namespace tarm {
 namespace io {
 
 class Dir : public Removable,
@@ -67,3 +68,4 @@ IO_DLL_PUBLIC
 void remove_dir(EventLoop& loop, const Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback = nullptr);
 
 } // namespace io
+} // namespace tarm

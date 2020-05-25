@@ -13,6 +13,7 @@
 #include <vector>
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 
 class Dir::Impl {
@@ -418,3 +419,4 @@ void remove_dir(EventLoop& loop, const Path& path, RemoveDirCallback remove_call
 }
 
 } // namespace io
+} // namespace tarm

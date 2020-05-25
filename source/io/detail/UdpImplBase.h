@@ -16,6 +16,7 @@
 #include <limits>
 #include <memory>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -226,3 +227,4 @@ const Endpoint& UdpImplBase<ParentType, ImplType>::endpoint() const {
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

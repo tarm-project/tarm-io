@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <iostream>
 
+namespace tarm {
 namespace io {
 
 class TcpClient::Impl : public detail::TcpClientImplBase<TcpClient, TcpClient::Impl> {
@@ -353,3 +354,4 @@ bool TcpClient::is_delay_send() const {
 }
 
 } // namespace io
+} // namespace tarm

@@ -15,6 +15,7 @@
 #include "Forward.h"
 #include "Removable.h"
 
+namespace tarm {
 namespace io {
 
 class DtlsClient : public Removable {
@@ -62,3 +63,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

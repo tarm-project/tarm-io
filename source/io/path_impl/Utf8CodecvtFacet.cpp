@@ -24,6 +24,7 @@
 #include <cassert>
 #include <limits>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -288,3 +289,4 @@ int utf8_codecvt_facet::get_cont_octet_out_count(
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

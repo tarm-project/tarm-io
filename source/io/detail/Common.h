@@ -17,6 +17,7 @@ enum {
 
 #include <cstring>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -24,3 +25,4 @@ void default_alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* 
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

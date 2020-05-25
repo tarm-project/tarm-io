@@ -14,6 +14,7 @@
 
 #include <memory>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -259,3 +260,4 @@ Error OpenSslContext<ParentType, ImplType>::ssl_init_certificate_and_key(::X509*
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

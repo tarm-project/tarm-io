@@ -12,6 +12,7 @@
 #include <ostream>
 #include <string>
 
+namespace tarm {
 namespace io {
 
 class Error {
@@ -44,3 +45,4 @@ IO_DLL_PUBLIC
 std::ostream& operator<<(std::ostream& os, const Error& err);
 
 } // namespace io
+} // namespace tarm

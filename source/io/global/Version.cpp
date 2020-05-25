@@ -7,6 +7,7 @@
 
 #include <openssl/ssl.h>
 
+namespace tarm {
 namespace io {
 namespace global {
 
@@ -52,3 +53,4 @@ DtlsVersion max_supported_dtls_version() {
 
 } // namespace global
 } // namespace io
+} // namespace tarm

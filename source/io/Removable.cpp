@@ -8,6 +8,7 @@
 #include "detail/Common.h"
 #include "Error.h"
 
+namespace tarm {
 namespace io {
 
 class Removable::Impl {
@@ -144,3 +145,4 @@ void Removable::set_removal_scheduled() {
 }
 
 } // namespace io
+} // namespace tarm

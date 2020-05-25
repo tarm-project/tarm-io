@@ -14,6 +14,7 @@
 #include <cstring>
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 
 class Endpoint::Impl {
@@ -259,3 +260,4 @@ std::ostream& operator <<(std::ostream& o, const Endpoint& e) {
 }
 
 } // namespace io
+} // namespace tarm

@@ -16,6 +16,7 @@
 
 #include <string>
 
+namespace tarm {
 namespace io {
 
 class TlsTcpClient::Impl : public detail::OpenSslClientImplBase<TlsTcpClient, TlsTcpClient::Impl> {
@@ -229,3 +230,4 @@ TlsVersion TlsTcpClient::negotiated_tls_version() const {
 }
 
 } // namespace io
+} // namespace tarm

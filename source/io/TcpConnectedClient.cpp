@@ -13,6 +13,7 @@
 
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 class TcpConnectedClient::Impl : public detail::TcpClientImplBase<TcpConnectedClient, TcpConnectedClient::Impl> {
 public:
@@ -268,3 +269,4 @@ Error TcpConnectedClient::init_stream() {
 }
 
 } // namespace io
+} // namespace tarm

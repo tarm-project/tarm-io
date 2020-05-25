@@ -9,6 +9,7 @@
 
 #include <cstddef>
 
+namespace tarm {
 namespace io {
 
 // These checks are required to be sure that we can safe reinterpret cast uv_stat_t to StatData
@@ -36,3 +37,4 @@ static_assert(offsetof(StatData::TimeSpec, seconds)     == offsetof(uv_timespec_
 static_assert(offsetof(StatData::TimeSpec, nanoseconds) == offsetof(uv_timespec_t, tv_nsec), "");
 
 } // namespace io
+} // namespace tarm

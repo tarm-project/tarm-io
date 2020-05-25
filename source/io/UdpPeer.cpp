@@ -13,6 +13,7 @@
 
 #include "detail/Common.h"
 
+namespace tarm {
 namespace io {
 
 class UdpPeer::Impl : public detail::UdpClientImplBase<UdpPeer, UdpPeer::Impl> {
@@ -114,3 +115,4 @@ const Endpoint& UdpPeer::endpoint() const {
 }
 
 } // namespace io
+} // namespace tarm

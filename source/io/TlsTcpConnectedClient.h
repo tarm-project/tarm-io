@@ -16,6 +16,7 @@
 
 #include <memory>
 
+namespace tarm {
 namespace io {
 
 class TlsTcpConnectedClient : protected Removable,
@@ -65,4 +66,5 @@ private:
 };
 
 } // namespace io
+} // namespace tarm
 

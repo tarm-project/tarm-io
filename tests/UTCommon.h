@@ -11,6 +11,8 @@
 #include <boost/filesystem.hpp>
 #include <chrono>
 
+using namespace tarm;
+
 #ifdef GTEST_SKIP
     #define IO_TEST_SKIP() GTEST_SKIP()
 #else

@@ -9,6 +9,7 @@
 
 #include <memory>
 
+namespace tarm {
 namespace io {
 
 struct DataChunk {
@@ -31,3 +32,4 @@ struct DataChunk {
 };
 
 } // namespace io
+} // namespace tarm

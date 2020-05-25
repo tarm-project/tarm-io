@@ -7,6 +7,7 @@
 
 #include "Export.h"
 
+namespace tarm {
 namespace io {
 
 // network_to_host
@@ -42,3 +43,4 @@ IO_DLL_PUBLIC
 unsigned long long host_to_network(unsigned long long v);
 
 } // namespace io
+} // namespace tarm

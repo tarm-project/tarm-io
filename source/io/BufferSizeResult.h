@@ -9,6 +9,7 @@
 
 #include <cstddef>
 
+namespace tarm {
 namespace io {
 
 struct BufferSizeResult {
@@ -22,3 +23,4 @@ struct BufferSizeResult {
 };
 
 } // namespace io
+} // namespace tarm

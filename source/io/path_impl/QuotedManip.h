@@ -12,7 +12,7 @@
 
 //  Library home page http://www.boost.org/libs/io
 
-//--------------------------------------------------------------------------------------// 
+//--------------------------------------------------------------------------------------//
 
 #pragma once
 
@@ -22,8 +22,9 @@
 #include <iterator>
 
 
-  namespace io
-  {
+namespace tarm {
+namespace io {
+
     class ios_flags_saver
     {
     public:
@@ -74,7 +75,7 @@
 
     namespace detail
     {
-      //  proxy used as an argument pack 
+      //  proxy used as an argument pack
       template <class String, class Char>
       struct quoted_proxy
       {
@@ -114,7 +115,7 @@
       //  inserter for const std::basic_string& proxies
       template <class Char, class Traits, class Alloc>
       inline
-      std::basic_ostream<Char, Traits>& operator<<(std::basic_ostream<Char, Traits>& os, 
+      std::basic_ostream<Char, Traits>& operator<<(std::basic_ostream<Char, Traits>& os,
         const quoted_proxy<std::basic_string<Char, Traits, Alloc> const &, Char>& proxy)
       {
         return basic_string_inserter_imp(os, proxy.string, proxy.escape, proxy.delim);
@@ -123,15 +124,15 @@
       //  inserter for non-const std::basic_string& proxies
       template <class Char, class Traits, class Alloc>
       inline
-      std::basic_ostream<Char, Traits>& operator<<(std::basic_ostream<Char, Traits>& os, 
+      std::basic_ostream<Char, Traits>& operator<<(std::basic_ostream<Char, Traits>& os,
         const quoted_proxy<std::basic_string<Char, Traits, Alloc>&, Char>& proxy)
       {
         return basic_string_inserter_imp(os, proxy.string, proxy.escape, proxy.delim);
       }
- 
+
       //  inserter for const C-string* proxies
       template <class Char, class Traits>
-      std::basic_ostream<Char, Traits>& operator<<(std::basic_ostream<Char, Traits>& os, 
+      std::basic_ostream<Char, Traits>& operator<<(std::basic_ostream<Char, Traits>& os,
         const quoted_proxy<const Char*, Char>& proxy)
       {
         os << proxy.delim;
@@ -149,7 +150,7 @@
 
       //  extractor for non-const std::basic_string& proxies
       template <class Char, class Traits, class Alloc>
-      std::basic_istream<Char, Traits>& operator>>(std::basic_istream<Char, Traits>& is, 
+      std::basic_istream<Char, Traits>& operator>>(std::basic_istream<Char, Traits>& is,
         const quoted_proxy<std::basic_string<Char, Traits, Alloc>&, Char>& proxy)
       {
         proxy.string.clear();
@@ -164,7 +165,7 @@
         {
           ios_flags_saver ifs(is);
           is >> std::noskipws;
-          for (;;)  
+          for (;;)
           {
             is >> c;
             if (!is.good())  // cope with I/O errors or end-of-file
@@ -211,5 +212,6 @@
       return detail::quoted_proxy<const Char*, Char> (s, escape, delim);
     }
 
-  }  // namespace io
+} // namespace io
+} // namespace tarm
 

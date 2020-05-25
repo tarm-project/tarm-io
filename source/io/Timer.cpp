@@ -9,6 +9,7 @@
 
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 
 class Timer::Impl  {
@@ -210,3 +211,4 @@ std::chrono::milliseconds Timer::real_time_passed_since_last_callback() const {
 }
 
 } // namespace io
+} // namespace tarm

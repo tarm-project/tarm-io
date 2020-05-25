@@ -8,6 +8,7 @@
 #include "detail/Common.h"
 #include "ScopeExitGuard.h"
 
+namespace tarm {
 namespace io {
 
 struct ReadRequest : public uv_fs_t {
@@ -503,3 +504,4 @@ void File::schedule_removal() {
 }
 
 } // namespace io
+} // namespace tarm

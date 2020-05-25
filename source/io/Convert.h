@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <string>
 
+namespace tarm {
 namespace io {
 
 // IPv4
@@ -32,3 +33,4 @@ IO_DLL_PUBLIC
 Error string_to_ip6_addr(const std::string& string_address, std::array<std::uint8_t, 16>& bytes);
 
 } // namespace io
+} // namespace tarm

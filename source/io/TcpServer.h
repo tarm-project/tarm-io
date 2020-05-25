@@ -20,6 +20,7 @@
 #include <set>
 #include <string>
 
+namespace tarm {
 namespace io {
 
 class TcpConnectedClient;
@@ -70,3 +71,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

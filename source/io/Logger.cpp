@@ -5,6 +5,7 @@
 
 #include "Logger.h"
 
+namespace tarm {
 namespace io {
 
 
@@ -30,3 +31,4 @@ void Logger::out_common_prefix(std::ostream& ss, Logger::Severity severity) {
 }
 
 } // namespace io
+} // namespace tarm

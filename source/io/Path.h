@@ -27,6 +27,7 @@
 #include <type_traits>
 #include <cstdint>
 
+namespace tarm {
 namespace io {
 namespace path_detail { // intentionally don't use io::detail to not bring internal filesystem functions into ADL via path_constants
 
@@ -765,14 +766,14 @@ private:
   template <class Char, class Traits>
   inline std::basic_ostream<Char, Traits>&
   operator<<(std::basic_ostream<Char, Traits>& os, const Path& p) {
-    return os << ::io::quoted(p.template string<std::basic_string<Char> >(), static_cast<Char>('&'));
+    return os << ::tarm::io::quoted(p.template string<std::basic_string<Char> >(), static_cast<Char>('&'));
   }
 
   template <class Char, class Traits>
   inline std::basic_istream<Char, Traits>&
   operator>>(std::basic_istream<Char, Traits>& is, Path& p) {
     std::basic_string<Char> str;
-    is >> ::io::quoted(str, static_cast<Char>('&'));
+    is >> ::tarm::io::quoted(str, static_cast<Char>('&'));
     p = str;
     return is;
   }
@@ -933,14 +934,16 @@ private:
   std::wstring Path::generic_string<std::wstring>(const codecvt_type& cvt) const
     { return generic_wstring(cvt); }
 
-}  // namespace io
+} // namespace io
+} // namespace tarm
+
 
 // Path hasher for std
 namespace std {
 
-template <> struct hash<io::Path> {
-    size_t operator()(const io::Path& x) const {
-        return io::hash_value(x);
+template <> struct hash<::tarm::io::Path> {
+    size_t operator()(const ::tarm::io::Path& x) const {
+        return ::tarm::io::hash_value(x);
     }
 };
 

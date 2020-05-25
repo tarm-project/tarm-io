@@ -64,8 +64,8 @@ namespace
 
 } // unnamed namespace
 
-namespace io
-{
+namespace tarm {
+namespace io {
 
 IO_DLL_PUBLIC const std::error_category& codecvt_error_category()
 {
@@ -74,3 +74,4 @@ IO_DLL_PUBLIC const std::error_category& codecvt_error_category()
 }
 
 } // namespace io
+} // namespace tarm

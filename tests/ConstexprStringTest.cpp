@@ -5,7 +5,7 @@
 
 #include "io/detail/ConstexprString.h"
 
-using namespace io::detail;
+using namespace tarm::io::detail;
 
 static_assert(length("") == 0, "");
 static_assert(length("abc") == 3, "");

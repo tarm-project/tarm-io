@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <vector>
 
+namespace tarm {
 namespace io {
 
 namespace {
@@ -494,3 +495,4 @@ void EventLoop::schedule_callback(WorkCallback callback) {
 }
 
 } // namespace io
+} // namespace tarm

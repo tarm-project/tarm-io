@@ -9,6 +9,8 @@
 
 #include <iostream>
 
+using namespace tarm;
+
 int main(int argc, char* argv[]) {
     io::EventLoop loop;
     auto client = new io::TlsTcpClient(loop);

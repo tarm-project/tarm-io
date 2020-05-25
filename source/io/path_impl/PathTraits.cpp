@@ -17,7 +17,7 @@
 #include <cwchar>   // for wcslen
 #include <memory>   // for unique_ptr
 
-namespace pt = io::path_traits;
+namespace pt = tarm::io::path_traits;
 
 //--------------------------------------------------------------------------------------//
 //                                  configuration                                       //
@@ -56,7 +56,7 @@ const std::size_t default_codecvt_buf_size = IO_FILESYSTEM_CODECVT_BUF_SIZE;
 
     if ((res=cvt.in(state, from, from_end, from_next, to, to_end, to_next)) != std::codecvt_base::ok) {
         // TODO: we do not want to throw exceptions
-        throw std::system_error(res, io::codecvt_error_category(), "io::Path codecvt to wstring");
+        throw std::system_error(res, tarm::io::codecvt_error_category(), "io::Path codecvt to wstring");
     }
     target.append(to, to_next);
 }
@@ -78,7 +78,7 @@ const std::size_t default_codecvt_buf_size = IO_FILESYSTEM_CODECVT_BUF_SIZE;
 
     if ((res=cvt.out(state, from, from_end, from_next, to, to_end, to_next)) != std::codecvt_base::ok) {
         // TODO: we do not want to throw exceptions
-        throw std::system_error(res, io::codecvt_error_category(), "io::Path codecvt to string");
+        throw std::system_error(res, tarm::io::codecvt_error_category(), "io::Path codecvt to string");
     }
     target.append(to, to_next);
 }
@@ -89,6 +89,7 @@ const std::size_t default_codecvt_buf_size = IO_FILESYSTEM_CODECVT_BUF_SIZE;
 //                                   path_traits                                        //
 //--------------------------------------------------------------------------------------//
 
+namespace tarm {
 namespace io {
 namespace path_traits {
 
@@ -232,3 +233,4 @@ void convert(const wchar_t* from, std::string & to) {
 
 } // namespace path_traits
 } // namespace io
+} // namespace tarm

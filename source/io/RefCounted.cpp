@@ -5,6 +5,7 @@
 
 #include "RefCounted.h"
 
+namespace tarm {
 namespace io {
 
 RefCounted::RefCounted(EventLoop& loop) :
@@ -34,3 +35,4 @@ std::size_t RefCounted::ref_count() {
 }
 
 } // namespace io
+} // namespace tarm

@@ -19,6 +19,7 @@
 #include <functional>
 #include <cstddef>
 
+namespace tarm {
 namespace io {
 
 class DtlsServer : public Removable,
@@ -75,3 +76,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

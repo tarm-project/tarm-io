@@ -19,6 +19,7 @@
 #include <memory>
 #include <functional>
 
+namespace tarm {
 namespace io {
 
 class UdpClient : public Removable,
@@ -65,3 +66,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

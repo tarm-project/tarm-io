@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 
+namespace tarm {
 namespace io {
 
 class UdpPeer : public UserDataHolder,
@@ -67,3 +68,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

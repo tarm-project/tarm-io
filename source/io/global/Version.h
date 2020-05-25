@@ -9,6 +9,7 @@
 #include "io/TlsVersion.h"
 #include "io/DtlsVersion.h"
 
+namespace tarm {
 namespace io {
 namespace global {
 
@@ -20,3 +21,4 @@ IO_DLL_PUBLIC DtlsVersion max_supported_dtls_version();
 
 } // namespace global
 } // namespace io
+} // namespace tarm

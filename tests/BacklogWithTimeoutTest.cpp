@@ -78,12 +78,12 @@ bool operator==(const TestItem& item1, const TestItem& item2) {
 
 } // namespace
 
-class FakeLoop : public ::io::UserDataHolder {
+class FakeLoop : public ::tarm::io::UserDataHolder {
 public:
     FakeLoop() = default;
 };
 
-class FakeTimer : public ::io::UserDataHolder {
+class FakeTimer : public ::tarm::io::UserDataHolder {
 public:
     using DefaultDelete = std::function<void(FakeTimer*)>;
 

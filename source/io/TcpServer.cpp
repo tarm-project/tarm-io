@@ -10,6 +10,7 @@
 
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 
 const size_t TcpServer::READ_BUFFER_SIZE;
@@ -401,3 +402,4 @@ void TcpServer::schedule_removal() {
 }
 
 } // namespace io
+} // namespace tarm

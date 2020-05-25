@@ -15,6 +15,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+namespace tarm {
 namespace io {
 
 class TlsTcpConnectedClient::Impl : public detail::OpenSslClientImplBase<TlsTcpConnectedClient, TlsTcpConnectedClient::Impl> {
@@ -233,4 +234,5 @@ TlsVersion TlsTcpConnectedClient::negotiated_tls_version() const {
 }
 
 } // namespace io
+} // namespace tarm
 

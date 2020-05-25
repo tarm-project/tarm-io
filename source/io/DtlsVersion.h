@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <tuple>
 
+namespace tarm {
 namespace io {
 
 // List all known versions of DTLS. Some of them may be not available for some setups.
@@ -26,3 +27,4 @@ using DtlsVersionRange = std::tuple<DtlsVersion, DtlsVersion>;
 const DtlsVersionRange DEFAULT_DTLS_VERSION_RANGE{DtlsVersion::MIN, DtlsVersion::MAX};
 
 } // namespace io
+} // namespace tarm

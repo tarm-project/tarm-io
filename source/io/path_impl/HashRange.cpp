@@ -5,6 +5,7 @@
 
 #include "HashRange.h"
 
+namespace tarm {
 namespace io {
 
 void hash_combine_impl(std::size_t& h, std::uint64_t k) {
@@ -23,3 +24,4 @@ void hash_combine_impl(std::size_t& h, std::uint64_t k) {
 }
 
 } // namespace io
+} // namespace tarm

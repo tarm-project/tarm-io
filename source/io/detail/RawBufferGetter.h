@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -21,4 +22,5 @@ inline const char* raw_buffer_get(const std::shared_ptr<const char>& p) {
 
 } // namespace detail
 } // namespace io
+} // namespace tarm
 

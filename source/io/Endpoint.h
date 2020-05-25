@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+namespace tarm {
 namespace io {
 
 class Endpoint {
@@ -68,3 +69,4 @@ IO_DLL_PUBLIC
 std::ostream& operator <<(std::ostream& o, const Endpoint& e);
 
 } // namespace io
+} // namespace tarm

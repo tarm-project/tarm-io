@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <iosfwd>
 
+namespace tarm {
 namespace io {
 
 // Note: do not forget to revise this list on bundled libuv version update
@@ -124,3 +125,4 @@ IO_DLL_PUBLIC
 std::ostream& operator<<(std::ostream& out, StatusCode code);
 
 } // namespace io
+} // namespace tarm

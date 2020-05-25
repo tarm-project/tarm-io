@@ -9,6 +9,7 @@
 
 #include <openssl/ssl.h>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -28,3 +29,4 @@ struct TlsContext {
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

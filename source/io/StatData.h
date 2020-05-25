@@ -7,6 +7,7 @@
 
 #include <cstdint>
 
+namespace tarm {
 namespace io {
 
 struct StatData {
@@ -34,3 +35,4 @@ struct StatData {
 };
 
 } // namespace io
+} // namespace tarm

@@ -17,6 +17,7 @@
 
 #include <memory>
 
+namespace tarm {
 namespace io {
 
 class TlsTcpClient : public Removable {
@@ -60,3 +61,4 @@ private:
 };
 
 } // namespace io
+} // namespace tarm

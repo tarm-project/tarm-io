@@ -16,6 +16,7 @@
 
 #include <iostream>
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -478,3 +479,4 @@ const Endpoint& OpenSslClientImplBase<ParentType, ImplType>::endpoint() const {
 
 } // namespace detail
 } // namespace io
+} // namespace tarm

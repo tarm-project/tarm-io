@@ -84,6 +84,7 @@
 #include <cwchar>   // for mbstate_t
 #include <cstddef>  // for std::size_t
 
+namespace tarm {
 namespace io {
 namespace detail {
 
@@ -192,4 +193,5 @@ protected:
 
 } // namespace detail
 } // namespace io
+} // namespace tarm
 

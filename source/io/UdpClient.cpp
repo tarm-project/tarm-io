@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <assert.h>
 
+namespace tarm {
 namespace io {
 
 class UdpClient::Impl : public detail::UdpClientImplBase<UdpClient, UdpClient::Impl> {
@@ -260,3 +261,4 @@ Error UdpClient::set_send_buffer_size(std::size_t size) {
 }
 
 } // namespace io
+} // namespace tarm

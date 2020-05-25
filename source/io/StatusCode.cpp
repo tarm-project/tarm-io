@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <ostream>
 
+namespace tarm {
 namespace io {
 
 StatusCode convert_from_uv(std::int64_t libuv_code) {
@@ -192,3 +193,4 @@ std::ostream& operator<<(std::ostream& out, StatusCode code) {
 }
 
 } // namespace io
+} // namespace tarm
