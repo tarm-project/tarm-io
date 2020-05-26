@@ -1,5 +1,5 @@
 .. tarm-io documentation master file, created by
-   sphinx-quickstart on Fri May 15 20:28:30 2020.  
+   sphinx-quickstart on Fri May 15 20:28:30 2020.
 
 .. meta::
    :yandex-verification: b8c1a29becd28cc4
@@ -13,7 +13,7 @@ Welcome to tarm-io's documentation!
 Overview
 --------
 
-tarm-io is a cross-platform general purpose event-driven C++11 input-output library project.
+Tarm-io is a cross-platform general purpose event-driven C++11 input-output library project.
 
 Features
 --------
@@ -22,6 +22,7 @@ Features
 * IPv4 and IPv6
 * Support of various SSL backend libraries
 * Asynchronous DNS resolution
+* No sockets. Instead library provides higher level abstractions like clients and servers
 * Asynchronous file and file system operations
 * Paths constructions and manipulations
 * File system events
@@ -33,28 +34,33 @@ Features
 Supported platforms
 -------------------
 
-* Windows (Visual Studio 2015+) 
-* Linux (Ubuntu 14.04+, Cent OS 7.3+, Alpine and more) 
-* Mac (10.10+) 
-* iOS 
-* Android 
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+* Windows (Visual Studio 2015+)
+* Linux (Ubuntu 14.04+, Cent OS 7.3+, Alpine and more)
+* Mac (10.10+)
+* iOS
+* Android
 
 Downloads
 ---------
 
 Tarm-io can be downloaded from `here <https://github.com/tarm-project/tarm-io>`_.
 
+Documentation
+-------------
+
+.. toctree::
+   :maxdepth: 1
+
+   build_instructions_index
+
+
+
 .. Subsection test
    ~~~~~~~~~~~~~~~
-
    Level 3 text!
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
