@@ -65,6 +65,7 @@ TEST_F(EndpointTest, inplace_address) {
     io::Endpoint endpoint({127, 0, 0, 1}, 1234);
 
     EXPECT_EQ(io::Endpoint::IP_V4, endpoint.type());
+    EXPECT_EQ(0x7F000001, endpoint.ipv4_addr());
     EXPECT_EQ("127.0.0.1", endpoint.address_string());
     EXPECT_EQ(1234, endpoint.port());
 }
@@ -118,7 +119,7 @@ TEST_F(EndpointTest, ostream_3) {
 }
 
 #if defined(__APPLE__) || defined(__linux__)
-TEST_F(EndpointTest, ipv4_init_raw_sockaddr) {
+TEST_F(EndpointTest, ipv4_init_from_raw_sockaddr) {
     ::sockaddr_in ipv4_sockaddr;
     std::memset(&ipv4_sockaddr, 0, sizeof(ipv4_sockaddr));
 
@@ -132,7 +133,7 @@ TEST_F(EndpointTest, ipv4_init_raw_sockaddr) {
     EXPECT_EQ("127.0.0.1", endpoint.address_string());
 }
 
-TEST_F(EndpointTest, ipv6_init_raw_sockaddr) {
+TEST_F(EndpointTest, ipv6_init_from_raw_sockaddr) {
     ::sockaddr_in6 ipv6_sockaddr;
     std::memset(&ipv6_sockaddr, 0, sizeof(ipv6_sockaddr));
 
