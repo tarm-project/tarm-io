@@ -32,3 +32,16 @@ div.sphinxsidebar #searchbox input[type="submit"] {
 div.sphinxsidebarwrapper {
     padding: 3px;
 }
+
+pre {
+    margin: 0;
+    box-shadow: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+}
+
+.highlight-bash .highlight {
+    background: #eeeeee;
+    border: 1px solid grey;
+    border-radius: 5px;
+}

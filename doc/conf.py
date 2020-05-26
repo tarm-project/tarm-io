@@ -62,6 +62,8 @@ html_style = 'custom.css'
 
 html_favicon = 'static/favicon.ico'
 
+pygments_style = 'vs' #solarized-light
+
 #html_css_files = [
 #    'static/custom.css'
 #]

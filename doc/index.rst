@@ -45,6 +45,50 @@ Downloads
 
 Tarm-io can be downloaded from `here <https://github.com/tarm-project/tarm-io>`_.
 
+Five minutes tutorial
+---------------------
+UDP echo server.
+
+.. code-block:: c++
+   :linenos:
+
+   // TODO: move to examples and ensure that it is buildable anytime
+
+   #include <tarm/io/udp.h>
+
+   #include <iostream>
+
+   using namespace tarm;
+
+   int main() {
+      io::EventLoop loop;
+
+      auto server = new io::UdpServer(loop);
+      auto listen_error = server->start_receive(
+         {"0.0.0.0", 1234},
+         [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+               if (error) {
+                  std::cerr << "Error: " << error << std::endl;
+                  return;
+               }
+
+               peer.send(std::string(data.buf.get(), data.size));
+         }
+      );
+
+      // TODO: signal handler and server deletion
+      return loop.run().code();
+   }
+
+As a client you may use utility like *netcat* in Linux:
+
+.. code-block:: bash
+
+   $ netcat -u 127.0.0.1 1234
+   Hello!
+   Hello!
+
+
 Documentation
 -------------
 
