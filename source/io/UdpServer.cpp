@@ -211,7 +211,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                 if (this_.peer_bookkeeping_enabled()) {
                     auto inative_peer_it = this_.m_inactive_peers.find(peer_id);
                     if (inative_peer_it != this_.m_inactive_peers.end()) {
-                        const Endpoint e{addr};
+                        const Endpoint e{reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)};
                         IO_LOG(this_.m_loop, TRACE, &parent, "Peer", e, "is inactive, ignoring packet");
                         return;
                     }
@@ -221,7 +221,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                         peer_ptr.reset(new UdpPeer(*this_.m_loop,
                                                    *this_.m_parent,
                                                    this_.m_udp_handle.get(),
-                                                   {addr},
+                                                   {reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)},
                                                    peer_id),
                                        free_udp_peer); // Ref count is == 1 here
                         IO_LOG(this_.m_loop, TRACE, &parent, "New tracked peer:", peer_ptr->endpoint());
@@ -242,10 +242,10 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                     // Ref/Unref semantics here was added to prolong lifetime of oneshot UdpPeer objects
                     // and to allow call send data in receive callback for UdpServer without peers tracking.
                     auto peer = new UdpPeer(*this_.m_loop,
-                                 *this_.m_parent,
-                                 this_.m_udp_handle.get(),
-                                 {addr},
-                                 peer_id); // Ref count is == 1 here
+                                            *this_.m_parent,
+                                            this_.m_udp_handle.get(),
+                                            {reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)},
+                                            peer_id); // Ref count is == 1 here
                     IO_LOG(this_.m_loop, TRACE, &parent, "New untracked peer:", peer->endpoint());
                     this_.m_data_receive_callback(*peer, data_chunk, error);
                     peer->unref();

@@ -27,6 +27,8 @@ public:
     friend class UdpPeer;
     friend class UdpServer;
 
+    struct sockaddr_placeholder {};
+
     IO_DECLARE_DLL_PUBLIC_MOVE(Endpoint);;
 
     IO_DLL_PUBLIC Endpoint& operator=(const Endpoint& other);
@@ -46,7 +48,7 @@ public:
     IO_DLL_PUBLIC Endpoint(std::initializer_list<std::uint8_t> address_bytes, std::uint16_t port);
     IO_DLL_PUBLIC Endpoint(std::uint8_t (&address_bytes)[4], std::uint16_t port);
     IO_DLL_PUBLIC Endpoint(std::uint8_t (&address_bytes)[16], std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(const void* raw_address); // TODO: replace void* with cutom empty struct to prevent occasional pointer casts???
+    IO_DLL_PUBLIC Endpoint(const sockaddr_placeholder* raw_address);
     IO_DLL_PUBLIC ~Endpoint();
 
     IO_DLL_PUBLIC std::string address_string() const;

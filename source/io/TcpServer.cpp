@@ -289,7 +289,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
                                                      reinterpret_cast<struct sockaddr*>(&info),
                                                      &info_len);
         if (!getpeername_error) {
-            tcp_client->set_endpoint(Endpoint(&info));
+            tcp_client->set_endpoint(Endpoint(reinterpret_cast<const Endpoint::sockaddr_placeholder*>(&info)));
 
             this_.m_client_connections.insert(tcp_client.get());
 

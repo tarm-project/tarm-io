@@ -127,7 +127,7 @@ TEST_F(EndpointTest, ipv4_init_from_raw_sockaddr) {
     ipv4_sockaddr.sin_port = io::host_to_network(std::uint16_t(1500));
     ipv4_sockaddr.sin_addr.s_addr = io::host_to_network(std::uint32_t(0x7F000001));
 
-    io::Endpoint endpoint(&ipv4_sockaddr);
+    io::Endpoint endpoint(reinterpret_cast<const io::Endpoint::sockaddr_placeholder*>(&ipv4_sockaddr));
     EXPECT_EQ(io::Endpoint::IP_V4, endpoint.type());
     EXPECT_EQ(1500, endpoint.port());
     EXPECT_EQ("127.0.0.1", endpoint.address_string());
@@ -142,7 +142,7 @@ TEST_F(EndpointTest, ipv6_init_from_raw_sockaddr) {
     const unsigned char buf[16] = {0, 0x7f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10};
     std::memcpy(&ipv6_sockaddr.sin6_addr, buf, 16);
 
-    io::Endpoint endpoint(&ipv6_sockaddr);
+    io::Endpoint endpoint(reinterpret_cast<const io::Endpoint::sockaddr_placeholder*>(&ipv6_sockaddr));
     EXPECT_EQ(io::Endpoint::IP_V6, endpoint.type());
     EXPECT_EQ(1500, endpoint.port());
     EXPECT_EQ("7f::10", endpoint.address_string());

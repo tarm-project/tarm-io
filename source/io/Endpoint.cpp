@@ -206,7 +206,7 @@ Endpoint::Endpoint(std::uint8_t (&address_bytes)[16], std::uint16_t port) :
     m_impl(new Impl(address_bytes, 16, port)) {
 }
 
-Endpoint::Endpoint(const void* raw_address) :
+Endpoint::Endpoint(const sockaddr_placeholder* raw_address) :
     m_impl(new Impl(reinterpret_cast<const ::sockaddr*>(raw_address))) {
 }
 
