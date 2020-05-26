@@ -30,12 +30,12 @@ fi
 # Domain socket (needed for tests)
 CREATE_DOMAIN_SOCKET_COMMAND="python -c \"import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/var/run/somesocket')\""
 
-# '--privileged' is required for leak sanitizer to work.
+# '--privileged' is required for leak sanitizer(and other tools) to work.
 docker run ${DOCKER_TERMINAL_OPTIONS} \
            --privileged \
            --cap-add=ALL \
            --rm \
-           -v "${SCRIPT_DIR}/../..":"/source" \
+           -v "${SCRIPT_DIR}/..":"/source" \
            --network=host \
            "${IMAGE_TO_EXECUTE}" \
            bash -c "echo 'You are in docker now!' && \
