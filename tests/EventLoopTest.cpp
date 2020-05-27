@@ -44,14 +44,17 @@ TEST_F(EventLoopTest, work_all_callbacks) {
     bool done_executed = false;
 
     io::EventLoop event_loop;
-    event_loop.add_work([&](io::EventLoop&) {
-        callback_executed = true;
-        ASSERT_FALSE(done_executed);
-    },
-    [&](io::EventLoop& loop) {
-        EXPECT_EQ(&loop, &event_loop);
-        done_executed = true;
-    });
+    event_loop.add_work(
+        [&](io::EventLoop&) {
+            callback_executed = true;
+            ASSERT_FALSE(done_executed);
+        },
+        [&](io::EventLoop& loop, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            EXPECT_EQ(&loop, &event_loop);
+            done_executed = true;
+        }
+    );
 
     ASSERT_EQ(0, event_loop.run());
     ASSERT_TRUE(callback_executed);
@@ -65,7 +68,8 @@ TEST_F(EventLoopTest, only_work_done_callback) {
     io::EventLoop event_loop;
     event_loop.add_work(
         nullptr,
-        [&](io::EventLoop&) {
+        [&](io::EventLoop&, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
             done_executed = true;
         }
     );
@@ -88,7 +92,8 @@ TEST_F(EventLoopTest, work_with_user_data) {
             callback_executed = true;
             return new int(42);
         },
-        [&](io::EventLoop& loop, void* user_data) {
+        [&](io::EventLoop& loop, void* user_data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
             EXPECT_EQ(&loop, &event_loop);
             done_executed = true;
             auto& value = *reinterpret_cast<int*>(user_data);

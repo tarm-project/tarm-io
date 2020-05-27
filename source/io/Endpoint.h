@@ -56,7 +56,6 @@ public:
 
     IO_DLL_PUBLIC Type type() const;
 
-    // TODO: unit test this;
     IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
 
 private:

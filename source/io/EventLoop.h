@@ -6,6 +6,7 @@
 #pragma once
 
 #include "CommonMacros.h"
+#include "Error.h"
 #include "Export.h"
 #include "Logger.h"
 #include "UserDataHolder.h"
@@ -23,9 +24,9 @@ class EventLoop : public Logger,
                   public UserDataHolder {
 public:
     using WorkCallback = std::function<void(EventLoop&)>;
-    using WorkDoneCallback = std::function<void(EventLoop&)>;
+    using WorkDoneCallback = std::function<void(EventLoop&, const Error&)>;
     using WorkCallbackWithUserData = std::function<void*(EventLoop&)>;
-    using WorkDoneCallbackWithUserData = std::function<void(EventLoop&, void*)>;
+    using WorkDoneCallbackWithUserData = std::function<void(EventLoop&, void*, const Error&)>;
 
     static const std::size_t INVALID_HANDLE = (std::numeric_limits<std::size_t>::max)();
 
@@ -35,6 +36,7 @@ public:
     IO_DLL_PUBLIC EventLoop();
     IO_DLL_PUBLIC ~EventLoop();
 
+    // TODO: add possibility to cancel work, handle work cancel
     IO_DLL_PUBLIC void add_work(WorkCallback thread_pool_work_callback,
                                 WorkDoneCallback loop_thread_work_done_callback = nullptr);
     IO_DLL_PUBLIC void add_work(WorkCallbackWithUserData thread_pool_work_callback,

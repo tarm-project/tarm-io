@@ -401,7 +401,8 @@ void remove_dir_impl(EventLoop& loop, const Path& path, RemoveDirCallback remove
 
         return new RemoveDirStatusContext(Error(0), "");
     },
-    [remove_callback](EventLoop&, void* user_data) {
+    [remove_callback](EventLoop&, void* user_data, const Error& error) {
+        // TODO: handle error
         auto& status_context = *reinterpret_cast<RemoveDirStatusContext*>(user_data);
         remove_callback(status_context.error);
         delete &status_context;

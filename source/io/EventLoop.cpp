@@ -211,9 +211,9 @@ struct Work : public uv_work_t {
         }
     }
 
-    void call_work_done_callback() {
+    void call_work_done_callback(const Error& error) {
         if (work_done_callback) {
-            work_done_callback(*m_event_loop);
+            work_done_callback(*m_event_loop, error);
         }
     }
 };
@@ -230,9 +230,9 @@ struct Work<EventLoop::WorkCallbackWithUserData, EventLoop::WorkDoneCallbackWith
         }
     }
 
-    void call_work_done_callback() {
+    void call_work_done_callback(const Error& error) {
         if (work_done_callback) {
-            work_done_callback(*m_event_loop, this->data);
+            work_done_callback(*m_event_loop, this->data, error);
         }
     }
 };
@@ -255,7 +255,10 @@ void EventLoop::Impl::add_work(WorkCallbackType work_callback,
                                 on_work<WorkCallbackType, WorkDoneCallbackType>,
                                 on_after_work<WorkCallbackType, WorkDoneCallbackType>);
     if (error) {
-        // TODO: error handling
+        this->schedule_callback([work, error](EventLoop&) {
+            work->call_work_done_callback(error);
+            delete work;
+        });
     }
 
 }
@@ -376,10 +379,8 @@ void EventLoop::Impl::on_work(uv_work_t* req) {
 
 template<typename WorkCallbackType, typename WorkDoneCallbackType>
 void EventLoop::Impl::on_after_work(uv_work_t* req, int status) {
-    // TODO: check cancel status????
     auto& work = *reinterpret_cast<Work<WorkCallbackType, WorkDoneCallbackType>*>(req);
-    work.call_work_done_callback();
-
+    work.call_work_done_callback(Error(status));
     delete &work;
 }
 
