@@ -8,8 +8,10 @@
 #include "io/EventLoop.h"
 #include "io/ScopeExitGuard.h"
 
-#include <thread>
+#include <atomic>
 #include <mutex>
+#include <thread>
+#include <vector>
 
 struct EventLoopTest : public testing::Test,
                        public LogRedirector {
@@ -66,13 +68,14 @@ TEST_F(EventLoopTest, only_work_done_callback) {
     bool done_executed = false;
 
     io::EventLoop event_loop;
-    event_loop.add_work(
+    auto handle = event_loop.add_work(
         nullptr,
         [&](io::EventLoop&, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             done_executed = true;
         }
     );
+    EXPECT_EQ(io::EventLoop::INVALID_HANDLE, handle);
 
     ASSERT_FALSE(done_executed);
 
@@ -106,6 +109,67 @@ TEST_F(EventLoopTest, work_with_user_data) {
     ASSERT_TRUE(callback_executed);
     ASSERT_TRUE(done_executed);
 }
+
+TEST_F(EventLoopTest, work_cancel) {
+    // TODO: query current threadpool size
+    const std::size_t THREAD_POOL_SIZE = 4;
+
+    std::size_t on_work_done_counter = 0;
+
+    io::EventLoop event_loop;
+
+    auto dummy_work_callback = [](io::EventLoop&) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    };
+
+    auto cancelled_work_callback = [](io::EventLoop&) {
+        FAIL() << "This callback should not be invoked!";
+    };
+
+    auto work_done_callback = [&](io::EventLoop&, const io::Error& error) {
+        if (error) {
+            EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
+        } else {
+            ++on_work_done_counter;
+        }
+    };
+
+    std::vector<io::EventLoop::WorkHandle> all_handles;
+
+    for (std::size_t i = 0 ; i < THREAD_POOL_SIZE; ++i) {
+        const auto handle = event_loop.add_work(
+            dummy_work_callback,
+            work_done_callback
+        );
+        EXPECT_NE(io::EventLoop::INVALID_HANDLE, handle) << "i=" << i;
+        all_handles.push_back(handle);
+    }
+
+    {
+        const auto handle = event_loop.add_work(
+            cancelled_work_callback,
+            work_done_callback
+        );
+        EXPECT_NE(io::EventLoop::INVALID_HANDLE, handle);
+        all_handles.push_back(handle);
+    }
+
+    for (std::size_t i = 0 ; i < THREAD_POOL_SIZE; ++i) {
+        auto error = event_loop.cancel_work(all_handles[i]);
+        ASSERT_TRUE(error) << error.string();
+        EXPECT_EQ(io::StatusCode::RESOURCE_BUSY_OR_LOCKED, error.code());
+    }
+
+    auto error = event_loop.cancel_work(all_handles.back());
+    EXPECT_FALSE(error);
+
+    EXPECT_EQ(0, on_work_done_counter);
+
+    ASSERT_EQ(0, event_loop.run());
+
+    EXPECT_EQ(THREAD_POOL_SIZE, on_work_done_counter);
+}
+
 
 TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
     io::EventLoop loop;

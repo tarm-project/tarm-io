@@ -25,6 +25,8 @@
 namespace tarm {
 namespace io {
 
+const std::size_t EventLoop::INVALID_HANDLE;
+
 namespace {
 
 struct Idle : public uv_idle_t {
@@ -43,7 +45,8 @@ public:
     IO_FORBID_MOVE(Impl);
 
     template<typename WorkCallbackType, typename WorkDoneCallbackType>
-    void add_work(WorkCallbackType work_callback, WorkDoneCallbackType work_done_callback);
+    WorkHandle add_work(WorkCallbackType work_callback, WorkDoneCallbackType work_done_callback);
+    Error cancel_work(WorkHandle handle);
 
     void execute_on_loop_thread(WorkCallback callback);
 
@@ -240,10 +243,10 @@ struct Work<EventLoop::WorkCallbackWithUserData, EventLoop::WorkDoneCallbackWith
 } // namespace
 
 template<typename WorkCallbackType, typename WorkDoneCallbackType>
-void EventLoop::Impl::add_work(WorkCallbackType work_callback,
-                               WorkDoneCallbackType work_done_callback) {
+EventLoop::WorkHandle EventLoop::Impl::add_work(WorkCallbackType work_callback,
+                                                WorkDoneCallbackType work_done_callback) {
     if (work_callback == nullptr) {
-        return;
+        return INVALID_HANDLE;
     }
 
     auto work = new Work<WorkCallbackType, WorkDoneCallbackType>;
@@ -255,12 +258,16 @@ void EventLoop::Impl::add_work(WorkCallbackType work_callback,
                                 on_work<WorkCallbackType, WorkDoneCallbackType>,
                                 on_after_work<WorkCallbackType, WorkDoneCallbackType>);
     if (error) {
-        this->schedule_callback([work, error](EventLoop&) {
-            work->call_work_done_callback(error);
-            delete work;
-        });
+        delete work;
+        return INVALID_HANDLE;
     }
 
+    return reinterpret_cast<std::size_t>(work);
+}
+
+Error EventLoop::Impl::cancel_work(WorkHandle handle) {
+    auto work = reinterpret_cast<uv_work_t*>(handle);
+    return uv_cancel(reinterpret_cast<uv_req_t*>(work));
 }
 
 int EventLoop::Impl::run() {
@@ -429,8 +436,6 @@ void EventLoop::Impl::on_dummy_idle_close(uv_handle_t* handle) {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-
-
 namespace {
 // TODO: handle wrap around
 std::atomic<std::size_t> m_loop_id_counter(0);
@@ -453,14 +458,18 @@ void EventLoop::execute_on_loop_thread(WorkCallback callback) {
     m_impl->execute_on_loop_thread(callback);
 }
 
-void EventLoop::add_work(WorkCallback thread_pool_work_callback,
-                         WorkDoneCallback loop_thread_work_done_callback) {
+EventLoop::WorkHandle EventLoop::add_work(WorkCallback thread_pool_work_callback,
+                                          WorkDoneCallback loop_thread_work_done_callback) {
     return m_impl->add_work(thread_pool_work_callback, loop_thread_work_done_callback);
 }
 
-void EventLoop::add_work(WorkCallbackWithUserData thread_pool_work_callback,
-                         WorkDoneCallbackWithUserData loop_thread_work_done_callback) {
+EventLoop::WorkHandle EventLoop::add_work(WorkCallbackWithUserData thread_pool_work_callback,
+                                          WorkDoneCallbackWithUserData loop_thread_work_done_callback) {
     return m_impl->add_work(thread_pool_work_callback, loop_thread_work_done_callback);
+}
+
+Error EventLoop::cancel_work(WorkHandle handle) {
+    return m_impl->cancel_work(handle);
 }
 
 std::size_t EventLoop::schedule_call_on_each_loop_cycle(WorkCallback callback) {
