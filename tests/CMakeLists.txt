@@ -80,25 +80,16 @@ set(TESTS_EXE_NAME tests)
 
 add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
 target_link_libraries(${TESTS_EXE_NAME}
-    io
+    tarm-io
     GTest::gtest
     Boost::system
     Boost::filesystem
 )
+add_dependencies(${TESTS_EXE_NAME} tarm-io)
 
 if (MSVC)
     target_compile_definitions(${TESTS_EXE_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
-
-# TODO: remove????
-#target_include_directories(${TESTS_EXE_NAME} PUBLIC
-#    "${CMAKE_CURRENT_SOURCE_DIR}"
-#    "${CMAKE_SOURCE_DIR}/source"
-#    $<BUILD_INTERFACE:$<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>>
-#    ${GTEST_INCLUDE_DIRS}
-#)
-
-add_dependencies(${TESTS_EXE_NAME} io)
 
 # TODO: need to improve this somehow
 if (${CMAKE_GENERATOR} MATCHES "Unix Makefiles")
@@ -121,7 +112,7 @@ else()
 		if (NOT EXISTS "${LIB_EAY_RELEASE}")
 			message(WARNING "LIB_EAY_RELEASE path is not found")
 		endif()
-	
+
 		if (NOT EXISTS "${SSL_EAY_RELEASE}")
 			message(WARNING "SSL_EAY_RELEASE path is not found")
 		endif()
@@ -181,17 +172,12 @@ endif()
 #  COMMAND ${CMAKE_COMMAND} -E echo $<CONFIG>
 #)
 
-# TODO: replace hardcoded 'tests' with ${TESTS_EXE_NAME}
 if(WIN32) # AND BUILD_SHARED_LIBS
-    add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD # Adds a post-build event to tests
-#      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#          $<TARGET_PROPERTY:GTest::gtest,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>
-#          $<TARGET_FILE_DIR:tests>
-#          )
-	 COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          $<TARGET_PROPERTY:GTest::gtest,INTERFACE_INCLUDE_DIRECTORIES>/../bin/gtest$<$<CONFIG:DEBUG>:d>.dll
-          $<TARGET_FILE_DIR:tests>
-          )
+    add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
+	    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_PROPERTY:GTest::gtest,INTERFACE_INCLUDE_DIRECTORIES>/../bin/gtest$<$<CONFIG:DEBUG>:d>.dll
+            $<TARGET_FILE_DIR:tests> # TODO: replace hardcoded 'tests' with ${TESTS_EXE_NAME}
+    )
 endif()
 
 add_custom_target(RunTests
