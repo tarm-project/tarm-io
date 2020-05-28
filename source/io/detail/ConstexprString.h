@@ -7,14 +7,12 @@
 
 #include <limits>
 
-#define IO_MSVC_MAX_MACRO_WORKAROUND
-
 namespace tarm {
 namespace io {
 namespace detail {
 
 using size_type = std::size_t;
-const auto NPOS = std::numeric_limits<size_type>::max IO_MSVC_MAX_MACRO_WORKAROUND ();
+const auto NPOS = (std::numeric_limits<size_type>::max)();
 
 // ========= length_impl =========
 constexpr std::size_t length_impl(char const* str, std::size_t i) {
