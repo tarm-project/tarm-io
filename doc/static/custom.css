@@ -45,3 +45,8 @@ pre {
     border: 1px solid grey;
     border-radius: 5px;
 }
+
+.code-block-caption .caption-text {
+    font-weight: bold;
+    text-decoration: underline;
+}

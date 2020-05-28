@@ -45,16 +45,31 @@ Downloads
 
 Tarm-io can be downloaded from `here <https://github.com/tarm-project/tarm-io>`_.
 
-Five minutes tutorial
----------------------
-UDP echo server.
+Showcase
+--------
+In this small tutorial we create UDP echo server, which replies back received messages.
+Ensure that library is :ref:`built and installed <build_instructions_index:Build instructions>`.
+Create 2 following files CMakeLists.txt and main.cpp.
+
+.. code-block:: cmake
+   :linenos:
+   :caption: CMakeLists.txt
+
+   cmake_minimum_required(VERSION 3.5.0)
+
+   project(tutorial VERSION 1.0.0 LANGUAGES C CXX)
+
+   add_executable(tutorial main.cpp)
+
+   find_package(tarm-io REQUIRED)
+   target_link_libraries(tutorial tarm-io::tarm-io)
+
 
 .. code-block:: c++
    :linenos:
+   :caption: main.cpp
 
-   // TODO: move to examples and ensure that it is buildable anytime
-
-   #include <tarm/io/udp.h>
+   #include <tarm/io/UdpServer.h>
 
    #include <iostream>
 
@@ -72,15 +87,32 @@ UDP echo server.
                   return;
                }
 
-               peer.send(std::string(data.buf.get(), data.size));
+               peer.send_data(std::string(data.buf.get(), data.size));
          }
       );
 
+      if (listen_error) {
+         std::cerr << "Error: " << listen_error << std::endl;
+         return 1;
+      }
+
       // TODO: signal handler and server deletion
-      return loop.run().code();
+      return loop.run();
    }
 
-As a client you may use utility like *netcat* in Linux:
+Build example:
+
+.. code-block:: bash
+
+   $ mkdir build
+   $ cd build
+   $ cmake ..
+   $ cmake --build .
+
+.. warning::
+   TODO: windows search path instruction
+
+And execute server application. As a client you may use utility like *netcat* in Linux:
 
 .. code-block:: bash
 
