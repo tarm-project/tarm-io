@@ -202,8 +202,13 @@ Error EventLoop::Impl::init_async() {
 
 namespace {
 
+struct WorkBase : public uv_work_t {
+    std::atomic<bool> cancelled{false};
+    std::atomic<bool> queued{false};
+};
+
 template <typename WorkCallbackType, typename WorkDoneCallbackType>
-struct Work : public uv_work_t {
+struct Work : WorkBase {
     EventLoop* m_event_loop = nullptr;
     WorkCallbackType work_callback;
     WorkDoneCallbackType work_done_callback;
@@ -222,7 +227,7 @@ struct Work : public uv_work_t {
 };
 
 template <>
-struct Work<EventLoop::WorkCallbackWithUserData, EventLoop::WorkDoneCallbackWithUserData> : public uv_work_t {
+struct Work<EventLoop::WorkCallbackWithUserData, EventLoop::WorkDoneCallbackWithUserData> : public WorkBase {
     EventLoop* m_event_loop = nullptr;
     EventLoop::WorkCallbackWithUserData work_callback;
     EventLoop::WorkDoneCallbackWithUserData work_done_callback;
@@ -253,21 +258,42 @@ EventLoop::WorkHandle EventLoop::Impl::add_work(WorkCallbackType work_callback,
     work->m_event_loop = m_parent;
     work->work_callback = work_callback;
     work->work_done_callback = work_done_callback;
-    Error error = uv_queue_work(this,
-                                work,
-                                on_work<WorkCallbackType, WorkDoneCallbackType>,
-                                on_after_work<WorkCallbackType, WorkDoneCallbackType>);
-    if (error) {
-        delete work;
-        return INVALID_HANDLE;
-    }
+
+    this->schedule_callback([work, this](EventLoop& loop) {
+        IO_LOG(&loop, TRACE, "Queue work", work);
+        if (work->cancelled) {
+            IO_LOG(&loop, TRACE, "Cancel work", work);
+            work->call_work_done_callback(StatusCode::OPERATION_CANCELED);
+            delete work;
+            return;
+        }
+
+        work->queued = true;
+
+        Error error = uv_queue_work(this,
+                                    work,
+                                    on_work<WorkCallbackType, WorkDoneCallbackType>,
+                                    on_after_work<WorkCallbackType, WorkDoneCallbackType>);
+        if (error) {
+            work->call_work_done_callback(error);
+            delete work;
+            return;
+        }
+    });
+
+    IO_LOG(m_parent, TRACE, "Created work", work);
 
     return reinterpret_cast<std::size_t>(work);
 }
 
 Error EventLoop::Impl::cancel_work(WorkHandle handle) {
-    auto work = reinterpret_cast<uv_work_t*>(handle);
-    return uv_cancel(reinterpret_cast<uv_req_t*>(work));
+    auto work = reinterpret_cast<WorkBase*>(handle);
+    work->cancelled = true;
+    if (work->queued) {
+        return uv_cancel(reinterpret_cast<uv_req_t*>(work));
+    }
+
+    return StatusCode::OK;
 }
 
 int EventLoop::Impl::run() {
@@ -380,7 +406,17 @@ void EventLoop::Impl::execute_pending_callbacks() {
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 template<typename WorkCallbackType, typename WorkDoneCallbackType>
 void EventLoop::Impl::on_work(uv_work_t* req) {
+    auto& this_ = *reinterpret_cast<EventLoop::Impl*>(req->loop->data);
+
     auto& work = *reinterpret_cast<Work<WorkCallbackType, WorkDoneCallbackType>*>(req);
+    if (work.cancelled) {
+        IO_LOG(this_.m_parent, TRACE, "Cancel work", &work);
+        this_.execute_on_loop_thread([&](EventLoop&) {
+            work.call_work_done_callback(StatusCode::OPERATION_CANCELED);
+        });
+        return;
+    }
+
     work.call_work_callback();
 }
 
