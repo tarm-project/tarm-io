@@ -110,7 +110,25 @@ TEST_F(EventLoopTest, work_with_user_data) {
     ASSERT_TRUE(done_executed);
 }
 
-// TODO: test that work is not started before loop run
+TEST_F(EventLoopTest, work_is_not_started_before_loop_run) {
+    io::EventLoop loop;
+
+    std::atomic<std::size_t> work_callback_count(0);
+
+    loop.add_work([&](io::EventLoop&) {
+        ++work_callback_count;
+    });
+
+    EXPECT_EQ(0, work_callback_count);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    EXPECT_EQ(0, work_callback_count);
+
+    ASSERT_EQ(0, loop.run());
+
+    EXPECT_EQ(1, work_callback_count);
+}
 
 TEST_F(EventLoopTest, work_cancel_before_loop_run) {
     // TODO: query current threadpool size
