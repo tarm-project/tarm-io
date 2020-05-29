@@ -56,3 +56,7 @@ TEST_F(ConfigurationTest, buffer_size) {
 
     loop.run();
 }
+
+TEST_F(ConfigurationTest, thread_pool_size_default) {
+    EXPECT_EQ(4, io::global::thread_pool_size());
+}

@@ -38,6 +38,8 @@ std::size_t default_send_buffer_size();
 IO_DLL_PUBLIC
 std::size_t max_send_buffer_size();
 
+IO_DLL_PUBLIC
+std::size_t thread_pool_size();
 
 } // namespace global
 } // namespace io

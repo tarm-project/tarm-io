@@ -254,6 +254,30 @@ std::size_t max_send_buffer_size() {
     return m_max_send_buffer_size;
 }
 
+#if UV_VERSION_HEX <= 0x11e00 // 1.30.0
+    #define MAX_THREADPOOL_SIZE 128
+#else
+    #define MAX_THREADPOOL_SIZE 1024
+#endif
+
+IO_DLL_PUBLIC
+std::size_t thread_pool_size() {
+    int nthreads = 4;
+    const char* val = ::getenv("UV_THREADPOOL_SIZE");
+    if (val != NULL) {
+        nthreads = std::stoi(val);
+    }
+
+    if (nthreads <= 0) {
+        nthreads = 1;
+    }
+
+    if (nthreads > MAX_THREADPOOL_SIZE) {
+        nthreads = MAX_THREADPOOL_SIZE;
+    }
+
+    return static_cast<std::size_t>(nthreads);
+}
 
 } // namespace global
 } // namespace io
