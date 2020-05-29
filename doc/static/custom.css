@@ -50,3 +50,18 @@ pre {
     font-weight: bold;
     text-decoration: underline;
 }
+
+
+div.sphinxsidebar #searchbox input[type="submit"] {
+    margin-left: 3px;
+    margin-top: 0px;
+}
+
+div.sphinxsidebar #searchbox input[type="text"] {
+    margin-left: 3px;
+    width: 75%;
+}
+
+div.sphinxsidebar div.sphinxsidebarwrapper div#searchbox p.highlight-link {
+    padding-left: 3px;
+}
