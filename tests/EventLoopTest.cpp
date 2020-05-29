@@ -182,8 +182,7 @@ TEST_F(EventLoopTest, work_cancel_before_loop_run) {
     EXPECT_EQ(0, on_work_done_counter);
 }
 
-/*
-TEST_F(EventLoopTest, work_cancel) {
+TEST_F(EventLoopTest, work_cancel_during_loop_run) {
     // TODO: query current threadpool size
     const std::size_t THREAD_POOL_SIZE = 4;
 
@@ -192,7 +191,7 @@ TEST_F(EventLoopTest, work_cancel) {
     io::EventLoop event_loop;
 
     auto dummy_work_callback = [](io::EventLoop&) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
     };
 
     auto cancelled_work_callback = [](io::EventLoop&) {
@@ -227,16 +226,16 @@ TEST_F(EventLoopTest, work_cancel) {
         all_handles.push_back(handle);
     }
 
-    //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    event_loop.schedule_callback([&](io::EventLoop& loop) {
+        for (std::size_t i = 0 ; i < THREAD_POOL_SIZE; ++i) {
+            auto error = loop.cancel_work(all_handles[i]);
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::RESOURCE_BUSY_OR_LOCKED, error.code());
+        }
 
-    for (std::size_t i = 0 ; i < THREAD_POOL_SIZE; ++i) {
-        auto error = event_loop.cancel_work(all_handles[i]);
-        EXPECT_FALSE(error) << error.string();
-        EXPECT_EQ(io::StatusCode::RESOURCE_BUSY_OR_LOCKED, error.code());
-    }
-
-    auto error = event_loop.cancel_work(all_handles.back());
-    EXPECT_FALSE(error);
+        auto error = loop.cancel_work(all_handles.back());
+        EXPECT_FALSE(error);
+    });
 
     EXPECT_EQ(0, on_work_done_counter);
 
@@ -244,8 +243,6 @@ TEST_F(EventLoopTest, work_cancel) {
 
     EXPECT_EQ(THREAD_POOL_SIZE, on_work_done_counter);
 }
-*/
-
 
 TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
     io::EventLoop loop;
