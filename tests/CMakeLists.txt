@@ -108,7 +108,6 @@ else()
 	# Copy openssl dlls to the tests folder
 	if (MSVC AND IO_OPENSSL_FOUND)
 		# TODO: openssl debug build support (if available) LIB_EAY_DEBUG, SSL_EAY_DEBUG ...
-		# TODO: static build of openssl support here (need to skip copying)
 		if (NOT EXISTS "${LIB_EAY_RELEASE}")
 			message(WARNING "LIB_EAY_RELEASE path is not found")
 		endif()
@@ -138,14 +137,20 @@ else()
 
 		message("FULL_PATH: ${SSL_DLL_DIR}/${LIB_EAY_DLL_NAME}")
 
-		add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy
-					${SSL_DLL_DIR}/${LIB_EAY_DLL_NAME}
-					${CMAKE_BINARY_DIR}/tests/$<CONFIG>
-			COMMAND ${CMAKE_COMMAND} -E copy
-					${SSL_DLL_DIR}/${SSL_EAY_DLL_NAME}
-					${CMAKE_BINARY_DIR}/tests/$<CONFIG>
-		)
+		if(EXISTS "${SSL_DLL_DIR}/${LIB_EAY_DLL_NAME}" AND
+		   EXISTS "${SSL_DLL_DIR}/${SSL_EAY_DLL_NAME}")
+
+			add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E copy
+						"${SSL_DLL_DIR}/${LIB_EAY_DLL_NAME}"
+						"${CMAKE_BINARY_DIR}/tests/$<CONFIG>"
+				COMMAND ${CMAKE_COMMAND} -E copy
+						"${SSL_DLL_DIR}/${SSL_EAY_DLL_NAME}"
+						"${CMAKE_BINARY_DIR}/tests/$<CONFIG>"
+			)
+		else()
+			message("OpenSSL dlls not found in the 'bin' folder, skip copying...")
+		endif()
 	endif()
 endif()
 
