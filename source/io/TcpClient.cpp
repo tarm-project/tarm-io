@@ -212,7 +212,6 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
         return;
     }
 
-    this_.m_connect_req.reset();
     uv_read_start(req->handle, alloc_read_buffer, on_read);
 }
 
@@ -243,6 +242,8 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
 void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(handle->data);
     auto& loop = *reinterpret_cast<EventLoop*>(handle->loop->data);
+
+    this_.m_connect_req.reset();
 
     Error error(nread);
     if (!error) {
