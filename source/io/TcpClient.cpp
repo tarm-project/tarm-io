@@ -50,7 +50,7 @@ protected:
 
 private:
     ConnectCallback m_connect_callback = nullptr;
-    uv_connect_t* m_connect_req = nullptr;
+    std::unique_ptr<uv_connect_t> m_connect_req;
 
     DataReceiveCallback m_receive_callback = nullptr;
 
@@ -63,10 +63,6 @@ TcpClient::Impl::Impl(EventLoop& loop, TcpClient& parent) :
 
 TcpClient::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, this, "");
-
-    if (m_connect_req) {
-        delete m_connect_req; // TODO: delete right after connect???
-    }
 }
 
 EventLoop* TcpClient::Impl::loop() {
@@ -113,10 +109,8 @@ void TcpClient::Impl::connect_impl(const Endpoint& endpoint,
         return;
     }
 
-    if (m_connect_req == nullptr) {
-        m_connect_req = new uv_connect_t;
-        m_connect_req->data = this;
-    }
+    m_connect_req.reset(new uv_connect_t);
+    m_connect_req->data = this;
 
     auto addr = reinterpret_cast<const ::sockaddr_in*>(raw_endpoint);
     IO_LOG(m_loop, DEBUG, m_parent, "endpoint:", endpoint);
@@ -125,17 +119,15 @@ void TcpClient::Impl::connect_impl(const Endpoint& endpoint,
     m_receive_callback = receive_callback;
     m_close_callback = close_callback;
 
-    int uv_status = uv_tcp_connect(m_connect_req, m_tcp_stream, reinterpret_cast<const struct sockaddr*>(addr), on_connect);
-    if (uv_status < 0) {
-        Error error(uv_status);
+    const Error connect_error = uv_tcp_connect(m_connect_req.get(),
+                                               m_tcp_stream,
+                                               reinterpret_cast<const struct sockaddr*>(addr),
+                                               on_connect);
+    if (connect_error) {
         if (m_connect_callback) {
-            m_connect_callback(*m_parent, error);
+            m_connect_callback(*m_parent, connect_error);
         }
-
-        // TODO: if not close TcpClient handle, memory leak will occur
-        //uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
     }
-
 }
 
 void TcpClient::Impl::shutdown() {
@@ -220,6 +212,7 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
         return;
     }
 
+    this_.m_connect_req.reset();
     uv_read_start(req->handle, alloc_read_buffer, on_read);
 }
 
