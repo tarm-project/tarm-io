@@ -48,7 +48,7 @@ TEST_F(RemovableTest, schedule_removal) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_TRUE(g_disposed);
 }
@@ -76,7 +76,7 @@ TEST_F(RemovableTest, callback) {
     EXPECT_EQ(0, callback_1_counter);
     EXPECT_EQ(0, callback_2_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, callback_1_counter);
     EXPECT_EQ(0, callback_2_counter);
@@ -104,7 +104,7 @@ TEST_F(RemovableTest, change_callback_after_schedule_removal) {
     EXPECT_EQ(0, callback_1_counter);
     EXPECT_EQ(0, callback_2_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, callback_1_counter);
     EXPECT_EQ(1, callback_2_counter);

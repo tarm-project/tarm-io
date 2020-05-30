@@ -30,7 +30,7 @@ TEST_F(UdpClientServerTest, client_default_state) {
     EXPECT_EQ(io::Endpoint::UNDEFINED, client->endpoint().type());
 
     client->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, server_default_state) {
@@ -38,7 +38,7 @@ TEST_F(UdpClientServerTest, server_default_state) {
     auto server = new io::UdpServer(loop);
 
     server->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, server_bind) {
@@ -49,7 +49,7 @@ TEST_F(UdpClientServerTest, server_bind) {
     ASSERT_FALSE(error);
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 #if defined(__APPLE__) || defined(__linux__)
@@ -61,7 +61,7 @@ TEST_F(UdpClientServerTest, bind_privileged) {
     ASSERT_EQ(io::Error(io::StatusCode::PERMISSION_DENIED), server->start_receive({m_default_addr, 80}, nullptr));
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 #endif
 
@@ -80,7 +80,7 @@ TEST_F(UdpClientServerTest, server_address_in_use) {
     server_1->schedule_removal();
     server_2->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, server_invalid_address) {
@@ -93,7 +93,7 @@ TEST_F(UdpClientServerTest, server_invalid_address) {
 
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, client_invalid_address) {
@@ -106,7 +106,7 @@ TEST_F(UdpClientServerTest, client_invalid_address) {
 
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
@@ -149,7 +149,7 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     EXPECT_EQ(0, server_on_data_receive_count);
     EXPECT_EQ(0, client_on_data_send_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_data_receive_count);
     EXPECT_EQ(1, client_on_data_send_count);
@@ -172,7 +172,7 @@ TEST_F(UdpClientServerTest, client_send_data_without_destination) {
 
     EXPECT_EQ(0, on_send_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_send_call_count);
 }
@@ -204,7 +204,7 @@ TEST_F(UdpClientServerTest, client_get_buffer_size_1) {
 
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, client_get_buffer_size_2) {
@@ -227,7 +227,7 @@ TEST_F(UdpClientServerTest, client_get_buffer_size_2) {
 
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, server_get_buffer_size_1) {
@@ -242,7 +242,7 @@ TEST_F(UdpClientServerTest, server_get_buffer_size_1) {
 
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, server_get_buffer_size_2) {
@@ -265,7 +265,7 @@ TEST_F(UdpClientServerTest, server_get_buffer_size_2) {
 
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, client_set_buffer_size_1) {
@@ -301,7 +301,7 @@ TEST_F(UdpClientServerTest, client_set_buffer_size_1) {
 
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, client_set_buffer_size_2) {
@@ -338,7 +338,7 @@ TEST_F(UdpClientServerTest, client_set_buffer_size_2) {
 
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, server_set_buffer_size) {
@@ -391,7 +391,7 @@ TEST_F(UdpClientServerTest, server_set_buffer_size) {
 
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
@@ -457,7 +457,7 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
     EXPECT_EQ(0, client_on_send_counter);
     EXPECT_EQ(0, client_on_receive_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_send_counter);
     EXPECT_EQ(1, server_on_receive_counter);
@@ -511,7 +511,7 @@ TEST_F(UdpClientServerTest, peer_identity_without_preservation_on_server) {
 
     EXPECT_EQ(0, server_receive_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_EQ(2, server_receive_counter);
 }
@@ -563,7 +563,7 @@ TEST_F(UdpClientServerTest, peer_identity_with_preservation_on_server) {
 
     EXPECT_EQ(0, server_receive_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_EQ(2, server_receive_counter);
 }
@@ -627,7 +627,7 @@ TEST_F(UdpClientServerTest, on_new_peer_callback) {
     EXPECT_EQ(0, on_new_peer_counter);
     EXPECT_EQ(0, on_data_receive_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(2, on_new_peer_counter);
     EXPECT_EQ(4, on_data_receive_counter);
@@ -722,7 +722,7 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
     EXPECT_EQ(0, server_receive_counter);
     EXPECT_EQ(0, server_timeout_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_EQ(3, client_send_counter);
     ASSERT_EQ(3, server_receive_counter);
@@ -828,7 +828,7 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
 
     EXPECT_EQ(0, peer_to_close_count.size());
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(3, peer_to_close_count.size());
     EXPECT_EQ(1, peer_to_close_count[client_1_message]);
@@ -900,7 +900,7 @@ TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
     EXPECT_EQ(0, client_data_receive_counter);
     EXPECT_EQ(0, peer_timeout_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(send_timeouts.size(), server_data_send_counter);
     EXPECT_EQ(send_timeouts.size(), client_data_receive_counter);
@@ -958,7 +958,7 @@ TEST_F(UdpClientServerTest, server_close) {
     EXPECT_EQ(0, server_close_1_callback_call_count);
     EXPECT_EQ(0, server_close_2_callback_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_peer_timeout_call_count);
     EXPECT_EQ(0, server_close_1_callback_call_count);
@@ -987,7 +987,7 @@ TEST_F(UdpClientServerTest, server_schedule_removal_in_close_callback) {
 
     EXPECT_EQ(0, server_close_callback_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_close_callback_call_count);
 }
@@ -1050,7 +1050,7 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     EXPECT_EQ(0, client_data_receive_counter);
     EXPECT_EQ(0, client_data_send_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_data_receive_counter);
     EXPECT_EQ(1, server_data_send_counter);
@@ -1129,7 +1129,7 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
     EXPECT_EQ(0, client_data_receive_counter);
     EXPECT_EQ(0, client_data_send_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_data_receive_counter);
     EXPECT_EQ(2, server_data_send_counter);
@@ -1182,7 +1182,7 @@ TEST_F(UdpClientServerTest, client_receive_data_only_from_its_target) {
 
     EXPECT_EQ(0, receive_callback_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, receive_callback_call_count);
 }
@@ -1226,7 +1226,7 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
         }
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(data_sent);
     EXPECT_TRUE(data_received);
 }
@@ -1249,7 +1249,7 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
         }
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
@@ -1339,7 +1339,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
     EXPECT_EQ(0, server_receive_message_counter);
     EXPECT_EQ(0, client_receive_message_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(SIZE, server_receive_message_counter);
     EXPECT_EQ(SIZE, client_receive_message_counter);
@@ -1422,7 +1422,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
         EXPECT_EQ(0, server_receive_message_counter);
 
-        ASSERT_EQ(0, server_loop.run());
+        ASSERT_EQ(io::StatusCode::OK, server_loop.run());
 
         EXPECT_EQ(SIZE, server_receive_message_counter);
     });
@@ -1473,7 +1473,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
         EXPECT_EQ(0, client_receive_message_counter);
 
-        ASSERT_EQ(0, client_loop.run());
+        ASSERT_EQ(io::StatusCode::OK, client_loop.run());
 
         EXPECT_EQ(SIZE, client_receive_message_counter);
     });
@@ -1512,7 +1512,7 @@ TEST_F(UdpClientServerTest, send_after_schedule_removal) {
     EXPECT_EQ(0, server_receive_counter);
     EXPECT_EQ(0, client_send_counter);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_receive_counter);
     EXPECT_EQ(1, client_send_counter);
@@ -1541,7 +1541,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_1) {
 
     EXPECT_NE(0, client->bound_port());
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_TIMEOUT_MS(TIMEOUT, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
 }
@@ -1598,7 +1598,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
     EXPECT_EQ(0, server_receive_counter);
     EXPECT_EQ(0, client_send_counter);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_receive_counter);
     EXPECT_EQ(1, client_send_counter);
@@ -1662,7 +1662,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
     EXPECT_EQ(0, client_on_timeout_count);
     EXPECT_EQ(0, client_send_counter);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_timeout_count);
     EXPECT_EQ(send_timeouts.size(), client_send_counter);
@@ -1730,7 +1730,7 @@ TEST_F(UdpClientServerTest, close_peer_from_server) {
     EXPECT_EQ(0, server_on_new_peer_callback_count);
     EXPECT_EQ(0, server_on_peer_timeout_callback_count);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(2, server_on_data_receive_callback_count);
     EXPECT_EQ(2, server_on_new_peer_callback_count);
@@ -1787,7 +1787,7 @@ TEST_F(UdpClientServerTest, closed_peer_from_server_has_no_timeout) {
     EXPECT_EQ(0, server_on_new_peer_callback_count);
     EXPECT_EQ(0, server_on_peer_timeout_callback_count);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_data_receive_callback_count);
     EXPECT_EQ(1, server_on_new_peer_callback_count);
@@ -1843,7 +1843,7 @@ TEST_F(UdpClientServerTest, double_close_peer_from_server) {
 
     EXPECT_EQ(0, server_on_data_receive_callback_count);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_data_receive_callback_count);
 }
@@ -1893,7 +1893,7 @@ TEST_F(UdpClientServerTest, close_peer_from_server_and_than_try_send) {
     EXPECT_EQ(0, server_on_data_receive_callback_count);
     EXPECT_EQ(0, peer_on_send_callback_count);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_data_receive_callback_count);
     EXPECT_EQ(1, peer_on_send_callback_count);
@@ -1960,7 +1960,7 @@ TEST_F(UdpClientServerTest, send_data_of_size_0) {
     EXPECT_EQ(0, client_on_send_count);
     EXPECT_EQ(0, client_on_receive_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_send_count);
     EXPECT_EQ(1, server_on_receive_count);
@@ -2021,7 +2021,7 @@ TEST_F(UdpClientServerTest, ipv6_address) {
     EXPECT_EQ(0, client_on_receive_count);
     EXPECT_EQ(0, server_on_receive_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_receive_count);
     EXPECT_EQ(1, server_on_receive_count);
@@ -2147,7 +2147,7 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
     EXPECT_FALSE(peer_2);
     EXPECT_FALSE(peer_3);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(3, server_on_timeout_count);
     EXPECT_TRUE(peer_1);

@@ -61,8 +61,7 @@ public:
     IO_DLL_PUBLIC void start_block_loop_from_exit();
     IO_DLL_PUBLIC void stop_block_loop_from_exit();
 
-    // TODO: handle(convert) error codes????
-    IO_DLL_PUBLIC int run();
+    IO_DLL_PUBLIC Error run();
 
     IO_DLL_PUBLIC bool is_running() const;
 

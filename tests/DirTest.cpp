@@ -34,7 +34,7 @@ TEST_F(DirTest, default_state) {
     EXPECT_TRUE(dir->path().empty());
     EXPECT_FALSE(dir->is_open());
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
 }
 
@@ -61,7 +61,7 @@ TEST_F(DirTest, open_then_close) {
     });
     EXPECT_FALSE(dir->is_open());
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
 }
 
@@ -83,7 +83,7 @@ TEST_F(DirTest, open_not_existing) {
         EXPECT_FALSE(dir.is_open());
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_TRUE(callback_called);
     EXPECT_EQ("", dir->path());
@@ -137,7 +137,7 @@ TEST_F(DirTest, list_elements) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
 
     EXPECT_TRUE(dir_1_listed);
@@ -168,7 +168,7 @@ TEST_F(DirTest, empty_dir) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
 
     EXPECT_FALSE(read_called);
@@ -194,7 +194,7 @@ TEST_F(DirTest, no_read_callback) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
 
     EXPECT_TRUE(end_read_called);
@@ -228,7 +228,7 @@ TEST_F(DirTest, list_symlink) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
 
     EXPECT_TRUE(link_found);
@@ -253,7 +253,7 @@ TEST_F(DirTest, list_block_and_char_devices) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
 
     EXPECT_GT(block_devices_count, 0);
@@ -275,7 +275,7 @@ TEST_F(DirTest, list_domain_sockets) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
 
     EXPECT_GT(domain_sockets_count, 0);
@@ -299,7 +299,7 @@ TEST_F(DirTest, list_fifo) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
 
     EXPECT_EQ(1, fifo_count);
@@ -325,7 +325,7 @@ TEST_F(DirTest, make_temp_dir) {
     );
 
     EXPECT_FALSE(callback_called); // Checking that operation is really async
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
 }
 
@@ -347,7 +347,7 @@ TEST_F(DirTest, DISABLED_make_temp_dir_invalid_template) {
     );
 
     EXPECT_FALSE(callback_called);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
 }
 
@@ -367,7 +367,7 @@ TEST_F(DirTest, make_dir) {
     );
 
     EXPECT_FALSE(callback_called);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
 }
 
@@ -387,7 +387,7 @@ TEST_F(DirTest, make_dir_no_such_dir_error) {
     );
 
     EXPECT_FALSE(callback_called);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
 }
 
@@ -407,7 +407,7 @@ TEST_F(DirTest, make_dir_exists_error) {
     );
 
     EXPECT_FALSE(callback_called);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
 }
 
@@ -427,7 +427,7 @@ TEST_F(DirTest, make_dir_empty_path_error) {
     );
 
     EXPECT_FALSE(callback_called);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
 }
 
@@ -447,7 +447,7 @@ TEST_F(DirTest, make_dir_name_to_long_error) {
     );
 
     EXPECT_FALSE(callback_called);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
 }
 
@@ -468,7 +468,7 @@ TEST_F(DirTest, make_dir_root_dir_error) {
     );
 
     EXPECT_FALSE(callback_called);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
 }
 #endif
@@ -511,7 +511,7 @@ TEST_F(DirTest, remove_dir) {
     });
 
     EXPECT_EQ(0, callback_call_count);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(1, callback_call_count);
 }
 
@@ -563,7 +563,7 @@ TEST_F(DirTest, remove_dir_with_progress) {
 
     EXPECT_EQ(0, remove_callback_call_count);
     EXPECT_EQ(0, progress_callback_call_count);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(1, remove_callback_call_count);
     EXPECT_EQ(7, progress_callback_call_count);
 
@@ -585,7 +585,7 @@ TEST_F(DirTest, remove_dir_not_exist) {
     });
 
     EXPECT_EQ(0, callback_call_count);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(1, callback_call_count);
 }
 
@@ -607,7 +607,7 @@ TEST_F(DirTest, remove_dir_not_exist_and_progress_callback) {
 
     EXPECT_EQ(0, callback_call_count);
     EXPECT_EQ(0, progress_call_count);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(1, callback_call_count);
     EXPECT_EQ(0, progress_call_count);
 }

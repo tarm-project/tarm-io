@@ -64,7 +64,7 @@ TEST_F(RefCountedTest, all_in_one_test) {
 
     EXPECT_EQ(0, on_schedule_removal_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_schedule_removal_call_count);
 }

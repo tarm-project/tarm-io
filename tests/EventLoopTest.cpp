@@ -20,12 +20,12 @@ struct EventLoopTest : public testing::Test,
 TEST_F(EventLoopTest, default_constructor) {
     std::unique_ptr<io::EventLoop> event_loop;
     EXPECT_NO_THROW(event_loop.reset(new io::EventLoop));
-    ASSERT_EQ(0, event_loop->run());
+    ASSERT_EQ(io::StatusCode::OK, event_loop->run());
 }
 
 TEST_F(EventLoopTest, default_constructor_with_run) {
     io::EventLoop event_loop;
-    ASSERT_EQ(0, event_loop.run());
+    ASSERT_EQ(io::StatusCode::OK, event_loop.run());
 }
 
 TEST_F(EventLoopTest, work_no_work_done_callback) {
@@ -37,7 +37,7 @@ TEST_F(EventLoopTest, work_no_work_done_callback) {
         callback_executed = true;
     });
 
-    ASSERT_EQ(0, event_loop.run());
+    ASSERT_EQ(io::StatusCode::OK, event_loop.run());
     ASSERT_TRUE(callback_executed);
 }
 
@@ -58,7 +58,7 @@ TEST_F(EventLoopTest, work_all_callbacks) {
         }
     );
 
-    ASSERT_EQ(0, event_loop.run());
+    ASSERT_EQ(io::StatusCode::OK, event_loop.run());
     ASSERT_TRUE(callback_executed);
     ASSERT_TRUE(done_executed);
 }
@@ -79,7 +79,7 @@ TEST_F(EventLoopTest, only_work_done_callback) {
 
     ASSERT_FALSE(done_executed);
 
-    ASSERT_EQ(0, event_loop.run());
+    ASSERT_EQ(io::StatusCode::OK, event_loop.run());
 
     ASSERT_FALSE(done_executed);
 }
@@ -105,7 +105,7 @@ TEST_F(EventLoopTest, work_with_user_data) {
         }
     );
 
-    ASSERT_EQ(0, event_loop.run());
+    ASSERT_EQ(io::StatusCode::OK, event_loop.run());
     ASSERT_TRUE(callback_executed);
     ASSERT_TRUE(done_executed);
 }
@@ -125,7 +125,7 @@ TEST_F(EventLoopTest, work_is_not_started_before_loop_run) {
 
     EXPECT_EQ(0, work_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, work_callback_count);
 }
@@ -176,7 +176,7 @@ TEST_F(EventLoopTest, work_cancel_before_loop_run) {
 
     EXPECT_EQ(0, on_work_done_counter);
 
-    ASSERT_EQ(0, event_loop.run());
+    ASSERT_EQ(io::StatusCode::OK, event_loop.run());
 
     EXPECT_EQ(0, on_work_done_counter);
 }
@@ -237,7 +237,7 @@ TEST_F(EventLoopTest, work_cancel_during_loop_run) {
 
     EXPECT_EQ(0, on_work_done_counter);
 
-    ASSERT_EQ(0, event_loop.run());
+    ASSERT_EQ(io::StatusCode::OK, event_loop.run());
 
     EXPECT_EQ(thread_pool_size, on_work_done_counter);
 }
@@ -256,7 +256,7 @@ TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
         }
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(500, counter);
 }
 
@@ -264,7 +264,7 @@ TEST_F(EventLoopTest, stop_call_on_each_loop_cycle_with_invalid_data) {
     // Crash test
     io::EventLoop loop;
     loop.stop_call_on_each_loop_cycle(io::EventLoop::INVALID_HANDLE);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
@@ -301,7 +301,7 @@ TEST_F(EventLoopTest, multiple_schedule_on_each_loop_cycle) {
         }
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(500, counter_1);
     EXPECT_EQ(200, counter_2);
     EXPECT_EQ(300, counter_3);
@@ -321,7 +321,7 @@ TEST_F(EventLoopTest, is_running) {
 
     EXPECT_EQ(0, callback_call_count);
     EXPECT_FALSE(event_loop.is_running());
-    ASSERT_EQ(0, event_loop.run());
+    ASSERT_EQ(io::StatusCode::OK, event_loop.run());
     EXPECT_FALSE(event_loop.is_running());
     EXPECT_EQ(1, callback_call_count);
 }
@@ -372,7 +372,7 @@ TEST_F(EventLoopTest, dummy_idle) {
     loop.start_block_loop_from_exit();
     loop.stop_block_loop_from_exit();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(EventLoopTest, execute_on_loop_thread_from_main_thread) {
@@ -391,7 +391,7 @@ TEST_F(EventLoopTest, execute_on_loop_thread_from_main_thread) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     EXPECT_EQ(0, execute_on_loop_thread_call_counter);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(1, execute_on_loop_thread_call_counter);
 }
 
@@ -419,7 +419,7 @@ TEST_F(EventLoopTest, execute_on_loop_thread_nested) {
 
     EXPECT_EQ(0, execute_on_loop_thread_call_counter_1);
     EXPECT_EQ(0, execute_on_loop_thread_call_counter_2);
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(1, execute_on_loop_thread_call_counter_1);
     EXPECT_EQ(1, execute_on_loop_thread_call_counter_2);
 }
@@ -446,7 +446,7 @@ TEST_F(EventLoopTest, execute_on_loop_thread_from_other_thread) {
         thread.join();
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(execute_on_loop_thread_called);
 }
 
@@ -465,7 +465,7 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     EXPECT_EQ(0, counter_2);
     EXPECT_EQ(0, counter_3);
 
-    ASSERT_EQ(0, loop.run()); // run 1
+    ASSERT_EQ(io::StatusCode::OK, loop.run()); // run 1
 
     EXPECT_EQ(1, counter_1);
     EXPECT_EQ(0, counter_2);
@@ -479,7 +479,7 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     EXPECT_EQ(0, counter_2);
     EXPECT_EQ(0, counter_3);
 
-    ASSERT_EQ(0, loop.run()); // run 2
+    ASSERT_EQ(io::StatusCode::OK, loop.run()); // run 2
 
     EXPECT_EQ(1, counter_1);
     EXPECT_EQ(1, counter_2);
@@ -493,7 +493,7 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     EXPECT_EQ(1, counter_2);
     EXPECT_EQ(0, counter_3);
 
-    ASSERT_EQ(0, loop.run()); // run 3
+    ASSERT_EQ(io::StatusCode::OK, loop.run()); // run 3
 
     EXPECT_EQ(1, counter_1);
     EXPECT_EQ(1, counter_2);
@@ -512,7 +512,7 @@ TEST_F(EventLoopTest, schedule_1_callback) {
 
     EXPECT_EQ(0, callback_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, callback_counter);
 }
@@ -527,7 +527,7 @@ TEST_F(EventLoopTest, schedule_callback_after_loop_run) {
 
     EXPECT_EQ(0, callback_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     loop.schedule_callback([&](io::EventLoop&){
         callback_counter++;
@@ -563,13 +563,13 @@ TEST_F(EventLoopTest, schedule_multiple_callbacks_parallel) {
     EXPECT_EQ(0, callback_counter_2);
     EXPECT_EQ(0, callback_counter_3);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, callback_counter_1);
     EXPECT_EQ(1, callback_counter_2);
     EXPECT_EQ(1, callback_counter_3);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, callback_counter_1);
     EXPECT_EQ(1, callback_counter_2);
@@ -582,7 +582,7 @@ TEST_F(EventLoopTest, schedule_multiple_callbacks_parallel) {
     EXPECT_EQ(1, callback_counter_2);
     EXPECT_EQ(1, callback_counter_3);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(2, callback_counter_1);
     EXPECT_EQ(2, callback_counter_2);
@@ -617,7 +617,7 @@ TEST_F(EventLoopTest, schedule_multiple_callbacks_sequential) {
     EXPECT_EQ(0, callback_counter_2);
     EXPECT_EQ(0, callback_counter_3);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, callback_counter_1);
     EXPECT_EQ(1, callback_counter_2);

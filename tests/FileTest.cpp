@@ -68,7 +68,7 @@ TEST_F(FileTest, default_constructor) {
     ASSERT_FALSE(file->is_open());
     file->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, open_existing) {
@@ -90,7 +90,7 @@ TEST_F(FileTest, open_existing) {
     });
     EXPECT_FALSE(file->is_open());
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(io::StatusCode::OK, open_status_code);
     EXPECT_EQ(path, file->path());
 
@@ -119,7 +119,7 @@ TEST_F(FileTest, DISABLED_double_open) {
         file.schedule_removal();
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_FALSE(opened_1);
     EXPECT_TRUE(opened_2);
@@ -145,7 +145,7 @@ TEST_F(FileTest, open_in_open_callback) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_TRUE(opened_1);
     EXPECT_TRUE(opened_2);
@@ -169,7 +169,7 @@ TEST_F(FileTest, open_not_existing) {
         status_code = error.code();
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_FALSE(opened);
     EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, status_code);
@@ -196,7 +196,7 @@ TEST_F(FileTest, open_existing_open_not_existing) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
 }
 
@@ -214,7 +214,7 @@ TEST_F(FileTest, close_in_open_callback) {
         EXPECT_FALSE(file.is_open());
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
 }
 
@@ -226,7 +226,7 @@ TEST_F(FileTest, close_not_open_file) {
     file->close();
     ASSERT_FALSE(file->is_open());
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
 }
 
@@ -246,7 +246,7 @@ TEST_F(FileTest, double_close) {
         EXPECT_FALSE(file.is_open());
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
 }
 
@@ -288,7 +288,7 @@ TEST_F(FileTest, simple_read) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_EQ(io::StatusCode::OK, open_status_code);
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
@@ -335,7 +335,7 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
     auto file = new io::File(loop);
     file->open(path_1, open);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, read_10mb_file) {
@@ -364,7 +364,7 @@ TEST_F(FileTest, read_10mb_file) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     ASSERT_EQ(SIZE, read_counter * 4);
 
     file->schedule_removal();
@@ -387,7 +387,7 @@ TEST_F(FileTest, read_not_open_file) {
         end_read_called = true;
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_EQ(io::StatusCode::FILE_NOT_OPEN, read_status_code);
     ASSERT_FALSE(end_read_called);
@@ -418,7 +418,7 @@ TEST_F(FileTest, sequential_read_data_past_eof) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     ASSERT_FALSE(second_read_called);
     file->schedule_removal();
 }
@@ -455,7 +455,7 @@ TEST_F(FileTest, close_in_read) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(5, counter);
     EXPECT_FALSE(file->is_open());
     EXPECT_FALSE(end_read_called);
@@ -483,7 +483,7 @@ TEST_F(FileTest, DISABLED_read_sequential_of_closed_file) {
         file.close(); // TODO: DATA race here because filesystem operations are performed in different threads
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(read_called);
 
     file->schedule_removal();
@@ -518,7 +518,7 @@ TEST_F(FileTest, read_block) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
 
@@ -547,7 +547,7 @@ TEST_F(FileTest, read_block_past_edge) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
 
@@ -575,7 +575,7 @@ TEST_F(FileTest, DISABLED_read_block_not_existing_chunk) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
 
@@ -596,7 +596,7 @@ TEST_F(FileTest, read_block_not_opened) {
         read_status = error.code();
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     ASSERT_EQ(read_status, io::StatusCode::FILE_NOT_OPEN);
 
     file->schedule_removal();
@@ -624,7 +624,7 @@ TEST_F(FileTest, DISABLED_read_block_of_closed_file) {
         file.close();
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(read_called);
 
     file->schedule_removal();
@@ -716,7 +716,7 @@ TEST_F(FileTest, slow_read_data_consumer) {
 
     // TODO: check from logger callback for message like "No free buffer found"
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     {
         std::lock_guard<std::mutex> guard(mutex);
         EXPECT_EQ(0, captured_bufs.size());
@@ -792,7 +792,7 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_FALSE(end_read_called);
     EXPECT_TRUE(file_buffers_in_use_event_occured);
 }
@@ -819,7 +819,7 @@ TEST_F(FileTest, stat_size) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ASSERT_EQ(0, stat_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
     ASSERT_EQ(1, stat_call_count);
 }
@@ -856,7 +856,7 @@ TEST_F(FileTest, stat_time) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 // TODO: more tests for various fields of StatData
@@ -876,7 +876,7 @@ TEST_F(FileTest, try_open_dir) {
 
     EXPECT_EQ(0, on_open_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_open_call_count);
 }

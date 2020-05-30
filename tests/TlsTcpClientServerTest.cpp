@@ -43,7 +43,7 @@ TEST_F(TlsTcpClientServerTest,  constructor) {
             client.schedule_removal();
         });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 */
 
@@ -87,7 +87,7 @@ TEST_F(TlsTcpClientServerTest, constructor) {
 
     ASSERT_FALSE(listen_error);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 */
 
@@ -96,7 +96,7 @@ TEST_F(TlsTcpClientServerTest, schedule_removal_not_connected_client) {
     auto client = new io::TlsTcpClient(loop);
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, is_open_not_connected_client) {
@@ -105,7 +105,7 @@ TEST_F(TlsTcpClientServerTest, is_open_not_connected_client) {
     EXPECT_FALSE(client->is_open());
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, client_send_without_connect_with_callback) {
@@ -120,7 +120,7 @@ TEST_F(TlsTcpClientServerTest, client_send_without_connect_with_callback) {
         }
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
@@ -142,7 +142,7 @@ TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
 
     EXPECT_EQ(0, client_on_connect_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_count);
 }
@@ -164,7 +164,7 @@ this->log_to_stdout();
 
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 #endif
 
@@ -183,7 +183,7 @@ TEST_F(TlsTcpClientServerTest, server_address_in_use) {
     server_1->schedule_removal();
     server_2->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, client_send_without_connect_no_callback) {
@@ -198,7 +198,7 @@ TEST_F(TlsTcpClientServerTest, client_send_without_connect_no_callback) {
     );
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
@@ -252,7 +252,7 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
     EXPECT_EQ(0, server_on_connect_callback_count);
     EXPECT_EQ(0, server_on_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
     EXPECT_EQ(1, client_on_send_callback_count);
@@ -321,7 +321,7 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_with_close_callbacks) 
     EXPECT_EQ(0, server_on_receive_callback_count);
     EXPECT_EQ(0, server_on_close_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
     EXPECT_EQ(1, client_on_send_callback_count);
@@ -406,7 +406,7 @@ TEST_F(TlsTcpClientServerTest, client_send_simultaneous_multiple_chunks_to_serve
     EXPECT_EQ(0, server_on_connect_callback_count);
     EXPECT_EQ(0, server_on_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1,               client_on_connect_callback_count);
     EXPECT_EQ(messages.size(), client_on_send_callback_count);
@@ -467,7 +467,7 @@ TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
     EXPECT_EQ(0, server_on_connect_callback_count);
     EXPECT_EQ(0, server_on_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
     EXPECT_EQ(1, client_on_receive_callback_count);
@@ -557,7 +557,7 @@ TEST_F(TlsTcpClientServerTest, server_send_simultaneous_multiple_chunks_to_clien
     EXPECT_EQ(0, server_on_send_callback_count);
     EXPECT_EQ(0, server_on_connect_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1,               client_on_connect_callback_count);
     EXPECT_EQ(messages.size(), client_on_receive_callback_count);
@@ -715,7 +715,7 @@ TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_som
         }
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
@@ -752,7 +752,7 @@ TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
@@ -792,7 +792,7 @@ TEST_F(TlsTcpClientServerTest, not_existing_key) {
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, invalid_certificate) {
@@ -822,7 +822,7 @@ TEST_F(TlsTcpClientServerTest, invalid_certificate) {
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, invalid_private_key) {
@@ -853,7 +853,7 @@ TEST_F(TlsTcpClientServerTest, invalid_private_key) {
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
@@ -888,7 +888,7 @@ TEST_F(TlsTcpClientServerTest, not_matching_certificate_and_key) {
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_new_connection_callback_count);
     EXPECT_EQ(0, server_data_receive_callback_count);
@@ -959,7 +959,7 @@ TEST_F(TlsTcpClientServerTest, callbacks_order) {
     EXPECT_EQ(0, client_new_connection_callback_count);
     EXPECT_EQ(0, client_data_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_new_connection_callback_count);
     EXPECT_EQ(1, server_data_receive_callback_count);
@@ -999,7 +999,7 @@ TEST_F(TlsTcpClientServerTest, tls_negotiated_version) {
 
     EXPECT_EQ(0, client_on_connect_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
 }
@@ -1052,7 +1052,7 @@ TEST_F(TlsTcpClientServerTest, server_with_restricted_tls_version) {
     EXPECT_EQ(0, server_on_connect_callback_count);
     EXPECT_EQ(0, server_on_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
     EXPECT_EQ(1, client_on_send_callback_count);
@@ -1110,7 +1110,7 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
     EXPECT_EQ(0, server_on_connect_callback_count);
     EXPECT_EQ(0, server_on_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
     EXPECT_EQ(1, client_on_send_callback_count);
@@ -1174,7 +1174,7 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
     EXPECT_EQ(0, server_on_connect_callback_count);
     EXPECT_EQ(0, server_on_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
     EXPECT_EQ(0, client_on_receive_callback_count);
@@ -1202,7 +1202,7 @@ TEST_F(TlsTcpClientServerTest, server_with_invalid_tls_version_range) {
 
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
@@ -1233,7 +1233,7 @@ TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
         nullptr
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 

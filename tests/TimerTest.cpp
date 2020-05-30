@@ -22,10 +22,10 @@ TEST_F(TimerTest, constructor) {
 
     auto timer = new io::Timer(loop);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     timer->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TimerTest, schedule_with_no_repeat) {
@@ -40,12 +40,12 @@ TEST_F(TimerTest, schedule_with_no_repeat) {
         EXPECT_TIMEOUT_MS(TIMEOUT_MS, timer.real_time_passed_since_last_callback());
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, call_counter);
 
     timer->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TimerTest, zero_timeot) {
@@ -70,12 +70,12 @@ TEST_F(TimerTest, zero_timeot) {
         ++timer_counter;
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, timer_counter);
 
     timer->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TimerTest, no_callback) {
@@ -88,7 +88,7 @@ TEST_F(TimerTest, no_callback) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -96,7 +96,7 @@ TEST_F(TimerTest, no_callback) {
     EXPECT_TIMEOUT_MS(100, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
 
     timer->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TimerTest, stop_after_start) {
@@ -110,11 +110,11 @@ TEST_F(TimerTest, stop_after_start) {
     });
     timer->stop();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_FALSE(callback_called);
 
     timer->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TimerTest, stop_in_callback) {
@@ -128,11 +128,11 @@ TEST_F(TimerTest, stop_in_callback) {
         timer.stop();
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(1, calls_counter);
 
     timer->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TimerTest, start_stop_start_stop) {
@@ -152,12 +152,12 @@ TEST_F(TimerTest, start_stop_start_stop) {
         timer.stop();
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_FALSE(first_callback_called);
     EXPECT_TRUE(second_callback_called);
 
     timer->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TimerTest, schedule_with_repeat) {
@@ -191,7 +191,7 @@ TEST_F(TimerTest, schedule_with_repeat) {
 
     EXPECT_EQ(0, call_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(2, call_counter);
 
@@ -200,7 +200,7 @@ TEST_F(TimerTest, schedule_with_repeat) {
     EXPECT_TIMEOUT_MS(REPEAT_MS, duration_2);
 
     timer->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TimerTest, schedule_removal_after_start) {
@@ -220,7 +220,7 @@ TEST_F(TimerTest, schedule_removal_after_start) {
 
     EXPECT_EQ(0, call_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, call_counter);
 }
@@ -243,7 +243,7 @@ TEST_F(TimerTest, schedule_removal_from_callback) {
 
     EXPECT_EQ(0, call_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, call_counter);
 }
@@ -268,7 +268,7 @@ TEST_F(TimerTest, multiple_intervals) {
 
     ASSERT_EQ(0, durations.size());
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     ASSERT_EQ(3, durations.size());
     for (std::size_t i = 0 ; i < durations.size(); ++i) {
@@ -276,7 +276,7 @@ TEST_F(TimerTest, multiple_intervals) {
     }
 
     timer->schedule_removal();
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TimerTest, start_in_callback_1) {
@@ -304,7 +304,7 @@ TEST_F(TimerTest, start_in_callback_1) {
 
     EXPECT_EQ(0, call_counter);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(3, call_counter);
 }
@@ -334,7 +334,7 @@ TEST_F(TimerTest, start_in_callback_2) {
 
     EXPECT_EQ(0, call_counter);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(3, call_counter);
 }
@@ -364,7 +364,7 @@ TEST_F(TimerTest, start_in_callback_3) {
 
     EXPECT_EQ(0, call_counter);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(3, call_counter);
 }
@@ -397,7 +397,7 @@ TEST_F(TimerTest, callback_call_counter_1) {
 
     EXPECT_EQ(0, callback_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(CALL_COUNT_MAX, callback_counter);
 }
@@ -422,7 +422,7 @@ TEST_F(TimerTest, callback_call_counter_2) {
 
     EXPECT_EQ(0, callback_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(CALL_COUNT_MAX, callback_counter);
 }
@@ -444,7 +444,7 @@ TEST_F(TimerTest, 100k_timers) {
 
     EXPECT_EQ(0, callback_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(COUNT, callback_counter);
 }
@@ -474,7 +474,7 @@ TEST_F(TimerTest, 1k_timers_1k_timeouts) {
 
     EXPECT_EQ(0, callback_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(COUNT * COUNT, callback_counter);
 
@@ -508,7 +508,7 @@ TEST_F(TimerTest, multiple_starts) {
     EXPECT_EQ(0, call_counter_1);
     EXPECT_EQ(0, call_counter_2);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, call_counter_1);
     EXPECT_EQ(1, call_counter_2);

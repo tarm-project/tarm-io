@@ -39,7 +39,7 @@ TEST_F(TcpClientServerTest, server_constructor) {
     auto server = new io::TcpServer(loop);
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TcpClientServerTest, client_constructor) {
@@ -47,7 +47,7 @@ TEST_F(TcpClientServerTest, client_constructor) {
     auto client = new io::TcpClient(loop);
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TcpClientServerTest, invalid_ip4_address) {
@@ -67,7 +67,7 @@ TEST_F(TcpClientServerTest, invalid_ip4_address) {
 
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TcpClientServerTest, schedule_removal_not_connected_client) {
@@ -75,7 +75,7 @@ TEST_F(TcpClientServerTest, schedule_removal_not_connected_client) {
     auto client = new io::TcpClient(loop);
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 #if defined(__APPLE__) || defined(__linux__)
@@ -97,7 +97,7 @@ TEST_F(TcpClientServerTest, bind_privileged) {
 
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 #endif
 
@@ -116,7 +116,7 @@ TEST_F(TcpClientServerTest, server_address_in_use) {
     server_1->schedule_removal();
     server_2->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TcpClientServerTest, client_connect_to_invalid_address) {
@@ -138,7 +138,7 @@ TEST_F(TcpClientServerTest, client_connect_to_invalid_address) {
 
     EXPECT_EQ(0, client_on_connect_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_count);
 }
@@ -197,7 +197,7 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     },
     nullptr);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(data_sent);
     EXPECT_TRUE(data_received);
 }
@@ -261,7 +261,7 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     },
     nullptr);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_TRUE(data_sent_1);
     EXPECT_TRUE(data_sent_2);
@@ -291,7 +291,7 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
         nullptr);
         EXPECT_FALSE(listen_error);
 
-        EXPECT_EQ(0, loop.run());
+        EXPECT_EQ(io::StatusCode::OK, loop.run());
         EXPECT_TRUE(receive_called);
     });
 
@@ -311,7 +311,7 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
         },
         nullptr);
 
-        EXPECT_EQ(0, loop.run());
+        EXPECT_EQ(io::StatusCode::OK, loop.run());
         EXPECT_TRUE(send_called);
     });
 
@@ -362,7 +362,7 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
         });
     });
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(data_sent);
     EXPECT_TRUE(data_received);
 }
@@ -398,7 +398,7 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
         nullptr);
         EXPECT_FALSE(listen_error);
 
-        EXPECT_EQ(0, loop.run());
+        EXPECT_EQ(io::StatusCode::OK, loop.run());
         EXPECT_EQ(TOTAL_BYTES, bytes_received);
         EXPECT_EQ(TOTAL_BYTES, total_bytes_received.size());
         for (std::size_t i = 0; i < total_bytes_received.size(); i += 4) {
@@ -432,7 +432,7 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
         },
         nullptr);
 
-        EXPECT_EQ(0, loop.run());
+        EXPECT_EQ(io::StatusCode::OK, loop.run());
     });
 
     io::ScopeExitGuard guard([&server_thread, &client_thread](){
@@ -488,7 +488,7 @@ TEST_F(TcpClientServerTest, null_send_buf) {
     EXPECT_EQ(0, server_on_send_count);
     EXPECT_EQ(0, client_on_send_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_send_count);
     EXPECT_EQ(1, client_on_send_count);
@@ -532,7 +532,7 @@ TEST_F(TcpClientServerTest, server_shutdown_callback) {
 
     EXPECT_EQ(0, on_server_shutdown_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_server_shutdown_call_count);
 }
@@ -552,7 +552,7 @@ TEST_F(TcpClientServerTest, server_close_callback_1) {
 
     EXPECT_EQ(0, on_server_close_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_server_close_call_count);
 }
@@ -581,7 +581,7 @@ TEST_F(TcpClientServerTest, server_close_callback_2) {
 
     EXPECT_EQ(0, on_server_close_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_server_close_call_count);
 }
@@ -624,7 +624,7 @@ TEST_F(TcpClientServerTest, server_close_callback_3) {
 
     EXPECT_EQ(0, on_server_close_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_server_close_call_count);
 }
@@ -645,7 +645,7 @@ TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server) {
     },
     nullptr);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
 }
 
@@ -716,7 +716,7 @@ TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callbac
     EXPECT_EQ(0, client_receive_callback_call_count);
     EXPECT_EQ(0, client_close_callback_call_count);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_new_connection_callback_call_count);
     EXPECT_EQ(0, server_receive_callback_call_count);
@@ -790,7 +790,7 @@ TEST_F(TcpClientServerTest, server_close_calls_close_on_connected_clients) {
     EXPECT_EQ(0, connected_client_close_callback_count);
     EXPECT_EQ(0, client_close_callback_count);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_connect_callback_count);
     EXPECT_EQ(0, server_receive_callback_count);
@@ -866,7 +866,7 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
     EXPECT_EQ(0, connected_client_close_callback_count);
     EXPECT_EQ(0, client_close_callback_count);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_connect_callback_count);
     EXPECT_EQ(0, server_receive_callback_count);
@@ -938,7 +938,7 @@ TEST_F(TcpClientServerTest, close_in_server_on_close_callback) {
 
     EXPECT_EQ(0, on_server_close_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(2, on_server_close_call_count);
 }
@@ -988,7 +988,7 @@ TEST_F(TcpClientServerTest, server_schedule_remove_after_send) {
     EXPECT_EQ(0, server_receive_callback_count);
     EXPECT_EQ(0, client_receive_callback_count);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_send_callback_count);
     EXPECT_EQ(0, server_receive_callback_count);
@@ -1045,7 +1045,7 @@ void TcpClientServerTest::test_impl_server_disconnect_client_from_data_receive_c
         timer.schedule_removal();
     });
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(disconnect_called);
 }
 
@@ -1140,7 +1140,7 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
             nullptr);
         }
 
-        EXPECT_EQ(0, clients_loop.run());
+        EXPECT_EQ(io::StatusCode::OK, clients_loop.run());
     });
 
     io::ScopeExitGuard guard([&client_thread](){
@@ -1150,7 +1150,7 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
     EXPECT_EQ(0, server_on_connect_counter);
     EXPECT_EQ(0, server_on_data_receive_counter);
 
-    EXPECT_EQ(0, server_loop.run());
+    EXPECT_EQ(io::StatusCode::OK, server_loop.run());
 
     EXPECT_EQ(NUMBER_OF_CLIENTS, server_on_connect_counter);
     EXPECT_EQ(NUMBER_OF_CLIENTS, server_on_data_receive_counter);
@@ -1218,7 +1218,7 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
     EXPECT_EQ(0, on_connected_client_close_call_count);
     EXPECT_EQ(0, on_raw_client_close_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_connected_client_close_call_count);
     EXPECT_EQ(1, on_raw_client_close_call_count);
@@ -1255,7 +1255,7 @@ TEST_F(TcpClientServerTest, client_closed_without_read_and_connect_callback) {
 
     EXPECT_EQ(0, client_close_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_close_call_count);
 }
@@ -1314,7 +1314,7 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
         }
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_EQ(1, client_connect_call_count);
     EXPECT_EQ(1, client_close_call_count);
 }
@@ -1386,7 +1386,7 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
     EXPECT_EQ(0, client_connect_call_count);
     EXPECT_EQ(0, client_close_call_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_connect_call_count);
     EXPECT_EQ(1, client_close_call_count);
@@ -1444,7 +1444,7 @@ TEST_F(TcpClientServerTest, client_shutdown_in_connect) {
     EXPECT_EQ(0, server_on_close_count);
     EXPECT_EQ(0, client_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_on_receive_count);
     EXPECT_EQ(1, server_on_close_count);
@@ -1661,7 +1661,7 @@ TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
         }
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TcpClientServerTest, client_send_without_connect_with_callback) {
@@ -1676,7 +1676,7 @@ TEST_F(TcpClientServerTest, client_send_without_connect_with_callback) {
         }
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TcpClientServerTest, client_send_without_connect_no_callback) {
@@ -1686,7 +1686,7 @@ TEST_F(TcpClientServerTest, client_send_without_connect_no_callback) {
     client->send_data("Hello"); // Just do nothing and hope for miracle
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TcpClientServerTest, client_saves_received_buffer) {
@@ -1773,7 +1773,7 @@ TEST_F(TcpClientServerTest, client_saves_received_buffer) {
     EXPECT_EQ(0, client_receive_counter);
     EXPECT_EQ(0, server_receive_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(2, client_receive_counter);
     EXPECT_EQ(2, server_receive_counter);
@@ -1846,7 +1846,7 @@ TEST_F(TcpClientServerTest, reuse_client_connection_after_disconnect_from_server
     EXPECT_EQ(0, client_receive_counter);
     EXPECT_EQ(0, client_close_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(2, client_receive_counter);
     EXPECT_EQ(2, client_close_counter);
@@ -1894,7 +1894,7 @@ TEST_F(TcpClientServerTest, client_communicate_with_multiple_servers_in_threads)
             );
             ASSERT_FALSE(listen_error);
 
-            ASSERT_EQ(0, loop.run());
+            ASSERT_EQ(io::StatusCode::OK, loop.run());
 
         }, std::string("server_") + std::string(1, 'a' + i));
     }
@@ -1960,7 +1960,7 @@ TEST_F(TcpClientServerTest, client_communicate_with_multiple_servers_in_threads)
     EXPECT_EQ(0, client_server_found_count);
     EXPECT_EQ(0, client_on_connect_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_server_found_count);
     EXPECT_EQ(SERVERS_COUNT, client_on_connect_count);
@@ -2042,7 +2042,7 @@ TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
     EXPECT_EQ(0, server_2_on_new_client_count);
     EXPECT_EQ(0, server_3_on_new_client_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(3, client_on_connect_fail_count);
     EXPECT_EQ(3, client_on_connect_ok_count);
@@ -2100,7 +2100,7 @@ TEST_F(TcpClientServerTest, DISABLED_connect_to_other_server_in_receive_callback
         EXPECT_EQ(0, server_on_send_count);
         EXPECT_EQ(0, server_on_close_client_count);
 
-        ASSERT_EQ(0, loop.run());
+        ASSERT_EQ(io::StatusCode::OK, loop.run());
 
         EXPECT_EQ(1, server_on_new_connection_count);
         EXPECT_EQ(1, server_on_send_count);
@@ -2147,7 +2147,7 @@ TEST_F(TcpClientServerTest, DISABLED_connect_to_other_server_in_receive_callback
         EXPECT_EQ(0, server_on_send_count);
         EXPECT_EQ(0, server_on_close_client_count);
 
-        ASSERT_EQ(0, loop.run());
+        ASSERT_EQ(io::StatusCode::OK, loop.run());
 
         EXPECT_EQ(1, server_on_new_connection_count);
         EXPECT_EQ(1, server_on_send_count);
@@ -2192,7 +2192,7 @@ TEST_F(TcpClientServerTest, DISABLED_connect_to_other_server_in_receive_callback
 
     EXPECT_EQ(0, client_on_new_connection_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     server_1_thread.join();
     server_2_thread.join();
 
@@ -2285,7 +2285,7 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
 
         EXPECT_EQ(0, server_on_connect_count);
 
-        ASSERT_EQ(0, loop.run());
+        ASSERT_EQ(io::StatusCode::OK, loop.run());
 
         EXPECT_EQ(CLIENTS_COUNT, server_on_connect_count);
     });
@@ -2323,7 +2323,7 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
 
             EXPECT_EQ(0, client_on_data_receive_bytes_count);
 
-            ASSERT_EQ(0, loop.run());
+            ASSERT_EQ(io::StatusCode::OK, loop.run());
 
             EXPECT_EQ(DATA_TO_SEND_SIZE, client_on_data_receive_bytes_count);
         },
@@ -2393,7 +2393,7 @@ TEST_F(TcpClientServerTest, send_data_of_size_0) {
     EXPECT_EQ(0, client_on_send_count);
     EXPECT_EQ(0, client_on_receive_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_send_count);
     EXPECT_EQ(0, server_on_receive_count);
@@ -2456,7 +2456,7 @@ TEST_F(TcpClientServerTest, connected_client_write_after_close_in_server_receive
     EXPECT_EQ(0, server_on_receive_count);
     EXPECT_EQ(0, client_on_receive_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_send_count);
     EXPECT_EQ(1, server_on_receive_count);
@@ -2498,7 +2498,7 @@ TEST_F(TcpClientServerTest, client_schedule_removal_during_large_chunk_send) {
 
     EXPECT_EQ(0, server_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_close_count);
 }
@@ -2541,7 +2541,7 @@ TEST_F(TcpClientServerTest, server_schedule_removal_during_large_chunk_send) {
 
     EXPECT_EQ(0, client_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_close_count);
 }
@@ -2591,7 +2591,7 @@ void TcpClientServerTest::test_impl_client_double_close(
     EXPECT_EQ(0, client_on_close_count);
     EXPECT_EQ(0, server_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_close_count);
     EXPECT_EQ(1, server_on_close_count);
@@ -2656,7 +2656,7 @@ void TcpClientServerTest::test_impl_server_double_close(
     EXPECT_EQ(0, client_on_close_count);
     EXPECT_EQ(0, server_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_close_count);
     EXPECT_EQ(2, server_on_close_count);
@@ -2687,7 +2687,7 @@ TEST_F(TcpClientServerTest, client_shutdown_not_connected_1) {
     client->shutdown();
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(TcpClientServerTest, client_shutdown_not_connected_2) {
@@ -2724,7 +2724,7 @@ TEST_F(TcpClientServerTest, client_shutdown_not_connected_2) {
 
     EXPECT_EQ(0, client_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_close_count);
 }
@@ -2745,7 +2745,7 @@ TEST_F(TcpClientServerTest, server_shutdown_not_listening_1) {
 
     EXPECT_EQ(0, server_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_close_count);
 }
@@ -2789,7 +2789,7 @@ TEST_F(TcpClientServerTest, server_shutdown_not_listening_2) {
     EXPECT_EQ(0, server_on_shutdown_1_count);
     EXPECT_EQ(0, server_on_shutdown_2_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_shutdown_1_count);
     EXPECT_EQ(1, server_on_shutdown_2_count);

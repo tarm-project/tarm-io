@@ -60,7 +60,7 @@ public:
     void stop_block_loop_from_exit();
 
     Error init_async();
-    int run();
+    Error run();
 
     bool is_running() const;
 
@@ -295,7 +295,7 @@ Error EventLoop::Impl::cancel_work(WorkHandle handle) {
     return StatusCode::OK;
 }
 
-int EventLoop::Impl::run() {
+Error EventLoop::Impl::run() {
     bool has_pending_callbacks = false;
 
     m_run_called = true;
@@ -527,7 +527,7 @@ void EventLoop::stop_block_loop_from_exit() {
     return m_impl->stop_block_loop_from_exit();
 }
 
-int EventLoop::run() {
+Error EventLoop::run() {
     return m_impl->run();
 }
 

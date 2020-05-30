@@ -41,7 +41,7 @@ TEST_F(DtlsClientServerTest, client_without_actions) {
     auto client = new io::DtlsClient(loop);
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DtlsClientServerTest, server_without_actions) {
@@ -50,7 +50,7 @@ TEST_F(DtlsClientServerTest, server_without_actions) {
     auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DtlsClientServerTest, server_with_invalid_address) {
@@ -85,7 +85,7 @@ TEST_F(DtlsClientServerTest, server_with_invalid_address) {
     EXPECT_EQ(0, server_on_receive_count);
     EXPECT_EQ(0, server_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_on_new_connection_count);
     EXPECT_EQ(0, server_on_receive_count);
@@ -106,7 +106,7 @@ TEST_F(DtlsClientServerTest, bind_privileged) {
 
     server->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 #endif
 
@@ -181,7 +181,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     EXPECT_EQ(0, client_data_receive_counter);
     EXPECT_EQ(0, client_data_send_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_new_connection_counter);
     EXPECT_EQ(1, server_data_receive_counter);
@@ -257,7 +257,7 @@ TEST_F(DtlsClientServerTest, connected_peer_timeout) {
     EXPECT_EQ(0, client_data_receive_counter);
     EXPECT_EQ(0, client_data_send_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_new_connection_counter);
     EXPECT_EQ(1, server_data_receive_counter);
@@ -304,7 +304,7 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
             }
         );
 
-        ASSERT_EQ(0, loop.run());
+        ASSERT_EQ(io::StatusCode::OK, loop.run());
     });
 
     std::size_t client_new_connection_counter = 0;
@@ -342,7 +342,7 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
             }
         );
 
-        ASSERT_EQ(0, loop.run());
+        ASSERT_EQ(io::StatusCode::OK, loop.run());
     });
 
     server_thread.join();
@@ -437,7 +437,7 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
     EXPECT_EQ(0, client_data_send_counter);
     EXPECT_EQ(0, server_data_send_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_data_send_counter);
     EXPECT_EQ(1, server_data_send_counter);
@@ -472,7 +472,7 @@ TEST_F(DtlsClientServerTest, dtls_negotiated_version) {
 
     EXPECT_EQ(0, client_new_connection_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_new_connection_counter);
 
@@ -496,7 +496,7 @@ TEST_F(DtlsClientServerTest, default_constructor) {
         }
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DtlsClientServerTest, default_constructor) {
@@ -515,7 +515,7 @@ TEST_F(DtlsClientServerTest, default_constructor) {
         }
     );
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 */
 
@@ -569,7 +569,7 @@ TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
     EXPECT_EQ(0, server_on_connect_callback_count);
     EXPECT_EQ(0, server_on_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
     EXPECT_EQ(1, client_on_send_callback_count);
@@ -627,7 +627,7 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
     EXPECT_EQ(0, server_on_connect_callback_count);
     EXPECT_EQ(0, server_on_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
     EXPECT_EQ(1, client_on_send_callback_count);
@@ -685,7 +685,7 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
     EXPECT_EQ(0, server_on_connect_callback_count);
     EXPECT_EQ(0, server_on_receive_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_callback_count);
     EXPECT_EQ(0, client_on_receive_callback_count);
@@ -760,7 +760,7 @@ TEST_F(DtlsClientServerTest, save_received_buffer) {
     EXPECT_EQ(0, server_data_receive_counter);
     EXPECT_EQ(0, client_data_receive_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(2, server_data_receive_counter);
     EXPECT_EQ(2, client_data_receive_counter);
@@ -819,7 +819,7 @@ TEST_F(DtlsClientServerTest, fail_to_init_ssl_on_client) {
     EXPECT_EQ(0, client_data_receive_counter);
     EXPECT_EQ(0, client_connect_counter);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_connect_counter);
     EXPECT_EQ(0, server_data_receive_counter);
@@ -877,7 +877,7 @@ TEST_F(DtlsClientServerTest, close_connection_from_server_side) {
     EXPECT_EQ(0, client_on_close_count);
     EXPECT_EQ(0, client_on_receive_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_close_count);
     EXPECT_EQ(1, client_on_receive_count);
@@ -936,7 +936,7 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_no_data_sent
     EXPECT_EQ(0, server_on_receive_count);
     EXPECT_EQ(0, server_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_new_connection_count);
     EXPECT_EQ(0, client_on_receive_count);
@@ -1010,7 +1010,7 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_with_data_se
     EXPECT_EQ(0, server_on_receive_count);
     EXPECT_EQ(0, server_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_new_connection_count);
     EXPECT_EQ(0, client_on_receive_count);
@@ -1044,7 +1044,7 @@ TEST_F(DtlsClientServerTest, client_with_invalid_dtls_version) {
 
     EXPECT_EQ(0, client_on_connect_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_count);
 }
@@ -1087,7 +1087,7 @@ TEST_F(DtlsClientServerTest, server_with_invalid_dtls_version) {
     EXPECT_EQ(0, server_on_receive_count);
     EXPECT_EQ(0, server_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(0, server_on_new_connection_count);
     EXPECT_EQ(0, server_on_receive_count);
@@ -1111,7 +1111,7 @@ TEST_F(DtlsClientServerTest, client_with_invalid_address) {
 
     EXPECT_EQ(0, client_on_connect_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_connect_count);
 }
@@ -1131,7 +1131,7 @@ TEST_F(DtlsClientServerTest, server_address_in_use) {
     server_1->schedule_removal();
     server_2->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DtlsClientServerTest, client_with_invalid_address_and_no_connect_callback) {
@@ -1144,7 +1144,7 @@ TEST_F(DtlsClientServerTest, client_with_invalid_address_and_no_connect_callback
     );
     client->schedule_removal();
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
@@ -1222,7 +1222,7 @@ TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
     EXPECT_EQ(0, client_on_close_callback_count);
     EXPECT_EQ(0, server_on_close_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_close_callback_count);
     EXPECT_EQ(1, server_on_close_callback_count);
@@ -1281,7 +1281,7 @@ TEST_F(DtlsClientServerTest, client_timeout_cause_server_peer_close) {
     EXPECT_EQ(0, client_on_close_callback_count);
     EXPECT_EQ(0, server_on_close_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_close_callback_count);
     EXPECT_EQ(1, server_on_close_callback_count);
@@ -1340,7 +1340,7 @@ TEST_F(DtlsClientServerTest, server_peer_timeout_cause_client_close) {
     EXPECT_EQ(0, client_on_close_callback_count);
     EXPECT_EQ(0, server_on_close_callback_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, client_on_close_callback_count);
     EXPECT_EQ(1, server_on_close_callback_count);
@@ -1403,7 +1403,7 @@ TEST_F(DtlsClientServerTest, server_schedule_removal_cause_client_close) {
     EXPECT_EQ(0, client_on_receive_count);
     EXPECT_EQ(0, client_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_connect_count);
     EXPECT_EQ(1, server_on_receive_count);
@@ -1469,7 +1469,7 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_before_handshake) {
     EXPECT_EQ(0, server_on_close_count);
     EXPECT_EQ(0, udp_on_receive_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_connect_count);
     EXPECT_EQ(0, server_on_receive_count);
@@ -1561,7 +1561,7 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_during_handshake) {
     EXPECT_EQ(0, server_on_close_count);
     EXPECT_EQ(0, udp_on_receive_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_connect_count);
     EXPECT_EQ(0, server_on_receive_count);
@@ -1700,7 +1700,7 @@ TEST_F(DtlsClientServerTest, DISABLED_client_send_invalid_data_after_handshake) 
     EXPECT_EQ(0, client_on_receive_count);
     EXPECT_EQ(0, client_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_connect_count);
     EXPECT_EQ(1, server_on_receive_count);
@@ -1785,7 +1785,7 @@ TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout
     EXPECT_EQ(0, client_on_receive_count);
     EXPECT_EQ(0, client_on_close_count);
 
-    ASSERT_EQ(0, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_connect_count);
     EXPECT_EQ(0, server_on_receive_count);

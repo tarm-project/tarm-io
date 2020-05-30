@@ -582,7 +582,7 @@ TEST_F(BacklogWithTimeoutTest, with_real_time_1_item) {
 
     EXPECT_EQ(0, expired_counter);
 
-    EXPECT_EQ(0, loop.run());
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, expired_counter);
 }
