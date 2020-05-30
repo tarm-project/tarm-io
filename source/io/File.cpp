@@ -96,7 +96,7 @@ File::Impl::Impl(EventLoop& loop, File& parent) :
 }
 
 File::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, "_");
+    IO_LOG(m_loop, TRACE, "");
 
     close();
 

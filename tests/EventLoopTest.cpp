@@ -263,7 +263,6 @@ TEST_F(EventLoopTest, schedule_on_each_loop_cycle) {
 TEST_F(EventLoopTest, stop_call_on_each_loop_cycle_with_invalid_data) {
     // Crash test
     io::EventLoop loop;
-    loop.stop_call_on_each_loop_cycle(100500);
     loop.stop_call_on_each_loop_cycle(io::EventLoop::INVALID_HANDLE);
     ASSERT_EQ(0, loop.run());
 }

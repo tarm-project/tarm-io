@@ -62,7 +62,7 @@ TcpClient::Impl::Impl(EventLoop& loop, TcpClient& parent) :
 }
 
 TcpClient::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, this, "_");
+    IO_LOG(m_loop, TRACE, this, "");
 
     if (m_connect_req) {
         delete m_connect_req; // TODO: delete right after connect???

@@ -22,6 +22,9 @@
 #include <unordered_map>
 #include <vector>
 
+// Need this check because we cast here pointers to std::size_t and return them as handles
+static_assert(sizeof(std::size_t) == sizeof(void*), "");
+
 namespace tarm {
 namespace io {
 
@@ -31,7 +34,6 @@ namespace {
 
 struct Idle : public uv_idle_t {
     std::function<void(EventLoop&)> callback = nullptr;
-    std::size_t id = 0;
 };
 
 } // namespace
@@ -81,9 +83,6 @@ protected:
 
 private:
     EventLoop* m_parent;
-    // TODO: handle wrap around (looks like some randomized algorithm of IDs generation may help)
-    std::size_t m_idle_it_counter = 0;
-    std::unordered_map<size_t, std::unique_ptr<Idle>> m_each_loop_cycle_handlers;
 
     uv_timer_t* m_dummy_idle = nullptr;
     std::int64_t m_dummy_idle_ref_counter = 0;
@@ -322,27 +321,34 @@ int EventLoop::Impl::run() {
 }
 
 std::size_t EventLoop::Impl::schedule_call_on_each_loop_cycle(WorkCallback callback) {
-    std::unique_ptr<Idle> ptr(new Idle);
-    uv_idle_init(this, ptr.get());
-    ptr->data = this;
-    ptr->id = m_idle_it_counter;
-    ptr->callback = callback;
+    auto idle = std::unique_ptr<Idle>(new Idle);
+    const Error init_error = uv_idle_init(this, idle.get());
+    if (init_error) {
+        return INVALID_HANDLE;
+    }
 
-    uv_idle_start(ptr.get(), EventLoop::Impl::on_idle);
+    idle->data = this;
+    idle->callback = callback;
 
-    m_each_loop_cycle_handlers[m_idle_it_counter] = std::move(ptr);
+    const Error start_error = uv_idle_start(idle.get(), EventLoop::Impl::on_idle);
+    if (start_error) {
+        return INVALID_HANDLE;
+    }
 
-    return m_idle_it_counter++;
+    return reinterpret_cast<std::size_t>(idle.release());
 }
 
 void EventLoop::Impl::stop_call_on_each_loop_cycle(std::size_t handle) {
-    auto it = m_each_loop_cycle_handlers.find(handle);
-    if (it == m_each_loop_cycle_handlers.end()) {
+    if (handle == INVALID_HANDLE) {
         return;
     }
 
-    uv_idle_stop(it->second.get());
-    uv_close(reinterpret_cast<uv_handle_t*>(it->second.get()), EventLoop::Impl::on_each_loop_cycle_handler_close);
+    auto& idle = *reinterpret_cast<Idle*>(handle);
+
+    // uv_idle_stop always returns 0. So no need to handle errors.
+    // Anyway we can not predict what kinds of errors could be returned and how to handle them.
+    uv_idle_stop(&idle);
+    uv_close(reinterpret_cast<uv_handle_t*>(&idle), EventLoop::Impl::on_each_loop_cycle_handler_close);
 }
 
 void EventLoop::Impl::start_block_loop_from_exit() {
@@ -445,12 +451,9 @@ void EventLoop::Impl::on_each_loop_cycle_handler_close(uv_handle_t* handle) {
     auto& idle = *reinterpret_cast<Idle*>(handle);
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
 
-    auto it = this_.m_each_loop_cycle_handlers.find(idle.id);
-    if (it == this_.m_each_loop_cycle_handlers.end()) {
-        return;
-    }
+    IO_LOG(this_.m_parent, TRACE, this_.m_parent, "");
 
-    this_.m_each_loop_cycle_handlers.erase(it);
+    delete &idle;
 }
 
 void EventLoop::Impl::on_async(uv_async_t* handle) {
@@ -460,12 +463,12 @@ void EventLoop::Impl::on_async(uv_async_t* handle) {
 
 void EventLoop::Impl::on_dummy_idle_tick(uv_timer_t* handle) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
-    IO_LOG(this_.m_parent, TRACE, "_");
+    IO_LOG(this_.m_parent, TRACE, "");
 }
 
 void EventLoop::Impl::on_dummy_idle_close(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->loop);
-    IO_LOG(this_.m_parent, TRACE, "_");
+    IO_LOG(this_.m_parent, TRACE, "");
 
     delete reinterpret_cast<uv_timer_t*>(handle);
 }
