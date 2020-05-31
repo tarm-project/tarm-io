@@ -87,6 +87,9 @@ endif()
 add_library(tarm-io ${IO_SOURCE_LIST})
 target_link_libraries(tarm-io PUBLIC ${LIBUV_LIB_DEPS})
 
+# DOC: there are problems with CMake to find different OpenSSL versions.
+# https://gitlab.kitware.com/cmake/cmake/-/issues/18352
+# One part could be found from one version and second from another
 if (IO_OPENSSL_FOUND)
     target_link_libraries(tarm-io PRIVATE OpenSSL::SSL) # WAS PUBLIC
     target_link_libraries(tarm-io PRIVATE OpenSSL::Crypto) # WAS PUBLIC
