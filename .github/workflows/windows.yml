@@ -1,0 +1,46 @@
+name: Windows
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  MSVC-ALL:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - 'windows-2016'
+          #- 'windows-2019'
+        config:
+          - 'Debug'
+          #- 'Release'
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install OpenSSL
+      run: |
+        choco install openssl
+        Get-Command openssl.exe
+    - name: install gtest
+      run: |
+        pushd $env:TEMP
+        curl -LO https://github.com/google/googletest/archive/release-1.10.0.tar.gz
+        tar -xf release-1.10.0.tar.gz
+        cd googletest-release-1.10.0
+        mkdir build
+        cd build/
+        cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 ..
+        cmake --build . --config ${{ matrix.config }}
+        cmake --install . --verbose --config ${{ matrix.config }} --prefix $env:GITHUB_WORKSPACE/gtest_install
+        popd
+    - name: build
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DBOOST_ROOT="$env:BOOST_ROOT_1_72_0" -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT="$env:GITHUB_WORKSPACE/gtest_install" -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64\" ..
+        cmake --build . --config ${{ matrix.config }}
+    - name: run tests
+      run: |
+        cd build
+        .\tests\${{ matrix.config }}\tests.exe

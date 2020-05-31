@@ -1,0 +1,36 @@
+name: Linux
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  ALL:
+    env:
+      IMAGE_PATH: tarmio/builders:${{ matrix.docker_image }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type:
+          - 'Debug'
+          #- 'Release'
+        docker_image:
+          - ubuntu14.04-gcc4.8.4-boost1.55-cmake3.10.3-gtest1.10.0-openssl1.0.1f
+          - ubuntu16.04-gcc5.4.0-boost1.70-cmake3.5.1-gtest1.8.1-openssl1.0.2g
+          - ubuntu18.04-gcc7.5.0-boost1.65-cmake3.10.2-gtest1.10.0-openssl1.1.1
+          - ubuntu20.04-gcc9.3.0-boost1.71-cmake3.16.3-gtest1.10.0-openssl1.1.1g
+          - centos7.6.1810-gcc4.8.5-boost1.70-cmake3.15.6-gtest1.8.1-openssl1.1.0
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: docker pull
+      run: docker pull ${IMAGE_PATH}
+    - name: build
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && make -j$(nproc)"
+    - name: run tests
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "cd build && make RunTests"
+#    - name: valgrind check
+#      run: |
+#        ./tests/docker/execute_in_docker.bash ${IMAGE_PATH} "cd build && sudo apt -y update && sudo apt -y install valgrind && valgrind --leak-check=full --error-exitcode=1 ./tests/tests"    
