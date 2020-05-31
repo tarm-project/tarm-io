@@ -31,7 +31,7 @@ TEST_F(TimerTest, constructor) {
 TEST_F(TimerTest, schedule_with_no_repeat) {
     io::EventLoop loop;
 
-    const uint64_t TIMEOUT_MS = 100;
+    const uint64_t TIMEOUT_MS = 300;
     size_t call_counter = 0;
 
     auto timer = new io::Timer(loop);
@@ -83,8 +83,10 @@ TEST_F(TimerTest, no_callback) {
     //       Even if timer has no callback, it should block an EventLoop.
     io::EventLoop loop;
 
+    const std::size_t TIMEOUT_MS = 300;
+
     auto timer = new io::Timer(loop);
-    timer->start(100, nullptr);
+    timer->start(TIMEOUT_MS, nullptr);
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
@@ -93,7 +95,7 @@ TEST_F(TimerTest, no_callback) {
     auto t2 = std::chrono::high_resolution_clock::now();
 
     EXPECT_TIMEOUT_MS(0, timer->real_time_passed_since_last_callback());
-    EXPECT_TIMEOUT_MS(100, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
+    EXPECT_TIMEOUT_MS(TIMEOUT_MS, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
 
     timer->schedule_removal();
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -163,8 +165,8 @@ TEST_F(TimerTest, start_stop_start_stop) {
 TEST_F(TimerTest, schedule_with_repeat) {
     io::EventLoop loop;
 
-    const uint64_t TIMEOUT_MS = 300;
-    const uint64_t REPEAT_MS = 100;
+    const uint64_t TIMEOUT_MS = 600;
+    const uint64_t REPEAT_MS = 300;
     size_t call_counter = 0;
 
     std::chrono::milliseconds duration_1;
@@ -251,7 +253,7 @@ TEST_F(TimerTest, schedule_removal_from_callback) {
 TEST_F(TimerTest, multiple_intervals) {
     io::EventLoop loop;
 
-    const std::deque<std::uint64_t> intervals = {100, 200, 300};
+    const std::deque<std::uint64_t> intervals = {300, 500, 700};
 
     std::deque<std::chrono::milliseconds> durations;
 
@@ -486,10 +488,10 @@ TEST_F(TimerTest, 1k_timers_1k_timeouts) {
 TEST_F(TimerTest, multiple_starts) {
     io::EventLoop loop;
 
-    const uint64_t TIMEOUT_1_MS = 100;
+    const uint64_t TIMEOUT_1_MS = 300;
     size_t call_counter_1 = 0;
 
-    const uint64_t TIMEOUT_2_MS = 200;
+    const uint64_t TIMEOUT_2_MS = 500;
     size_t call_counter_2 = 0;
 
     auto timer = new io::Timer(loop);
