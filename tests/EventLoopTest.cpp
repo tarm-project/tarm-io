@@ -224,15 +224,26 @@ TEST_F(EventLoopTest, work_cancel_during_loop_run) {
         all_handles.push_back(handle);
     }
 
-    event_loop.schedule_callback([&](io::EventLoop& loop) {
-        for (std::size_t i = 0 ; i < thread_pool_size; ++i) {
-            auto error = loop.cancel_work(all_handles[i]);
-            EXPECT_TRUE(error);
-            EXPECT_EQ(io::StatusCode::RESOURCE_BUSY_OR_LOCKED, error.code());
-        }
+    // Here we do not want to use Timer because Timer is dependent on EventLoop and we want to
+    // ensure in tests that EventLoop is working first. Need to wait for a while because work is not
+    // started immediately. At least Ubuntu18.04 has this weird behavior.
+    const auto start_time = std::chrono::high_resolution_clock::now();
+    std::size_t each_loop_cycle_handle = 0;
+    each_loop_cycle_handle = event_loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - start_time).count() > 50) {
 
-        auto error = loop.cancel_work(all_handles.back());
-        EXPECT_FALSE(error);
+            for (std::size_t i = 0 ; i < thread_pool_size; ++i) {
+                auto error = loop.cancel_work(all_handles[i]);
+                EXPECT_TRUE(error);
+                EXPECT_EQ(io::StatusCode::RESOURCE_BUSY_OR_LOCKED, error.code());
+            }
+
+            auto error = loop.cancel_work(all_handles.back());
+            EXPECT_FALSE(error) << error.string();
+
+            loop.stop_call_on_each_loop_cycle(each_loop_cycle_handle);
+        }
     });
 
     EXPECT_EQ(0, on_work_done_counter);
