@@ -87,6 +87,10 @@ target_link_libraries(${TESTS_EXE_NAME}
 )
 add_dependencies(${TESTS_EXE_NAME} tarm-io)
 
+if (OPENSSL_ROOT_DIR)
+    target_include_directories(${TESTS_EXE_NAME} PUBLIC ${OPENSSL_ROOT_DIR}/include)
+endif()
+
 if (MSVC)
     target_compile_definitions(${TESTS_EXE_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
