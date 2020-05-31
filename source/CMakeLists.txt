@@ -118,6 +118,11 @@ target_include_directories(tarm-io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOUR
 target_include_directories(tarm-io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 target_compile_definitions(tarm-io PRIVATE IO_BUILDING_DLL)
 
+if (LINUX)
+    target_compile_options(tarm-io PUBLIC -pthread)
+    set_target_properties(tarm-io PROPERTIES LINK_FLAGS -pthread)
+endif()
+
 if (IO_IS_BIG_ENDIAN)
     target_compile_definitions(tarm-io PRIVATE IO_BIG_ENDIAN)
 endif()
