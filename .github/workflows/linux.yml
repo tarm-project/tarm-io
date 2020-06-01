@@ -20,6 +20,7 @@ jobs:
           - ubuntu18.04-gcc7.5.0-boost1.65-cmake3.10.2-gtest1.10.0-openssl1.1.1
           - ubuntu20.04-gcc9.3.0-boost1.71-cmake3.16.3-gtest1.10.0-openssl1.1.1g
           - centos7.6.1810-gcc4.8.5-boost1.70-cmake3.15.6-gtest1.8.1-openssl1.1.0
+          - alpine3.9.6-gcc8.3.0-boost1.67-cmake3.13.0-gtest1.8.1-openssl1.1.1g
 
     steps:
     - uses: actions/checkout@v2
