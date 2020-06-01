@@ -76,9 +76,9 @@ void Removable::Impl::schedule_removal() {
     auto idle_ptr = new uv_idle_t;
     idle_ptr->data = this;
 
-    // TODO: error handling
-    Error init_error = uv_idle_init(reinterpret_cast<uv_loop_t*>(m_loop->raw_loop()), idle_ptr);
-    Error start_error = uv_idle_start(idle_ptr, on_removal);
+    // No need to handle errors here as we guarantee that callback is not null
+    uv_idle_init(reinterpret_cast<uv_loop_t*>(m_loop->raw_loop()), idle_ptr);
+    uv_idle_start(idle_ptr, on_removal);
 }
 
 void Removable::Impl::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
