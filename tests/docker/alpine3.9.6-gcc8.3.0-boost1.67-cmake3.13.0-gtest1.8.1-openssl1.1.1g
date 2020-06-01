@@ -1,0 +1,11 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
+FROM tarmio/builders:alpine3.9.6-gcc8.3.0-boost1.67-cmake3.13.0-gtest1.8.1
+
+LABEL maintainer="av@tarm.io"
+
+RUN apk add openssl-dev
+
