@@ -148,3 +148,15 @@ TEST_F(EndpointTest, ipv6_init_from_raw_sockaddr) {
     EXPECT_EQ("7f::10", endpoint.address_string());
 }
 #endif
+
+TEST_F(EndpointTest, clear_ipv4) {
+    io::Endpoint endpoint({127, 2, 2, 1}, 1234);
+    endpoint.clear();
+    EXPECT_EQ(io::Endpoint::UNDEFINED, endpoint.type());
+}
+
+TEST_F(EndpointTest, clear_ipv6) {
+    io::Endpoint endpoint({0, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, 1234);
+    endpoint.clear();
+    EXPECT_EQ(io::Endpoint::UNDEFINED, endpoint.type());
+}

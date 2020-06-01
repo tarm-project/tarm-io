@@ -58,6 +58,8 @@ public:
 
     IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
 
+    IO_DLL_PUBLIC void clear();
+
 private:
     void* raw_endpoint();
     const void* raw_endpoint() const;

@@ -36,6 +36,8 @@ public:
 
     std::uint32_t ipv4_addr() const;
 
+    void clear();
+
 private:
     ::sockaddr_storage m_address_storage;
     Type m_type = UNDEFINED;
@@ -170,6 +172,11 @@ std::uint32_t Endpoint::Impl::ipv4_addr() const {
     return network_to_host(addr->sin_addr.s_addr);
 }
 
+void Endpoint::Impl::clear() {
+    m_type = UNDEFINED;
+    std::memset(&m_address_storage, 0, sizeof(::sockaddr_storage));
+}
+
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 IO_DEFINE_DEFAULT_MOVE(Endpoint);
@@ -244,6 +251,10 @@ const void* Endpoint::raw_endpoint() const {
 
 std::uint32_t Endpoint::ipv4_addr() const {
     return m_impl->ipv4_addr();
+}
+
+void Endpoint::clear() {
+    return m_impl->clear();
 }
 
 ///////////////////////////////////////// functions ///////////////////////////////////////////

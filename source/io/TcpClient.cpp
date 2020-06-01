@@ -228,8 +228,7 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
             this_.m_close_callback(*this_.m_parent, Error(0));
         }
 
-        // TODO: replace with endpoint.clear();
-        this_.m_destination_endpoint = Endpoint();
+        this_.m_destination_endpoint.clear();
 
         if (should_delete) {
             this_.m_parent->schedule_removal();
