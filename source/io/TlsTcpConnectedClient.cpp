@@ -87,37 +87,7 @@ void TlsTcpConnectedClient::Impl::close() {
 void TlsTcpConnectedClient::Impl::shutdown() {
     m_client->shutdown();
 }
-/*
-const SSL_METHOD* TlsTcpConnectedClient::Impl::ssl_method() {
-    return SSLv23_server_method(); // This call includes also TLS versions
-}
 
-void TlsTcpConnectedClient::Impl::ssl_set_versions() {
-    this->set_tls_version(std::get<0>(m_tls_context.tls_version_range), std::get<1>(m_tls_context.tls_version_range));
-}
-
-bool TlsTcpConnectedClient::Impl::ssl_init_certificate_and_key() {
-    auto result = SSL_CTX_use_certificate(this->ssl_ctx(), m_tls_context.certificate);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load certificate");
-        return false;
-    }
-
-    result = SSL_CTX_use_PrivateKey(this->ssl_ctx(), m_tls_context.private_key);
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to load private key");
-        return false;
-    }
-
-    result = SSL_CTX_check_private_key(this->ssl_ctx());
-    if (!result) {
-        IO_LOG(m_loop, ERROR, "Failed to check private key");
-        return false;
-    }
-
-    return true;
-}
-*/
 void TlsTcpConnectedClient::Impl::ssl_set_state() {
     SSL_set_accept_state(this->ssl());
 }
@@ -135,27 +105,6 @@ void TlsTcpConnectedClient::Impl::on_handshake_complete() {
 }
 
 void TlsTcpConnectedClient::Impl::on_handshake_failed(long openssl_error_code, const Error& error) {
-    // TODO: is it done via SSL_shotdown? Need to recheck it.
-    if ((openssl_error_code & 0xFFF) == SSL_R_UNKNOWN_PROTOCOL) {
-        // Sending version failed alert manually because OpensSSL does not do it.
-        const std::size_t BUF_SIZE = 7;
-        std::shared_ptr<char> buf_ptr(new char[BUF_SIZE], std::default_delete<char[]>());
-        buf_ptr.get()[0] = 0x15;
-        buf_ptr.get()[1] = 0x03;
-        buf_ptr.get()[2] = 0x01; // TLS 1.0 by default
-        buf_ptr.get()[3] = 0x00;
-        buf_ptr.get()[4] = 0x02;
-        buf_ptr.get()[5] = 0x02;
-        buf_ptr.get()[6] = 0x46;
-
-        //char buf[] = {0x15, 0x03, 0x01, 0x00, 0x02, 0x02, 0x46};
-        if (std::get<1>(m_tls_server->version_range()) != TlsVersion::UNKNOWN) {
-            buf_ptr.get()[2] = static_cast<unsigned char>(std::get<1>(m_tls_server->version_range()));
-        }
-
-        m_client->send_data(buf_ptr, BUF_SIZE);
-    }
-
     if (m_new_connection_callback) {
         m_new_connection_callback(*this->m_parent, error);
     }
