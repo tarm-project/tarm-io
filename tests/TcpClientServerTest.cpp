@@ -2864,6 +2864,7 @@ TEST_F(TcpClientServerTest, client_schedule_removal_in_on_send_callback) {
     EXPECT_EQ(1, client_on_send_counter);
 }
 
+// TODO: this test does not work with thread sanitizer
 TEST_F(TcpClientServerTest, server_schedule_removal_in_on_send_callback) {
     const std::size_t DATA_SIZE = 32 * 1024 * 1024;
 
