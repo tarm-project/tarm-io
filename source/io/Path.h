@@ -525,12 +525,6 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
 //--------------------------------------------------------------------------------------//
 
   private:
-
-// TODO: revise these pragmas
-#   if defined(_MSC_VER)
-#     pragma warning(push) // Save warning settings
-#     pragma warning(disable : 4251) // disable warning: class 'std::basic_string<_Elem,_Traits,_Ax>'
-#   endif                            // needs to have dll-interface...
 /*
       m_pathname has the type, encoding, and format required by the native
       operating system. Thus for POSIX and Windows there is no conversion for
@@ -541,9 +535,6 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
 */
     string_type  m_pathname;  // Windows: as input; backslashes NOT converted to slashes,
                               // slashes NOT converted to backslashes
-#   if defined(_MSC_VER)
-#     pragma warning(pop) // restore warning settings.
-#   endif
 
     //  Returns: If separator is to be appended, m_pathname.size() before append. Otherwise 0.
     //  Note: An append is never performed if size()==0, so a returned 0 is unambiguous.
