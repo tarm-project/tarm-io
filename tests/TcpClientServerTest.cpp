@@ -3066,7 +3066,8 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
                     close_if_required(client);
                 };
 
-                EXPECT_EQ((client_send_buf.get() + data.offset)[0], data.buf.get()[0]);
+                EXPECT_EQ((client_send_buf.get() + data.offset)[0], data.buf.get()[0]) <<
+                    "offset: " << data.offset << "size: " << data.size;
 
                 memcpy(receive_buf.get() + data.offset, data.buf.get(), data.size);
             },
