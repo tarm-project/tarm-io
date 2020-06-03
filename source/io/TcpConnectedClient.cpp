@@ -89,17 +89,22 @@ void TcpConnectedClient::Impl::close() {
 
     m_is_open = false;
 
-    // TODO: check uv_is_closing???
     uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
 }
 
 void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callback) {
     m_receive_callback = data_receive_callback;
 
-    // TODO: handle return status code
-    uv_read_start(reinterpret_cast<uv_stream_t*>(m_tcp_stream),
-                  alloc_read_buffer,
-                  on_read);
+    const Error read_error = uv_read_start(reinterpret_cast<uv_stream_t*>(m_tcp_stream),
+                                           alloc_read_buffer,
+                                           on_read);
+    if (read_error) {
+        m_loop->schedule_callback([this, read_error](io::EventLoop&) {
+            if (m_receive_callback) {
+                m_receive_callback(*m_parent, {nullptr, 0}, read_error);
+            }
+        });
+    }
 }
 
 TcpServer& TcpConnectedClient::Impl::server() {
