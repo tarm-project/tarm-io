@@ -43,8 +43,7 @@ public:
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);
 
-    // TODO: rename as pending_send_requesets??? Because name is inconsistent.
-    IO_DLL_PUBLIC std::size_t pending_write_requesets() const;
+    IO_DLL_PUBLIC std::size_t pending_send_requesets() const;
 
     IO_DLL_PUBLIC void delay_send(bool enabled);
     IO_DLL_PUBLIC bool is_delay_send() const;

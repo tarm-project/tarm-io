@@ -1329,22 +1329,22 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
             EXPECT_FALSE(error);
         },
         [](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_EQ(0, client.pending_write_requesets());
+            EXPECT_EQ(0, client.pending_send_requesets());
             client.send_data("world", [](io::TcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
-                EXPECT_EQ(1, client.pending_write_requesets());
+                EXPECT_EQ(1, client.pending_send_requesets());
             });
-            EXPECT_EQ(1, client.pending_write_requesets());
+            EXPECT_EQ(1, client.pending_send_requesets());
             client.send_data("!", [](io::TcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
-                EXPECT_EQ(0, client.pending_write_requesets());
+                EXPECT_EQ(0, client.pending_send_requesets());
 
                 client.server().shutdown([&](io::TcpServer& server, const io::Error& error) {
                     EXPECT_FALSE(error);
                     server.schedule_removal();
                 });
             });
-            EXPECT_EQ(2, client.pending_write_requesets());
+            EXPECT_EQ(2, client.pending_send_requesets());
         },
         nullptr
     );
@@ -1357,7 +1357,7 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
     client->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
-            EXPECT_EQ(0, client.pending_write_requesets());
+            EXPECT_EQ(0, client.pending_send_requesets());
             ++client_connect_call_count;
 
             client.send_data("H");
@@ -1368,10 +1368,10 @@ TEST_F(TcpClientServerTest, pending_write_requests) {
             client.send_data(" ",
                 [&](io::TcpClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
-                    EXPECT_EQ(0, client.pending_write_requesets());
+                    EXPECT_EQ(0, client.pending_send_requesets());
                 }
             );
-            EXPECT_EQ(6, client.pending_write_requesets());
+            EXPECT_EQ(6, client.pending_send_requesets());
         },
         [](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -2085,7 +2085,7 @@ TEST_F(TcpClientServerTest, DISABLED_connect_to_other_server_in_receive_callback
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
             ++server_on_close_client_count;
-            EXPECT_EQ(1, client.pending_write_requesets());
+            EXPECT_EQ(1, client.pending_send_requesets());
         };
 
         auto server = new io::TcpServer(loop);
@@ -2132,7 +2132,7 @@ TEST_F(TcpClientServerTest, DISABLED_connect_to_other_server_in_receive_callback
         auto server_on_client_close = [&](io::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++server_on_close_client_count;
-            EXPECT_EQ(0, client.pending_write_requesets());
+            EXPECT_EQ(0, client.pending_send_requesets());
         };
 
         auto server = new io::TcpServer(loop);

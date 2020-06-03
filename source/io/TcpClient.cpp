@@ -325,7 +325,7 @@ void TcpClient::send_data(std::string&& message, EndSendCallback callback) {
     return m_impl->send_data(std::move(message), callback);
 }
 
-std::size_t TcpClient::pending_write_requesets() const {
+std::size_t TcpClient::pending_send_requesets() const {
     return m_impl->pending_write_requests();
 }
 

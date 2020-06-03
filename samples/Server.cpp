@@ -201,8 +201,8 @@ int main(int argc, char* argv[]) {
                 file.read([&client](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
                     //std::cout.write(buf.get(), size);
 
-                    if (client.pending_write_requesets() > 0) {
-                        //std::cout << "pending_write_requesets " << client.pending_write_requesets() << std::endl;
+                    if (client.pending_send_requesets() > 0) {
+                        //std::cout << "pending_send_requesets " << client.pending_send_requesets() << std::endl;
                     }
 
                     client.send_data(chunk.buf, chunk.size, [&file](io::TcpConnectedClient& client, const io::Error& error) {
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
                         // }
                     });
 
-                    // if (client.pending_write_requesets() > 1) {
+                    // if (client.pending_send_requesets() > 1) {
                     //     std::cout << "Pause read" << std::endl;
                     //     file.pause_read();
                     // }
