@@ -122,13 +122,6 @@ void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
 
     IO_LOG(this_.m_loop, TRACE, this_.m_parent, "endpoint:", this_.endpoint());
 
-    //this_.m_server->remove_client_connection(this_.m_parent);
-
-    //if (this_.m_close_callback) {
-    //    this_.m_close_callback(*this_.m_parent, Error(status));
-    //    this_.m_close_callback = nullptr; // TODO: looks like a hack
-    //}
-
     uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
     delete req;
 }
@@ -145,12 +138,9 @@ void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
         this_.m_close_callback(*this_.m_parent, Error(0));
     }
 
-    // TOOD: endpoint clear
-    this_.m_destination_endpoint = Endpoint();
+    this_.m_destination_endpoint.clear();
 
     this_.m_parent->schedule_removal();
-
-    //delete reinterpret_cast<uv_tcp_t*>(handle);
 }
 
 void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
@@ -188,10 +178,9 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
         }
         //---------------------------------------------
 
-        this_.m_close_callback = nullptr; // TODO: looks like a hack
+        // Reseting close callback before close() call as we already called it
+        this_.m_close_callback = nullptr;
         this_.close();
-        //this_.m_server->remove_client_connection(this_.m_parent);
-        //this_.m_parent->schedule_removal();
     }
 }
 
