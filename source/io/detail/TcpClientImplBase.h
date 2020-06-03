@@ -45,6 +45,8 @@ protected:
     static void after_write(uv_write_t* req, int status);
     static void alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
 
+    void on_read_error(const Error& error);
+
     // data
     EventLoop* m_loop;
     uv_loop_t* m_uv_loop;
@@ -185,6 +187,20 @@ void TcpClientImplBase<ParentType, ImplType>::delay_send(bool enabled) {
 template<typename ParentType, typename ImplType>
 bool TcpClientImplBase<ParentType, ImplType>::is_delay_send() const {
     return m_delay_send;
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::on_read_error(const Error& error) {
+    IO_LOG(m_loop, DEBUG, m_parent, "Connection end", endpoint(), "reason:", error);
+
+    if (m_close_callback) {
+        if (error.code() == StatusCode::END_OF_FILE) {
+            m_close_callback(*m_parent, Error(0)); // OK
+        } else {
+            // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
+            m_close_callback(*m_parent, error);
+        }
+    }
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////

@@ -99,6 +99,8 @@ void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callb
                                            alloc_read_buffer,
                                            on_read);
     if (read_error) {
+        // TODO: call close callback instead of read? Because when we have error during read, we call close callback.
+        //       and close connection.
         m_loop->schedule_callback([this, read_error](io::EventLoop&) {
             if (m_receive_callback) {
                 m_receive_callback(*m_parent, {nullptr, 0}, read_error);
@@ -164,19 +166,7 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
 
         this_.m_data_offset += static_cast<std::size_t>(nread);
     } else {
-        // TODO: this is common code with TcpCLient. Extract to TcpClientImplBase???
-        //---------------------------------------------
-        IO_LOG(this_.m_loop, DEBUG, "connection end endpoint:", this_.endpoint(), "reason:", error.string());
-
-        if (this_.m_close_callback) {
-            if (error.code() == StatusCode::END_OF_FILE) {
-                this_.m_close_callback(*this_.m_parent, Error(0)); // OK
-            } else {
-                // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
-                this_.m_close_callback(*this_.m_parent, error);
-            }
-        }
-        //---------------------------------------------
+        this_.on_read_error(error);
 
         // Reseting close callback before close() call as we already called it
         this_.m_close_callback = nullptr;
