@@ -321,6 +321,58 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
     });
 }
 
+TEST_F(TcpClientServerTest, send_data_from_char_buffer) {
+    io::EventLoop loop;
+
+    char client_message[] = "Hello from client!";
+    char server_message[] = "Hello from server!";
+
+    std::size_t on_server_receive_count = 0;
+    std::size_t on_client_receive_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+        nullptr,
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++on_server_receive_count;
+
+            client.send_data(server_message, sizeof(server_message),
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    server->schedule_removal();
+                }
+            );
+        },
+        nullptr
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+
+            client.send_data(client_message, sizeof(client_message),
+                [&](io::TcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    ++on_client_receive_count;
+                    client.schedule_removal();
+                }
+            );
+        },
+        nullptr
+    );
+
+    EXPECT_EQ(0, on_server_receive_count);
+    EXPECT_EQ(0, on_client_receive_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_server_receive_count);
+    EXPECT_EQ(1, on_client_receive_count);
+}
+
 TEST_F(TcpClientServerTest, server_sends_data_first) {
     io::EventLoop loop;
 

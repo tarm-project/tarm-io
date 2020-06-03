@@ -12,6 +12,10 @@ namespace tarm {
 namespace io {
 namespace detail {
 
+inline const char* raw_buffer_get(const char* pc) {
+    return pc;
+}
+
 inline const char* raw_buffer_get(const std::string& s) {
     return s.c_str();
 }

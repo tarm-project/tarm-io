@@ -33,6 +33,7 @@ public:
     IO_FORBID_COPY(UdpPeer);
     IO_FORBID_MOVE(UdpPeer);
 
+    // TODO: char* as send buffer like for TCP
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);

@@ -23,6 +23,7 @@ public:
 
     const Endpoint& endpoint() const;
 
+    void send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
     void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
     void send_data(std::string&& message, typename ParentType::EndSendCallback callback);
@@ -147,6 +148,12 @@ void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint
     }
 
     ++m_pending_write_requests;
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback)  {
+
+    send_data_impl(c_str, size, callback);
 }
 
 template<typename ParentType, typename ImplType>
