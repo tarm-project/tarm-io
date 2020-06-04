@@ -3134,7 +3134,7 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
         EXPECT_EQ(0, std::memcmp(client_send_buf.get(), receive_buf.get(), CLIENT_SEND_DATA_SIZE));
     });
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
     std::thread client_thread([&](){
         std::shared_ptr<char> receive_buf(new char[SERVER_SEND_DATA_SIZE], std::default_delete<char[]>());

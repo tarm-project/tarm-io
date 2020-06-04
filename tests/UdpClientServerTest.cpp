@@ -1630,7 +1630,7 @@ TEST_F(UdpClientServerTest, send_after_schedule_removal) {
 TEST_F(UdpClientServerTest, client_with_timeout_1) {
     io::EventLoop loop;
 
-    const std::size_t TIMEOUT = 100;
+    const std::size_t TIMEOUT = 500;
 
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
