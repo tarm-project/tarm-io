@@ -2916,7 +2916,6 @@ TEST_F(TcpClientServerTest, client_schedule_removal_in_on_send_callback) {
     EXPECT_EQ(1, client_on_send_counter);
 }
 
-// TODO: this test does not work with thread sanitizer
 TEST_F(TcpClientServerTest, server_schedule_removal_in_on_send_callback) {
     const std::size_t DATA_SIZE = 32 * 1024 * 1024;
 
@@ -2931,20 +2930,20 @@ TEST_F(TcpClientServerTest, server_schedule_removal_in_on_send_callback) {
         auto server = new io::TcpServer(loop);
         auto listen_error = server->listen({m_default_addr, m_default_port},
             [&](io::TcpConnectedClient& client, const io::Error& error) {
-                EXPECT_FALSE(error);
+                EXPECT_FALSE(error) << error;
                 client.send_data(buf, DATA_SIZE,
                     [&](io::TcpConnectedClient& client, const io::Error& error) {
-                        EXPECT_FALSE(error);
+                        EXPECT_FALSE(error) << error;
                         ++server_on_send_counter;
                         client.server().schedule_removal();
                     }
                 );
             },
             [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-                EXPECT_FALSE(error);
+                EXPECT_FALSE(error) << error;
             },
             [&](io::TcpConnectedClient& /*client*/, const io::Error& error) {
-                EXPECT_FALSE(error);
+                EXPECT_FALSE(error) << error;
             }
         );
         EXPECT_FALSE(listen_error);
@@ -2956,7 +2955,7 @@ TEST_F(TcpClientServerTest, server_schedule_removal_in_on_send_callback) {
         EXPECT_EQ(1, server_on_send_counter);
     });
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
     io::EventLoop loop;
 
@@ -2965,14 +2964,14 @@ TEST_F(TcpClientServerTest, server_schedule_removal_in_on_send_callback) {
     auto client_ptr = new io::TcpClient(loop);
     client_ptr->connect({m_default_addr, m_default_port},
         [&](io::TcpClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error;
         },
         [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error;
             client_received_size += data.size;
         },
         [&](io::TcpClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error;
             client.schedule_removal();
         }
     );

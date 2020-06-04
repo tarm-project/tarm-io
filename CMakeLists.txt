@@ -32,6 +32,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     message(STATUS "Platform is: Mac OS X")
 endif()
 
+# cmake -DCMAKE_BUILD_TYPE=Debug -DIO_SANITIZER=thread ..
 if (NOT MSVC AND NOT DEFINED IO_SANITIZER)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
