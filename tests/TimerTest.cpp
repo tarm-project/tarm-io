@@ -94,7 +94,7 @@ TEST_F(TimerTest, no_callback) {
 
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    EXPECT_TIMEOUT_MS(0, timer->real_time_passed_since_last_callback());
+    EXPECT_LE(timer->real_time_passed_since_last_callback().count(), 10);
     EXPECT_TIMEOUT_MS(TIMEOUT_MS, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
 
     timer->schedule_removal();
