@@ -1,0 +1,8 @@
+{% extends "!layout.html" %}
+
+{%- block extrahead %}
+{% if pagename == 'index' %}
+<link rel="canonical" href="https://tarm.io" />
+{% endif %}
+{{ super() }}
+{%- endblock %}
