@@ -44,7 +44,7 @@ Supported platforms
 Downloads
 ---------
 
-Tarm-io can be downloaded from `here <https://github.com/tarm-project/tarm-io>`_.
+Tarm-io can be downloaded from `github page <https://github.com/tarm-project/tarm-io>`_.
 
 Showcase
 --------
