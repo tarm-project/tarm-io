@@ -1,0 +1,28 @@
+name: Undefined Behavior Sanitizer
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  ALL:
+    env:
+      IMAGE_PATH: tarmio/builders:${{ matrix.docker_image }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type:
+          - 'Debug'
+        docker_image:
+          - ubuntu20.04-clang9.0.1-boost1.71-cmake3.17.3-gtest1.8.1-openssl1.1.1g
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: docker pull
+      run: docker pull ${IMAGE_PATH}
+    - name: build
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DIO_SANITIZER=undefined .. && make -j$(nproc)"
+    - name: run tests
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "cd build && make RunTests"

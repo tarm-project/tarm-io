@@ -1,0 +1,22 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+FROM tarmio/builders:ubuntu20.04-clang9.0.1-boost1.71
+
+LABEL maintainer="av@tarm.io"
+
+RUN cd /usr/bin && \
+    ln -s clang-9 clang && \
+    ln -s clang++-9 clang++
+
+RUN mkdir -p ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget https://cmake.org/files/v3.17/cmake-3.17.3.tar.gz && \
+    tar -xf cmake* && \
+    cd cmake* && \
+    ./bootstrap -- -DCMAKE_USE_OPENSSL=OFF -DCMAKE_BUILD_TYPE=RELEASE && \
+    make && \
+    make install && \
+    ldconfig && \
+    rm -rf ${BUILD_DIR}

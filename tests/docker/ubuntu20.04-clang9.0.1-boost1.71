@@ -4,7 +4,7 @@
 #----------------------------------------------------------------------------------------------
 FROM tarmio/builders:ubuntu20.04-clang9.0.1
 
-LABEL maintainer="av@tarm.io"
+LABEL maintainer="av@tcloud.pro"
 
 RUN apt -y install libboost1.71-dev \
                    libboost-system1.71-dev \

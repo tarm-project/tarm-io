@@ -1,0 +1,20 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+FROM tarmio/builders:ubuntu20.04-clang9.0.1-boost1.71-cmake3.17.3
+
+LABEL maintainer="av@tarm.io"
+
+RUN mkdir ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget https://github.com/google/googletest/archive/release-1.8.1.tar.gz && \
+    tar -xf release* && \
+    cd goog* && \
+    mkdir build && \
+    cd build && \
+    cmake -DBUILD_SHARED_LIBS=ON .. && \
+    make -j $(nproc) && \
+    make install && \
+    ldconfig && \
+    rm -rf ${BUILD_DIR}
