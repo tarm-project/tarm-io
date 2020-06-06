@@ -78,10 +78,15 @@ div.sphinxsidebar div.sphinxsidebarwrapper div#searchbox p.highlight-link {
 
     div.literal-block-wrapper.docutils.container {
         overflow: auto;
+        padding-left: 0px;
     }
 
     html body div.document div.documentwrapper div.bodywrapper div.body {
         min-width: 200px;
         max-width: none;
+    }
+
+    table.highlighttable {
+        margin-left: 0px;
     }
 }
