@@ -147,6 +147,23 @@ TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
     EXPECT_EQ(1, client_on_connect_count);
 }
 
+TEST_F(TlsTcpClientServerTest, server_listen_on_invalid_address) {
+    io::EventLoop loop;
+
+    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen({"1.2:333333aa.adf", m_default_port},
+        nullptr,
+        nullptr,
+        nullptr
+    );
+    EXPECT_TRUE(listen_error);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, listen_error.code());
+
+    server->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+}
+
 #if defined(__APPLE__) || defined(__linux__)
 // Windows does not have privileged ports
 TEST_F(TlsTcpClientServerTest, bind_privileged) {
@@ -1237,7 +1254,6 @@ TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
 
 
 // TODO: connect as TCP and send invalid data on various stages
-// TODO: listen on invalid address
 
 // TODO: SSL_renegotiate test
 
