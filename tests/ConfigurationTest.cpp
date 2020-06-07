@@ -31,15 +31,15 @@ TEST_F(ConfigurationTest, buffer_size) {
     EXPECT_LE(min_send_buf_size, default_send_buf_size);
     EXPECT_LE(default_send_buf_size, max_send_buf_size);
 
-    std::cout << io::global::min_receive_buffer_size() << std::endl;
-    std::cout << io::global::default_receive_buffer_size() << std::endl;
-    std::cout << io::global::max_receive_buffer_size() << std::endl;
+    //std::cout << io::global::min_receive_buffer_size() << std::endl;
+    //std::cout << io::global::default_receive_buffer_size() << std::endl;
+    //std::cout << io::global::max_receive_buffer_size() << std::endl;
 
-    std::cout << "===" << std::endl;
+    //std::cout << "===" << std::endl;
 
-    std::cout << io::global::min_send_buffer_size() << std::endl;
-    std::cout << io::global::default_send_buffer_size() << std::endl;
-    std::cout << io::global::max_send_buffer_size() << std::endl;
+    //std::cout << io::global::min_send_buffer_size() << std::endl;
+    //std::cout << io::global::default_send_buffer_size() << std::endl;
+    //std::cout << io::global::max_send_buffer_size() << std::endl;
 
     // TODO: move this test to Udp
     io::EventLoop loop;

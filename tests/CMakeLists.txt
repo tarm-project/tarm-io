@@ -75,7 +75,7 @@ if (NOT IO_OPENSSL_FOUND)
     list(FILTER TESTS_LIST EXCLUDE REGEX VersionTest\.cpp)
 endif()
 
-set(RUN_TEST_ENV) # TODO: currently this is unused but may be utilized with sanitizers
+set(RUN_TEST_ENV) # currently this is unused but may be utilized with sanitizers
 set(TESTS_EXE_NAME tests)
 
 add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
