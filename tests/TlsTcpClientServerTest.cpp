@@ -1301,8 +1301,8 @@ TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
 }
 
 TEST_F(TlsTcpClientServerTest, server_works_with_multiple_clients) {
-    const std::size_t CLIENTS_COUNT = 50;
-    const std::size_t BUF_SIZE = 2 * 1024 * 1024;
+    const std::size_t CLIENTS_COUNT = 20;
+    const std::size_t BUF_SIZE = 1 * 1024 * 1024;
 
     std::thread server_thread([&]() {
         io::EventLoop loop;

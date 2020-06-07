@@ -130,6 +130,7 @@ void TlsTcpClient::Impl::connect(const Endpoint endpoint,
 
             if (m_close_callback) {
                 m_close_callback(*this->m_parent, error);
+                m_close_callback = nullptr; // Not reacting on SSL shutdown callback if any
             }
         };
 
@@ -140,7 +141,7 @@ void TlsTcpClient::Impl::close() {
     const auto error = this->ssl_shutdown([this](TcpClient& client, const Error& error) {
         if (m_close_callback) {
             m_close_callback(*m_parent, Error(0));
-            m_close_callback = nullptr; // Not reactiong on TCP close afterwards
+            m_close_callback = nullptr; // Not reacting on TCP close afterwards
         }
     });
 
