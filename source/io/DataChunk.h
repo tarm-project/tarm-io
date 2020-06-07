@@ -28,6 +28,7 @@ struct DataChunk {
 
     std::shared_ptr<const char> buf;
     std::size_t size = 0;
+    // doc: for huge data transfers overflow of offset is possible
     std::size_t offset = 0;
 };
 

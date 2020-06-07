@@ -10,6 +10,7 @@
 #include "io/TlsTcpServer.h"
 #include "io/global/Version.h"
 
+#include <thread>
 #include <vector>
 
 struct TlsTcpClientServerTest : public testing::Test,
@@ -290,11 +291,11 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_with_close_callbacks) 
     auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error;
             ++server_on_connect_callback_count;
         },
         [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error;
             ++server_on_receive_callback_count;
 
             EXPECT_EQ(message.size(), data.size);
@@ -304,7 +305,7 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_with_close_callbacks) 
             server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
         },
         [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error;
             ++server_on_close_callback_count;
         }
     );
@@ -314,7 +315,7 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_with_close_callbacks) 
 
     client->connect({m_default_addr, m_default_port},
         [&](io::TlsTcpClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
+            EXPECT_FALSE(error) << error;
             ++client_on_connect_callback_count;
             client.send_data(message, [&](io::TlsTcpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -324,9 +325,9 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_with_close_callbacks) 
         },
         nullptr,
         [&](io::TlsTcpClient& client, const io::Error& error) {
-            EXPECT_FALSE(error);
-            client.schedule_removal();
+            EXPECT_FALSE(error) << error;
             ++client_on_close_callback_count;
+            client.schedule_removal();
         }
     );
 
@@ -1299,6 +1300,84 @@ TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
+TEST_F(TlsTcpClientServerTest, server_works_with_multiple_clients) {
+    const std::size_t CLIENTS_COUNT = 50;
+    const std::size_t BUF_SIZE = 2 * 1024 * 1024;
+
+    std::thread server_thread([&]() {
+        io::EventLoop loop;
+
+        std::size_t on_server_close_count = 0;
+
+        auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+        auto listen_error = server->listen({m_default_addr, m_default_port},
+            [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+            },
+            [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+                client.send_data(data.buf, data.size);
+            },
+            [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+
+                // TODO: connected_clients_count is unreliable here
+                //if (client.server().connected_clients_count() == 1) { // this is the last one
+
+                if (++on_server_close_count == CLIENTS_COUNT) {
+                    server->schedule_removal();
+                }
+            }
+        );
+        ASSERT_FALSE(listen_error);
+
+        ASSERT_EQ(io::StatusCode::OK, loop.run());
+    });
+
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    std::vector<std::thread> client_threads;
+    for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
+        client_threads.emplace_back([&]() {
+            std::shared_ptr<char> buffer(new char[BUF_SIZE], std::default_delete<char[]>());
+            for (std::size_t i = 0; i < BUF_SIZE; ++i) {
+                buffer.get()[i] = ::rand() % 255;
+            }
+
+            io::EventLoop loop;
+
+            auto client = new io::TlsTcpClient(loop);
+            client->connect({m_default_addr, m_default_port},
+                [&](io::TlsTcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    client.send_data(buffer, BUF_SIZE);
+                },
+                [&](io::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    for (std::size_t i = 0; i < data.size; ++i) {
+                        ASSERT_EQ(buffer.get()[i + data.offset], data.buf.get()[i]) << "i: " << i;
+                    }
+
+                    if (data.offset + data.size == BUF_SIZE) {
+                        client.close();
+                    }
+                },
+                [&](io::TlsTcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    client.schedule_removal();
+                }
+            );
+
+            ASSERT_EQ(io::StatusCode::OK, loop.run());
+        });
+    }
+
+    server_thread.join();
+    for (auto& t : client_threads) {
+        t.join();
+    }
+}
 
 // TODO: connect as TCP and send invalid data on various stages
 
@@ -1307,5 +1386,3 @@ TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
 // TODO: private key with password
 // TODO: multiple private keys and certificates in one file??? https://www.openssl.org/docs/man1.0.2/man3/SSL_CTX_use_PrivateKey_file.html
 // TODO: DER (binary file) support???
-
-// TODO: simultaneous connect attempts (multiple connect calls)

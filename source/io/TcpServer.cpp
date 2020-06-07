@@ -10,6 +10,8 @@
 
 #include <assert.h>
 
+#include <iostream>
+
 namespace tarm {
 namespace io {
 

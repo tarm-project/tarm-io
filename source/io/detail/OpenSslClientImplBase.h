@@ -94,6 +94,8 @@ private:
     // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
     const std::size_t DECRYPT_BUF_SIZE = 16 * 1024;
     std::shared_ptr<char> m_decrypt_buf;
+
+    std::size_t m_data_offset = 0;
 };
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
@@ -221,7 +223,8 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
     while (decrypted_size > 0) {
         IO_LOG(m_loop, TRACE, m_parent, "Decrypted message of size:", decrypted_size);
         const auto prev_use_count = m_decrypt_buf.use_count();
-        on_ssl_read({m_decrypt_buf, static_cast<std::size_t>(decrypted_size)}, StatusCode::OK);
+        on_ssl_read({m_decrypt_buf, static_cast<std::size_t>(decrypted_size), m_data_offset}, StatusCode::OK);
+        m_data_offset += static_cast<std::size_t>(decrypted_size);
         if (prev_use_count != m_decrypt_buf.use_count()) { // user made a copy
             m_decrypt_buf.reset(new char[DECRYPT_BUF_SIZE], std::default_delete<char[]>());
         }
