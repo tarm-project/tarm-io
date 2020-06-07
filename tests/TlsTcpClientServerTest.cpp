@@ -692,6 +692,53 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
     EXPECT_EQ(DATA_SIZE, server_data_receive_size);
 }
 
+TEST_F(TlsTcpClientServerTest, server_close_connection_cause_client_close) {
+    // Test description: checking that connection close from server side calls close callbacks for both client and server
+    io::EventLoop loop;
+
+    std::size_t server_on_close_count = 0;
+    std::size_t clietn_on_close_count = 0;
+
+    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+        },
+        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.close();
+        },
+        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_close_count;
+            server->schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::TlsTcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.send_data("!");
+        },
+        nullptr,
+        [&](io::TlsTcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++clietn_on_close_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_close_count);
+    EXPECT_EQ(0, clietn_on_close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, server_on_close_count);
+    EXPECT_EQ(1, clietn_on_close_count);
+}
+
 TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_some_data) {
     io::EventLoop loop;
 
@@ -1259,9 +1306,6 @@ TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
 
 // TODO: private key with password
 // TODO: multiple private keys and certificates in one file??? https://www.openssl.org/docs/man1.0.2/man3/SSL_CTX_use_PrivateKey_file.html
-// TODO DER (binary file) support???
+// TODO: DER (binary file) support???
 
 // TODO: simultaneous connect attempts (multiple connect calls)
-
-
-// TODO: tests with close callbacks (react on both sef-close and remote close)
