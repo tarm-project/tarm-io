@@ -2264,9 +2264,7 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
     EXPECT_TRUE(peer_3);
 }
 
-// TODO: check address of UDP peer
-
-// TODO: set_destination with ipv4 address athan with ipv6
+// TODO: set_destination with ipv4 address and then with ipv6
 // TODO: null send buf
 
 // TODO: client start receive without destination set???? Allow receive from any peer????
