@@ -665,7 +665,7 @@ TEST_F(FileTest, slow_read_data_consumer) {
             }
 
             if (need_reset_bufs) {
-                // Modifying data of a loop is only allowed in the loop's thread, thereby we use async
+                // Modifying data of a loop is only allowed in the loop's thread, thereby we use execute_on_loop_thread
                 loop.execute_on_loop_thread([&mutex, &captured_bufs](io::EventLoop& loop){
                     std::lock_guard<std::mutex> guard(mutex);
                     captured_bufs.clear();

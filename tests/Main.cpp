@@ -43,7 +43,7 @@ void hanged_tests_watchdog() {
                 " seconds, aborting. Last test: " << test_info->test_suite_name() << "." << test_info->name() << std::endl;
      */
 
-    // TODO: looks like data race is possible here, but we don't mind because want to abort anyway
+    // looks like data race is possible here, but we don't mind because want to abort anyway
     const std::string current_test_scope = ::testing::UnitTest::GetInstance()->current_test_case()->name();
     const std::string current_test_name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 

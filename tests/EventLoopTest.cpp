@@ -511,8 +511,6 @@ TEST_F(EventLoopTest, run_loop_several_times) {
     EXPECT_EQ(1, counter_3);
 }
 
-// TODO: create event loop in one thread and run in another
-
 TEST_F(EventLoopTest, schedule_1_callback) {
     io::EventLoop loop;
 
@@ -635,3 +633,20 @@ TEST_F(EventLoopTest, schedule_multiple_callbacks_sequential) {
     EXPECT_EQ(1, callback_counter_3);
 }
 
+TEST_F(EventLoopTest, create_loop_in_one_thread_and_run_in_another) {
+    io::EventLoop loop;
+
+    std::size_t callback_counter = 0;
+
+    std::thread([&]() {
+        loop.execute_on_loop_thread([&](io::EventLoop&) {
+            ++callback_counter;
+        });
+
+        EXPECT_EQ(0, callback_counter);
+
+        ASSERT_FALSE(loop.run());
+    }).join();
+
+    EXPECT_EQ(1, callback_counter);
+}
