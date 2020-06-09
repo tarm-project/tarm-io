@@ -118,7 +118,7 @@ void Timer::Impl::start_impl() {
 }
 
 void Timer::Impl::stop() {
-    uv_timer_stop(m_uv_timer); // TODO: error handling
+    uv_timer_stop(m_uv_timer);
 }
 
 std::uint64_t Timer::Impl::timeout_ms() const {
