@@ -110,7 +110,7 @@ void DtlsConnectedClient::Impl::close() {
         if (m_close_callback) {
             m_close_callback(*m_parent, Error(0));
         }
-        m_client->close(1000); // TODO: hardcode
+        m_client->close();
     });
 
     m_dtls_server->remove_client(*m_parent);

@@ -57,6 +57,8 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
+    // TODO: implement close with incativity timeout like for UdpPeer
+
 protected:
     IO_DLL_PUBLIC ~UdpClient();
 

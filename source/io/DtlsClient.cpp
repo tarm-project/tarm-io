@@ -140,6 +140,8 @@ void DtlsClient::Impl::close() {
         if (m_close_callback) {
             m_close_callback(*m_parent, Error(0));
         }
+        // TODO: uncomment when close() will be implemented
+        // m_client->close();
     });
 
     if (error) {
