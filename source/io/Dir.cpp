@@ -125,15 +125,15 @@ void Dir::Impl::close() {
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(m_open_dir_req.ptr);
 
-    // synchronous
-    uv_fs_t closedir_req;
-    uv_fs_closedir(m_uv_loop, &closedir_req, dir, nullptr);
-
     uv_fs_req_cleanup(&m_open_dir_req);
     uv_fs_req_cleanup(&m_read_dir_req);
 
     m_open_dir_req.data = nullptr;
     m_read_dir_req.data = nullptr;
+
+    // synchronous
+    uv_fs_t closedir_req;
+    uv_fs_closedir(m_uv_loop, &closedir_req, dir, nullptr);
 
     m_uv_dir = nullptr;
 }
