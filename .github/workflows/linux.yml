@@ -28,7 +28,23 @@ jobs:
       run: docker pull ${IMAGE_PATH}
     - name: build
       run: |
-        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && make -j$(nproc)"
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
+          "mkdir -p build && \
+           cd build && \
+           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && \
+           make -j$(nproc)"
     - name: run tests
       run: |
-        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "cd build && make RunTests"
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
+          "cd build && \
+           make RunTests"
+    - name: lib install and build examples
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
+          "cd build && \
+           sudo make install && \
+           cd ../examlpes && \
+           mkdir -p build && \
+           cd build && \
+           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && \
+           make -j$(nproc)"
