@@ -52,54 +52,17 @@ In this small tutorial we create UDP echo server, which replies back received me
 Ensure that library is :ref:`built and installed <build_instructions_index:Build instructions>`.
 Create 2 following files CMakeLists.txt and main.cpp.
 
-.. code-block:: cmake
-   :linenos:
+
+.. literalinclude:: ../examlpes/udp_echo_server/CMakeLists.txt
    :caption: CMakeLists.txt
-
-   cmake_minimum_required(VERSION 3.5.0)
-
-   project(tutorial VERSION 1.0.0 LANGUAGES C CXX)
-
-   add_executable(tutorial main.cpp)
-
-   find_package(tarm-io REQUIRED)
-   target_link_libraries(tutorial tarm-io::tarm-io)
-
-
-.. code-block:: c++
+   :language: cmake
    :linenos:
+
+
+.. literalinclude:: ../examlpes/udp_echo_server/main.cpp
    :caption: main.cpp
-
-   #include <tarm/io/UdpServer.h>
-
-   #include <iostream>
-
-   using namespace tarm;
-
-   int main() {
-      io::EventLoop loop;
-
-      auto server = new io::UdpServer(loop);
-      auto listen_error = server->start_receive(
-         {"0.0.0.0", 1234},
-         [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
-               if (error) {
-                  std::cerr << "Error: " << error << std::endl;
-                  return;
-               }
-
-               peer.send_data(std::string(data.buf.get(), data.size));
-         }
-      );
-
-      if (listen_error) {
-         std::cerr << "Error: " << listen_error << std::endl;
-         return 1;
-      }
-
-      // TODO: signal handler and server deletion
-      return loop.run();
-   }
+   :language: c++
+   :linenos:
 
 Build example:
 
