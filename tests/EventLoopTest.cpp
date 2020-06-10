@@ -13,6 +13,10 @@
 #include <thread>
 #include <vector>
 
+#if defined(__APPLE__) || defined(__linux__)
+    #include <signal.h>
+#endif
+
 struct EventLoopTest : public testing::Test,
                        public LogRedirector {
 };
@@ -649,4 +653,39 @@ TEST_F(EventLoopTest, create_loop_in_one_thread_and_run_in_another) {
     }).join();
 
     EXPECT_EQ(1, callback_counter);
+}
+
+// TODO: need to add platform defines from library like TARM_IO_PLATFORM_LINUX
+TEST_F(EventLoopTest, signal) {
+#if defined(__APPLE__) || defined(__linux__)
+    io::EventLoop loop;
+
+    std::size_t callback_counter = 0;
+
+    loop.add_signal_handler(io::EventLoop::Signal::INT,
+        [&](io::EventLoop&, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++callback_counter;
+            loop.remove_signal_handler(io::EventLoop::Signal::INT);
+        }
+    );
+
+    const auto start_time = std::chrono::high_resolution_clock::now();
+    std::size_t each_loop_cycle_handle = 0;
+    each_loop_cycle_handle = loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - start_time).count() > 50) {
+            raise(SIGINT);
+            loop.stop_call_on_each_loop_cycle(each_loop_cycle_handle);
+        }
+    });
+
+    EXPECT_EQ(0, callback_counter);
+
+    ASSERT_FALSE(loop.run());
+
+    EXPECT_EQ(1, callback_counter);
+#else
+    IO_TEST_SKIP();
+#endif
 }

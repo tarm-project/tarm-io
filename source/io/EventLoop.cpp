@@ -32,6 +32,8 @@ const std::size_t EventLoop::INVALID_HANDLE;
 
 namespace {
 
+struct SignalHandler;
+
 struct Idle : public uv_idle_t {
     std::function<void(EventLoop&)> callback = nullptr;
 };
@@ -59,6 +61,9 @@ public:
     void start_block_loop_from_exit();
     void stop_block_loop_from_exit();
 
+    void add_signal_handler(Signal signal, SignalCallback callback);
+    void remove_signal_handler(Signal signal);
+
     Error init_async();
     Error run();
 
@@ -67,8 +72,10 @@ public:
     void schedule_callback(WorkCallback callback);
 
     void finish();
+
 protected:
     void execute_pending_callbacks();
+    void close_signal_handlers();
 
     // statics
     template<typename WorkCallbackType, typename WorkDoneCallbackType>
@@ -80,6 +87,8 @@ protected:
     static void on_async(uv_async_t* handle);
     static void on_dummy_idle_tick(uv_timer_t*);
     static void on_dummy_idle_close(uv_handle_t* handle);
+    static void on_signal(uv_signal_t* handle, int signum);
+    static void on_signal_close(uv_handle_t* handle);
 
 private:
     EventLoop* m_parent;
@@ -98,6 +107,8 @@ private:
     std::function<void(EventLoop&)> m_sync_callbacks_executor_function;
     std::vector<std::function<void(EventLoop&)>> m_sync_callbacks_queue;
     bool m_have_active_sync_callbacks = false;
+
+    std::unordered_map<EventLoop::Signal, SignalHandler*> m_signal_handlers;
 };
 
 namespace {
@@ -146,6 +157,8 @@ EventLoop::Impl::Impl(EventLoop& parent) :
 void EventLoop::Impl::finish() {
     IO_LOG(m_parent, TRACE, "dummy_idle_ref_counter:", m_dummy_idle_ref_counter);
 
+    close_signal_handlers();
+
     {
         std::lock_guard<std::mutex> guard(m_async_callbacks_queue_mutex);
         m_async.reset();
@@ -161,8 +174,6 @@ void EventLoop::Impl::finish() {
     m_sync_callbacks_queue.clear();
 
     if (status == UV_EBUSY) {
-        IO_LOG(m_parent, DEBUG, "loop returned EBUSY at close, running one more time");
-
         // Making the last attemt to close everything and shut down gracefully
         status = uv_run(this, UV_RUN_ONCE);
 
@@ -383,6 +394,81 @@ void EventLoop::Impl::stop_block_loop_from_exit() {
     m_dummy_idle = nullptr;
 }
 
+namespace {
+
+int uv_signal_from_enum(EventLoop::Signal signal) {
+    switch(signal) {
+        case EventLoop::Signal::INT:
+            return SIGINT;
+        default:
+            return 0;
+    }
+}
+
+struct SignalHandler : public uv_signal_t {
+    EventLoop::SignalCallback callback = nullptr;
+};
+
+} // namespace
+
+void EventLoop::Impl::add_signal_handler(Signal signal, SignalCallback callback) {
+    if (!callback) {
+        return;
+    }
+
+    const auto sig_num = uv_signal_from_enum(signal);
+    /*
+    if (!sig_num) {
+        if (callback) {
+            this->schedule_callback([this, callback](io::EventLoop&) {
+                callback(*m_parent, StatusCode::INVALID_ARGUMENT);
+            });
+        }
+        return;
+    }*/
+
+    auto& signal_handler = m_signal_handlers[signal];
+    if (signal_handler == nullptr) {
+        //auto signal_handler = new SignalHandler;
+        signal_handler = new SignalHandler;
+        signal_handler->data = this;
+        const Error init_error = uv_signal_init(this, signal_handler);
+        /*
+        if (init_error) {
+            if (callback) {
+                this->schedule_callback([this, callback, init_error](io::EventLoop&) {
+                    callback(*m_parent, init_error);
+                });
+            }
+            return;
+        }
+        */
+    }
+
+    signal_handler->callback = callback;
+
+    const Error start_error = uv_signal_start(signal_handler, on_signal, sig_num);
+}
+
+void EventLoop::Impl::remove_signal_handler(Signal signal) {
+    auto& signal_handler = m_signal_handlers[signal];
+    if (signal_handler) {
+        uv_signal_stop(signal_handler);
+    }
+}
+
+void EventLoop::Impl::close_signal_handlers() {
+    IO_LOG(m_parent, TRACE, "");
+    for (auto& k_v : m_signal_handlers) {
+        const Error stop_error = uv_signal_stop(k_v.second);
+        if (stop_error) {
+            IO_LOG(m_parent, ERROR, stop_error);
+            continue;
+        }
+        uv_close(reinterpret_cast<uv_handle_t*>(k_v.second), EventLoop::Impl::on_signal_close);
+    }
+}
+
 void EventLoop::Impl::execute_on_loop_thread(WorkCallback callback) {
     {
         std::lock_guard<std::mutex> guard(m_async_callbacks_queue_mutex);
@@ -473,6 +559,23 @@ void EventLoop::Impl::on_dummy_idle_close(uv_handle_t* handle) {
     delete reinterpret_cast<uv_timer_t*>(handle);
 }
 
+void EventLoop::Impl::on_signal(uv_signal_t* handle, int /*signum*/) {
+    auto& handler = *reinterpret_cast<SignalHandler*>(handle);
+    auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
+    IO_LOG(this_.m_parent, TRACE, "");
+
+    handler.callback(*this_.m_parent, StatusCode::OK);
+
+    //uv_signal_stop(handle);
+}
+
+void EventLoop::Impl::on_signal_close(uv_handle_t* handle) {
+    auto& handler = *reinterpret_cast<SignalHandler*>(handle);
+    auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
+    IO_LOG(this_.m_parent, TRACE, "");
+    delete &handler;
+}
+
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 namespace {
@@ -542,6 +645,15 @@ void* EventLoop::raw_loop() {
 void EventLoop::schedule_callback(WorkCallback callback) {
     return m_impl->schedule_callback(callback);
 }
+
+void EventLoop::add_signal_handler(Signal signal, SignalCallback callback) {
+    return m_impl->add_signal_handler(signal, callback);
+}
+
+void EventLoop::remove_signal_handler(Signal signal) {
+    return m_impl->remove_signal_handler(signal);
+}
+
 
 } // namespace io
 } // namespace tarm

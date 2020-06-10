@@ -23,6 +23,12 @@ namespace io {
 class EventLoop : public Logger,
                   public UserDataHolder {
 public:
+    enum class Signal {
+        INT = 0
+    };
+
+    using SignalCallback = std::function<void(EventLoop&, const Error&)>;
+
     using WorkCallback = std::function<void(EventLoop&)>;
     using WorkDoneCallback = std::function<void(EventLoop&, const Error&)>;
     using WorkCallbackWithUserData = std::function<void*(EventLoop&)>;
@@ -60,6 +66,9 @@ public:
     // Do not forget to call 'stop_block_loop_from_exit' when you are sure that loop has enough work to do.
     IO_DLL_PUBLIC void start_block_loop_from_exit();
     IO_DLL_PUBLIC void stop_block_loop_from_exit();
+
+    IO_DLL_PUBLIC void add_signal_handler(Signal signal, SignalCallback callback);
+    IO_DLL_PUBLIC void remove_signal_handler(Signal signal);
 
     IO_DLL_PUBLIC Error run();
 
