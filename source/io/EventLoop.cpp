@@ -32,7 +32,16 @@ const std::size_t EventLoop::INVALID_HANDLE;
 
 namespace {
 
-struct SignalHandler;
+struct EnumClassHash {
+    template <typename T>
+    std::size_t operator()(T t) const {
+        return static_cast<std::size_t>(t);
+    }
+};
+
+struct SignalHandler : public uv_signal_t {
+    EventLoop::SignalCallback callback = nullptr;
+};
 
 struct Idle : public uv_idle_t {
     std::function<void(EventLoop&)> callback = nullptr;
@@ -108,7 +117,7 @@ private:
     std::vector<std::function<void(EventLoop&)>> m_sync_callbacks_queue;
     bool m_have_active_sync_callbacks = false;
 
-    std::unordered_map<EventLoop::Signal, SignalHandler*> m_signal_handlers;
+    std::unordered_map<EventLoop::Signal, SignalHandler*, EnumClassHash> m_signal_handlers;
 };
 
 namespace {
@@ -404,10 +413,6 @@ int uv_signal_from_enum(EventLoop::Signal signal) {
             return 0;
     }
 }
-
-struct SignalHandler : public uv_signal_t {
-    EventLoop::SignalCallback callback = nullptr;
-};
 
 } // namespace
 
