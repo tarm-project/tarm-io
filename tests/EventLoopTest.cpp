@@ -656,17 +656,19 @@ TEST_F(EventLoopTest, create_loop_in_one_thread_and_run_in_another) {
 }
 
 // TODO: need to add platform defines from library like TARM_IO_PLATFORM_LINUX
-TEST_F(EventLoopTest, signal) {
+
+// lldb, to not stop on signal: process handle SIGHUP -s false
+TEST_F(EventLoopTest, signal_repeat_1) {
 #if defined(__APPLE__) || defined(__linux__)
     io::EventLoop loop;
 
     std::size_t callback_counter = 0;
 
-    loop.add_signal_handler(io::EventLoop::Signal::INT,
+    loop.add_signal_handler(io::EventLoop::Signal::HUP,
         [&](io::EventLoop&, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++callback_counter;
-            loop.remove_signal_handler(io::EventLoop::Signal::INT);
+            loop.remove_signal_handler(io::EventLoop::Signal::HUP);
         }
     );
 
@@ -675,7 +677,40 @@ TEST_F(EventLoopTest, signal) {
     each_loop_cycle_handle = loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
         if (std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::high_resolution_clock::now() - start_time).count() > 50) {
-            raise(SIGINT);
+            raise(SIGHUP);
+            loop.stop_call_on_each_loop_cycle(each_loop_cycle_handle);
+        }
+    });
+
+    EXPECT_EQ(0, callback_counter);
+
+    ASSERT_FALSE(loop.run());
+
+    EXPECT_EQ(1, callback_counter);
+#else
+    IO_TEST_SKIP();
+#endif
+}
+
+TEST_F(EventLoopTest, signal_once_1) {
+#if defined(__APPLE__) || defined(__linux__)
+    io::EventLoop loop;
+
+    std::size_t callback_counter = 0;
+
+    loop.handle_signal_once(io::EventLoop::Signal::HUP,
+        [&](io::EventLoop&, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++callback_counter;
+        }
+    );
+
+    const auto start_time = std::chrono::high_resolution_clock::now();
+    std::size_t each_loop_cycle_handle = 0;
+    each_loop_cycle_handle = loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - start_time).count() > 50) {
+            raise(SIGHUP);
             loop.stop_call_on_each_loop_cycle(each_loop_cycle_handle);
         }
     });

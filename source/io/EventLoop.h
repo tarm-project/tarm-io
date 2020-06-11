@@ -24,7 +24,8 @@ class EventLoop : public Logger,
                   public UserDataHolder {
 public:
     enum class Signal {
-        INT = 0
+        INT = 0,
+        HUP
     };
 
     using SignalCallback = std::function<void(EventLoop&, const Error&)>;
@@ -67,6 +68,7 @@ public:
     IO_DLL_PUBLIC void start_block_loop_from_exit();
     IO_DLL_PUBLIC void stop_block_loop_from_exit();
 
+    IO_DLL_PUBLIC void handle_signal_once(Signal signal, SignalCallback callback);
     IO_DLL_PUBLIC void add_signal_handler(Signal signal, SignalCallback callback);
     IO_DLL_PUBLIC void remove_signal_handler(Signal signal);
 

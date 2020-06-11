@@ -40,7 +40,13 @@ struct EnumClassHash {
 };
 
 struct SignalHandler : public uv_signal_t {
+    enum Continuity {
+        ONCE,
+        REPEAT
+    };
+
     EventLoop::SignalCallback callback = nullptr;
+    Continuity continuity = Continuity::ONCE;
 };
 
 struct Idle : public uv_idle_t {
@@ -70,7 +76,7 @@ public:
     void start_block_loop_from_exit();
     void stop_block_loop_from_exit();
 
-    void add_signal_handler(Signal signal, SignalCallback callback);
+    void add_signal_handler(Signal signal, SignalCallback callback, SignalHandler::Continuity handler_continuity);
     void remove_signal_handler(Signal signal);
 
     Error init_async();
@@ -409,6 +415,8 @@ int uv_signal_from_enum(EventLoop::Signal signal) {
     switch(signal) {
         case EventLoop::Signal::INT:
             return SIGINT;
+        case EventLoop::Signal::HUP:
+            return SIGHUP;
         default:
             return 0;
     }
@@ -416,7 +424,7 @@ int uv_signal_from_enum(EventLoop::Signal signal) {
 
 } // namespace
 
-void EventLoop::Impl::add_signal_handler(Signal signal, SignalCallback callback) {
+void EventLoop::Impl::add_signal_handler(Signal signal, SignalCallback callback, SignalHandler::Continuity handler_continuity) {
     if (!callback) {
         return;
     }
@@ -449,7 +457,7 @@ void EventLoop::Impl::add_signal_handler(Signal signal, SignalCallback callback)
         }
         */
     }
-
+    signal_handler->continuity = handler_continuity;
     signal_handler->callback = callback;
 
     const Error start_error = uv_signal_start(signal_handler, on_signal, sig_num);
@@ -569,7 +577,12 @@ void EventLoop::Impl::on_signal(uv_signal_t* handle, int /*signum*/) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
     IO_LOG(this_.m_parent, TRACE, "");
 
-    handler.callback(*this_.m_parent, StatusCode::OK);
+    Error stop_error(StatusCode::OK);
+    if (handler.continuity == SignalHandler::ONCE) {
+        stop_error = uv_signal_stop(handle);
+    }
+
+    handler.callback(*this_.m_parent, stop_error);
 
     //uv_signal_stop(handle);
 }
@@ -652,13 +665,16 @@ void EventLoop::schedule_callback(WorkCallback callback) {
 }
 
 void EventLoop::add_signal_handler(Signal signal, SignalCallback callback) {
-    return m_impl->add_signal_handler(signal, callback);
+    return m_impl->add_signal_handler(signal, callback, SignalHandler::REPEAT);
+}
+
+void EventLoop::handle_signal_once(Signal signal, SignalCallback callback) {
+    return m_impl->add_signal_handler(signal, callback, SignalHandler::ONCE);
 }
 
 void EventLoop::remove_signal_handler(Signal signal) {
     return m_impl->remove_signal_handler(signal);
 }
-
 
 } // namespace io
 } // namespace tarm
