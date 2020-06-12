@@ -20,7 +20,7 @@ using namespace tarm;
 std::atomic<bool> stop_watchdog(false);
 
 void hanged_tests_watchdog() {
-    const auto LIMIT = std::chrono::minutes(10);
+    const auto LIMIT = std::chrono::minutes(20);
 
     auto seconds_counter = std::chrono::seconds(0);
     while(!stop_watchdog) {
