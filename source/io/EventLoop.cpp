@@ -417,6 +417,8 @@ int uv_signal_from_enum(EventLoop::Signal signal) {
             return SIGINT;
         case EventLoop::Signal::HUP:
             return SIGHUP;
+        case EventLoop::Signal::WINCH:
+            return SIGWINCH;
         default:
             return 0;
     }

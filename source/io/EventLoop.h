@@ -25,7 +25,8 @@ class EventLoop : public Logger,
 public:
     enum class Signal {
         INT = 0,
-        HUP
+        HUP,
+        WINCH
     };
 
     using SignalCallback = std::function<void(EventLoop&, const Error&)>;
