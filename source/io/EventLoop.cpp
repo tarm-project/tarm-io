@@ -76,7 +76,7 @@ public:
     void start_block_loop_from_exit();
     void stop_block_loop_from_exit();
 
-    void add_signal_handler(Signal signal, SignalCallback callback, SignalHandler::Continuity handler_continuity);
+    Error add_signal_handler(Signal signal, SignalCallback callback, SignalHandler::Continuity handler_continuity);
     void remove_signal_handler(Signal signal);
 
     Error init_async();
@@ -424,21 +424,15 @@ int uv_signal_from_enum(EventLoop::Signal signal) {
 
 } // namespace
 
-void EventLoop::Impl::add_signal_handler(Signal signal, SignalCallback callback, SignalHandler::Continuity handler_continuity) {
+Error EventLoop::Impl::add_signal_handler(Signal signal, SignalCallback callback, SignalHandler::Continuity handler_continuity) {
     if (!callback) {
-        return;
+        return StatusCode::INVALID_ARGUMENT;
     }
 
     const auto sig_num = uv_signal_from_enum(signal);
-    /*
     if (!sig_num) {
-        if (callback) {
-            this->schedule_callback([this, callback](io::EventLoop&) {
-                callback(*m_parent, StatusCode::INVALID_ARGUMENT);
-            });
-        }
-        return;
-    }*/
+        return StatusCode::INVALID_ARGUMENT;;
+    }
 
     auto& signal_handler = m_signal_handlers[signal];
     if (signal_handler == nullptr) {
@@ -446,21 +440,19 @@ void EventLoop::Impl::add_signal_handler(Signal signal, SignalCallback callback,
         signal_handler = new SignalHandler;
         signal_handler->data = this;
         const Error init_error = uv_signal_init(this, signal_handler);
-        /*
         if (init_error) {
-            if (callback) {
-                this->schedule_callback([this, callback, init_error](io::EventLoop&) {
-                    callback(*m_parent, init_error);
-                });
-            }
-            return;
+            return init_error;
         }
-        */
     }
     signal_handler->continuity = handler_continuity;
     signal_handler->callback = callback;
 
     const Error start_error = uv_signal_start(signal_handler, on_signal, sig_num);
+    if (start_error) {
+        return start_error;
+    }
+
+    return StatusCode::OK;
 }
 
 void EventLoop::Impl::remove_signal_handler(Signal signal) {
@@ -664,11 +656,11 @@ void EventLoop::schedule_callback(WorkCallback callback) {
     return m_impl->schedule_callback(callback);
 }
 
-void EventLoop::add_signal_handler(Signal signal, SignalCallback callback) {
+Error EventLoop::add_signal_handler(Signal signal, SignalCallback callback) {
     return m_impl->add_signal_handler(signal, callback, SignalHandler::REPEAT);
 }
 
-void EventLoop::handle_signal_once(Signal signal, SignalCallback callback) {
+Error EventLoop::handle_signal_once(Signal signal, SignalCallback callback) {
     return m_impl->add_signal_handler(signal, callback, SignalHandler::ONCE);
 }
 

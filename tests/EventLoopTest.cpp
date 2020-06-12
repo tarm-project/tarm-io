@@ -666,20 +666,33 @@ TEST_F(EventLoopTest, stop_signal_without_handler) {
     ASSERT_FALSE(loop.run());
 }
 
-// lldb, to not stop on signal: process handle SIGHUP -s false
+TEST_F(EventLoopTest, signal_no_callback) {
+    io::EventLoop loop;
+
+    auto error = loop.add_signal_handler(io::EventLoop::Signal::HUP,
+        nullptr
+    );
+    ASSERT_TRUE(error);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+
+    ASSERT_FALSE(loop.run());
+}
+
+// lldb, to not stop on signal type: process handle SIGHUP -s false
 TEST_F(EventLoopTest, signal_repeat_1) {
 #if defined(__APPLE__) || defined(__linux__)
     io::EventLoop loop;
 
     std::size_t callback_counter = 0;
 
-    loop.add_signal_handler(io::EventLoop::Signal::HUP,
+    auto error = loop.add_signal_handler(io::EventLoop::Signal::HUP,
         [&](io::EventLoop&, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++callback_counter;
             loop.remove_signal_handler(io::EventLoop::Signal::HUP);
         }
     );
+    ASSERT_FALSE(error) << error;
 
     const auto start_time = std::chrono::high_resolution_clock::now();
     std::size_t each_loop_cycle_handle = 0;
@@ -707,12 +720,13 @@ TEST_F(EventLoopTest, signal_once_1) {
 
     std::size_t callback_counter = 0;
 
-    loop.handle_signal_once(io::EventLoop::Signal::HUP,
+    const auto error = loop.handle_signal_once(io::EventLoop::Signal::HUP,
         [&](io::EventLoop&, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++callback_counter;
         }
     );
+    ASSERT_FALSE(error) << error;
 
     const auto start_time = std::chrono::high_resolution_clock::now();
     std::size_t each_loop_cycle_handle = 0;

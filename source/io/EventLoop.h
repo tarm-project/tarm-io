@@ -68,8 +68,8 @@ public:
     IO_DLL_PUBLIC void start_block_loop_from_exit();
     IO_DLL_PUBLIC void stop_block_loop_from_exit();
 
-    IO_DLL_PUBLIC void handle_signal_once(Signal signal, SignalCallback callback);
-    IO_DLL_PUBLIC void add_signal_handler(Signal signal, SignalCallback callback);
+    IO_DLL_PUBLIC Error handle_signal_once(Signal signal, SignalCallback callback);
+    IO_DLL_PUBLIC Error add_signal_handler(Signal signal, SignalCallback callback);
     IO_DLL_PUBLIC void remove_signal_handler(Signal signal);
 
     IO_DLL_PUBLIC Error run();
