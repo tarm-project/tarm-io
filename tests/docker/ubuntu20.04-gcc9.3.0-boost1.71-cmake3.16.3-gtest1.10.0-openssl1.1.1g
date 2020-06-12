@@ -5,7 +5,7 @@
 
 FROM tarmio/builders:ubuntu20.04-gcc9.3.0-boost1.71-cmake3.16.3-gtest1.10.0
 
-LABEL maintainer="av@tcloud.pro"
+LABEL maintainer="av@tarm.io"
 
 RUN mkdir ${BUILD_DIR} && \
     cd ${BUILD_DIR} && \

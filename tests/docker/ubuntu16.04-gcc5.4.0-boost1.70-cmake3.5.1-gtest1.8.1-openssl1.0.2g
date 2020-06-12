@@ -5,6 +5,6 @@
 
 FROM tarmio/builders:ubuntu16.04-gcc5.4.0-boost1.70-cmake3.5.1-gtest1.8.1
 
-LABEL maintainer="av@tcloud.pro"
+LABEL maintainer="av@tarm.io"
 
 RUN apt -y install libssl-dev

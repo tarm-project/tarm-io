@@ -5,7 +5,7 @@
 
 FROM tarmio/builders:ubuntu16.04-gcc5.4.0
 
-LABEL maintainer="av@tcloud.pro"
+LABEL maintainer="av@tarm.io"
 
 ENV BUILD_DIR=/build
 
