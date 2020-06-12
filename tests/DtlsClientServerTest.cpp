@@ -1800,6 +1800,7 @@ TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout
     // TODO:
 }
 
+// TODO: connect from client without running server at destination endpoint
 // TODO: key and certificate mismatch
 // TODO: send data to server after connection timeout
 // TODO: send data to client after connection timeout
