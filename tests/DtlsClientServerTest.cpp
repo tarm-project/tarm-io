@@ -1148,85 +1148,96 @@ TEST_F(DtlsClientServerTest, client_with_invalid_address_and_no_connect_callback
 }
 
 TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
-    this->log_to_stdout();
-    io::EventLoop loop;
-
     const std::size_t COMMON_TIMEOUT_MS = 800;
     const std::size_t SEND_TIMEOUT_MS = 550;
 
-    const auto start_time = std::chrono::high_resolution_clock::now();
+    std::thread server_thread([&](){
+        std::size_t server_on_close_callback_count = 0;
+        io::EventLoop loop;
 
-    std::size_t client_on_close_callback_count = 0;
-    std::size_t server_on_close_callback_count = 0;
+        const auto start_time = std::chrono::high_resolution_clock::now();
 
-    auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
-    auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::DtlsConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error) << error.string();
-            // Note: here we capture client by reference in Timer's callback. This should not
-            //       be done in production code because it is impossible to track lifetime of
-            //       server-size objects outside of the server callbacks.
-            (new io::Timer(loop))->start(SEND_TIMEOUT_MS,
-                [&](io::Timer& timer) {
-                    client.send_data("!");
-                    timer.schedule_removal();
-                }
-            );
-        },
-        [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error) << error.string();
+        auto server = new io::DtlsServer(loop, m_cert_path, m_key_path);
+        auto listen_error = server->listen({m_default_addr, m_default_port},
+            [&](io::DtlsConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                // Note: here we capture client by reference in Timer's callback. This should not
+                //       be done in production code because it is impossible to track lifetime of
+                //       server-size objects outside of the server callbacks.
+                (new io::Timer(loop))->start(SEND_TIMEOUT_MS,
+                    [&](io::Timer& timer) {
+                        client.send_data("!");
+                        timer.schedule_removal();
+                    }
+                );
+            },
+            [&](io::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
 
-            client.close();
-        },
-        COMMON_TIMEOUT_MS,
-        [&](io::DtlsConnectedClient& client, const io::Error& error) {
-            EXPECT_FALSE(error) << error.string();
-            ++server_on_close_callback_count;
+                client.close();
+            },
+            COMMON_TIMEOUT_MS,
+            [&](io::DtlsConnectedClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                ++server_on_close_callback_count;
 
-            const auto end_time = std::chrono::high_resolution_clock::now();
-            EXPECT_GE(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count(),
-                      2 * SEND_TIMEOUT_MS);
+                const auto end_time = std::chrono::high_resolution_clock::now();
+                EXPECT_GE(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count(),
+                        2 * SEND_TIMEOUT_MS);
 
-            server->schedule_removal();
-        }
-    );
-    ASSERT_FALSE(listen_error) << listen_error.string();
+                server->schedule_removal();
+            }
+        );
+        ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::DtlsClient(loop);
-    client->connect({m_default_addr, m_default_port},
-        [&](io::DtlsClient& client, const io::Error& error) {
-            EXPECT_FALSE(error) << error.string();
-        },
-        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error) << error.string();
+        EXPECT_EQ(0, server_on_close_callback_count);
+        ASSERT_EQ(io::StatusCode::OK, loop.run());
+        EXPECT_EQ(1, server_on_close_callback_count);
+    });
 
-            (new io::Timer(loop))->start(SEND_TIMEOUT_MS,
-                [&](io::Timer& timer) {
-                    client.send_data("!");
-                    timer.schedule_removal();
-                }
-            );
-        },
-        [&](io::DtlsClient& client, const io::Error& error) {
-            EXPECT_FALSE(error) << error.string();
-            ++client_on_close_callback_count;
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-            const auto end_time = std::chrono::high_resolution_clock::now();
-            EXPECT_GE(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count(),
-                      2 * SEND_TIMEOUT_MS);
+    std::thread client_thread([&](){
+        std::size_t client_on_close_callback_count = 0;
+        io::EventLoop loop;
 
-            client.schedule_removal();
-        },
-        COMMON_TIMEOUT_MS
-    );
+        const auto start_time = std::chrono::high_resolution_clock::now();
 
-    EXPECT_EQ(0, client_on_close_callback_count);
-    EXPECT_EQ(0, server_on_close_callback_count);
+        auto client = new io::DtlsClient(loop);
+        client->connect({m_default_addr, m_default_port},
+            [&](io::DtlsClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+            },
+            [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
 
-    ASSERT_EQ(io::StatusCode::OK, loop.run());
+                (new io::Timer(loop))->start(SEND_TIMEOUT_MS,
+                    [&](io::Timer& timer) {
+                        client.send_data("!");
+                        timer.schedule_removal();
+                    }
+                );
+            },
+            [&](io::DtlsClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                ++client_on_close_callback_count;
 
-    EXPECT_EQ(1, client_on_close_callback_count);
-    EXPECT_EQ(1, server_on_close_callback_count);
+                const auto end_time = std::chrono::high_resolution_clock::now();
+                EXPECT_GE(std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count(),
+                        2 * SEND_TIMEOUT_MS);
+
+                client.schedule_removal();
+            },
+            COMMON_TIMEOUT_MS
+        );
+
+        EXPECT_EQ(0, client_on_close_callback_count);
+        ASSERT_EQ(io::StatusCode::OK, loop.run());
+        EXPECT_EQ(1, client_on_close_callback_count);
+    });
+
+    server_thread.join();
+    client_thread.join();
 }
 
 TEST_F(DtlsClientServerTest, client_timeout_cause_server_peer_close) {
