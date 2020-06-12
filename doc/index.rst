@@ -63,6 +63,7 @@ Create 2 following files CMakeLists.txt and main.cpp.
    :caption: main.cpp
    :language: c++
    :linenos:
+   :lines: 8-
 
 Build example:
 
