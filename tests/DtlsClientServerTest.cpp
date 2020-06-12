@@ -1754,40 +1754,40 @@ TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout
     ASSERT_FALSE(listen_error) << listen_error.string();
 
     auto client = new io::DtlsClient(loop);
-        client->connect({m_default_addr, m_default_port},
-            [&](io::DtlsClient& client, const io::Error& error) {
-                EXPECT_FALSE(error) << error.string();
-                ++client_on_connect_count;
-                (new io::Timer(loop))->start(400,
-                    [&](io::Timer& timer) {
-                        // TODO: currently this data will not be received because UDP peers at UDP server
-                        //       have inactivity timeout which is hardcoded in DTLS server and filters incoming data.
-                        //       Need to revise this/
-                        client.send_data("!!!");
-                        timer.schedule_removal();
-                    }
-                );
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_on_connect_count;
+            (new io::Timer(loop))->start(400,
+                [&](io::Timer& timer) {
+                    // TODO: currently this data will not be received because UDP peers at UDP server
+                    //       have inactivity timeout which is hardcoded in DTLS server and filters incoming data.
+                    //       Need to revise this/
+                    client.send_data("!!!");
+                    timer.schedule_removal();
+                }
+            );
 
-                (new io::Timer(loop))->start(600,
-                    [&](io::Timer& timer) {
-                        client.schedule_removal();
-                        server->schedule_removal();
-                        timer.schedule_removal();
-                    }
-                );
-            },
-            [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
-                EXPECT_FALSE(error) << error.string();
-                ++client_on_receive_count;
-            },
-            [&](io::DtlsClient& client, const io::Error& error) {
-                EXPECT_FALSE(error) << error.string();
-                EXPECT_EQ(0, client_on_close_count);
-                EXPECT_EQ(1, server_on_close_count);
-                ++client_on_close_count;
-            },
-            100000
-        );
+            (new io::Timer(loop))->start(600,
+                [&](io::Timer& timer) {
+                    client.schedule_removal();
+                    server->schedule_removal();
+                    timer.schedule_removal();
+                }
+            );
+        },
+        [&](io::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            ++client_on_receive_count;
+        },
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            EXPECT_EQ(0, client_on_close_count);
+            EXPECT_EQ(1, server_on_close_count);
+            ++client_on_close_count;
+        },
+        100000
+    );
 
     EXPECT_EQ(0, server_on_connect_count);
     EXPECT_EQ(0, server_on_receive_count);
@@ -1812,7 +1812,31 @@ TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout
     // TODO:
 }
 
-// TODO: connect from client without running server at destination endpoint
+// TODO: client timeout when no close callback provided, see test below
+
+TEST_F(DtlsClientServerTest, connect_to_not_existing_server) {
+    io::EventLoop loop;
+
+    std::size_t client_on_connect_count = 0;
+
+    auto client = new io::DtlsClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::DtlsClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, error.code());
+            ++client_on_connect_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_count);
+}
+
+
 // TODO: key and certificate mismatch
 // TODO: send data to server after connection timeout
 // TODO: send data to client after connection timeout

@@ -118,6 +118,13 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
         },
         timeout_ms,
         [this](UdpClient&, const Error& error) {
+            if (m_ssl_handshake_state != HandshakeState::FINISHED) {
+                if (m_connect_callback) {
+                    m_connect_callback(*m_parent, StatusCode::CONNECTION_REFUSED);
+                    return;
+                }
+            }
+
             if (m_close_callback) {
                 m_close_callback(*m_parent, error);
             }
