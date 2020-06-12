@@ -657,6 +657,15 @@ TEST_F(EventLoopTest, create_loop_in_one_thread_and_run_in_another) {
 
 // TODO: need to add platform defines from library like TARM_IO_PLATFORM_LINUX
 
+TEST_F(EventLoopTest, stop_signal_without_handler) {
+    // Test description: crash test
+    io::EventLoop loop;
+
+    loop.remove_signal_handler(io::EventLoop::Signal::HUP);
+
+    ASSERT_FALSE(loop.run());
+}
+
 // lldb, to not stop on signal: process handle SIGHUP -s false
 TEST_F(EventLoopTest, signal_repeat_1) {
 #if defined(__APPLE__) || defined(__linux__)

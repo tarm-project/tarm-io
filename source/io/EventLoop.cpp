@@ -464,9 +464,9 @@ void EventLoop::Impl::add_signal_handler(Signal signal, SignalCallback callback,
 }
 
 void EventLoop::Impl::remove_signal_handler(Signal signal) {
-    auto& signal_handler = m_signal_handlers[signal];
-    if (signal_handler) {
-        uv_signal_stop(signal_handler);
+    auto it = m_signal_handlers.find(signal);
+    if (it != m_signal_handlers.end() && it->second) {
+        uv_signal_stop(it->second);
     }
 }
 
