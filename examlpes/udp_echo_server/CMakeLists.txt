@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5.0)
 
 project(udp_echo_server VERSION 1.0.0 LANGUAGES C CXX)
 
+set(CMAKE_CXX_STANDARD 11)
 add_executable(main main.cpp)
 
 find_package(tarm-io REQUIRED)
