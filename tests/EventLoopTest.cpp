@@ -235,7 +235,7 @@ TEST_F(EventLoopTest, work_cancel_during_loop_run) {
     std::size_t each_loop_cycle_handle = 0;
     each_loop_cycle_handle = event_loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
         if (std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::high_resolution_clock::now() - start_time).count() > 50) {
+                std::chrono::high_resolution_clock::now() - start_time).count() > 100) {
 
             for (std::size_t i = 0 ; i < thread_pool_size; ++i) {
                 auto error = loop.cancel_work(all_handles[i]);
