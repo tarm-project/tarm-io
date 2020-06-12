@@ -1148,10 +1148,11 @@ TEST_F(DtlsClientServerTest, client_with_invalid_address_and_no_connect_callback
 }
 
 TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
+    this->log_to_stdout();
     io::EventLoop loop;
 
-    const std::size_t COMMON_TIMEOUT_MS = 300;
-    const std::size_t SEND_TIMEOUT_MS = 200;
+    const std::size_t COMMON_TIMEOUT_MS = 800;
+    const std::size_t SEND_TIMEOUT_MS = 550;
 
     const auto start_time = std::chrono::high_resolution_clock::now();
 
