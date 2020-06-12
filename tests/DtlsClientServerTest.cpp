@@ -1243,8 +1243,8 @@ TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
 TEST_F(DtlsClientServerTest, client_timeout_cause_server_peer_close) {
     io::EventLoop loop;
 
-    const std::size_t SERVER_TIMEOUT_MS = 300;
-    const std::size_t CLIENT_TIMEOUT_MS = 200;
+    const std::size_t SERVER_TIMEOUT_MS = 600;
+    const std::size_t CLIENT_TIMEOUT_MS = 400;
 
     std::size_t client_on_close_callback_count = 0;
     std::size_t server_on_close_callback_count = 0;
