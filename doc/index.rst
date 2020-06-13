@@ -93,6 +93,7 @@ Documentation
    :maxdepth: 1
 
    build_instructions_index
+   reference
 
 
 
