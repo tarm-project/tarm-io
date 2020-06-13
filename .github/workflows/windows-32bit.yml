@@ -1,0 +1,64 @@
+name: Windows-32bit
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  MSVC:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - 'windows-2016'
+          - 'windows-2019'
+        config:
+          - 'Debug'
+          #- 'Release'
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x86
+    - name: install OpenSSL
+      run: |
+        pushd $env:TEMP
+        curl -LO https://www.openssl.org/source/openssl-1.1.1g.tar.gz
+        tar -xf openssl-1.1.1g.tar.gz
+        cd openssl-1.1.1g
+        perl Configure VC-WIN32 no-asm no-tests --prefix="$env:GITHUB_WORKSPACE/OpenSSL-Win32"
+        set CL=/MP
+        nmake
+        nmake install
+        
+    - name: install gtest
+      run: |
+        pushd $env:TEMP
+        curl -LO https://github.com/google/googletest/archive/release-1.10.0.tar.gz
+        tar -xf release-1.10.0.tar.gz
+        cd googletest-release-1.10.0
+        mkdir build
+        cd build/
+        cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 -DCMAKE_GENERATOR_PLATFORM=Win32 ..
+        cmake --build . --config ${{ matrix.config }}
+        cmake --install . --verbose --config ${{ matrix.config }} --prefix $env:GITHUB_WORKSPACE/gtest_install
+        popd
+    - name: build
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 -DCMAKE_GENERATOR_PLATFORM=Win32 -DBOOST_ROOT="$env:BOOST_ROOT_1_72_0" -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT="$env:GITHUB_WORKSPACE/gtest_install" -DOPENSSL_ROOT_DIR="$env:GITHUB_WORKSPACE/OpenSSL-Win32" ..
+        cmake --build . --config ${{ matrix.config }}
+    - name: run tests
+      run: |
+        cd build
+        ls $env:GITHUB_WORKSPACE/OpenSSL-Win32/lib
+        ls $env:GITHUB_WORKSPACE/OpenSSL-Win32/bin
+        # TODO: fix this (copying should be done via CMake automatically)
+        cp $env:GITHUB_WORKSPACE/OpenSSL-Win32/bin/libcrypto-1_1.dll .\tests\${{ matrix.config }}
+        cp $env:GITHUB_WORKSPACE/OpenSSL-Win32/bin/libssl-1_1.dll .\tests\${{ matrix.config }}
+        dumpbin /dependents .\tests\${{ matrix.config }}\tests.exe
+        dumpbin /dependents .\tests\${{ matrix.config }}\tarm-io.dll
+        ls .\tests\${{ matrix.config }}
+        .\tests\${{ matrix.config }}\tests.exe
