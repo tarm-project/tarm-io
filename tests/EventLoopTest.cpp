@@ -747,3 +747,29 @@ TEST_F(EventLoopTest, signal_once_1) {
     IO_TEST_SKIP();
 #endif
 }
+
+TEST_F(EventLoopTest, signal_schedule_once_and_cancel) {
+    io::EventLoop loop;
+
+    std::size_t callback_counter = 0;
+
+    const auto error = loop.handle_signal_once(io::EventLoop::Signal::HUP,
+        [&](io::EventLoop&, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++callback_counter;
+        }
+    );
+    ASSERT_FALSE(error) << error;
+
+    loop.remove_signal_handler(io::EventLoop::Signal::HUP);
+
+    EXPECT_EQ(0, callback_counter);
+
+    ASSERT_FALSE(loop.run());
+
+    EXPECT_EQ(0, callback_counter);
+}
+
+TEST_F(EventLoopTest, signal_once_schedule_cancel_and_scgedule_again) {
+    // TODO:
+}
