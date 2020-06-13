@@ -771,5 +771,49 @@ TEST_F(EventLoopTest, signal_schedule_once_and_cancel) {
 }
 
 TEST_F(EventLoopTest, signal_once_schedule_cancel_and_scgedule_again) {
-    // TODO:
+#if defined(__APPLE__) || defined(__linux__)
+    io::EventLoop loop;
+
+    std::size_t callback_counter_1 = 0;
+    std::size_t callback_counter_2 = 0;
+
+    auto error = loop.handle_signal_once(io::EventLoop::Signal::HUP,
+        [&](io::EventLoop&, const io::Error& error) {
+            // Should be never called
+            EXPECT_FALSE(error) << error;
+            ++callback_counter_1;
+        }
+    );
+    ASSERT_FALSE(error) << error;
+
+    loop.remove_signal_handler(io::EventLoop::Signal::HUP);
+
+    error = loop.handle_signal_once(io::EventLoop::Signal::HUP,
+        [&](io::EventLoop&, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++callback_counter_2;
+        }
+    );
+    ASSERT_FALSE(error) << error;
+
+    const auto start_time = std::chrono::high_resolution_clock::now();
+    std::size_t each_loop_cycle_handle = 0;
+    each_loop_cycle_handle = loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - start_time).count() > 50) {
+            raise(SIGHUP);
+            loop.stop_call_on_each_loop_cycle(each_loop_cycle_handle);
+        }
+    });
+
+    EXPECT_EQ(0, callback_counter_1);
+    EXPECT_EQ(0, callback_counter_2);
+
+    ASSERT_FALSE(loop.run());
+
+    EXPECT_EQ(0, callback_counter_1);
+    EXPECT_EQ(1, callback_counter_2);
+#else
+    IO_TEST_SKIP();
+#endif
 }
