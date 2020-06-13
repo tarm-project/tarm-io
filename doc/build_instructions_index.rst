@@ -11,6 +11,6 @@ Build for platforms
 .. toctree::
    :maxdepth: 1
 
-   build_linux
-   build_mac
-   build_windows
+   articles/build/linux
+   articles/build/mac
+   articles/build/windows
