@@ -655,8 +655,6 @@ TEST_F(EventLoopTest, create_loop_in_one_thread_and_run_in_another) {
     EXPECT_EQ(1, callback_counter);
 }
 
-// TODO: need to add platform defines from library like TARM_IO_PLATFORM_LINUX
-
 TEST_F(EventLoopTest, stop_signal_without_handler) {
     // Test description: crash test
     io::EventLoop loop;
@@ -679,7 +677,7 @@ TEST_F(EventLoopTest, signal_no_callback) {
 }
 
 // lldb, to not stop on signal type: process handle SIGHUP -s false
-TEST_F(EventLoopTest, signal_repeat_1) {
+TEST_F(EventLoopTest, signal_repeating) {
 #if defined(__APPLE__) || defined(__linux__)
     io::EventLoop loop;
 
@@ -714,7 +712,7 @@ TEST_F(EventLoopTest, signal_repeat_1) {
 #endif
 }
 
-TEST_F(EventLoopTest, signal_once_1) {
+TEST_F(EventLoopTest, signal_once) {
 #if defined(__APPLE__) || defined(__linux__)
     io::EventLoop loop;
 
@@ -817,3 +815,52 @@ TEST_F(EventLoopTest, signal_once_schedule_cancel_and_scgedule_again) {
     IO_TEST_SKIP();
 #endif
 }
+
+TEST_F(EventLoopTest, signal_force_out_one_callback_with_another) {
+#if defined(__APPLE__) || defined(__linux__)
+    io::EventLoop loop;
+
+    std::size_t callback_counter_1 = 0;
+    std::size_t callback_counter_2 = 0;
+
+    auto error = loop.add_signal_handler(io::EventLoop::Signal::HUP,
+        [&](io::EventLoop&, const io::Error& error) {
+            // Should be never called
+            EXPECT_FALSE(error) << error;
+            ++callback_counter_1;
+        }
+    );
+    ASSERT_FALSE(error) << error;
+
+    error = loop.add_signal_handler(io::EventLoop::Signal::HUP,
+        [&](io::EventLoop&, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++callback_counter_2;
+            loop.remove_signal_handler(io::EventLoop::Signal::HUP);
+        }
+    );
+    ASSERT_FALSE(error) << error;
+
+    const auto start_time = std::chrono::high_resolution_clock::now();
+    std::size_t each_loop_cycle_handle = 0;
+    each_loop_cycle_handle = loop.schedule_call_on_each_loop_cycle([&](io::EventLoop& loop) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - start_time).count() > 50) {
+            raise(SIGHUP);
+            loop.stop_call_on_each_loop_cycle(each_loop_cycle_handle);
+        }
+    });
+
+    EXPECT_EQ(0, callback_counter_1);
+    EXPECT_EQ(0, callback_counter_2);
+
+    ASSERT_FALSE(loop.run());
+
+    EXPECT_EQ(0, callback_counter_1);
+    EXPECT_EQ(1, callback_counter_2);
+#else
+    IO_TEST_SKIP();
+#endif
+}
+
+// TODO: need to add platform defines from library like TARM_IO_PLATFORM_LINUX
