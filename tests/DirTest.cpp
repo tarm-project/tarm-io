@@ -13,7 +13,7 @@
 #include <vector>
 #include <thread>
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     #include <sys/stat.h>
 #endif
 
@@ -200,7 +200,7 @@ TEST_F(DirTest, no_read_callback) {
     EXPECT_TRUE(end_read_called);
 }
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
 TEST_F(DirTest, list_symlink) {
     auto file_path = m_tmp_test_dir / "some_file";
     {
@@ -451,7 +451,7 @@ TEST_F(DirTest, make_dir_name_to_long_error) {
     EXPECT_TRUE(callback_called);
 }
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
 TEST_F(DirTest, make_dir_root_dir_error) {
     io::EventLoop loop;
 

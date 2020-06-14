@@ -8,7 +8,7 @@
 #include "io/ByteSwap.h"
 #include "io/Endpoint.h"
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     #include <sys/socket.h>
     #include <netinet/in.h>
 #endif
@@ -118,7 +118,8 @@ TEST_F(EndpointTest, ostream_3) {
     EXPECT_EQ("[7f::1]:1234", oss.str());
 }
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+// TODO: this test on Windows??????? (include <uv.h> for system specific headers)
 TEST_F(EndpointTest, ipv4_init_from_raw_sockaddr) {
     ::sockaddr_in ipv4_sockaddr;
     std::memset(&ipv4_sockaddr, 0, sizeof(ipv4_sockaddr));

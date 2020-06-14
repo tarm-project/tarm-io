@@ -52,7 +52,7 @@ TEST_F(UdpClientServerTest, server_bind) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
 // Windows does not have privileged ports
 TEST_F(UdpClientServerTest, bind_privileged) {
     io::EventLoop loop;
@@ -399,7 +399,7 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
 
     const auto min_send_buffer_size = io::global::min_send_buffer_size();
     const auto min_receive_buffer_size = io::global::min_receive_buffer_size()
-#ifdef __APPLE__
+#ifdef TARM_IO_PLATFORM_MACOSX
     // At least on MAC OS X receive buffer should be larger (N + 16) than send buffer
     // to be able to receive packets of size N
     + 16

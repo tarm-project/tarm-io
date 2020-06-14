@@ -78,7 +78,7 @@ TEST_F(TcpClientServerTest, schedule_removal_not_connected_client) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
 // Windows does not have privileged ports
 TEST_F(TcpClientServerTest, bind_privileged) {
     io::EventLoop loop;

@@ -137,7 +137,7 @@ BufferSizeResult UdpImplBase<ParentType, ImplType>::receive_buffer_size() const 
 
     int receive_size = 0;
     const Error error = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
-#if defined(__linux__)
+#if defined(TARM_IO_PLATFORM_LINUX)
     // For details read http://man7.org/linux/man-pages/man7/socket.7.html
     // SO_RCVBUF option or similar ones.
     return {error, static_cast<std::size_t>(receive_size / 2)};
@@ -154,7 +154,7 @@ BufferSizeResult UdpImplBase<ParentType, ImplType>::send_buffer_size() const {
 
     int receive_size = 0;
     const Error error = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), &receive_size);
-#if defined(__linux__)
+#if defined(TARM_IO_PLATFORM_LINUX)
     return {error, static_cast<std::size_t>(receive_size / 2)};
 #else
     return {error, static_cast<std::size_t>(receive_size)};

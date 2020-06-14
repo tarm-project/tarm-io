@@ -92,7 +92,8 @@ TEST_F(DtlsClientServerTest, server_with_invalid_address) {
     EXPECT_EQ(0, server_on_close_count);
 }
 
-#if defined(__APPLE__) || defined(__linux__)
+// TODO: skip these tests
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
 // Windows does not have privileged ports
 TEST_F(DtlsClientServerTest, bind_privileged) {
     io::EventLoop loop;
@@ -1664,9 +1665,9 @@ TEST_F(DtlsClientServerTest, DISABLED_client_send_invalid_data_after_handshake) 
 
             int result = 0;
             int yes = 1;
-#ifdef __APPLE__
+#if defined(TARM_IO_PLATFORM_MACOSX)
             result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(int));
-#elif defined(_WIN32)
+#elif defined(TARM_IO_PLATFORM_WINDOWS)
 			result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), sizeof(int));
 #else
             result = ::setsockopt(socket_handle, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));

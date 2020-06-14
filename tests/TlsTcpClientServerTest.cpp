@@ -165,7 +165,7 @@ TEST_F(TlsTcpClientServerTest, server_listen_on_invalid_address) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
 // Windows does not have privileged ports
 TEST_F(TlsTcpClientServerTest, bind_privileged) {
     io::EventLoop loop;
@@ -786,8 +786,8 @@ TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
     io::EventLoop loop;
 
     io::Path not_existing_path;
-#if defined(__APPLE__) || defined(__linux__)
-    not_existing_path = "/no/existing/path.pem";
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    not_existing_path = "/not/existing/path.pem";
 #else
     not_existing_path = "C:\\no\\existing\\path.pem";
 #endif
@@ -826,8 +826,8 @@ TEST_F(TlsTcpClientServerTest, not_existing_key) {
     io::EventLoop loop;
 
     io::Path not_existing_path;
-#if defined(__APPLE__) || defined(__linux__)
-    not_existing_path = "/no/existing/path.pem";
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    not_existing_path = "/not/existing/path.pem";
 #else
     not_existing_path = "C:\\no\\existing\\path.pem";
 #endif

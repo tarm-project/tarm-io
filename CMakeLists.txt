@@ -17,18 +17,19 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/CMakeMod
 
 if(UNIX AND NOT APPLE)
     message(STATUS "Platform is: Linux")
-    set(LINUX TRUE)
+    set(TARM_IO_PLATFORM_LINUX TRUE)
 endif()
 
 if(WIN32)
     message(STATUS "Platform is: Windows")
+    set(TARM_IO_PLATFORM_WINDOWS TRUE)
     if (MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP") # Multicore building
     endif()
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(MACOSX TRUE)
+    set(TARM_IO_PLATFORM_MACOSX TRUE)
     message(STATUS "Platform is: Mac OS X")
 endif()
 
@@ -46,7 +47,6 @@ endif()
 
 set(IO_LIBUV_VERSION "1.30.1")
 
-#export TSAN_OPTIONS="halt_on_error=1"
 if(DEFINED IO_SANITIZER)
     message(STATUS "Using sanitizer: ${IO_SANITIZER}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${IO_SANITIZER}")
@@ -80,9 +80,6 @@ endif()
 
 #project
 #cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 -DCMAKE_GENERATOR_PLATFORM=Win32 -DBOOST_ROOT="F:\boost_install_32bit" -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT="D:\gtest_install_32bit" -DOPENSSL_ROOT_DIR=D:\openssl_install_32bit ..
-
-#find_package(PkgConfig REQUIRED)
-#pkg_check_modules(LIBUV REQUIRED libuv)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)

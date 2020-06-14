@@ -21,12 +21,12 @@ std::string create_temp_test_directory() {
     return path.string();
 }
 
-#ifdef _WIN32
+#ifdef TARM_IO_PLATFORM_WINDOWS
     #include <windows.h>    //GetModuleFileNameW
 #else // assuming Unix
     #include <unistd.h>     //readlink
 
-    #ifdef __APPLE__
+    #ifdef TARM_IO_PLATFORM_MACOSX
         #include <sys/syslimits.h>
         #include <mach-o/dyld.h>
     #else
@@ -37,17 +37,17 @@ std::string create_temp_test_directory() {
 boost::filesystem::path exe_path() {
     boost::filesystem::path result;
 
-#if defined(_WIN32)
+#if defined(TARM_IO_PLATFORM_WINDOWS)
     wchar_t path[MAX_PATH] = { 0 };
     GetModuleFileNameW(NULL, path, MAX_PATH);
     result = boost::filesystem::path(path).remove_filename();
-#elif defined(__APPLE__)
+#elif defined(TARM_IO_PLATFORM_MACOSX)
     char buf[PATH_MAX] = { 0 };
     uint32_t buf_size = PATH_MAX;
     if(!_NSGetExecutablePath(buf, &buf_size)) {
         result = boost::filesystem::path(std::string(buf, (buf_size > 0 ? buf_size : 0))).remove_filename();
     }
-#else
+#else // Linux // TODO: need to make error in case of undefined platform
     char buf[PATH_MAX];
     ssize_t buf_size = readlink("/proc/self/exe", buf, PATH_MAX);
     result = boost::filesystem::path(std::string(buf, (buf_size > 0 ? buf_size : 0))).remove_filename();

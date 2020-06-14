@@ -54,7 +54,7 @@ bool is_buffer_size_available(uv_handle_t* handle,
     }
 
     std::size_t size_multiplier = 1;
-#if defined(__linux__)
+#if defined(TARM_IO_PLATFORM_LINUX)
     // For details read http://man7.org/linux/man-pages/man7/socket.7.html
     // SO_RCVBUF option or similar ones.
     size_multiplier = 2;

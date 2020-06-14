@@ -7,7 +7,7 @@
 
 #include <cstring>
 
-#ifdef _WIN32
+#ifdef TARM_IO_PLATFORM_WINDOWS
     #include <Winsock2.h>
     #include <stdlib.h>
 
@@ -21,7 +21,7 @@
 
 #else
     #include <netinet/in.h>
-    #ifdef __APPLE__
+    #ifdef TARM_IO_PLATFORM_MACOSX
         #include <machine/endian.h>
 
         #define IO_NTOHLL(x) ntohll(x)

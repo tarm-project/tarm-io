@@ -118,7 +118,7 @@ target_include_directories(tarm-io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOUR
 target_include_directories(tarm-io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 target_compile_definitions(tarm-io PRIVATE IO_BUILDING_DLL)
 
-if (LINUX)
+if (TARM_IO_PLATFORM_LINUX)
     target_compile_options(tarm-io PUBLIC -pthread)
     set_target_properties(tarm-io PROPERTIES LINK_FLAGS -pthread)
 endif()
@@ -133,9 +133,19 @@ if (IO_IS_BIG_ENDIAN)
 endif()
 
 if (WIN32)
-    target_compile_definitions(tarm-io PUBLIC IO_BUILD_FOR_WINDOWS)
+    target_compile_definitions(tarm-io PUBLIC IO_BUILD_FOR_WINDOWS) # TODO: replace this with TARM_IO_PLATFORM_WINDOWS
     target_compile_definitions(tarm-io PRIVATE WIN32_LEAN_AND_MEAN)
     target_compile_definitions(tarm-io PRIVATE NOGDI)
+endif()
+
+if (TARM_IO_PLATFORM_LINUX)
+    target_compile_definitions(tarm-io PUBLIC TARM_IO_PLATFORM_LINUX)
+elseif (TARM_IO_PLATFORM_WINDOWS)
+    target_compile_definitions(tarm-io PUBLIC TARM_IO_PLATFORM_WINDOWS)
+elseif (TARM_IO_PLATFORM_MACOSX)
+    target_compile_definitions(tarm-io PUBLIC TARM_IO_PLATFORM_MACOSX)
+else()
+    message(FATAL_ERROR "Can not determine platform of libtarm-io build.")
 endif()
 
 # TODO: no exceptions even in regular builds????
