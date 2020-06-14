@@ -188,13 +188,15 @@ void File::Impl::read(ReadCallback read_callback, EndReadCallback end_read_callb
 namespace {
 
 struct ReadBlockReq : public uv_fs_t {
+    // TODO: remove this code
+    /*
     ReadBlockReq() {
         // TODO: remove memset????
         memset(this, 0, sizeof(uv_fs_t));
     }
 
     ~ReadBlockReq() {
-    }
+    }*/
 
     std::shared_ptr<char> buf;
     std::size_t offset = 0;
