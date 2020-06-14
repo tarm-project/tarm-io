@@ -1,3 +1,6 @@
+.. meta::
+   :description: Tarm-io build instructions
+
 Build instructions
 ==================
 

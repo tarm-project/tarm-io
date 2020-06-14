@@ -4,7 +4,7 @@
 .. meta::
    :yandex-verification: 2ee209155a2548b6
    :google-site-verification: uj3is7vssI50kvq-LLgzvEX5ls-MjbhtOg-zRPOrlHI
-   :Description: Cross-platform event-driven C++11 input-output library
+   :description: Cross-platform event-driven C++11 input-output library
 
 Welcome to tarm-io's documentation!
 ===================================

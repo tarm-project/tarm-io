@@ -1,3 +1,6 @@
+.. meta::
+   :description: Tarm-io API reference
+
 API Reference
 =============
 
