@@ -7,7 +7,7 @@
 
 #include <gtest/gtest.h>
 
-#ifdef IO_BUILD_FOR_WINDOWS
+#ifdef TARM_IO_PLATFORM_WINDOWS
     #include <openssl/applink.c>
 #endif
 

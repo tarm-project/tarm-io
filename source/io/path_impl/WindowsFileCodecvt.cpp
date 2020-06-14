@@ -16,7 +16,7 @@
 
 #include <cwchar>  // for mbstate_t
 
-#ifdef IO_BUILD_FOR_WINDOWS
+#ifdef TARM_IO_PLATFORM_WINDOWS
 
 #include "WindowsFileCodecvt.h"
 
@@ -67,5 +67,5 @@
     return ok;
   }
 
-# endif  // IO_BUILD_FOR_WINDOWS
+# endif  // TARM_IO_PLATFORM_WINDOWS
 

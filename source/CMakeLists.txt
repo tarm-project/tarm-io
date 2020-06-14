@@ -133,7 +133,6 @@ if (IO_IS_BIG_ENDIAN)
 endif()
 
 if (WIN32)
-    target_compile_definitions(tarm-io PUBLIC IO_BUILD_FOR_WINDOWS) # TODO: replace this with TARM_IO_PLATFORM_WINDOWS
     target_compile_definitions(tarm-io PRIVATE WIN32_LEAN_AND_MEAN)
     target_compile_definitions(tarm-io PRIVATE NOGDI)
 endif()
