@@ -1156,6 +1156,9 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
     );
     EXPECT_FALSE(listen_error);
 
+    // Giving server chance to start
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
     std::thread client_thread([this, NUMBER_OF_CLIENTS]() {
         io::EventLoop clients_loop;
 
