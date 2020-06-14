@@ -47,10 +47,12 @@ boost::filesystem::path exe_path() {
     if(!_NSGetExecutablePath(buf, &buf_size)) {
         result = boost::filesystem::path(std::string(buf, (buf_size > 0 ? buf_size : 0))).remove_filename();
     }
-#else // Linux // TODO: need to make error in case of undefined platform
+#elif defined(TARM_IO_PLATFORM_LINUX)
     char buf[PATH_MAX];
     ssize_t buf_size = readlink("/proc/self/exe", buf, PATH_MAX);
     result = boost::filesystem::path(std::string(buf, (buf_size > 0 ? buf_size : 0))).remove_filename();
+#else
+    #error Unknown platform.
 #endif
 
     if (result.empty()) {
