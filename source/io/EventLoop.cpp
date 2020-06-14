@@ -591,8 +591,8 @@ void EventLoop::Impl::on_signal_close(uv_handle_t* handle) {
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
 namespace {
-// TODO: handle wrap around
-std::atomic<std::size_t> m_loop_id_counter(0);
+
+std::atomic<std::uint64_t> m_loop_id_counter(0);
 
 } // namespace
 
