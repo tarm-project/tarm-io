@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'tarm-io library'
-copyright = '2020, Alexander Voitenko'
+copyright = '2020 - present, Alexander Voitenko'
 author = 'Alexander Voitenko'
 
 # The full version, including alpha/beta/rc tags
