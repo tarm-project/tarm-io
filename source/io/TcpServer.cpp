@@ -8,9 +8,9 @@
 #include "ByteSwap.h"
 #include "detail/Common.h"
 
-#include <assert.h>
+#include <unordered_set>
 
-#include <iostream>
+#include <assert.h>
 
 namespace tarm {
 namespace io {
@@ -64,8 +64,7 @@ private:
 
     CloseServerCallback m_end_server_callback = nullptr;
 
-    // TODO: unordered set???
-    std::set<TcpConnectedClient*> m_client_connections;
+    std::unordered_set<TcpConnectedClient*> m_client_connections;
 
     Endpoint m_endpoint;
 
