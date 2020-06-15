@@ -1458,17 +1458,18 @@ TEST_F(TcpClientServerTest, client_shutdown_in_connect) {
 
     auto server = new io::TcpServer(loop);
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
-    [&](io::TcpConnectedClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
-    },
-    [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
-        ++server_on_receive_count;
-    },
-    [&](io::TcpConnectedClient& client, const io::Error& error) {
-        EXPECT_FALSE(error);
-        ++server_on_close_count;
-        server->schedule_removal();
-    });
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            ++server_on_receive_count;
+        },
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++server_on_close_count;
+            server->schedule_removal();
+        }
+    );
 
     ASSERT_FALSE(listen_error);
 
@@ -1483,7 +1484,7 @@ TEST_F(TcpClientServerTest, client_shutdown_in_connect) {
         nullptr,
         [&](io::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            ++client_on_close_count = true;
+            ++client_on_close_count;
             EXPECT_FALSE(client.is_open());
             client.schedule_removal();
 
@@ -3188,6 +3189,92 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
 
     server_thread.join();
     client_thread.join();
+}
+
+TEST_F(TcpClientServerTest, ipv6_address) {
+    io::EventLoop loop;
+
+    const std::string client_message = "client";
+    const std::string server_message = "server";
+
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+    std::size_t server_on_connect_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+
+    auto server = new io::TcpServer(loop);
+    auto server_listen_error = server->listen({"::", m_default_port},
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_connect_count;
+        },
+        [&](io::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            EXPECT_EQ(server, &client.server());
+
+            ++server_on_receive_count;
+
+            const std::string s(data.buf.get(), data.size);
+            EXPECT_EQ(client_message, s);
+
+            client.send_data(server_message,
+                [&](io::TcpConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error.string();
+                    server->schedule_removal();
+                }
+            );
+        },
+        [&](io::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_close_count;
+        }
+    );
+    ASSERT_FALSE(server_listen_error) << server_listen_error;
+
+    auto client = new io::TcpClient(loop);
+    client->connect({m_default_addr,m_default_port},
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            EXPECT_TRUE(client.is_open());
+
+            ++client_on_connect_count;
+
+            client.send_data(client_message,
+                [&](io::TcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                }
+            );
+        },
+        [&](io::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_receive_count;
+            const std::string s(data.buf.get(), data.size);
+            EXPECT_EQ(server_message, s);
+        },
+        [&](io::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_close_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_connect_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(1, client_on_receive_count);
+    EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(1, server_on_connect_count);
+    EXPECT_EQ(1, server_on_receive_count);
+    EXPECT_EQ(1, server_on_close_count);
 }
 
 // TODO: Get backlog size on different platforms???

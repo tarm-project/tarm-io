@@ -94,7 +94,9 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
     m_endpoint = endpoint;
 
     m_server_handle = new uv_tcp_t;
-    const Error init_error = uv_tcp_init_ex(m_uv_loop, m_server_handle, AF_INET); // TODO: IPV6 support
+    const Error init_error = uv_tcp_init_ex(m_uv_loop,
+                                            m_server_handle,
+                                            endpoint.type() == Endpoint::IP_V4 ? AF_INET : AF_INET6);
     m_server_handle->data = this;
 
     if (init_error) {
