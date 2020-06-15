@@ -211,36 +211,6 @@ bool TcpServer::Impl::schedule_removal() {
     }
 
     return true;
-
-    /*
-    const auto removal_scheduled = m_parent->is_removal_scheduled();
-    if (!removal_scheduled && !is_open() && m_server_handle == nullptr) {
-        return true;
-    }
-
-    if (!removal_scheduled) {
-        // TODO: this setter should be set via call of ->schedule_removal
-        m_parent->set_removal_scheduled();
-
-
-        //if (m_client_connections.empty()) {
-        //    auto end_server_callback_copy = m_end_server_callback;
-//
-        //    this->close([this, end_server_callback_copy](TcpServer& server, const Error& error) {
-        //        // TODO: revise this. Do we need such strange way of calling end server callback?
-        //        if (end_server_callback_copy && is_open()) {
-        //            end_server_callback_copy(server, error);
-        //        }
-        //    });
-        //} else {
-        //    this->close(nullptr);
-        //}
-
-        this->close(nullptr);
-    }
-
-    return removal_scheduled || m_server_handle == nullptr;
-    */
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
