@@ -50,7 +50,6 @@ protected:
     static void on_new_connection(uv_stream_t* server, int status);
 
     static void on_close(uv_handle_t* handle);
-    static void on_shutdown(uv_shutdown_t* req, int status);
 
 private:
     TcpServer* m_parent;
@@ -146,15 +145,6 @@ void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
     for (auto& client : m_client_connections) {
         client->shutdown();
     }
-
-    // shutdown only works on connected sockets but m_server_handle does not connects to anyone
-    /*
-    auto shutdown_req = new uv_shutdown_t;
-    int status = uv_shutdown(shutdown_req, reinterpret_cast<uv_stream_t*>(m_server_handle), TcpServer::on_shutdown);
-    if (status < 0) {
-        m_loop->log(Logger::Severity::DEBUG, "TcpServer::shutdown failer to start shutdown, reason: ", uv_strerror(status));
-    }
-    */
 
     close_impl();
 }
@@ -320,12 +310,6 @@ void TcpServer::Impl::on_close(uv_handle_t* handle) {
     this_.m_server_handle = nullptr;
 
     delete reinterpret_cast<uv_tcp_t*>(handle);
-}
-
-// TODO: candidate for removal
-void TcpServer::Impl::on_shutdown(uv_shutdown_t* req, int status) {
-    uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
-    delete req;
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
