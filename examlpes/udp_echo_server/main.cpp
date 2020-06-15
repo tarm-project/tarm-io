@@ -17,6 +17,7 @@ int main() {
 
     const auto port = 1234;
 
+    // TODO: smart pointer will do the job in case of error
     auto server = new io::UdpServer(loop);
     auto listen_error = server->start_receive(
         {"0.0.0.0", port},
@@ -31,6 +32,7 @@ int main() {
 
     if (listen_error) {
         std::cerr << "Listen error: " << listen_error << std::endl;
+        server->schedule_removal();
         return 1;
     }
 
@@ -51,6 +53,7 @@ int main() {
 
     if (signal_handler_error) {
         std::cerr << "Signal handling error: " << signal_handler_error << std::endl;
+        server->schedule_removal();
         return 1;
     }
 
