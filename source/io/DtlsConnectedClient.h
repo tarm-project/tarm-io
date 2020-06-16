@@ -40,6 +40,7 @@ public:
 
     IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
+    // TODO: char* and std::string&& send overloads
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
 

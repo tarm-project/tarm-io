@@ -213,6 +213,10 @@ Error UdpClient::set_destination(const Endpoint& endpoint) {
     return m_impl->set_destination(endpoint);
 }
 
+void UdpClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback) {
+    return m_impl->send_data(c_str, size, callback);
+}
+
 void UdpClient::send_data(const std::string& message, EndSendCallback callback) {
     return m_impl->send_data(message, callback);
 }

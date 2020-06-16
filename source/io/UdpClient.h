@@ -51,6 +51,7 @@ public:
     IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
     IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
 
+    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);

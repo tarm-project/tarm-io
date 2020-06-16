@@ -152,7 +152,6 @@ void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint
 
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback)  {
-
     send_data_impl(c_str, size, callback);
 }
 

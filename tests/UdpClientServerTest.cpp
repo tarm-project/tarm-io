@@ -1167,6 +1167,72 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     EXPECT_EQ(1, client_data_send_counter);
 }
 
+TEST_F(UdpClientServerTest, client_and_server_use_char_buffer_for_send) {
+    io::EventLoop loop;
+
+    const char client_message[] = "Hello from client!";
+    const char server_message[] = "Hello from server!";
+
+    std::size_t server_data_receive_counter = 0;
+    std::size_t server_data_send_counter = 0;
+
+    std::size_t client_data_receive_counter = 0;
+    std::size_t client_data_send_counter = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
+    [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error);
+        ++server_data_receive_counter;
+
+        std::string s(data.buf.get(), data.size);
+        EXPECT_EQ(client_message, s);
+
+        peer.send_data(server_message, sizeof(server_message) - 1, // -1 is for last 0
+            [&](io::UdpPeer& peer, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+                ++server_data_send_counter;
+                server->schedule_removal();
+            }
+        );
+    });
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::UdpClient(loop);
+    EXPECT_FALSE(client->set_destination({0x7F000001u, m_default_port}));
+    auto receive_error = client->start_receive(
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            std::string s(data.buf.get(), data.size);
+            EXPECT_EQ(server_message, s);
+
+            ++client_data_receive_counter;
+            client.schedule_removal();
+        }
+    );
+    EXPECT_FALSE(receive_error);
+
+    client->send_data(client_message, sizeof(client_message) - 1,  // -1 is for last 0
+        [&](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error);
+            ++client_data_send_counter;
+        }
+    );
+
+    EXPECT_EQ(0, server_data_receive_counter);
+    EXPECT_EQ(0, server_data_send_counter);
+    EXPECT_EQ(0, client_data_receive_counter);
+    EXPECT_EQ(0, client_data_send_counter);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, server_data_receive_counter);
+    EXPECT_EQ(1, server_data_send_counter);
+    EXPECT_EQ(1, client_data_receive_counter);
+    EXPECT_EQ(1, client_data_send_counter);
+}
+
 TEST_F(UdpClientServerTest, null_send_buf) {
     io::EventLoop loop;
 
