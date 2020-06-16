@@ -1167,6 +1167,54 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     EXPECT_EQ(1, client_data_send_counter);
 }
 
+TEST_F(UdpClientServerTest, null_send_buf) {
+    io::EventLoop loop;
+
+    std::size_t client_on_send_count = 0;
+    std::size_t server_on_send_count = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error);
+
+            peer.send_data(nullptr, 0,
+                [&](io::UdpPeer& peer, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+                    ++server_on_send_count;
+                    server->schedule_removal();
+                }
+            );
+        }
+    );
+    ASSERT_FALSE(listen_error);
+
+    auto client = new io::UdpClient(loop);
+    EXPECT_FALSE(client->set_destination({0x7F000001u, m_default_port}));
+
+    client->send_data("!!!", // Just to force server to reply with nullptr message
+        [&](io::UdpClient& client, const io::Error& error) {
+            client.send_data(nullptr, 0,
+                [&](io::UdpClient& client, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+                    ++client_on_send_count;
+                    client.schedule_removal();
+                }
+            );
+        }
+    );
+
+    EXPECT_EQ(0, client_on_send_count);
+    EXPECT_EQ(0, server_on_send_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, client_on_send_count);
+    EXPECT_EQ(1, server_on_send_count);
+}
+
 TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
     // Test description: here checking that UdpPeer in a server state without peer timeout enabled
     // allows to send data correctly and no memory corruption happens
@@ -2265,7 +2313,6 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
 }
 
 // TODO: set_destination with ipv4 address and then with ipv6
-// TODO: null send buf
 
 // TODO: client start receive without destination set???? Allow receive from any peer????
 
