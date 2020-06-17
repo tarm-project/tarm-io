@@ -49,7 +49,7 @@ Tarm-io can be downloaded from `github page <https://github.com/tarm-project/tar
 Showcase
 --------
 In this small tutorial we create UDP echo server, which replies back received messages.
-Ensure that library is :ref:`built and installed <build_instructions_index:Build instructions>`.
+Ensure that library is :ref:`built and installed <build_instructions:Build instructions>`.
 Create 2 following files CMakeLists.txt and main.cpp.
 
 
@@ -92,7 +92,7 @@ Documentation
 .. toctree::
    :maxdepth: 1
 
-   build_instructions_index
+   build_instructions
    reference
 
 
