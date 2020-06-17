@@ -30,7 +30,7 @@ Features
 * Thread pool
 * Signal handling
 * Embedded data producer or consumer pacing
-* Guaranteed and auto-tested ABI compatibility between minor versions
+* Guaranteed and auto-tested ABI compatibility between minor and patch versions
 
 Supported platforms
 -------------------
@@ -46,45 +46,19 @@ Downloads
 
 Tarm-io can be downloaded from `github page <https://github.com/tarm-project/tarm-io>`_.
 
-Showcase
---------
-In this small tutorial we create UDP echo server, which replies back received messages.
-Ensure that library is :ref:`built and installed <build_instructions:Build instructions>`.
-Create 2 following files CMakeLists.txt and main.cpp.
+Quick showcase
+--------------
 
+Tarm-io library leverages simplicity as its main design principle. The library hides a lot of networking complexity from you. Just look at the example below. The very basic version of UDP echo server without error handling and memory management will look like this.
 
-.. literalinclude:: ../examlpes/udp_echo_server/CMakeLists.txt
-   :caption: CMakeLists.txt
-   :language: cmake
-   :linenos:
-
-
-.. literalinclude:: ../examlpes/udp_echo_server/main.cpp
+.. literalinclude:: ../examlpes/very_basic_udp_echo_server/main.cpp
    :caption: main.cpp
    :language: c++
    :linenos:
    :lines: 8-
 
-Build example:
 
-.. code-block:: bash
-
-   $ mkdir build
-   $ cd build
-   $ cmake ..
-   $ cmake --build .
-
-.. warning::
-   TODO: windows search path instruction
-
-And execute server application. As a client you may use utility like *netcat* in Linux:
-
-.. code-block:: bash
-
-   $ netcat -u 127.0.0.1 1234
-   Hello!
-   Hello!
-
+For a complete example with explanations see :ref:`tutorials <tutorials:Tutorials>` section.
 
 Documentation
 -------------
