@@ -93,6 +93,10 @@ Documentation
    :maxdepth: 1
 
    build_instructions
+   tutorials
+   design_overview
+   memory_management
+   error_handling
    reference
 
 
