@@ -9,14 +9,20 @@ trap exit ERR
 
 set -u
 
-SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SCRIPT_NAME=$(basename "${BASH_SOURCE[0]}")
 
-IMAGE_TO_EXECUTE="tarmio/builders:$(echo ${1} | sed 's|tarmio/builders:||')"
+source "${SCRIPT_DIR}/env.bash"
+
+IMAGE_TO_EXECUTE="${DOCKER_REGISTRY_PREFIX}:$(echo ${1} | sed "s|${DOCKER_REGISTRY_PREFIX}:||")"
 COMMAND_TO_EXECUTE="${2:-bash}"
 
 USER_ID=$(id -u $USER)
-GROUP_ID=$(id -g $USER)
+if [ "${MACHINE}" = "Mac" ]; then
+    GROUP_ID=1000
+else
+    GROUP_ID=$(id -g $USER)
+fi
 
 docker pull "${IMAGE_TO_EXECUTE}" || true
 
@@ -30,9 +36,6 @@ fi
 # Domain socket (needed for tests)
 CREATE_DOMAIN_SOCKET_COMMAND="python -c \"import socket as s; sock = s.socket(s.AF_UNIX); sock.bind('/var/run/somesocket')\""
 
-#CREATE_GROUP="groupadd -g ${GROUP_ID} ${USER}"
-#CREATE_USER="useradd -u ${USER_ID} -g ${USER} --create-home -s /bin/bash ${USER}"
-
 if [[ ${IMAGE_TO_EXECUTE} == *"alpine"* ]]; then
     echo "Alpine Linux detected!"
     CREATE_GROUP="true" 
@@ -41,9 +44,6 @@ else
     CREATE_GROUP="groupadd -g ${GROUP_ID} ${USER}"
     CREATE_USER="useradd -u ${USER_ID} -g ${USER} --create-home -s /bin/bash ${USER}"
 fi
-
-#CREATE_GROUP="addgroup -S ${USER}"
-#CREATE_USER="adduser --shell /bin/bash -S -G ${USER} ${USER}"
 
 # '--privileged' is required for leak sanitizer(and other tools) to work.
 docker run ${DOCKER_TERMINAL_OPTIONS} \
