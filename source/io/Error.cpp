@@ -174,8 +174,8 @@ std::string Error::string() const {
             return "Operation not supported on socket";
         case StatusCode::OPERATION_NOT_PERMITTED:
             return "Operation not permitted";
-        case StatusCode::BROKEN_PIPE:
-            return "Broken pipe";
+        case StatusCode::OPERATION_ON_CLOSED_SOCKET:
+            return "Operation on closed socket";
         case StatusCode::PROTOCOL_ERROR:
             return "Protocol error";
         case StatusCode::PROTOCOL_NOT_SUPPORTED:

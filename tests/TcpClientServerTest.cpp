@@ -1673,11 +1673,10 @@ TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
                     // Chance to reproduce is about 5-10%
                     // In this test client closes conenction first and sends RESET to server.
                     // Server may send some data meantime and connection may become reset from client side (data will not be delivered) but not closed yet
-                    // And this callback is called with "BROKEN_PIPE" error and than close.
+                    // And this callback is called with "OPERATION_ON_CLOSED_SOCKET" (broken pipe) error and than close.
                     // This error means that message was not delivered because peer closed connection.
-                    // TODO: BROKEN_PIPE error name is not descriptiove enough. Convert all such errors into CONNECTION_RESET_BY_PEER????
                     // TODO: OPERATION_CANCELED is returned on Windows here. Need to generalize this?
-                    EXPECT_TRUE(io::StatusCode::BROKEN_PIPE == error.code() ||
+                    EXPECT_TRUE(io::StatusCode::OPERATION_ON_CLOSED_SOCKET == error.code() ||
                                 io::StatusCode::OPERATION_CANCELED == error.code()) << error.string();
                 }
 

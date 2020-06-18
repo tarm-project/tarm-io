@@ -136,7 +136,7 @@ StatusCode convert_from_uv(std::int64_t libuv_code) {
         case UV_EPERM:
             return StatusCode::OPERATION_NOT_PERMITTED;
         case UV_EPIPE:
-            return StatusCode::BROKEN_PIPE;
+            return StatusCode::OPERATION_ON_CLOSED_SOCKET;
         case UV_EPROTO:
             return StatusCode::PROTOCOL_ERROR;
         case UV_EPROTONOSUPPORT:
