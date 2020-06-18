@@ -3281,8 +3281,5 @@ TEST_F(TcpClientServerTest, ipv6_address) {
 // http://veithen.io/2014/01/01/how-tcp-backlog-works-in-linux.html
 // https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/listen.2.html
 
-
-// TODO: ipv6
-
 // TODO: test schedule of server removal when have no connections and try connect many clients right after removal is scheduled
 // TODO: send large chunk of bytes and close connection right after close from sending side, ensure that client received not all data
