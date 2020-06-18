@@ -2378,9 +2378,6 @@ TEST_F(PathTest, lexically_relative) {
     EXPECT_TRUE(Path("a/b/c").lexically_relative("/x/y/z") == "");
     EXPECT_TRUE(Path("a/b/c").lexically_relative("/a/b/c") == "");
 
-    // TODO: add some Windows-only test cases that probe presence or absence of
-    // drive specifier-and root-directory
-
     //  Some tests from Jamie Allsop's paper
     EXPECT_TRUE(Path("/a/d").lexically_relative("/a/b/c") == "../../d");
     EXPECT_TRUE(Path("/a/b/c").lexically_relative("/a/d") == "../b/c");

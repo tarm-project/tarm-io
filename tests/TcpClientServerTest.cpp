@@ -1874,7 +1874,9 @@ TEST_F(TcpClientServerTest, reuse_client_connection_after_disconnect_from_server
     std::function<void(io::TcpClient& client, const io::Error& error)> client_on_close = nullptr;
     client_on_close = [&](io::TcpClient& client, const io::Error& error) {
         if (error) {
-            // TODO: investigate this
+            // DOC: CONNECTION_RESET_BY_PEER may also come from server in close callback.
+            //      In this test client sends data in "on_connect_callback". CONNECTION_RESET_BY_PEER is an indication
+            //      to user that some of the data that was previously sent may not have been received.
             EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
         }
 
