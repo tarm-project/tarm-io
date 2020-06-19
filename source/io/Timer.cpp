@@ -40,6 +40,9 @@ private:
     EventLoop* m_loop = nullptr;
     uv_timer_t* m_uv_timer = nullptr;
     Callback m_callback = nullptr;
+    // Old callback is needed to save (move) current one and not overwrite itself
+    // while being inside the call.
+    Callback m_old_callback = nullptr;
 
     std::deque<std::uint64_t> m_timeouts_ms;
     uint64_t m_current_timeout_ms = 0;
@@ -97,6 +100,11 @@ void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t r
     }
 
     m_state_was_reset = true;
+
+    m_old_callback = std::move(m_callback);
+    m_loop->schedule_callback([this](EventLoop&) {
+        this->m_old_callback = nullptr;
+    });
 
     m_timeouts_ms = timeouts_ms;
     m_repeat_ms = repeat_ms;

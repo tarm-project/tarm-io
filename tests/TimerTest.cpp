@@ -380,16 +380,13 @@ TEST_F(TimerTest, callback_call_counter_1) {
 
     std::function<void(io::Timer&)> timer_callback = [&] (io::Timer& timer) {
         EXPECT_EQ(0, timer.callback_call_counter());
-        ++callback_counter;
-        if (callback_counter == CALL_COUNT_MAX) {
+        if (callback_counter == CALL_COUNT_MAX - 1) {
             timer.schedule_removal();
         } else {
             timer.start(10, timer_callback);
         }
 
-        // TODO: if increment counter here on Ubuntu 14.04.6 (GCC 4.8.4), memory corruption happen
-        //       need some workaround for such kind of problems and not only for Timer
-        // ++callback_counter;
+        ++callback_counter;
     };
 
     auto timer = new io::Timer(loop);
