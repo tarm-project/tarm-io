@@ -14,7 +14,7 @@ int main() {
 
     auto server = new io::UdpServer(loop);
     server->start_receive({"0.0.0.0", 1234},
-        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error&) {
             peer.send_data(std::string(data.buf.get(), data.size));
         }
     );
