@@ -2269,6 +2269,94 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
     EXPECT_TRUE(peer_3);
 }
 
+TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
+    std::size_t on_client_receive_from_server_1 = 0;
+    std::size_t on_client_receive_from_server_2 = 0;
+    std::size_t on_client_receive_from_server_3 = 0;
+
+    io::EventLoop loop;
+
+    auto server_1 = new io::UdpServer(loop);
+    auto listen_error_1 = server_1->start_receive({m_default_addr, m_default_port},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            peer.send_data("1");
+        }
+    );
+    ASSERT_FALSE(listen_error_1) << listen_error_1;
+
+    auto server_2 = new io::UdpServer(loop);
+    auto listen_error_2 = server_2->start_receive({m_default_addr, std::uint16_t(m_default_port + 1)},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            peer.send_data("2");
+        }
+    );
+    ASSERT_FALSE(listen_error_2) << listen_error_2;
+
+    auto server_3 = new io::UdpServer(loop);
+    auto listen_error_3 = server_3->start_receive({m_default_addr, std::uint16_t(m_default_port + 2)},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            peer.send_data("3");
+        }
+    );
+    ASSERT_FALSE(listen_error_3) << listen_error_3;
+
+    auto client = new io::UdpClient(loop);
+    auto set_endpoint_error = client->set_destination({m_default_addr, m_default_port});
+    ASSERT_FALSE(set_endpoint_error) << set_endpoint_error;
+
+    client->start_receive(
+        [&](io::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            const std::string s(data.buf.get(), data.size);
+            if (s == "1") {
+                ++on_client_receive_from_server_1;
+
+                auto destination_error = client.set_destination({m_default_addr, std::uint16_t(m_default_port + 1)});
+                EXPECT_FALSE(destination_error);
+                client.send_data("!");
+            } else if (s == "2") {
+                ++on_client_receive_from_server_2;
+
+                auto destination_error = client.set_destination({m_default_addr, std::uint16_t(m_default_port + 2)});
+                EXPECT_FALSE(destination_error);
+                client.send_data("!");
+            } else if (s == "3") {
+                ++on_client_receive_from_server_3;
+            } else {
+                FAIL() << "Unexpected data";
+            }
+        }
+    );
+
+    auto destination_error = client->set_destination({m_default_addr, m_default_port});
+    EXPECT_FALSE(destination_error);
+    client->send_data("!");
+
+    (new io::Timer(loop))->start(
+        500,
+        [&](io::Timer& timer) {
+            timer.schedule_removal();
+            server_1->schedule_removal();
+            server_2->schedule_removal();
+            server_3->schedule_removal();
+            client->schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, on_client_receive_from_server_1);
+    EXPECT_EQ(0, on_client_receive_from_server_2);
+    EXPECT_EQ(0, on_client_receive_from_server_3);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_client_receive_from_server_1);
+    EXPECT_EQ(1, on_client_receive_from_server_2);
+    EXPECT_EQ(1, on_client_receive_from_server_3);
+}
+
 TEST_F(UdpClientServerTest, client_set_destination_with_ipv4_address_then_with_ipv6) {
     io::EventLoop loop;
 
@@ -2307,7 +2395,9 @@ TEST_F(UdpClientServerTest, client_set_destination_with_ipv4_address_then_with_i
     EXPECT_EQ(1, server_data_receive_count);
 }
 
-// TODO: UDP client exchange data with multiple servers
+// TODO: multiple start receive (for server) with some random IP address
+
+// TODO: multiple start receive on the same server with different addresses
 
 // TODO: client start receive without destination set???? Allow receive from any peer????
 
