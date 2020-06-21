@@ -836,115 +836,6 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
     EXPECT_EQ(2, peer_to_close_count[client_3_message]);
 }
 
-/*
-TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
-    // Note: timings are essential in this test
-    // Timeout : 210ms
-    // UdpClient1 send:    0 - 100 - 200 - 300 - 400 - 500 - 600 | - - - -x- - - - -
-    // UdpClient2 send:    0 - - - - 200 - - - - 400 - - - - 600 | - - - -x- - - - -
-    // UdpClient3 send:    0 - - - - - x - - - - 400 - - - - - x | - - - - - - - - -
-    //                                                           | <- stop sending here
-    //                                                                  terminate there -> ...
-    // 'x' - is client timeout
-
-    io::EventLoop loop;
-
-    std::string client_1_message = "client_1";
-    std::string client_2_message = "client_2";
-    std::string client_3_message = "client_3";
-
-    std::unordered_map<std::string, std::size_t> peer_to_close_count;
-
-    auto server = new io::UdpServer(loop);
-    auto listen_error = server->start_receive({m_default_addr, m_default_port},
-    [&](io::UdpPeer& client, const io::DataChunk& data, const io::Error& error) {
-        EXPECT_FALSE(error);
-
-        std::string s(data.buf.get(), data.size);
-        if (s == client_1_message) {
-            client.set_user_data(&client_1_message);
-        } else if (s == client_2_message) {
-            client.set_user_data(&client_2_message);
-        } else if (s == client_3_message) {
-            client.set_user_data(&client_3_message);
-        }
-    },
-    220, // timeout MS
-    [&](io::UdpPeer& client, const io::Error& error) {
-        EXPECT_FALSE(error);
-        ASSERT_TRUE(client.user_data());
-
-        const auto& data_str = *reinterpret_cast<std::string*>(client.user_data());
-        peer_to_close_count[data_str]++;
-    });
-
-    auto client_1 = new io::UdpClient(loop);
-    EXPECT_FALSE(client_1->set_destination({0x7F000001u, m_default_port}));
-    auto timer_1 = new io::Timer(loop);
-    timer_1->start(0, 100, [&](io::Timer& timer) {
-        client_1->send_data(client_1_message,
-            [&](io::UdpClient& client, const io::Error& error) {
-                EXPECT_FALSE(error);
-            }
-        );
-    });
-
-    EXPECT_FALSE(listen_error);
-
-    auto client_2 = new io::UdpClient(loop);
-    EXPECT_FALSE(client_2->set_destination({0x7F000001u, m_default_port}));
-    auto timer_2 = new io::Timer(loop);
-    timer_2->start(0, 200, [&](io::Timer& timer) {
-        client_2->send_data(client_2_message,
-            [&](io::UdpClient& client, const io::Error& error) {
-                EXPECT_FALSE(error);
-            }
-        );
-    });
-
-    auto client_3 = new io::UdpClient(loop);
-    EXPECT_FALSE(client_3->set_destination({0x7F000001u, m_default_port}));
-    auto timer_3 = new io::Timer(loop);
-    timer_3->start(0, 400, [&](io::Timer& timer) {
-        client_3->send_data(client_3_message,
-            [&](io::UdpClient& client, const io::Error& error) {
-                EXPECT_FALSE(error);
-            }
-        );
-    });
-
-    auto timer_stop_all = new io::Timer(loop);
-    timer_stop_all->start(650, [&](io::Timer& timer) {
-        timer_1->stop();
-        timer_2->stop();
-        timer_3->stop();
-        timer.schedule_removal();
-    });
-
-    auto timer_remove = new io::Timer(loop);
-    timer_remove->start(1000, [&](io::Timer& timer) {
-        client_1->schedule_removal();
-        client_2->schedule_removal();
-        client_3->schedule_removal();
-        server->schedule_removal();
-
-        timer_1->schedule_removal();
-        timer_2->schedule_removal();
-        timer_3->schedule_removal();
-        timer.schedule_removal();
-    });
-
-    EXPECT_EQ(0, peer_to_close_count.size());
-
-    ASSERT_EQ(io::StatusCode::OK, loop.run());
-
-    EXPECT_EQ(3, peer_to_close_count.size());
-    EXPECT_EQ(1, peer_to_close_count[client_1_message]);
-    EXPECT_EQ(1, peer_to_close_count[client_2_message]);
-    EXPECT_EQ(2, peer_to_close_count[client_3_message]);
-}
-*/
-
 TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
     io::EventLoop loop;
 
@@ -2378,7 +2269,45 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
     EXPECT_TRUE(peer_3);
 }
 
-// TODO: set_destination with ipv4 address and then with ipv6
+TEST_F(UdpClientServerTest, client_set_destination_with_ipv4_address_then_with_ipv6) {
+    io::EventLoop loop;
+
+    std::size_t server_data_receive_count = 0;
+
+    auto server = new io::UdpServer(loop);
+    auto listen_error = server->start_receive({"::", m_default_port},
+        [&](io::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_data_receive_count;
+            server->schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error;
+
+    auto client = new io::UdpClient(loop);
+    auto set_endpoint_error = client->set_destination({m_default_addr, m_default_port});
+    ASSERT_FALSE(set_endpoint_error) << set_endpoint_error;
+
+    // DOC: after set_destination error client remains in a valid state if previously set_destination succeeded
+    set_endpoint_error = client->set_destination({"::1", std::uint16_t(m_default_port + 1)});
+    ASSERT_TRUE(set_endpoint_error);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, set_endpoint_error.code());
+
+    client->send_data("!",
+        [](io::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_data_receive_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, server_data_receive_count);
+}
+
+// TODO: UDP client exchange data with multiple servers
 
 // TODO: client start receive without destination set???? Allow receive from any peer????
 

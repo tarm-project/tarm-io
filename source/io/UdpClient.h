@@ -39,6 +39,7 @@ public:
                                       std::size_t timeout_ms,
                                       TimeoutCallback timeout_callback);
 
+    // DOC: set_destination does not allows to change address family
     IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint);
     IO_DLL_PUBLIC const Endpoint& endpoint() const;
     // Returns 0 on error

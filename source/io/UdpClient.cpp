@@ -96,6 +96,10 @@ Error UdpClient::Impl::set_destination(const Endpoint& endpoint) {
         if (bind_error) {
             return bind_error;
         }
+    } else {
+        if (m_destination_endpoint.type() != endpoint.type()) {
+            return StatusCode::INVALID_ARGUMENT;
+        }
     }
 
     m_destination_endpoint = endpoint;
