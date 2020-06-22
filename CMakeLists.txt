@@ -90,7 +90,6 @@ endif()
 
 add_subdirectory("thirdparty")
 add_subdirectory("source")
-add_subdirectory("samples")
 
 if (IO_ENABLE_TESTS)
     add_subdirectory(tests)
