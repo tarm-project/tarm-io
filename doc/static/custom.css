@@ -12,11 +12,12 @@ div.body h1 {
 div.body h2 {
     color: #1d1a1a;
     background-color: #d5f4ff;
+    margin-top: 20px;
 }
 
 div.body h3 {
     background-color: #F0F7FF;
-    margin-top: 5px;
+    margin-top: 10px;
 }
 
 div.warning {
@@ -34,6 +35,7 @@ div.sphinxsidebarwrapper {
     padding: 3px;
 }
 
+/* code */
 pre {
     margin: 0;
     box-shadow: none;
@@ -52,7 +54,11 @@ pre {
     text-decoration: underline;
 }
 
+div.literal-block-wrapper {
+    padding: 0.25em 1em 1em 0.25em
+}
 
+/* search box */
 div.sphinxsidebar #searchbox input[type="submit"] {
     margin-left: 3px;
     margin-top: 0px;

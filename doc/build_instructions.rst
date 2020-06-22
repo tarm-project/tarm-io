@@ -3,7 +3,7 @@
 
 Build instructions
 ==================
-Each platfrom build instructions page has description how to build and install dependencies.
+Each platfrom's build instructions page has description how to build and install dependencies.
 
 Build for platforms
 -------------------
@@ -18,19 +18,21 @@ Build for platforms
 Build system requirements
 --------------------------
 
+C++11 compliant compiler.
+
 `CMake <https://cmake.org/download/>`_ at least version 3.5. But the latest version is usually better. All popular generators are supported.
 
 Dependencies
 ------------
 Tarm-io library has very few optional dependencies.
 
-Build dependencies
-~~~~~~~~~~~~~~~~~~
+Runtime dependencies
+~~~~~~~~~~~~~~~~~~~~
 
 .. TODO: revise this text if Microsoft secure channels will be supported.
 
-* `OpenSSL <https://www.openssl.org/source/>`_ at least version 1.0.0. Version 1.0.2 and greater is recommended. Without OpenSSL TLS and DTLS networking features will not be available.
-* `libuv <https://github.com/libuv/libuv/releases>`_ at least version 1.0.0. The Tarm-io library **has bundled libuv** sources and by default use them to build libuv.
+* `libuv <https://github.com/libuv/libuv/releases>`_ (bundled) at least version 1.0.0. The Tarm-io library **has bundled libuv** sources and by default use them during the build.
+* `OpenSSL <https://www.openssl.org/source/>`_ (optional) at least version 1.0.0. Version 1.0.2 and greater is recommended. Without OpenSSL TLS and DTLS networking features will not be available.
 
 
 Tests dependencies
