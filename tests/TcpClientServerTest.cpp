@@ -3072,7 +3072,6 @@ TEST_F(TcpClientServerTest, multiple_connect_calls_to_server) {
 }
 
 TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_other) {
-this->log_to_stdout();
     const std::size_t SERVER_SEND_DATA_SIZE = 64 * 1000 * 1000;
     const std::size_t CLIENT_SEND_DATA_SIZE = 64 * 1024 * 1024;
 
