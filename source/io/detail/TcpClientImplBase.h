@@ -58,9 +58,6 @@ protected:
     uv_tcp_t* m_tcp_stream = nullptr;
     std::size_t m_pending_write_requests = 0;
 
-    std::shared_ptr<char> m_read_buf;
-    std::size_t m_read_buf_size = 0;
-
     std::size_t m_data_offset = 0;
 
     bool m_is_open = false;
@@ -90,7 +87,6 @@ TcpClientImplBase<ParentType, ImplType>::TcpClientImplBase(EventLoop& loop, Pare
 
 template<typename ParentType, typename ImplType>
 TcpClientImplBase<ParentType, ImplType>::~TcpClientImplBase() {
-    m_read_buf.reset();
 }
 
 template<typename ParentType, typename ImplType>
@@ -235,15 +231,7 @@ template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::alloc_read_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     auto& this_ = *reinterpret_cast<ImplType*>(handle->data);
 
-    if (this_.m_read_buf == nullptr) {
-        default_alloc_buffer(handle, suggested_size, buf);
-
-        this_.m_read_buf.reset(buf->base, std::default_delete<char[]>());
-        this_.m_read_buf_size = buf->len;
-    } else {
-        buf->base =  this_.m_read_buf.get();
-        buf->len = static_cast<decltype(uv_buf_t::len)>(this_.m_read_buf_size);
-    }
+    default_alloc_buffer(handle, suggested_size, buf);
 }
 
 } // namespace detail
