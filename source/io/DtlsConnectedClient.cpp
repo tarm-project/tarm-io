@@ -206,6 +206,14 @@ void DtlsConnectedClient::send_data(const std::string& message, EndSendCallback 
     return m_impl->send_data(message, callback);
 }
 
+void DtlsConnectedClient::send_data(std::string&& message, EndSendCallback callback) {
+    return m_impl->send_data(std::move(message), callback);
+}
+
+void DtlsConnectedClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback) {
+    return m_impl->send_data(c_str, size, callback);
+}
+
 void DtlsConnectedClient::close() {
     return m_impl->close();
 }

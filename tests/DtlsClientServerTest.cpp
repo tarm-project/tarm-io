@@ -114,8 +114,8 @@ TEST_F(DtlsClientServerTest, bind_privileged) {
 TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     io::EventLoop loop;
 
-    const std::string client_message = "Hello from client!";
-    const std::string server_message = "Hello from server!";
+    const char client_message[] = "Hello from client!";
+    const char server_message[] = "Hello from server!";
 
     std::size_t server_new_connection_counter = 0;
     std::size_t server_data_receive_counter = 0;
@@ -139,7 +139,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
             std::string s(data.buf.get(), data.size);
             EXPECT_EQ(client_message, s);
 
-            client.send_data(server_message,
+            client.send_data(server_message, sizeof(server_message) - 1, // -1 is to not send last 0
                 [&](io::DtlsConnectedClient& client, const io::Error& error) {
                     EXPECT_FALSE(error) << error.string();
                     ++server_data_send_counter;
@@ -155,7 +155,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
             EXPECT_FALSE(error) << error.string();
             ++client_new_connection_counter;
 
-            client.send_data(client_message,
+            client.send_data(client_message, sizeof(client_message) - 1, // -1 is to not send last 0
                 [&](io::DtlsClient& client, const io::Error& error) {
                     EXPECT_FALSE(error) << error.string();
                     ++client_data_send_counter;

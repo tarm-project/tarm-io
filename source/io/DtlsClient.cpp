@@ -250,6 +250,14 @@ void DtlsClient::send_data(const std::string& message, EndSendCallback callback)
     return m_impl->send_data(message, callback);
 }
 
+void DtlsClient::send_data(std::string&& message, EndSendCallback callback) {
+    return m_impl->send_data(std::move(message), callback);
+}
+
+void DtlsClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback) {
+    return m_impl->send_data(c_str, size, callback);
+}
+
 DtlsVersion DtlsClient::negotiated_dtls_version() const {
     return m_impl->negotiated_dtls_version();
 }
