@@ -39,9 +39,10 @@ public:
     IO_DLL_PUBLIC void shutdown();
     IO_DLL_PUBLIC bool is_open() const;
 
-    // TODO: char* and std::string&& send overloads
+    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
     IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);
 
     IO_DLL_PUBLIC TlsTcpServer& server();
     IO_DLL_PUBLIC const TlsTcpServer& server() const;

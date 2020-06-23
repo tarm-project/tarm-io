@@ -155,16 +155,7 @@ void TlsTcpClient::Impl::close() {
 const SSL_METHOD* TlsTcpClient::Impl::ssl_method() {
     return SSLv23_client_method(); // This call includes also TLS versions
 }
-/*
-void TlsTcpClient::Impl::ssl_set_versions() {
-    this->set_tls_version(std::get<0>(m_version_range), std::get<1>(m_version_range));
-}
 
-bool TlsTcpClient::Impl::ssl_init_certificate_and_key() {
-    // Do nothing
-    return true;
-}
-*/
 void TlsTcpClient::Impl::ssl_set_state() {
     SSL_set_connect_state(this->ssl());
 }
@@ -187,7 +178,7 @@ void TlsTcpClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const 
     }
 }
 
-void TlsTcpClient::Impl::on_alert(int code) {
+void TlsTcpClient::Impl::on_alert(int /*code*/) {
     // Do nothing
 }
 
@@ -235,6 +226,14 @@ void TlsTcpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t s
 
 void TlsTcpClient::send_data(const std::string& message, EndSendCallback callback) {
     return m_impl->send_data(message, callback);
+}
+
+void TlsTcpClient::send_data(std::string&& message, EndSendCallback callback) {
+    return m_impl->send_data(std::move(message), callback);
+}
+
+void TlsTcpClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback) {
+    return m_impl->send_data(c_str, size, callback);
 }
 
 TlsVersion TlsTcpClient::negotiated_tls_version() const {

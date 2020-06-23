@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "RawBufferGetter.h"
 #include "io/DataChunk.h"
 #include "io/DtlsVersion.h"
 #include "io/EventLoop.h"
@@ -14,6 +15,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+#include <cstring>
 #include <iostream>
 
 namespace tarm {
@@ -43,8 +45,10 @@ public:
 
     virtual void on_alert(int code) = 0;
 
-    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
-    void send_data(const std::string& message, typename ParentType::EndSendCallback callback);
+    void send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback);
+    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback  callback);
+    void send_data(const std::string& message, typename ParentType::EndSendCallback  callback);
+    void send_data(std::string&& message, typename ParentType::EndSendCallback callback);
 
     void on_data_receive(const char* buf, std::size_t size);
 
@@ -64,6 +68,9 @@ protected:
         FINISHING,
         FINISHED
     };
+
+    template<typename T>
+    void send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
 
     void internal_read_from_sll_and_send(typename ParentType::UnderlyingClientType::EndSendCallback on_send);
 
@@ -355,15 +362,41 @@ void OpenSslClientImplBase<ParentType, ImplType>::finish_handshake() {
     on_handshake_complete();
 }
 
+
+template<typename ParentType, typename ImplType>
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback)  {
+    send_data_impl(c_str, size, callback);
+}
+
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
 
+    send_data_impl(buffer, size, callback);
+}
+
+template<typename ParentType, typename ImplType>
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(const std::string& message, typename ParentType::EndSendCallback callback) {
+    std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
+    std::memcpy(ptr.get(), message.c_str(), message.size());
+    send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
+}
+
+template<typename ParentType, typename ImplType>
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::string&& message, typename ParentType::EndSendCallback callback) {
+    const std::uint32_t size = static_cast<std::uint32_t>(message.size());
+    send_data_impl(std::move(message), size, callback);
+}
+
+template<typename ParentType, typename ImplType>
+template<typename T>
+void OpenSslClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
     if (!is_open()) {
         callback(*m_parent, Error(StatusCode::NOT_CONNECTED));
         return;
     }
 
-    const auto write_result = SSL_write(m_ssl.get(), buffer.get(), size);
+    const auto buf_data = raw_buffer_get(buffer);
+    const auto write_result = SSL_write(m_ssl.get(), buf_data, size);
     if (write_result <= 0) {
         IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size", size);
 
@@ -394,13 +427,6 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<cons
             callback(*m_parent, error);
         }
     });
-}
-
-template<typename ParentType, typename ImplType>
-void OpenSslClientImplBase<ParentType, ImplType>::send_data(const std::string& message, typename ParentType::EndSendCallback callback) {
-    std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
-    std::copy(message.c_str(), message.c_str() + message.size(), ptr.get());
-    send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
 }
 
 template<typename ParentType, typename ImplType>

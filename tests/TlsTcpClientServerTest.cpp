@@ -219,7 +219,7 @@ TEST_F(TlsTcpClientServerTest, client_send_without_connect_no_callback) {
 }
 
 TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
-    const std::string message = "Hello!";
+    const char message[] = "Hello!";
     std::size_t client_on_connect_callback_count = 0;
     std::size_t client_on_send_callback_count = 0;
     std::size_t server_on_connect_callback_count = 0;
@@ -239,7 +239,7 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
             EXPECT_EQ(1, server_on_connect_callback_count);
             ++server_on_receive_callback_count;
 
-            EXPECT_EQ(message.size(), data.size);
+            EXPECT_EQ(sizeof(message) - 1, data.size);
             std::string received_message(data.buf.get(), data.size);
             EXPECT_EQ(message, received_message);
 
@@ -256,11 +256,13 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
         [&](io::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++client_on_connect_callback_count;
-            client.send_data(message, [&](io::TlsTcpClient& client, const io::Error& error) {
-                EXPECT_FALSE(error);
-                ++client_on_send_callback_count;
-                client.schedule_removal();
-            });
+            client.send_data(message, sizeof(message) - 1,
+                [&](io::TlsTcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error);
+                    ++client_on_send_callback_count;
+                    client.schedule_removal();
+                }
+            );
         }
     );
 
@@ -432,7 +434,7 @@ TEST_F(TlsTcpClientServerTest, client_send_simultaneous_multiple_chunks_to_serve
 }
 
 TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
-    const std::string message = "Hello!";
+    const char message[] = "Hello!";
     std::size_t client_on_connect_callback_count = 0;
     std::size_t client_on_receive_callback_count = 0;
     std::size_t server_on_send_callback_count = 0;
@@ -447,11 +449,13 @@ TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
         [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
-            client.send_data(message, [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+            client.send_data(message, sizeof(message) - 1, // -1 is for last 0
+                [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
                     ++server_on_send_callback_count;
                     server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
-                });
+                }
+            );
         },
         [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -470,7 +474,7 @@ TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
             EXPECT_FALSE(error);
             ++client_on_receive_callback_count;
 
-            EXPECT_EQ(message.size(), data.size);
+            EXPECT_EQ(sizeof(message) - 1, data.size);
             std::string received_message(data.buf.get(), data.size);
             EXPECT_EQ(message, received_message);
 

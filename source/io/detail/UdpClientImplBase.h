@@ -23,8 +23,8 @@ public:
     UdpClientImplBase(EventLoop& loop, ParentType& parent, RefCounted& ref_counted, uv_udp_t* udp_handle);
 
     void send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback);
-    void send_data(const std::string& message, typename ParentType::EndSendCallback  callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback  callback);
+    void send_data(const std::string& message, typename ParentType::EndSendCallback  callback);
     void send_data(std::string&& message, typename ParentType::EndSendCallback callback);
 
     std::uint16_t bound_port() const;
