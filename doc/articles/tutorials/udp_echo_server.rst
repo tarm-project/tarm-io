@@ -8,13 +8,13 @@ In this small tutorial we create UDP echo server, which replies back received me
 Create 2 following files CMakeLists.txt and main.cpp.
 
 
-.. literalinclude:: ../../../examlpes/udp_echo_server/CMakeLists.txt
+.. literalinclude:: ../../../examples/udp_echo_server/CMakeLists.txt
    :caption: CMakeLists.txt
    :language: cmake
    :linenos:
 
 
-.. literalinclude:: ../../../examlpes/udp_echo_server/main.cpp
+.. literalinclude:: ../../../examples/udp_echo_server/main.cpp
    :caption: main.cpp
    :language: c++
    :linenos:

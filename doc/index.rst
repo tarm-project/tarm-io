@@ -52,7 +52,7 @@ Quick showcase
 Tarm-io library leverages simplicity as its main design principle. The library hides a lot of networking complexity from user.
 Just look at the example below. The very basic version of UDP echo server without error handling and memory management will look like this.
 
-.. literalinclude:: ../examlpes/very_basic_udp_echo_server/main.cpp
+.. literalinclude:: ../examples/very_basic_udp_echo_server/main.cpp
    :caption: main.cpp
    :language: c++
    :linenos:

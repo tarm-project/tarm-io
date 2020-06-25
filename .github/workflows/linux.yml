@@ -43,7 +43,7 @@ jobs:
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
           "cd build && \
            sudo make install && \
-           cd ../examlpes && \
+           cd ../examples && \
            mkdir -p build && \
            cd build && \
            cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && \
