@@ -20,11 +20,18 @@ div.body h3 {
     margin-top: 10px;
 }
 
+/* special blocks */
 div.warning {
     background-color: #fde6d8;
     border: 1px solid #ffca66;
 }
 
+div.note {
+    background-color: #fffbce;
+    border: 1px solid #fbe54e;
+}
+
+/* sidebar */
 div.sphinxsidebar #searchbox input[type="submit"] {
     border: 1px solid #ccc;
     margin-left: 20px;

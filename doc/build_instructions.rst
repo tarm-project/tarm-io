@@ -5,6 +5,8 @@ Build instructions
 ==================
 Each platfrom's build instructions page has description how to build and install dependencies.
 
+If you are familar with Docker, the fastest way to get started and play around with the library is to use existing `tarmio builder <https://hub.docker.com/r/tarmio/builders/tags>`_ images.
+
 Build for platforms
 -------------------
 .. toctree::
@@ -13,6 +15,7 @@ Build for platforms
    articles/build/windows
    articles/build/linux
    articles/build/mac
+   articles/build/docker
 
 
 Build system requirements
