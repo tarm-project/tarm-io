@@ -15,7 +15,7 @@ using namespace tarm;
 int main() {
     io::EventLoop loop;
 
-    const auto port = 1234;
+    const std::uint16_t port = 1234;
 
     // TODO: smart pointer will do the job in case of error
     auto server = new io::UdpServer(loop);
