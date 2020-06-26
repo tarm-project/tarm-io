@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.5.0)
 
-option(BUILD_SHARED_LIBS "Build IO as shared library" ON)
-option(IO_ENABLE_TESTS "Enable tests" ON)
+option(BUILD_SHARED_LIBS "Build tarm-io as shared library" ON)
+option(TARM_IO_BUILD_TESTS "Build tests" OFF)
 option(IO_USE_EXTERNAL_LIBUV "Use system libuv instead of the bundled one" OFF)
 
+# TODO: enable only on MacOS X
 # According to docs this variable should be set before 'project' statement
 if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version")
@@ -33,13 +34,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     message(STATUS "Platform is: Mac OS X")
 endif()
 
-# cmake -DCMAKE_BUILD_TYPE=Debug -DIO_SANITIZER=thread ..
-if (NOT MSVC AND NOT DEFINED IO_SANITIZER)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
-endif()
-
-
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
@@ -47,12 +41,20 @@ endif()
 
 set(IO_LIBUV_VERSION "1.30.1")
 
+# IO_SANITIZER allows to build the library with sanitizer enabled
+# For details see https://clang.llvm.org/docs/.
+# value if set should be name of GCC/Clang sanitizers like 'thread', 'address', etc...
 if(DEFINED IO_SANITIZER)
     message(STATUS "Using sanitizer: ${IO_SANITIZER}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${IO_SANITIZER}")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${IO_SANITIZER}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
+else()
+    if (NOT MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+    endif()
 endif()
 
 #cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_INSTALL_PREFIX=E:\projects\thirdparty\gtest\install ..\googletest-release-1.8.1
@@ -91,12 +93,14 @@ endif()
 add_subdirectory("thirdparty")
 add_subdirectory("source")
 
-if (IO_ENABLE_TESTS)
+if (TARM_IO_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
 message("================ Configuration summary ================")
-message("IO_OPENSSL_FOUND ${IO_OPENSSL_FOUND}")
+message("OpenSSL support: ${IO_OPENSSL_FOUND}")
+message("Build tests: ${TARM_IO_BUILD_TESTS}")
+message("=======================================================")
 
 #############################################################
 # get_cmake_property(_variableNames VARIABLES)

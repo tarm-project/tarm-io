@@ -22,7 +22,7 @@ jobs:
       run: docker pull ${IMAGE_PATH}
     - name: build
       run: |
-        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DIO_SANITIZER=thread .. && make -j$(nproc)"
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DIO_SANITIZER=thread -DTARM_IO_BUILD_TESTS=TRUE .. && make -j$(nproc)"
     - name: run tests
       run: |
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} "cd build && make RunTests"

@@ -24,7 +24,7 @@ jobs:
       run: docker pull ${IMAGE_PATH}
     - name: build
       run: |
-        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && make -j$(nproc)"
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTARM_IO_BUILD_TESTS=TRUE .. && make -j$(nproc)"
     - name: valgrind check
       run: |
-        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "cd build && valgrind --leak-check=full --error-exitcode=1 ./tests/tests"    
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} "cd build && valgrind --leak-check=full --error-exitcode=1 ./tests/tests"

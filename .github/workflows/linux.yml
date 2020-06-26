@@ -31,7 +31,7 @@ jobs:
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
           "mkdir -p build && \
            cd build && \
-           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && \
+           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTARM_IO_BUILD_TESTS=TRUE .. && \
            make -j$(nproc)"
     - name: run tests
       run: |
