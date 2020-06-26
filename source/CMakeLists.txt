@@ -85,6 +85,7 @@ else()
 endif()
 
 add_library(tarm-io ${IO_SOURCE_LIST})
+set_target_properties(tarm-io PROPERTIES DEBUG_POSTFIX _d)
 target_link_libraries(tarm-io PUBLIC ${LIBUV_LIB_DEPS})
 
 # DOC: there are problems with CMake to find different OpenSSL versions.
