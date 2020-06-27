@@ -88,6 +88,10 @@ add_library(tarm-io ${IO_SOURCE_LIST})
 set_target_properties(tarm-io PROPERTIES DEBUG_POSTFIX _d)
 target_link_libraries(tarm-io PUBLIC ${LIBUV_LIB_DEPS})
 
+#add_custom_target(debug_generator_expressions
+#    COMMAND ${CMAKE_COMMAND} -E echo $<$<CONFIG:DEBUG>:$<TARGET_PROPERTY:tarm-io,DEBUG_POSTFIX>>
+#)
+
 # DOC: there are problems with CMake to find different OpenSSL versions.
 # https://gitlab.kitware.com/cmake/cmake/-/issues/18352
 # One part could be found from one version and second from another
@@ -157,7 +161,7 @@ if(WIN32 AND BUILD_SHARED_LIBS)
     add_custom_command(TARGET tarm-io POST_BUILD
           COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/tests/$<CONFIG>/"
           COMMAND ${CMAKE_COMMAND} -E copy_if_different
-              "${CMAKE_BINARY_DIR}/source/$<CONFIG>/tarm-io.dll"
+              "${CMAKE_BINARY_DIR}/source/$<CONFIG>/tarm-io$<$<CONFIG:DEBUG>:$<TARGET_PROPERTY:tarm-io,DEBUG_POSTFIX>>.dll"
               "${CMAKE_BINARY_DIR}/tests/$<CONFIG>/"
               )
 endif()
