@@ -175,6 +175,9 @@ install(DIRECTORY io DESTINATION include/tarm
    REGEX "${IO_SOURCE_EXCLUDE_PATTERN}" EXCLUDE)
 
 install(TARGETS tarm-io EXPORT tarm-ioTargets
+    RUNTIME
+        DESTINATION bin
+        COMPONENT Libraries
     LIBRARY
         DESTINATION lib
         COMPONENT Libraries
