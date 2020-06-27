@@ -195,7 +195,7 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
 TEST_F(DtlsClientServerTest, connected_peer_timeout) {
     io::EventLoop loop;
 
-    const std::size_t TIMEOUT_MS = 100;
+    const std::size_t TIMEOUT_MS = 200;
     const std::string client_message = "Hello from client!";
 
     std::size_t server_new_connection_counter = 0;
