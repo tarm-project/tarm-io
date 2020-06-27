@@ -2,7 +2,9 @@ name: Windows-64bit
 
 on:
   push:
-    branches: [ dev ]
+    branches:
+      - master
+      - dev
 
 jobs:
   MSVC:

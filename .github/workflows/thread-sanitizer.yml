@@ -2,7 +2,9 @@ name: Thread Sanitizer
 
 on:
   push:
-    branches: [ dev ]
+    branches:
+      - master
+      - dev
 
 jobs:
   ALL:
