@@ -27,7 +27,7 @@ namespace io {
 
 class DtlsServer::Impl {
 public:
-    Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent);
+    Impl(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent);
     ~Impl();
 
     Error listen(const Endpoint& endpoint,
@@ -62,8 +62,8 @@ private:
     EventLoop* m_loop;
     UdpServer* m_udp_server;
 
-    Path m_certificate_path;
-    Path m_private_key_path;
+    fs::Path m_certificate_path;
+    fs::Path m_private_key_path;
 
     X509Ptr m_certificate;
     EvpPkeyPtr m_private_key;
@@ -80,7 +80,7 @@ private:
     std::unordered_set<DtlsConnectedClient*> m_clients;
 };
 
-DtlsServer::Impl::Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent) :
+DtlsServer::Impl::Impl(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_udp_server(new UdpServer(loop)),
@@ -278,7 +278,7 @@ bool DtlsServer::Impl::schedule_removal() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-DtlsServer::DtlsServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, DtlsVersionRange version_range) :
+DtlsServer::DtlsServer(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, DtlsVersionRange version_range) :
     Removable(loop),
     m_impl(new Impl(loop, certificate_path, private_key_path, version_range, *this)) {
 }

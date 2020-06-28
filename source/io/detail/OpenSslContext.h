@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "io/TlsVersion.h"
-#include "io/DtlsVersion.h"
-#include "io/global/Configuration.h"
+#include "TlsVersion.h"
+#include "DtlsVersion.h"
+#include "global/Configuration.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

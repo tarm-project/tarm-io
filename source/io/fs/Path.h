@@ -29,6 +29,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 namespace path_detail { // intentionally don't use io::detail to not bring internal filesystem functions into ADL via path_constants
 
 template< typename Char, Char Separator, Char PreferredSeparator, Char Dot >
@@ -575,8 +576,8 @@ class Path::Iterator : public std::iterator<
                           const Path*,                     // pointer
                           Path&                            // reference
                         > {
-    friend class io::Path;
-    friend class io::Path::ReverseIterator;
+    friend class io::fs::Path;
+    friend class io::fs::Path::ReverseIterator;
     friend void m_path_iterator_increment(Path::Iterator & it);
     friend void m_path_iterator_decrement(Path::Iterator & it);
 
@@ -670,7 +671,7 @@ public:
     bool operator!=(const ReverseIterator& rhs) const { return !equal(rhs);}
 
 private:
-    friend class io::Path;
+    friend class io::fs::Path;
 
     const Path& dereference() const { return m_element; }
     bool equal(const ReverseIterator& rhs) const { return m_itr == rhs.m_itr; }
@@ -757,14 +758,14 @@ private:
   template <class Char, class Traits>
   inline std::basic_ostream<Char, Traits>&
   operator<<(std::basic_ostream<Char, Traits>& os, const Path& p) {
-    return os << ::tarm::io::quoted(p.template string<std::basic_string<Char> >(), static_cast<Char>('&'));
+    return os << ::tarm::io::fs::quoted(p.template string<std::basic_string<Char> >(), static_cast<Char>('&'));
   }
 
   template <class Char, class Traits>
   inline std::basic_istream<Char, Traits>&
   operator>>(std::basic_istream<Char, Traits>& is, Path& p) {
     std::basic_string<Char> str;
-    is >> ::tarm::io::quoted(str, static_cast<Char>('&'));
+    is >> ::tarm::io::fs::quoted(str, static_cast<Char>('&'));
     p = str;
     return is;
   }
@@ -925,6 +926,7 @@ private:
   std::wstring Path::generic_string<std::wstring>(const codecvt_type& cvt) const
     { return generic_wstring(cvt); }
 
+} // namespace fs
 } // namespace io
 } // namespace tarm
 
@@ -932,9 +934,9 @@ private:
 // Path hasher for std
 namespace std {
 
-template <> struct hash<::tarm::io::Path> {
-    size_t operator()(const ::tarm::io::Path& x) const {
-        return ::tarm::io::hash_value(x);
+template <> struct hash<::tarm::io::fs::Path> {
+    size_t operator()(const ::tarm::io::fs::Path& x) const {
+        return ::tarm::io::fs::hash_value(x);
     }
 };
 

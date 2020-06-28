@@ -5,10 +5,10 @@
 
 #include "UTCommon.h"
 
-#include "io/Path.h"
-#include "io/TlsTcpClient.h"
-#include "io/TlsTcpServer.h"
-#include "io/global/Version.h"
+#include "TlsTcpClient.h"
+#include "TlsTcpServer.h"
+#include "fs/Path.h"
+#include "global/Version.h"
 
 #include <thread>
 #include <vector>
@@ -20,10 +20,10 @@ protected:
     std::uint16_t m_default_port = 32541;
     std::string m_default_addr = "127.0.0.1";
 
-    const io::Path m_test_path = exe_path().string();
+    const io::fs::Path m_test_path = exe_path().string();
 
-    const io::Path m_cert_path = m_test_path / "certificate.pem";
-    const io::Path m_key_path = m_test_path / "key.pem";
+    const io::fs::Path m_cert_path = m_test_path / "certificate.pem";
+    const io::fs::Path m_key_path = m_test_path / "key.pem";
 };
 /*
 TEST_F(TlsTcpClientServerTest,  constructor) {
@@ -789,7 +789,7 @@ TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_som
 TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
     io::EventLoop loop;
 
-    io::Path not_existing_path;
+    io::fs::Path not_existing_path;
 #if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     not_existing_path = "/not/existing/path.pem";
 #else
@@ -829,7 +829,7 @@ TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
 TEST_F(TlsTcpClientServerTest, not_existing_key) {
     io::EventLoop loop;
 
-    io::Path not_existing_path;
+    io::fs::Path not_existing_path;
 #if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     not_existing_path = "/not/existing/path.pem";
 #else
@@ -866,7 +866,7 @@ TEST_F(TlsTcpClientServerTest, not_existing_key) {
 TEST_F(TlsTcpClientServerTest, invalid_certificate) {
     io::EventLoop loop;
 
-    io::Path certificate_path = m_test_path / "invalid_certificate.pem";;
+    io::fs::Path certificate_path = m_test_path / "invalid_certificate.pem";;
     auto server = new io::TlsTcpServer(loop, certificate_path, m_key_path);
 
     std::size_t server_new_connection_callback_count = 0;
@@ -896,7 +896,7 @@ TEST_F(TlsTcpClientServerTest, invalid_certificate) {
 TEST_F(TlsTcpClientServerTest, invalid_private_key) {
     io::EventLoop loop;
 
-    io::Path key_path = m_test_path / "invalid_key.pem";;
+    io::fs::Path key_path = m_test_path / "invalid_key.pem";;
     auto server = new io::TlsTcpServer(loop, m_cert_path, key_path);
 
     std::size_t server_new_connection_callback_count = 0;
@@ -930,8 +930,8 @@ TEST_F(TlsTcpClientServerTest, invalid_private_key) {
 TEST_F(TlsTcpClientServerTest, not_matching_certificate_and_key) {
     io::EventLoop loop;
 
-    const io::Path cert_path = m_test_path / "not_matching_certificate.pem";
-    const io::Path key_path = m_test_path / "not_matching_key.pem";
+    const io::fs::Path cert_path = m_test_path / "not_matching_certificate.pem";
+    const io::fs::Path key_path = m_test_path / "not_matching_key.pem";
     auto server = new io::TlsTcpServer(loop, cert_path, key_path);
 
     std::size_t server_new_connection_callback_count = 0;

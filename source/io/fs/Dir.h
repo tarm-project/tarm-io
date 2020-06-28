@@ -20,6 +20,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 class Dir : public Removable,
             public UserDataHolder {
@@ -67,5 +68,6 @@ using ProgressCallback = std::function<void(const std::string&)>;
 IO_DLL_PUBLIC
 void remove_dir(EventLoop& loop, const Path& path, const RemoveDirCallback& remove_callback, const ProgressCallback& progress_callback = nullptr);
 
+} // namespace fs
 } // namespace io
 } // namespace tarm

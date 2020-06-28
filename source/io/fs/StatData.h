@@ -9,6 +9,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 struct StatData {
     struct TimeSpec {
@@ -34,5 +35,6 @@ struct StatData {
     TimeSpec      birth_time;
 };
 
+} // namespace fs
 } // namespace io
 } // namespace tarm

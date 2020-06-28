@@ -23,6 +23,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 class File : public Removable,
              public UserDataHolder {
@@ -62,5 +63,6 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
+} // namespace fs
 } // namespace io
 } // namespace tarm

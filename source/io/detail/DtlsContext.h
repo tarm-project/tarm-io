@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "io/DtlsVersion.h"
+#include "DtlsVersion.h"
 
 #include <openssl/ssl.h>
 

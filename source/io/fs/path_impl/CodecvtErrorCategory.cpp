@@ -14,7 +14,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "io/Export.h"
+#include "Export.h"
 
 #include <locale>
 #include <vector>
@@ -66,6 +66,7 @@ namespace
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 IO_DLL_PUBLIC const std::error_category& codecvt_error_category()
 {
@@ -73,5 +74,6 @@ IO_DLL_PUBLIC const std::error_category& codecvt_error_category()
     return codecvt_error_cat_const;
 }
 
+} // namespace fs
 } // namespace io
 } // namespace tarm

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "io/global/Configuration.h"
+#include "global/Configuration.h"
 
 #include <boost/filesystem/path.hpp>
 

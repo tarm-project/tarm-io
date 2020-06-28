@@ -25,7 +25,7 @@ namespace io {
 
 class TlsTcpServer::Impl {
 public:
-    Impl(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsVersionRange version_range, TlsTcpServer& parent);
+    Impl(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range, TlsTcpServer& parent);
     ~Impl();
 
     Error listen(const Endpoint endpoint,
@@ -61,8 +61,8 @@ private:
     EventLoop* m_loop;
     TcpServer* m_tcp_server;
 
-    Path m_certificate_path;
-    Path m_private_key_path;
+    fs::Path m_certificate_path;
+    fs::Path m_private_key_path;
 
     X509Ptr m_certificate;
     EvpPkeyPtr m_private_key;
@@ -76,8 +76,8 @@ private:
 };
 
 TlsTcpServer::Impl::Impl(EventLoop& loop,
-                         const Path& certificate_path,
-                         const Path& private_key_path,
+                         const fs::Path& certificate_path,
+                         const fs::Path& private_key_path,
                          TlsVersionRange version_range,
                          TlsTcpServer& parent) :
     m_parent(&parent),
@@ -265,7 +265,7 @@ bool TlsTcpServer::Impl::certificate_and_key_match() {
 
 
 
-TlsTcpServer::TlsTcpServer(EventLoop& loop, const Path& certificate_path, const Path& private_key_path, TlsVersionRange version_range) :
+TlsTcpServer::TlsTcpServer(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range) :
     Removable(loop),
     m_impl(new Impl(loop, certificate_path, private_key_path, version_range, *this)) {
 }

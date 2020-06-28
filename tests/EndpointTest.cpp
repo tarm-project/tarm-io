@@ -5,8 +5,8 @@
 
 #include "UTCommon.h"
 
-#include "io/ByteSwap.h"
-#include "io/Endpoint.h"
+#include "ByteSwap.h"
+#include "Endpoint.h"
 
 #if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     #include <sys/socket.h>

@@ -5,15 +5,15 @@
 
 #include "UTCommon.h"
 
-#include "io/ByteSwap.h"
-#include "io/DtlsClient.h"
-#include "io/DtlsServer.h"
-#include "io/Path.h"
-#include "io/ScopeExitGuard.h"
-#include "io/Timer.h"
-#include "io/UdpClient.h"
-#include "io/UdpServer.h"
-#include "io/global/Version.h"
+#include "ByteSwap.h"
+#include "DtlsClient.h"
+#include "DtlsServer.h"
+#include "ScopeExitGuard.h"
+#include "Timer.h"
+#include "UdpClient.h"
+#include "UdpServer.h"
+#include "fs/Path.h"
+#include "global/Version.h"
 
 #include <chrono>
 #include <string>
@@ -29,10 +29,10 @@ protected:
     std::uint16_t m_default_port = 30541;
     std::string m_default_addr = "127.0.0.1";
 
-    const io::Path m_test_path = exe_path().string();
+    const io::fs::Path m_test_path = exe_path().string();
 
-    const io::Path m_cert_path = m_test_path / "certificate.pem";
-    const io::Path m_key_path = m_test_path / "key.pem";
+    const io::fs::Path m_cert_path = m_test_path / "certificate.pem";
+    const io::fs::Path m_key_path = m_test_path / "key.pem";
 };
 
 TEST_F(DtlsClientServerTest, client_without_actions) {

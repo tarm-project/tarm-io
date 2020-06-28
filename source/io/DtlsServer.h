@@ -12,8 +12,8 @@
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
-#include "Path.h"
 #include "Removable.h"
+#include "fs/Path.h"
 
 #include <memory>
 #include <functional>
@@ -39,8 +39,8 @@ public:
     IO_FORBID_MOVE(DtlsServer);
 
     IO_DLL_PUBLIC DtlsServer(EventLoop& loop,
-                             const Path& certificate_path,
-                             const Path& private_key_path,
+                             const fs::Path& certificate_path,
+                             const fs::Path& private_key_path,
                              DtlsVersionRange version_range = DEFAULT_DTLS_VERSION_RANGE);
 
     IO_DLL_PUBLIC

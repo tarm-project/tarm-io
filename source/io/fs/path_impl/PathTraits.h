@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "io/Export.h"
+#include "Export.h"
 
 #include <cwchar>  // for mbstate_t
 #include <string>
@@ -24,6 +24,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 IO_DLL_PUBLIC const std::error_category& codecvt_error_category();
 //  uses std::codecvt_base::result used for error codes:
@@ -232,5 +233,6 @@ void dispatch(T* const& c_str, U& to) {
 }
 
 } // namespace path_traits
+} // namespace fs
 } // namespace io
 } // namespace tarm

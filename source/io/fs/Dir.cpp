@@ -15,6 +15,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 class Dir::Impl {
 public:
@@ -419,5 +420,6 @@ void remove_dir(EventLoop& loop, const Path& path, const RemoveDirCallback& remo
     }
 }
 
+} // namespace fs
 } // namespace io
 } // namespace tarm

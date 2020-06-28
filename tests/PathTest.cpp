@@ -5,10 +5,9 @@
 
 #include "UTCommon.h"
 
-#include "io/detail/ConstexprString.h"
-
-#include "io/Path.h"
-#include "io/path_impl/Utf8CodecvtFacet.h"
+#include "detail/ConstexprString.h"
+#include "fs/Path.h"
+#include "fs/path_impl/Utf8CodecvtFacet.h"
 
 #include <iterator>
 #include <string>
@@ -20,11 +19,13 @@
 // https://github.com/google/googlemock/issues/170
 namespace tarm {
 namespace io {
+namespace fs {
 
-void PrintTo(const tarm::io::Path& path, std::ostream* os) {
+void PrintTo(const tarm::io::fs::Path& path, std::ostream* os) {
     *os << path;
 }
 
+} // namespace fs
 } // namespace io
 } // namespace tarm
 
@@ -34,7 +35,7 @@ void PrintTo(const tarm::io::Path& path, std::ostream* os) {
 # define IO_TEST_DIR_SEP "/"
 #endif
 
-using io::Path;
+using io::fs::Path;
 
 struct PathTest : public testing::Test,
                   public LogRedirector {
@@ -899,7 +900,7 @@ TEST_F(PathTest, imbue_locale) {
     //  \u2722 and \xE2\x9C\xA2 are UTF-16 and UTF-8 FOUR TEARDROP-SPOKED ASTERISK
 
     std::locale global_loc = std::locale();
-    std::locale loc(global_loc, new io::detail::utf8_codecvt_facet);
+    std::locale loc(global_loc, new io::fs::detail::utf8_codecvt_facet);
     std::locale old_loc = Path::imbue(loc);
 
     Path p2("\xE2\x9C\xA2");
@@ -2518,7 +2519,7 @@ TEST_F(PathTest, error_handling) {
       catch (const std::system_error& ex)
       {
         exception_thrown = true;
-        ASSERT_EQ(ex.code(), std::error_code(std::codecvt_base::partial, io::codecvt_error_category()));
+        ASSERT_EQ(ex.code(), std::error_code(std::codecvt_base::partial, io::fs::codecvt_error_category()));
       }
       catch (...) { ASSERT_TRUE(false); }
       ASSERT_TRUE(exception_thrown);
@@ -2530,7 +2531,7 @@ TEST_F(PathTest, error_handling) {
       catch (const std::system_error& ex)
       {
         exception_thrown = true;
-        ASSERT_EQ(ex.code(), std::error_code(std::codecvt_base::error, io::codecvt_error_category()));
+        ASSERT_EQ(ex.code(), std::error_code(std::codecvt_base::error, io::fs::codecvt_error_category()));
       }
       catch (...) { ASSERT_TRUE(false); }
       ASSERT_TRUE(exception_thrown);
@@ -2542,7 +2543,7 @@ TEST_F(PathTest, error_handling) {
       catch (const std::system_error & ex)
       {
         exception_thrown = true;
-        ASSERT_EQ(ex.code(), std::error_code(std::codecvt_base::noconv, io::codecvt_error_category()));
+        ASSERT_EQ(ex.code(), std::error_code(std::codecvt_base::noconv, io::fs::codecvt_error_category()));
       }
       catch (...) { ASSERT_TRUE(false); }
       ASSERT_TRUE(exception_thrown);

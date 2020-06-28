@@ -10,6 +10,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 #define IO_LIST_OF_DIRECTORY_ENTRY_TYPES \
     X(UNKNOWN) \
@@ -38,6 +39,6 @@ inline std::ostream& operator<< (std::ostream& out, DirectoryEntryType type) {
     }
 }
 
-
+} // namespace fs
 } // namespace io
 } // namespace tarm

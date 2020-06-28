@@ -5,9 +5,9 @@
 
 #include "UTCommon.h"
 
-#include "io/detail/ConstexprString.h"
+#include "detail/ConstexprString.h"
 
-#include "io/Logger.h"
+#include "Logger.h"
 
 struct LoggerTest : public testing::Test,
                     public LogRedirector {

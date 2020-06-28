@@ -10,6 +10,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 struct ReadRequest : public uv_fs_t {
     ReadRequest() {
@@ -505,5 +506,6 @@ void File::schedule_removal() {
     }
 }
 
+} // namespace fs
 } // namespace io
 } // namespace tarm

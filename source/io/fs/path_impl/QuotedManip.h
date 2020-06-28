@@ -24,6 +24,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
     class ios_flags_saver
     {
@@ -212,6 +213,7 @@ namespace io {
       return detail::quoted_proxy<const Char*, Char> (s, escape, delim);
     }
 
+} // namespace fs
 } // namespace io
 } // namespace tarm
 

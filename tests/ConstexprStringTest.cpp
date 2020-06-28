@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *----------------------------------------------------------------------------------------------*/
 
-#include "io/detail/ConstexprString.h"
+#include "detail/ConstexprString.h"
 
 using namespace tarm::io::detail;
 

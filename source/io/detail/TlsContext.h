@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "io/TlsVersion.h"
+#include "TlsVersion.h"
 
 #include <openssl/ssl.h>
 

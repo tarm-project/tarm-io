@@ -105,13 +105,13 @@ int main(int argc, char* argv[]) {
         std::cout << "Work done!" << std::endl;
     });
 
-    // auto dr = new io::Dir(loop);
-    // dr->open(".", [](io::Dir& dir) {
+    // auto dr = new io::fs::Dir(loop);
+    // dr->open(".", [](io::fs::Dir& dir) {
     //     std::cout << "Opened dir: " << dir.path() << std::endl;
-    //     dir.read([&] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
+    //     dir.read([&] (io::fs::Dir& dir, const char* path, io::fs::DirectoryEntryType type) {
     //         std::cout << type << " " << path << std::endl;
     //     },
-    //     [](io::Dir& dir) {
+    //     [](io::fs::Dir& dir) {
     //         dir.schedule_removal();
     //     });
     // });
@@ -119,10 +119,10 @@ int main(int argc, char* argv[]) {
     //io::Timer timer(loop);
     //timer.start([&](Timer& t){ std::cout << "Timer!!!" << std::endl; timer.stop();}, 1000, 0);
 
-    // auto my_file_ptr = new io::File(loop);
-    // my_file_ptr->open("/home/tarm/work/source/uv_cpp/build/3", [](io::File& file) {
+    // auto my_file_ptr = new io::fs::File(loop);
+    // my_file_ptr->open("/home/tarm/work/source/uv_cpp/build/3", [](io::fs::File& file) {
     //     std::cout << "Opened file: " << file.path() << std::endl;
-    //     file.read([](io::File& file, const char* buf, std::size_t size) {
+    //     file.read([](io::fs::File& file, const char* buf, std::size_t size) {
     //         //file.close();
     //         file.schedule_removal();
     //     });
@@ -140,18 +140,18 @@ int main(int argc, char* argv[]) {
         std::cout << message;
 
         if (message.find("ls") != std::string::npos ) {
-            auto dir = new io::Dir(loop);
-            dir->open(".", [&client](io::Dir& dir, const io::Error& error) {
+            auto dir = new io::fs::Dir(loop);
+            dir->open(".", [&client](io::fs::Dir& dir, const io::Error& error) {
                 std::cout << "Opened dir: " << dir.path() << std::endl;
 
-                dir.read([&client] (io::Dir& dir, const char* path, io::DirectoryEntryType type) {
+                dir.read([&client] (io::fs::Dir& dir, const char* path, io::fs::DirectoryEntryType type) {
                     std::stringstream ss;
                     //for (size_t i = 0; i < 100; ++i)
                         ss << type << " " << path << std::endl;
 
                     client.send_data(ss.str());
                 },
-                [](io::Dir& dir) {
+                [](io::fs::Dir& dir) {
                     std::cout << "End read dir " << std::endl;
                     dir.schedule_removal();
                 });
@@ -179,9 +179,9 @@ int main(int argc, char* argv[]) {
 
         if (message.find("open") != std::string::npos ) {
             auto file_name = extract_parameter(message);
-            auto file_ptr = new io::File(loop);
+            auto file_ptr = new io::fs::File(loop);
 
-            file_ptr->open(file_name, [&client](io::File& file, const io::Error& error) {
+            file_ptr->open(file_name, [&client](io::fs::File& file, const io::Error& error) {
                 if (error) {
                     std::cerr << error.string() << " " << file.path() << std::endl;
                     file.schedule_removal();
@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
 
                 std::cout << "Opened file: " << file.path() << std::endl;
 
-                file.stat([](io::File& file, const io::StatData& stat) {
+                file.stat([](io::fs::File& file, const io::StatData& stat) {
                     std::cout << "File size is: " << stat.size << std::endl;
                 });
 
@@ -198,7 +198,7 @@ int main(int argc, char* argv[]) {
                     file.schedule_removal();
                 });
 
-                file.read([&client](io::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
+                file.read([&client](io::fs::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
                     //std::cout.write(buf.get(), size);
 
                     if (client.pending_send_requesets() > 0) {
@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
                         static int counter = 0;
                         std::cout << "TcpClient after send counter: " << counter++ << std::endl;
 
-                        // if (file.read_state() == io::File::ReadState::PAUSE) {
+                        // if (file.read_state() == io::fs::File::ReadState::PAUSE) {
                         //     std::cout << "Continue read" << std::endl;
                         //     file.continue_read();
                         // }
@@ -220,7 +220,7 @@ int main(int argc, char* argv[]) {
                     //     file.pause_read();
                     // }
                 },
-                [&client](io::File& file){
+                [&client](io::fs::File& file){
                     std::cout << "File end read!" << std::endl;
                     client.set_close_callback(nullptr);
                     file.schedule_removal();

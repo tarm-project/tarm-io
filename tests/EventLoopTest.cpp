@@ -5,8 +5,8 @@
 
 #include "UTCommon.h"
 
-#include "io/EventLoop.h"
-#include "io/ScopeExitGuard.h"
+#include "EventLoop.h"
+#include "ScopeExitGuard.h"
 
 #include <atomic>
 #include <mutex>

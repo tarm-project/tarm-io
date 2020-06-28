@@ -7,6 +7,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 void hash_combine_impl(std::size_t& h, std::uint64_t k) {
     const std::uint64_t m = 0xc6a4a7935bd1e995ul;
@@ -23,5 +24,6 @@ void hash_combine_impl(std::size_t& h, std::uint64_t k) {
     h += 0xe6546b64;
 }
 
+} // namespace fs
 } // namespace io
 } // namespace tarm

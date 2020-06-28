@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "io/Export.h"
-#include "io/TlsVersion.h"
-#include "io/DtlsVersion.h"
+#include "Export.h"
+#include "TlsVersion.h"
+#include "DtlsVersion.h"
 
 namespace tarm {
 namespace io {

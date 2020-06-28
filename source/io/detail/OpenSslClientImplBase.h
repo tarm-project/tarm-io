@@ -6,11 +6,11 @@
 #pragma once
 
 #include "RawBufferGetter.h"
-#include "io/DataChunk.h"
-#include "io/DtlsVersion.h"
-#include "io/EventLoop.h"
-#include "io/TlsVersion.h"
-#include "io/global/Configuration.h"
+#include "DataChunk.h"
+#include "DtlsVersion.h"
+#include "EventLoop.h"
+#include "TlsVersion.h"
+#include "global/Configuration.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

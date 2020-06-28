@@ -5,10 +5,10 @@
 
 #include "UTCommon.h"
 
-#include "io/TcpClient.h"
-#include "io/TcpServer.h"
-#include "io/ScopeExitGuard.h"
-#include "io/Timer.h"
+#include "TcpClient.h"
+#include "TcpServer.h"
+#include "ScopeExitGuard.h"
+#include "Timer.h"
 
 #include <cstdint>
 #include <cstdlib>

@@ -11,6 +11,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 // These checks are required to be sure that we can safe reinterpret cast uv_stat_t to StatData
 static_assert(sizeof(StatData) == sizeof(uv_stat_t), "");
@@ -36,5 +37,6 @@ static_assert(sizeof(StatData::TimeSpec) == sizeof(uv_timespec_t), "");
 static_assert(offsetof(StatData::TimeSpec, seconds)     == offsetof(uv_timespec_t, tv_sec), "");
 static_assert(offsetof(StatData::TimeSpec, nanoseconds) == offsetof(uv_timespec_t, tv_nsec), "");
 
+} // namespace fs
 } // namespace io
 } // namespace tarm

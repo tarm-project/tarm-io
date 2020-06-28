@@ -5,7 +5,7 @@
 
 #include "UTCommon.h"
 
-#include "io/Convert.h"
+#include "Convert.h"
 
 struct ConvertTest : public testing::Test,
                      public LogRedirector {

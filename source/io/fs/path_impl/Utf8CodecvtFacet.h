@@ -78,7 +78,7 @@
 // of types other than <wchar_t,char_t> is used, then std::codecvt must be
 // specialized on those types for this to work.
 
-#include "io/Export.h"
+#include "Export.h"
 
 #include <locale>
 #include <cwchar>   // for mbstate_t
@@ -86,6 +86,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 namespace detail {
 
 //----------------------------------------------------------------------------//
@@ -192,6 +193,7 @@ protected:
 };
 
 } // namespace detail
+} // namespace fs
 } // namespace io
 } // namespace tarm
 

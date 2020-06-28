@@ -11,9 +11,9 @@
 #include "Error.h"
 #include "EventLoop.h"
 #include "Export.h"
-#include "Path.h"
 #include "Removable.h"
 #include "TlsTcpConnectedClient.h"
+#include "fs/Path.h"
 
 #include <memory>
 #include <functional>
@@ -36,8 +36,8 @@ public:
     IO_FORBID_MOVE(TlsTcpServer);
 
     IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,
-                               const Path& certificate_path,
-                               const Path& private_key_path,
+                               const fs::Path& certificate_path,
+                               const fs::Path& private_key_path,
                                TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
     IO_DLL_PUBLIC void schedule_removal() override;

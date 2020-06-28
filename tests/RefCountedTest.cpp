@@ -5,7 +5,7 @@
 
 #include "UTCommon.h"
 
-#include "io/RefCounted.h"
+#include "RefCounted.h"
 
 struct RefCountedTest : public testing::Test,
                         public LogRedirector {

@@ -5,7 +5,7 @@
 
 #include "UTCommon.h"
 
-#include "io/ByteSwap.h"
+#include "ByteSwap.h"
 
 struct ByteSwapTest : public testing::Test,
                       public LogRedirector {

@@ -5,7 +5,7 @@
 
 #include "UTCommon.h"
 
-#include "io/ScopeExitGuard.h"
+#include "ScopeExitGuard.h"
 
 struct ScopeExitGuardTest : public testing::Test,
                             public LogRedirector {

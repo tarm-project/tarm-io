@@ -3,13 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *----------------------------------------------------------------------------------------------*/
 
-
 #include "UTCommon.h"
 
-#include "io/UdpClient.h"
-#include "io/UdpServer.h"
-#include "io/ScopeExitGuard.h"
-#include "io/Timer.h"
+#include "UdpClient.h"
+#include "UdpServer.h"
+#include "ScopeExitGuard.h"
+#include "Timer.h"
 
 #include <cstdint>
 #include <numeric>

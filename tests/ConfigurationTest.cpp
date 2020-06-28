@@ -5,8 +5,8 @@
 
 #include "UTCommon.h"
 
-#include "io/global/Configuration.h"
-#include "io/UdpClient.h"
+#include "global/Configuration.h"
+#include "UdpClient.h"
 
 struct ConfigurationTest : public testing::Test,
                            public LogRedirector {

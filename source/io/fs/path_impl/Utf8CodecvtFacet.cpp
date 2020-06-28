@@ -26,6 +26,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 namespace detail {
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
@@ -288,5 +289,6 @@ int utf8_codecvt_facet::get_cont_octet_out_count(
 
 
 } // namespace detail
+} // namespace fs
 } // namespace io
 } // namespace tarm

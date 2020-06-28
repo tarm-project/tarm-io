@@ -27,6 +27,7 @@ endif()
 # Files
 FILE(GLOB IO_HEADERS_LIST
         io/*.h
+        io/fs/*.h
         io/global/*.h
         io/detail/*.h
         io/path_impl/*.h)
@@ -38,26 +39,26 @@ list(APPEND IO_SOURCE_LIST
         io/detail/PeerId.cpp
         io/global/Configuration.cpp
         io/global/Version.cpp
-        io/path_impl/CodecvtErrorCategory.cpp
-        io/path_impl/PathTraits.cpp
-        io/path_impl/HashRange.cpp
-        io/path_impl/Utf8CodecvtFacet.cpp
-        io/path_impl/WindowsFileCodecvt.cpp
+        io/fs/Dir.cpp
+        io/fs/File.cpp
+        io/fs/Path.cpp
+        io/fs/StatData.cpp
+        io/fs/path_impl/CodecvtErrorCategory.cpp
+        io/fs/path_impl/PathTraits.cpp
+        io/fs/path_impl/HashRange.cpp
+        io/fs/path_impl/Utf8CodecvtFacet.cpp
+        io/fs/path_impl/WindowsFileCodecvt.cpp
         io/ByteSwap.cpp
         io/Convert.cpp
-        io/Dir.cpp
         io/DtlsClient.cpp
         io/DtlsConnectedClient.cpp
         io/DtlsServer.cpp
         io/Endpoint.cpp
         io/Error.cpp
         io/EventLoop.cpp
-        io/File.cpp
         io/Logger.cpp
-        io/Path.cpp
         io/RefCounted.cpp
         io/Removable.cpp
-        io/StatData.cpp
         io/StatusCode.cpp
         io/Timer.cpp
         io/TcpClient.cpp
@@ -119,7 +120,7 @@ else()
     add_dependencies(tarm-io libuv)
 endif()
 
-target_include_directories(tarm-io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+target_include_directories(tarm-io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/io>)
 target_include_directories(tarm-io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 target_compile_definitions(tarm-io PRIVATE IO_BUILDING_DLL)
 

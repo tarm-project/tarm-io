@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "io/Export.h"
+#include "Export.h"
 
 #include <cstdint>
 #include <cstddef>
@@ -13,6 +13,7 @@
 
 namespace tarm {
 namespace io {
+namespace fs {
 
 IO_DLL_PUBLIC
 void hash_combine_impl(std::size_t& h, std::uint64_t k);
@@ -41,5 +42,6 @@ inline void hash_range(std::size_t& seed, It first, It last) {
     }
 }
 
+} // namespace fs
 } // namespace io
 } // namespace tarm
