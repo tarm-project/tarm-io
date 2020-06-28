@@ -39,20 +39,20 @@ public:
     IO_DLL_PUBLIC void schedule_removal() override;
 
     IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
-                                      DataReceivedCallback receive_callback);
+                                      const DataReceivedCallback& receive_callback);
 
     IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
-                                      NewPeerCallback new_peer_callback,
-                                      DataReceivedCallback receive_callback,
+                                      const NewPeerCallback& new_peer_callback,
+                                      const DataReceivedCallback& receive_callback,
                                       std::size_t timeout_ms,
-                                      PeerTimeoutCallback timeout_callback);
+                                      const PeerTimeoutCallback& timeout_callback);
 
     IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
-                                      DataReceivedCallback receive_callback,
+                                      const DataReceivedCallback& receive_callback,
                                       std::size_t timeout_ms,
-                                      PeerTimeoutCallback timeout_callback);
+                                      const PeerTimeoutCallback& timeout_callback);
 
-    IO_DLL_PUBLIC void close(CloseServerCallback close_callback = nullptr);
+    IO_DLL_PUBLIC void close(const CloseServerCallback& close_callback = nullptr);
 
     IO_DLL_PUBLIC BufferSizeResult receive_buffer_size() const;
     IO_DLL_PUBLIC BufferSizeResult send_buffer_size() const;

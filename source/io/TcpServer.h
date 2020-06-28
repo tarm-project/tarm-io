@@ -46,13 +46,13 @@ public:
 
     IO_DLL_PUBLIC
     Error listen(const Endpoint& endpoint,
-                 NewConnectionCallback new_connection_callback,
-                 DataReceivedCallback data_receive_callback,
-                 CloseConnectionCallback close_connection_callback,
+                 const NewConnectionCallback& new_connection_callback,
+                 const DataReceivedCallback& data_receive_callback,
+                 const CloseConnectionCallback& close_connection_callback,
                  int backlog_size = 128);
 
-    IO_DLL_PUBLIC void close(CloseServerCallback close_callback = nullptr);
-    IO_DLL_PUBLIC void shutdown(ShutdownServerCallback shutdown_callback = nullptr);
+    IO_DLL_PUBLIC void close(const CloseServerCallback& close_callback = nullptr);
+    IO_DLL_PUBLIC void shutdown(const ShutdownServerCallback& shutdown_callback = nullptr);
 
     IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 

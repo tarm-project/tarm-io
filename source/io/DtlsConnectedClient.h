@@ -40,10 +40,10 @@ public:
 
     IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
-    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
     IO_DLL_PUBLIC DtlsVersion negotiated_dtls_version() const;
 
@@ -60,11 +60,11 @@ private:
 
     DtlsConnectedClient(EventLoop& loop,
                         DtlsServer& dtls_server,
-                        NewConnectionCallback new_connection_callback,
-                        CloseCallback close_callback,
+                        const NewConnectionCallback& new_connection_callback,
+                        const CloseCallback& close_callback,
                         UdpPeer& udp_peer,
                         void* context);
-    void set_data_receive_callback(DataReceiveCallback callback);
+    void set_data_receive_callback(const DataReceiveCallback& callback);
     void on_data_receive(const char* buf, std::size_t size);
     Error init_ssl();
 

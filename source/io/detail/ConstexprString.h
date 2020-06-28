@@ -55,7 +55,7 @@ constexpr const char* extract_file_name_from_path(char const* str) {
 // Proof that 'extract_file_name_from_path' works in compile time (because static_assert works only in compile time)
 #if defined( _MSC_VER) || defined(__clang__) || (__GNUC__ >= 7)
 // GCC versions 5 and 6 have known bug that (ptr + i) stops to become constexpr,
-// but nevertheless call to extract_file_name_from_path is optimized under -O2 to simple output of (str + offset)
+// but nevertheless call to extract_file_name_from_path is optimized under -O2 to simple output of (str + offset) in most cases
 static_assert(extract_file_name_from_path(__FILE__) != nullptr, "");
 #endif
 

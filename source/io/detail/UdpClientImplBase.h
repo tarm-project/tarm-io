@@ -22,10 +22,10 @@ public:
     UdpClientImplBase(EventLoop& loop, ParentType& parent);
     UdpClientImplBase(EventLoop& loop, ParentType& parent, RefCounted& ref_counted, uv_udp_t* udp_handle);
 
-    void send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback);
-    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback  callback);
-    void send_data(const std::string& message, typename ParentType::EndSendCallback  callback);
-    void send_data(std::string&& message, typename ParentType::EndSendCallback callback);
+    void send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
+    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
+    void send_data(const std::string& message, const typename ParentType::EndSendCallback& callback);
+    void send_data(std::string&& message, const typename ParentType::EndSendCallback& callback);
 
     std::uint16_t bound_port() const;
 
@@ -38,7 +38,7 @@ protected:
     };
 
     template<typename T>
-    void send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
+    void send_data_impl(T buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
 
     // statics
     template<typename T>
@@ -70,7 +70,7 @@ UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, Pare
 
 template<typename ParentType, typename ImplType>
 template<typename T>
-void UdpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+void UdpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback) {
     const auto handle_init_error = UdpImplBase<ParentType, ImplType>::ensure_handle_inited();
     if (handle_init_error) {
         schedule_send_error(callback, handle_init_error);
@@ -119,25 +119,25 @@ void UdpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint
 }
 
 template<typename ParentType, typename ImplType>
-void UdpClientImplBase<ParentType, ImplType>::send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback)  {
+void UdpClientImplBase<ParentType, ImplType>::send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback)  {
     send_data_impl(c_str, size, callback);
 }
 
 template<typename ParentType, typename ImplType>
-void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+void UdpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback) {
 
     send_data_impl(buffer, size, callback);
 }
 
 template<typename ParentType, typename ImplType>
-void UdpClientImplBase<ParentType, ImplType>::send_data(const std::string& message, typename ParentType::EndSendCallback callback) {
+void UdpClientImplBase<ParentType, ImplType>::send_data(const std::string& message, const typename ParentType::EndSendCallback& callback) {
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::memcpy(ptr.get(), message.c_str(), message.size());
     send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
 }
 
 template<typename ParentType, typename ImplType>
-void UdpClientImplBase<ParentType, ImplType>::send_data(std::string&& message, typename ParentType::EndSendCallback callback) {
+void UdpClientImplBase<ParentType, ImplType>::send_data(std::string&& message, const typename ParentType::EndSendCallback& callback) {
     const std::uint32_t size = static_cast<std::uint32_t>(message.size());
     send_data_impl(std::move(message), size, callback);
 }

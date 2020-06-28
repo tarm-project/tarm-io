@@ -45,16 +45,16 @@ public:
 
     virtual void on_alert(int code) = 0;
 
-    void send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback);
-    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback  callback);
-    void send_data(const std::string& message, typename ParentType::EndSendCallback  callback);
-    void send_data(std::string&& message, typename ParentType::EndSendCallback callback);
+    void send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
+    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
+    void send_data(const std::string& message, const typename ParentType::EndSendCallback& callback);
+    void send_data(std::string&& message, const typename ParentType::EndSendCallback& callback);
 
     void on_data_receive(const char* buf, std::size_t size);
 
     bool is_open() const;
 
-    Error ssl_shutdown(typename ParentType::UnderlyingClientType::EndSendCallback on_send);
+    Error ssl_shutdown(const typename ParentType::UnderlyingClientType::EndSendCallback& on_send);
 
     TlsVersion negotiated_tls_version() const;
     DtlsVersion negotiated_dtls_version() const;
@@ -70,9 +70,9 @@ protected:
     };
 
     template<typename T>
-    void send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback);
+    void send_data_impl(T buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
 
-    void internal_read_from_sll_and_send(typename ParentType::UnderlyingClientType::EndSendCallback on_send);
+    void internal_read_from_sll_and_send(const typename ParentType::UnderlyingClientType::EndSendCallback& on_send);
 
     ParentType* m_parent;
     EventLoop* m_loop;
@@ -261,7 +261,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
 }
 
 template<typename ParentType, typename ImplType>
-void OpenSslClientImplBase<ParentType, ImplType>::internal_read_from_sll_and_send(typename ParentType::UnderlyingClientType::EndSendCallback on_send) {
+void OpenSslClientImplBase<ParentType, ImplType>::internal_read_from_sll_and_send(const typename ParentType::UnderlyingClientType::EndSendCallback& on_send) {
 
     const auto write_pending = BIO_pending(m_ssl_write_bio);
     if (write_pending == 0) {
@@ -364,32 +364,32 @@ void OpenSslClientImplBase<ParentType, ImplType>::finish_handshake() {
 
 
 template<typename ParentType, typename ImplType>
-void OpenSslClientImplBase<ParentType, ImplType>::send_data(const char* c_str, std::uint32_t size, typename ParentType::EndSendCallback callback)  {
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback)  {
     send_data_impl(c_str, size, callback);
 }
 
 template<typename ParentType, typename ImplType>
-void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback) {
 
     send_data_impl(buffer, size, callback);
 }
 
 template<typename ParentType, typename ImplType>
-void OpenSslClientImplBase<ParentType, ImplType>::send_data(const std::string& message, typename ParentType::EndSendCallback callback) {
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(const std::string& message, const typename ParentType::EndSendCallback& callback) {
     std::shared_ptr<char> ptr(new char[message.size()], [](const char* p) { delete[] p;});
     std::memcpy(ptr.get(), message.c_str(), message.size());
     send_data(ptr, static_cast<std::uint32_t>(message.size()), callback);
 }
 
 template<typename ParentType, typename ImplType>
-void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::string&& message, typename ParentType::EndSendCallback callback) {
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::string&& message, const typename ParentType::EndSendCallback& callback) {
     const std::uint32_t size = static_cast<std::uint32_t>(message.size());
     send_data_impl(std::move(message), size, callback);
 }
 
 template<typename ParentType, typename ImplType>
 template<typename T>
-void OpenSslClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint32_t size, typename ParentType::EndSendCallback callback) {
+void OpenSslClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback) {
     if (!is_open()) {
         callback(*m_parent, Error(StatusCode::NOT_CONNECTED));
         return;
@@ -472,7 +472,7 @@ bool OpenSslClientImplBase<ParentType, ImplType>::schedule_removal() {
 }
 
 template<typename ParentType, typename ImplType>
-Error OpenSslClientImplBase<ParentType, ImplType>::ssl_shutdown(typename ParentType::UnderlyingClientType::EndSendCallback on_send) {
+Error OpenSslClientImplBase<ParentType, ImplType>::ssl_shutdown(const typename ParentType::UnderlyingClientType::EndSendCallback& on_send) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
     auto return_code = SSL_shutdown(m_ssl.get());

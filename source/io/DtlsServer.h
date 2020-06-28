@@ -45,21 +45,21 @@ public:
 
     IO_DLL_PUBLIC
     Error listen(const Endpoint& endpoint,
-                 DataReceivedCallback data_receive_callback);
+                 const DataReceivedCallback& data_receive_callback);
 
     IO_DLL_PUBLIC
     Error listen(const Endpoint& endpoint,
-                 NewConnectionCallback new_connection_callback,
-                 DataReceivedCallback data_receive_callback);
+                 const NewConnectionCallback& new_connection_callback,
+                 const DataReceivedCallback& data_receive_callback);
 
    IO_DLL_PUBLIC
    Error listen(const Endpoint& endpoint,
-                NewConnectionCallback new_connection_callback,
-                DataReceivedCallback data_receive_callback,
+                const NewConnectionCallback& new_connection_callback,
+                const DataReceivedCallback& data_receive_callback,
                 std::size_t timeout_ms,
-                CloseConnectionCallback close_callback);
+                const CloseConnectionCallback& close_callback);
 
-    IO_DLL_PUBLIC void close(CloseServerCallback callback = nullptr);
+    IO_DLL_PUBLIC void close(const CloseServerCallback& callback = nullptr);
 
     IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 

@@ -64,19 +64,19 @@ public:
     IO_FORBID_MOVE(Impl);
 
     template<typename WorkCallbackType, typename WorkDoneCallbackType>
-    WorkHandle add_work(WorkCallbackType work_callback, WorkDoneCallbackType work_done_callback);
+    WorkHandle add_work(const WorkCallbackType& work_callback, const WorkDoneCallbackType& work_done_callback);
     Error cancel_work(WorkHandle handle);
 
-    void execute_on_loop_thread(WorkCallback callback);
+    void execute_on_loop_thread(const WorkCallback& callback);
 
     // Warning: do not perform heavy calculations or blocking calls here
-    std::size_t schedule_call_on_each_loop_cycle(WorkCallback callback);
+    std::size_t schedule_call_on_each_loop_cycle(const WorkCallback& callback);
     void stop_call_on_each_loop_cycle(std::size_t handle);
 
     void start_block_loop_from_exit();
     void stop_block_loop_from_exit();
 
-    Error add_signal_handler(Signal signal, SignalCallback callback, SignalHandler::Continuity handler_continuity);
+    Error add_signal_handler(Signal signal, const SignalCallback& callback, SignalHandler::Continuity handler_continuity);
     void remove_signal_handler(Signal signal);
 
     Error init_async();
@@ -84,7 +84,7 @@ public:
 
     bool is_running() const;
 
-    void schedule_callback(WorkCallback callback);
+    void schedule_callback(const WorkCallback& callback);
 
     void finish();
 
@@ -200,7 +200,7 @@ void EventLoop::Impl::finish() {
 EventLoop::Impl::~Impl() {
 }
 
-void EventLoop::Impl::schedule_callback(WorkCallback callback) {
+void EventLoop::Impl::schedule_callback(const WorkCallback& callback) {
     if (!m_have_active_sync_callbacks) {
         m_sync_callbacks_executor_handle = schedule_call_on_each_loop_cycle(m_sync_callbacks_executor_function);
         m_have_active_sync_callbacks = true;
@@ -273,8 +273,8 @@ struct Work<EventLoop::WorkCallbackWithUserData, EventLoop::WorkDoneCallbackWith
 } // namespace
 
 template<typename WorkCallbackType, typename WorkDoneCallbackType>
-EventLoop::WorkHandle EventLoop::Impl::add_work(WorkCallbackType work_callback,
-                                                WorkDoneCallbackType work_done_callback) {
+EventLoop::WorkHandle EventLoop::Impl::add_work(const WorkCallbackType& work_callback,
+                                                const WorkDoneCallbackType& work_done_callback) {
     if (work_callback == nullptr) {
         return INVALID_HANDLE;
     }
@@ -346,7 +346,7 @@ Error EventLoop::Impl::run() {
     return run_status;
 }
 
-std::size_t EventLoop::Impl::schedule_call_on_each_loop_cycle(WorkCallback callback) {
+std::size_t EventLoop::Impl::schedule_call_on_each_loop_cycle(const WorkCallback& callback) {
     auto idle = std::unique_ptr<Idle>(new Idle);
     const Error init_error = uv_idle_init(this, idle.get());
     if (init_error) {
@@ -426,7 +426,7 @@ int uv_signal_from_enum(EventLoop::Signal signal) {
 
 } // namespace
 
-Error EventLoop::Impl::add_signal_handler(Signal signal, SignalCallback callback, SignalHandler::Continuity handler_continuity) {
+Error EventLoop::Impl::add_signal_handler(Signal signal, const SignalCallback& callback, SignalHandler::Continuity handler_continuity) {
     if (!callback) {
         return StatusCode::INVALID_ARGUMENT;
     }
@@ -476,7 +476,7 @@ void EventLoop::Impl::close_signal_handlers() {
     }
 }
 
-void EventLoop::Impl::execute_on_loop_thread(WorkCallback callback) {
+void EventLoop::Impl::execute_on_loop_thread(const WorkCallback& callback) {
     {
         std::lock_guard<std::mutex> guard(m_async_callbacks_queue_mutex);
         m_async_callbacks_queue.push_back(callback);
@@ -608,17 +608,17 @@ EventLoop::~EventLoop() {
     m_impl->finish();
 }
 
-void EventLoop::execute_on_loop_thread(WorkCallback callback) {
+void EventLoop::execute_on_loop_thread(const WorkCallback& callback) {
     m_impl->execute_on_loop_thread(callback);
 }
 
-EventLoop::WorkHandle EventLoop::add_work(WorkCallback thread_pool_work_callback,
-                                          WorkDoneCallback loop_thread_work_done_callback) {
+EventLoop::WorkHandle EventLoop::add_work(const WorkCallback& thread_pool_work_callback,
+                                          const WorkDoneCallback& loop_thread_work_done_callback) {
     return m_impl->add_work(thread_pool_work_callback, loop_thread_work_done_callback);
 }
 
-EventLoop::WorkHandle EventLoop::add_work(WorkCallbackWithUserData thread_pool_work_callback,
-                                          WorkDoneCallbackWithUserData loop_thread_work_done_callback) {
+EventLoop::WorkHandle EventLoop::add_work(const WorkCallbackWithUserData& thread_pool_work_callback,
+                                          const WorkDoneCallbackWithUserData& loop_thread_work_done_callback) {
     return m_impl->add_work(thread_pool_work_callback, loop_thread_work_done_callback);
 }
 
@@ -626,7 +626,7 @@ Error EventLoop::cancel_work(WorkHandle handle) {
     return m_impl->cancel_work(handle);
 }
 
-std::size_t EventLoop::schedule_call_on_each_loop_cycle(WorkCallback callback) {
+std::size_t EventLoop::schedule_call_on_each_loop_cycle(const WorkCallback& callback) {
     return m_impl->schedule_call_on_each_loop_cycle(callback);
 }
 
@@ -654,15 +654,15 @@ void* EventLoop::raw_loop() {
     return m_impl.get();
 }
 
-void EventLoop::schedule_callback(WorkCallback callback) {
+void EventLoop::schedule_callback(const WorkCallback& callback) {
     return m_impl->schedule_callback(callback);
 }
 
-Error EventLoop::add_signal_handler(Signal signal, SignalCallback callback) {
+Error EventLoop::add_signal_handler(Signal signal, const SignalCallback& callback) {
     return m_impl->add_signal_handler(signal, callback, SignalHandler::REPEAT);
 }
 
-Error EventLoop::handle_signal_once(Signal signal, SignalCallback callback) {
+Error EventLoop::handle_signal_once(Signal signal, const SignalCallback& callback) {
     return m_impl->add_signal_handler(signal, callback, SignalHandler::ONCE);
 }
 

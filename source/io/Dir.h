@@ -34,11 +34,11 @@ public:
 
     IO_DLL_PUBLIC Dir(EventLoop& loop);
 
-    IO_DLL_PUBLIC void open(const Path& path, OpenCallback callback);
+    IO_DLL_PUBLIC void open(const Path& path, const OpenCallback& callback);
     IO_DLL_PUBLIC bool is_open() const;
     IO_DLL_PUBLIC void close();
 
-    IO_DLL_PUBLIC void read(ReadCallback read_callback, EndReadCallback end_read_callback = nullptr);
+    IO_DLL_PUBLIC void read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback = nullptr);
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
@@ -55,17 +55,17 @@ private:
 // TODO: transfer mode ???
 using MakeTempDirCallback = std::function<void(const std::string&, const Error&)>;
 IO_DLL_PUBLIC
-void make_temp_dir(EventLoop& loop, const Path& name_template, MakeTempDirCallback callback);
+void make_temp_dir(EventLoop& loop, const Path& name_template, const MakeTempDirCallback& callback);
 
 // TODO: transfer mode
 using MakeDirCallback = std::function<void(const Error&)>;
 IO_DLL_PUBLIC
-void make_dir(EventLoop& loop, const Path& path, MakeDirCallback callback);
+void make_dir(EventLoop& loop, const Path& path, const MakeDirCallback& callback);
 
 using RemoveDirCallback = std::function<void(const Error&)>;
 using ProgressCallback = std::function<void(const std::string&)>;
 IO_DLL_PUBLIC
-void remove_dir(EventLoop& loop, const Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback = nullptr);
+void remove_dir(EventLoop& loop, const Path& path, const RemoveDirCallback& remove_callback, const ProgressCallback& progress_callback = nullptr);
 
 } // namespace io
 } // namespace tarm

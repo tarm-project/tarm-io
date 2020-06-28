@@ -16,7 +16,7 @@ class ScopeExitGuard {
 public:
     using Callback = std::function<void()>;
 
-    ScopeExitGuard(Callback callback) : m_callback(callback) {
+    ScopeExitGuard(const Callback& callback) : m_callback(callback) {
     }
 
     ~ScopeExitGuard() {

@@ -17,10 +17,10 @@ public:
     Impl(EventLoop& loop, Timer& parent);
     ~Impl();
 
-    void start(uint64_t timeout_ms, uint64_t repeat_ms, Callback callback);
-    void start(uint64_t timeout_ms, Callback callback);
-    void start(const std::deque<std::uint64_t>& timeouts_ms, Callback callback);
-    void start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t repeat_ms, Callback callback);
+    void start(uint64_t timeout_ms, uint64_t repeat_ms, const Callback& callback);
+    void start(uint64_t timeout_ms, const Callback& callback);
+    void start(const std::deque<std::uint64_t>& timeouts_ms, const Callback& callback);
+    void start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t repeat_ms, const Callback& callback);
     void start_impl();
     void stop();
 
@@ -78,19 +78,19 @@ Timer::Impl::~Impl() {
     uv_close(reinterpret_cast<uv_handle_t*>(m_uv_timer), on_timer_close);
 }
 
-void Timer::Impl::start(uint64_t timeout_ms, Callback callback) {
+void Timer::Impl::start(uint64_t timeout_ms, const Callback& callback) {
     start(std::deque<std::uint64_t>(1, timeout_ms), 0, callback);
 }
 
-void Timer::Impl::start(uint64_t timeout_ms, uint64_t repeat_ms, Callback callback) {
+void Timer::Impl::start(uint64_t timeout_ms, uint64_t repeat_ms, const Callback& callback) {
     start(std::deque<std::uint64_t>(1, timeout_ms), repeat_ms, callback);
 }
 
-void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, Callback callback) {
+void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, const Callback& callback) {
     start(timeouts_ms, 0, callback);
 }
 
-void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t repeat_ms, Callback callback) {
+void Timer::Impl::start(const std::deque<std::uint64_t>& timeouts_ms, uint64_t repeat_ms, const Callback& callback) {
     m_call_counter = 0;
 
     m_last_callback_time = uv_hrtime();
@@ -181,15 +181,15 @@ Timer::Timer(EventLoop& loop) :
 Timer::~Timer() {
 }
 
-void Timer::start(uint64_t timeout_ms, uint64_t repeat_ms, Callback callback) {
+void Timer::start(uint64_t timeout_ms, uint64_t repeat_ms, const Callback& callback) {
     return m_impl->start(timeout_ms, repeat_ms, callback);
 }
 
-void Timer::start(uint64_t timeout_ms, Callback callback) {
+void Timer::start(uint64_t timeout_ms, const Callback& callback) {
     return m_impl->start(timeout_ms, callback);
 }
 
-void Timer::start(const std::deque<std::uint64_t>& timeouts_ms, Callback callback) {
+void Timer::start(const std::deque<std::uint64_t>& timeouts_ms, const Callback& callback) {
     return m_impl->start(timeouts_ms, callback);
 }
 

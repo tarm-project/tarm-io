@@ -18,7 +18,7 @@ public:
 
     void schedule_removal();
 
-    void set_on_schedule_removal(OnScheduleRemovalCallback callback);
+    void set_on_schedule_removal(const OnScheduleRemovalCallback& callback);
 
     bool is_removal_scheduled() const;
 
@@ -76,7 +76,7 @@ void Removable::Impl::schedule_removal() {
     uv_idle_start(idle_ptr, on_removal);
 }
 
-void Removable::Impl::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
+void Removable::Impl::set_on_schedule_removal(const OnScheduleRemovalCallback& callback) {
     if (m_about_to_remove) {
         return;
     }
@@ -123,7 +123,7 @@ void Removable::schedule_removal() {
     return m_impl->schedule_removal();
 }
 
-void Removable::set_on_schedule_removal(OnScheduleRemovalCallback callback) {
+void Removable::set_on_schedule_removal(const OnScheduleRemovalCallback& callback) {
     return m_impl->set_on_schedule_removal(callback);
 }
 

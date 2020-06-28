@@ -27,9 +27,9 @@ public:
     const Endpoint& endpoint() const;
 
     void connect(const Endpoint endpoint,
-                 ConnectCallback connect_callback,
-                 DataReceiveCallback receive_callback,
-                 CloseCallback close_callback);
+                 const ConnectCallback& connect_callback,
+                 const DataReceiveCallback& receive_callback,
+                 const CloseCallback& close_callback);
     void close();
 
 protected:
@@ -64,9 +64,9 @@ const Endpoint& TlsTcpClient::Impl::endpoint() const {
 }
 
 void TlsTcpClient::Impl::connect(const Endpoint endpoint,
-                                 ConnectCallback connect_callback,
-                                 DataReceiveCallback receive_callback,
-                                 CloseCallback close_callback) {
+                                 const ConnectCallback& connect_callback,
+                                 const DataReceiveCallback& receive_callback,
+                                 const CloseCallback& close_callback) {
     m_client = new TcpClient(*m_loop);
 
     if (!is_ssl_inited()) {
@@ -206,9 +206,9 @@ const Endpoint& TlsTcpClient::endpoint() const {
 }
 
 void TlsTcpClient::connect(const Endpoint endpoint,
-                           ConnectCallback connect_callback,
-                           DataReceiveCallback receive_callback,
-                           CloseCallback close_callback) {
+                           const ConnectCallback& connect_callback,
+                           const DataReceiveCallback& receive_callback,
+                           const CloseCallback& close_callback) {
     return m_impl->connect(endpoint, connect_callback, receive_callback, close_callback);
 }
 
@@ -220,19 +220,19 @@ bool TlsTcpClient::is_open() const {
     return m_impl->is_open();
 }
 
-void TlsTcpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
+void TlsTcpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(buffer, size, callback);
 }
 
-void TlsTcpClient::send_data(const std::string& message, EndSendCallback callback) {
+void TlsTcpClient::send_data(const std::string& message, const EndSendCallback& callback) {
     return m_impl->send_data(message, callback);
 }
 
-void TlsTcpClient::send_data(std::string&& message, EndSendCallback callback) {
+void TlsTcpClient::send_data(std::string&& message, const EndSendCallback& callback) {
     return m_impl->send_data(std::move(message), callback);
 }
 
-void TlsTcpClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback) {
+void TlsTcpClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(c_str, size, callback);
 }
 

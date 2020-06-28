@@ -39,10 +39,10 @@ public:
     IO_DLL_PUBLIC void shutdown();
     IO_DLL_PUBLIC bool is_open() const;
 
-    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
     IO_DLL_PUBLIC TlsTcpServer& server();
     IO_DLL_PUBLIC const TlsTcpServer& server() const;
@@ -55,11 +55,11 @@ protected:
 private:
     TlsTcpConnectedClient(EventLoop& loop,
                           TlsTcpServer& tls_server,
-                          NewConnectionCallback new_connection_callback,
+                          const NewConnectionCallback& new_connection_callback,
                           TcpConnectedClient& tcp_client,
                           void* context);
 
-    void set_data_receive_callback(DataReceiveCallback callback);
+    void set_data_receive_callback(const DataReceiveCallback& callback);
     void on_data_receive(const char* buf, std::size_t size);
     Error init_ssl();
 

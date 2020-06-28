@@ -25,12 +25,10 @@ public:
 
     void connect(const Endpoint& endpoint,
                  const void* raw_endpoint,
-                 ConnectCallback connect_callback,
-                 DataReceiveCallback receive_callback,
-                 CloseCallback close_callback);
+                 const ConnectCallback& connect_callback,
+                 const DataReceiveCallback& receive_callback,
+                 const CloseCallback& close_callback);
     bool close();
-
-    void set_close_callback(CloseCallback callback);
 
     void shutdown();
 
@@ -39,9 +37,9 @@ public:
 protected:
     void connect_impl(const Endpoint& endpoint,
                       const void* raw_endpoint,
-                      ConnectCallback connect_callback,
-                      DataReceiveCallback receive_callback,
-                      CloseCallback close_callback);
+                      const ConnectCallback& connect_callback,
+                      const DataReceiveCallback& receive_callback,
+                      const CloseCallback& close_callback);
     // statics
     static void on_shutdown(uv_shutdown_t* req, int uv_status);
     static void on_close(uv_handle_t* handle);
@@ -71,9 +69,9 @@ EventLoop* TcpClient::Impl::loop() {
 
 void TcpClient::Impl::connect(const Endpoint& endpoint,
                               const void* raw_endpoint,
-                              ConnectCallback connect_callback,
-                              DataReceiveCallback receive_callback,
-                              CloseCallback close_callback) {
+                              const ConnectCallback& connect_callback,
+                              const DataReceiveCallback& receive_callback,
+                              const CloseCallback& close_callback) {
     if (m_tcp_stream) {
         m_tcp_stream->data = nullptr;
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
@@ -88,9 +86,9 @@ void TcpClient::Impl::connect(const Endpoint& endpoint,
 
 void TcpClient::Impl::connect_impl(const Endpoint& endpoint,
                                    const void* raw_endpoint,
-                                   ConnectCallback connect_callback,
-                                   DataReceiveCallback receive_callback,
-                                   CloseCallback close_callback) {
+                                   const ConnectCallback& connect_callback,
+                                   const DataReceiveCallback& receive_callback,
+                                   const CloseCallback& close_callback) {
 
     if (endpoint.type() == Endpoint::UNDEFINED) {
         if (connect_callback) {
@@ -299,9 +297,9 @@ const Endpoint& TcpClient::endpoint() const {
 }
 
 void TcpClient::connect(const Endpoint& endpoint,
-                        ConnectCallback connect_callback,
-                        DataReceiveCallback receive_callback,
-                        CloseCallback close_callback) {
+                        const ConnectCallback& connect_callback,
+                        const DataReceiveCallback& receive_callback,
+                        const CloseCallback& close_callback) {
     return m_impl->connect(endpoint, endpoint.raw_endpoint(), connect_callback, receive_callback, close_callback);
 }
 
@@ -313,19 +311,19 @@ bool TcpClient::is_open() const {
     return m_impl->is_open();
 }
 
-void TcpClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback)  {
+void TcpClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback)  {
     return m_impl->send_data(c_str, size, callback);
 }
 
-void TcpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
+void TcpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(buffer, size, callback);
 }
 
-void TcpClient::send_data(const std::string& message, EndSendCallback callback) {
+void TcpClient::send_data(const std::string& message, const EndSendCallback& callback) {
     return m_impl->send_data(message, callback);
 }
 
-void TcpClient::send_data(std::string&& message, EndSendCallback callback) {
+void TcpClient::send_data(std::string&& message, const EndSendCallback& callback) {
     return m_impl->send_data(std::move(message), callback);
 }
 

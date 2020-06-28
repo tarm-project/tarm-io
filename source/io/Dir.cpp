@@ -21,11 +21,11 @@ public:
     Impl(EventLoop& loop, Dir& parent);
     ~Impl();
 
-    void open(const Path& path, OpenCallback callback);
+    void open(const Path& path, const OpenCallback& callback);
     bool is_open() const;
     void close();
 
-    void read(ReadCallback read_callback, EndReadCallback end_read_callback = nullptr);
+    void read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback = nullptr);
 
     const Path& path() const;
 
@@ -95,7 +95,7 @@ Dir::Impl::Impl(EventLoop& loop, Dir& parent) :
 Dir::Impl::~Impl() {
 }
 
-void Dir::Impl::open(const Path& path, OpenCallback callback) {
+void Dir::Impl::open(const Path& path, const OpenCallback& callback) {
     m_path = path;
     m_open_callback = callback;
     m_open_dir_req.data = this;
@@ -103,7 +103,7 @@ void Dir::Impl::open(const Path& path, OpenCallback callback) {
     uv_fs_opendir(m_uv_loop, &m_open_dir_req, path.string().c_str(), on_open_dir);
 }
 
-void Dir::Impl::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
+void Dir::Impl::read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback) {
     // TODO: check if open
     m_read_dir_req.data = this;
     m_read_callback = read_callback;
@@ -194,7 +194,7 @@ Dir::Dir(EventLoop& loop) :
 Dir::~Dir() {
 }
 
-void Dir::open(const Path& path, OpenCallback callback) {
+void Dir::open(const Path& path, const OpenCallback& callback) {
     return m_impl->open(path, callback);
 }
 
@@ -206,7 +206,7 @@ void Dir::close() {
     return m_impl->close();
 }
 
-void Dir::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
+void Dir::read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback) {
     return m_impl->read(read_callback, end_read_callback);
 }
 
@@ -242,7 +242,7 @@ void on_make_temp_dir(uv_fs_t* uv_request) {
     delete &request;
 }
 
-void make_temp_dir(EventLoop& loop, const Path& name_template, MakeTempDirCallback callback) {
+void make_temp_dir(EventLoop& loop, const Path& name_template, const MakeTempDirCallback& callback) {
     auto request = new RequestWithCallback<MakeTempDirCallback>(callback);
     const Error error = uv_fs_mkdtemp(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, name_template.string().c_str(), on_make_temp_dir);
     if (error) {
@@ -276,7 +276,7 @@ void on_make_dir(uv_fs_t* uv_request) {
     delete &request;
 }
 
-void make_dir(EventLoop& loop, const Path& path, MakeDirCallback callback) {
+void make_dir(EventLoop& loop, const Path& path, const MakeDirCallback& callback) {
     auto request = new RequestWithCallback<MakeDirCallback>(callback);
     const Error error = uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.string().c_str(), 0, on_make_dir);
     if (error) {
@@ -367,7 +367,7 @@ RemoveDirStatusContext remove_dir_entry(uv_loop_t* uv_loop, const Path& path, Pa
     return {Error(0), ""};
 }
 
-void remove_dir_impl(EventLoop& loop, const Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
+void remove_dir_impl(EventLoop& loop, const Path& path, const RemoveDirCallback& remove_callback, const ProgressCallback& progress_callback) {
     loop.add_work([path, progress_callback](EventLoop& loop) -> void* {
         auto uv_loop = reinterpret_cast<uv_loop_t*>(loop.raw_loop());
 
@@ -409,7 +409,7 @@ void remove_dir_impl(EventLoop& loop, const Path& path, RemoveDirCallback remove
     });
 }
 
-void remove_dir(EventLoop& loop, const Path& path, RemoveDirCallback remove_callback, ProgressCallback progress_callback) {
+void remove_dir(EventLoop& loop, const Path& path, const RemoveDirCallback& remove_callback, const ProgressCallback& progress_callback) {
     if (loop.is_running()) {
         remove_dir_impl(loop, path, remove_callback, progress_callback);
     } else {

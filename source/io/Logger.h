@@ -43,7 +43,7 @@ public:
     IO_DLL_PUBLIC Logger();
     IO_DLL_PUBLIC Logger(const std::string& prefix);
 
-    IO_DLL_PUBLIC void enable_log(Callback callback);
+    IO_DLL_PUBLIC void enable_log(const Callback& callback);
 
     template<typename... T>
     void log(Severity severity, T... t);

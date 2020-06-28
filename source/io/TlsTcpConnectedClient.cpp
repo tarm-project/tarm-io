@@ -22,7 +22,7 @@ class TlsTcpConnectedClient::Impl : public detail::OpenSslClientImplBase<TlsTcpC
 public:
     Impl(EventLoop& loop,
          TlsTcpServer& tls_server,
-         NewConnectionCallback new_connection_callback,
+         const NewConnectionCallback& new_connection_callback,
          TcpConnectedClient& tcp_client,
          const detail::TlsContext& context,
          TlsTcpConnectedClient& parent);
@@ -33,7 +33,7 @@ public:
     void close();
     void shutdown();
 
-    void set_data_receive_callback(DataReceiveCallback callback);
+    void set_data_receive_callback(const DataReceiveCallback& callback);
 
     TlsTcpServer& server();
     const TlsTcpServer& server() const;
@@ -57,7 +57,7 @@ private:
 
 TlsTcpConnectedClient::Impl::Impl(EventLoop& loop,
                                   TlsTcpServer& tls_server,
-                                  NewConnectionCallback new_connection_callback,
+                                  const NewConnectionCallback& new_connection_callback,
                                   TcpConnectedClient& tcp_client,
                                   const detail::TlsContext& context,
                                   TlsTcpConnectedClient& parent) :
@@ -76,7 +76,7 @@ Error TlsTcpConnectedClient::Impl::init_ssl() {
     return ssl_init(m_tls_context.ssl_ctx);
 }
 
-void TlsTcpConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback callback) {
+void TlsTcpConnectedClient::Impl::set_data_receive_callback(const DataReceiveCallback& callback) {
     m_data_receive_callback = callback;
 }
 
@@ -151,7 +151,7 @@ const TlsTcpServer& TlsTcpConnectedClient::Impl::server() const {
 
 TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop,
                                              TlsTcpServer& tls_server,
-                                             NewConnectionCallback new_connection_callback,
+                                             const NewConnectionCallback& new_connection_callback,
                                              TcpConnectedClient& tcp_client,
                                              void* context) :
     Removable(loop),
@@ -161,7 +161,7 @@ TlsTcpConnectedClient::TlsTcpConnectedClient(EventLoop& loop,
 TlsTcpConnectedClient::~TlsTcpConnectedClient() {
 }
 
-void TlsTcpConnectedClient::set_data_receive_callback(DataReceiveCallback callback) {
+void TlsTcpConnectedClient::set_data_receive_callback(const DataReceiveCallback& callback) {
     return m_impl->set_data_receive_callback(callback);
 }
 
@@ -173,19 +173,19 @@ Error TlsTcpConnectedClient::init_ssl() {
     return m_impl->init_ssl();
 }
 
-void TlsTcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
+void TlsTcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(buffer, size, callback);
 }
 
-void TlsTcpConnectedClient::send_data(const std::string& message, EndSendCallback callback) {
+void TlsTcpConnectedClient::send_data(const std::string& message, const EndSendCallback& callback) {
     return m_impl->send_data(message, callback);
 }
 
-void TlsTcpConnectedClient::send_data(std::string&& message, EndSendCallback callback) {
+void TlsTcpConnectedClient::send_data(std::string&& message, const EndSendCallback& callback) {
     return m_impl->send_data(std::move(message), callback);
 }
 
-void TlsTcpConnectedClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback) {
+void TlsTcpConnectedClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(c_str, size, callback);
 }
 

@@ -17,7 +17,7 @@ namespace tarm {
 namespace io {
 class TcpConnectedClient::Impl : public detail::TcpClientImplBase<TcpConnectedClient, TcpConnectedClient::Impl> {
 public:
-    Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, CloseCallback cloase_callback);
+    Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, const CloseCallback& close_callback);
     ~Impl();
 
     void set_endpoint(const Endpoint& endpoint);
@@ -26,7 +26,7 @@ public:
 
     void shutdown();
 
-    void start_read(DataReceiveCallback data_receive_callback);
+    void start_read(const DataReceiveCallback& data_receive_callback);
     uv_tcp_t* tcp_client_stream();
 
     TcpServer& server();
@@ -44,10 +44,10 @@ private:
     DataReceiveCallback m_receive_callback = nullptr;
 };
 
-TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, CloseCallback cloase_callback) :
+TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, const CloseCallback& close_callback) :
     TcpClientImplBase(loop, parent),
     m_server(&server) {
-    m_close_callback = cloase_callback;
+    m_close_callback = close_callback;
 }
 
 TcpConnectedClient::Impl::~Impl() {
@@ -92,7 +92,7 @@ void TcpConnectedClient::Impl::close() {
     uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
 }
 
-void TcpConnectedClient::Impl::start_read(DataReceiveCallback data_receive_callback) {
+void TcpConnectedClient::Impl::start_read(const DataReceiveCallback& data_receive_callback) {
     m_receive_callback = data_receive_callback;
 
     const Error read_error = uv_read_start(reinterpret_cast<uv_stream_t*>(m_tcp_stream),
@@ -176,7 +176,7 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TcpConnectedClient::TcpConnectedClient(EventLoop& loop, TcpServer& server, CloseCallback cloase_callback) :
+TcpConnectedClient::TcpConnectedClient(EventLoop& loop, TcpServer& server, const CloseCallback& cloase_callback) :
     Removable(loop),
     m_impl(new Impl(loop, server, *this, cloase_callback)) {
 }
@@ -200,19 +200,19 @@ bool TcpConnectedClient::is_open() const {
     return m_impl->is_open();
 }
 
-void TcpConnectedClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback)  {
+void TcpConnectedClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback)  {
     return m_impl->send_data(c_str, size, callback);
 }
 
-void TcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
+void TcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(buffer, size, callback);
 }
 
-void TcpConnectedClient::send_data(const std::string& message, EndSendCallback callback) {
+void TcpConnectedClient::send_data(const std::string& message, const EndSendCallback& callback) {
     return m_impl->send_data(message, callback);
 }
 
-void TcpConnectedClient::send_data(std::string&& message, EndSendCallback callback) {
+void TcpConnectedClient::send_data(std::string&& message, const EndSendCallback& callback) {
     return m_impl->send_data(std::move(message), callback);
 }
 
@@ -224,7 +224,7 @@ void TcpConnectedClient::shutdown() {
     return m_impl->shutdown();
 }
 
-void TcpConnectedClient::start_read(DataReceiveCallback data_receive_callback) {
+void TcpConnectedClient::start_read(const DataReceiveCallback& data_receive_callback) {
     return m_impl->start_read(data_receive_callback);
 }
 

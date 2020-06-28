@@ -31,12 +31,12 @@ public:
     ~Impl();
 
     Error listen(const Endpoint& endpoint,
-                 NewConnectionCallback new_connection_callback,
-                 DataReceivedCallback data_receive_callback,
+                 const NewConnectionCallback& new_connection_callback,
+                 const DataReceivedCallback& data_receive_callback,
                  std::size_t timeout_ms,
-                 CloseConnectionCallback close_callback);
+                 const CloseConnectionCallback& close_callback);
 
-    void close(CloseServerCallback callback);
+    void close(const CloseServerCallback& callback);
 
     std::size_t connected_clients_count() const;
 
@@ -157,10 +157,10 @@ void DtlsServer::Impl::on_timeout(UdpPeer& udp_peer, const Error& error) {
 }
 
 Error DtlsServer::Impl::listen(const Endpoint& endpoint,
-                               NewConnectionCallback new_connection_callback,
-                               DataReceivedCallback data_receive_callback,
+                               const NewConnectionCallback& new_connection_callback,
+                               const DataReceivedCallback& data_receive_callback,
                                std::size_t timeout_ms,
-                               CloseConnectionCallback close_callback) {
+                               const CloseConnectionCallback& close_callback) {
     if (endpoint.type() == Endpoint::UNDEFINED) {
         return Error(StatusCode::INVALID_ARGUMENT);
     }
@@ -218,7 +218,7 @@ Error DtlsServer::Impl::listen(const Endpoint& endpoint,
                                        std::bind(&DtlsServer::Impl::on_timeout, this, _1, _2));
 }
 
-void DtlsServer::Impl::close(CloseServerCallback callback) {
+void DtlsServer::Impl::close(const CloseServerCallback& callback) {
     std::unordered_set<DtlsConnectedClient*> clients;
     clients.swap(m_clients);
 
@@ -287,25 +287,25 @@ DtlsServer::~DtlsServer() {
 }
 
 Error DtlsServer::listen(const Endpoint& endpoint,
-                         DataReceivedCallback data_receive_callback) {
+                         const DataReceivedCallback& data_receive_callback) {
     return m_impl->listen(endpoint, nullptr, data_receive_callback, DEFAULT_TIMEOUT_MS, nullptr);
 }
 
 Error DtlsServer::listen(const Endpoint& endpoint,
-                         NewConnectionCallback new_connection_callback,
-                         DataReceivedCallback data_receive_callback) {
+                         const NewConnectionCallback& new_connection_callback,
+                         const DataReceivedCallback& data_receive_callback) {
     return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, DEFAULT_TIMEOUT_MS, nullptr);
 }
 
 Error DtlsServer::listen(const Endpoint& endpoint,
-                         NewConnectionCallback new_connection_callback,
-                         DataReceivedCallback data_receive_callback,
+                         const NewConnectionCallback& new_connection_callback,
+                         const DataReceivedCallback& data_receive_callback,
                          std::size_t timeout_ms,
-                         CloseConnectionCallback close_callback) {
+                         const CloseConnectionCallback& close_callback) {
     return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, timeout_ms, close_callback);
 }
 
-void DtlsServer::close(CloseServerCallback callback) {
+void DtlsServer::close(const CloseServerCallback& callback) {
     return m_impl->close(callback);
 }
 

@@ -40,18 +40,17 @@ public:
 
     IO_DLL_PUBLIC File(EventLoop& loop);
 
-    IO_DLL_PUBLIC void open(const Path& path, OpenCallback callback); // TODO: pass open flags
+    IO_DLL_PUBLIC void open(const Path& path, const OpenCallback& callback); // TODO: pass open flags
     IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC bool is_open() const;
 
-    IO_DLL_PUBLIC void read(ReadCallback callback);
-    IO_DLL_PUBLIC void read(ReadCallback read_callback, EndReadCallback end_read_callback);
-
-    IO_DLL_PUBLIC void read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback);
+    IO_DLL_PUBLIC void read(const ReadCallback& callback);
+    IO_DLL_PUBLIC void read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback);
+    IO_DLL_PUBLIC void read_block(off_t offset, unsigned int bytes_count, const ReadCallback& read_callback);
 
     IO_DLL_PUBLIC const Path& path() const;
 
-    IO_DLL_PUBLIC void stat(StatCallback callback);
+    IO_DLL_PUBLIC void stat(const StatCallback& callback);
 
     IO_DLL_PUBLIC void schedule_removal() override;
 

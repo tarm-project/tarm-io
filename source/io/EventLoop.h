@@ -46,22 +46,22 @@ public:
     IO_DLL_PUBLIC EventLoop();
     IO_DLL_PUBLIC ~EventLoop();
 
-    IO_DLL_PUBLIC WorkHandle add_work(WorkCallback thread_pool_work_callback,
-                                      WorkDoneCallback loop_thread_work_done_callback = nullptr);
-    IO_DLL_PUBLIC WorkHandle add_work(WorkCallbackWithUserData thread_pool_work_callback,
-                                      WorkDoneCallbackWithUserData loop_thread_work_done_callback = nullptr);
+    IO_DLL_PUBLIC WorkHandle add_work(const WorkCallback& thread_pool_work_callback,
+                                      const WorkDoneCallback& loop_thread_work_done_callback = nullptr);
+    IO_DLL_PUBLIC WorkHandle add_work(const WorkCallbackWithUserData& thread_pool_work_callback,
+                                      const WorkDoneCallbackWithUserData& loop_thread_work_done_callback = nullptr);
     // Only callbacks that are still not executed could be cancelled
     IO_DLL_PUBLIC Error cancel_work(WorkHandle handle);
 
     // Call callback on the EventLoop's thread. Could be executed from any thread
     // Note: this method is thread safe
-    IO_DLL_PUBLIC void execute_on_loop_thread(WorkCallback callback);
+    IO_DLL_PUBLIC void execute_on_loop_thread(const WorkCallback& callback);
 
     // Schedule on loop's thread, will block loop. Not thread safe.
-    IO_DLL_PUBLIC void schedule_callback(WorkCallback callback);
+    IO_DLL_PUBLIC void schedule_callback(const WorkCallback& callback);
 
     // Warning: do not perform heavy calculations or blocking calls here
-    IO_DLL_PUBLIC std::size_t schedule_call_on_each_loop_cycle(WorkCallback callback);
+    IO_DLL_PUBLIC std::size_t schedule_call_on_each_loop_cycle(const WorkCallback& callback);
     IO_DLL_PUBLIC void stop_call_on_each_loop_cycle(std::size_t handle);
 
     // As loop exits when there is nothing to do, sometimes it is needed to postpone exiting.
@@ -69,8 +69,8 @@ public:
     IO_DLL_PUBLIC void start_block_loop_from_exit();
     IO_DLL_PUBLIC void stop_block_loop_from_exit();
 
-    IO_DLL_PUBLIC Error handle_signal_once(Signal signal, SignalCallback callback);
-    IO_DLL_PUBLIC Error add_signal_handler(Signal signal, SignalCallback callback);
+    IO_DLL_PUBLIC Error handle_signal_once(Signal signal, const SignalCallback& callback);
+    IO_DLL_PUBLIC Error add_signal_handler(Signal signal, const SignalCallback& callback);
     IO_DLL_PUBLIC void remove_signal_handler(Signal signal);
 
     IO_DLL_PUBLIC Error run();

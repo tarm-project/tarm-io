@@ -34,10 +34,10 @@ public:
 
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
 
-    IO_DLL_PUBLIC Error start_receive(DataReceivedCallback receive_callback);
-    IO_DLL_PUBLIC Error start_receive(DataReceivedCallback receive_callback,
+    IO_DLL_PUBLIC Error start_receive(const DataReceivedCallback& receive_callback);
+    IO_DLL_PUBLIC Error start_receive(const DataReceivedCallback& receive_callback,
                                       std::size_t timeout_ms,
-                                      TimeoutCallback timeout_callback);
+                                      const TimeoutCallback& timeout_callback);
 
     // DOC: set_destination does not allows to change address family
     IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint);
@@ -52,10 +52,10 @@ public:
     IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
     IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
 
-    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
     IO_DLL_PUBLIC void schedule_removal() override;
 

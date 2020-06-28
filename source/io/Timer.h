@@ -33,13 +33,13 @@ public:
     // If timeout is zero, the callback fires on the next event loop iteration.
     // If repeat is non-zero, the callback fires first after timeout milliseconds
     // and then repeatedly after repeat milliseconds.
-    IO_DLL_PUBLIC void start(std::uint64_t timeout_ms, uint64_t repeat_ms, Callback callback);
+    IO_DLL_PUBLIC void start(std::uint64_t timeout_ms, uint64_t repeat_ms, const Callback& callback);
 
     // one shot timer
-    IO_DLL_PUBLIC void start(std::uint64_t timeout_ms, Callback callback);
+    IO_DLL_PUBLIC void start(std::uint64_t timeout_ms, const Callback& callback);
 
     // Multiple timeouts and then stop
-    IO_DLL_PUBLIC void start(const std::deque<std::uint64_t>& timeouts_ms, Callback callback);
+    IO_DLL_PUBLIC void start(const std::deque<std::uint64_t>& timeouts_ms, const Callback& callback);
 
     IO_DLL_PUBLIC void stop();
 

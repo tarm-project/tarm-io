@@ -40,17 +40,17 @@ public:
 
     IO_DLL_PUBLIC
     void connect(const Endpoint endpoint,
-                 ConnectCallback connect_callback,
-                 DataReceiveCallback receive_callback = nullptr,
-                 CloseCallback close_callback = nullptr);
+                 const ConnectCallback& connect_callback,
+                 const DataReceiveCallback& receive_callback = nullptr,
+                 const CloseCallback& close_callback = nullptr);
     IO_DLL_PUBLIC void close();
 
     IO_DLL_PUBLIC bool is_open() const;
 
-    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
     IO_DLL_PUBLIC TlsVersion negotiated_tls_version() const;
 

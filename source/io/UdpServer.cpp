@@ -26,10 +26,10 @@ public:
     Impl(EventLoop& loop, UdpServer& parent);
 
     Error bind(const Endpoint& endpoint);
-    Error start_receive(const Endpoint& endpoint, DataReceivedCallback data_receive_callback);
-    Error start_receive(const Endpoint& endpoint, NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback);
+    Error start_receive(const Endpoint& endpoint, const DataReceivedCallback& data_receive_callback);
+    Error start_receive(const Endpoint& endpoint, const NewPeerCallback& new_peer_callback, const DataReceivedCallback& receive_callback, std::size_t timeout_ms, const PeerTimeoutCallback& timeout_callback);
 
-    void close(CloseServerCallback close_callback);
+    void close(const CloseServerCallback& close_callback);
     bool close_with_removal();
 
     bool peer_bookkeeping_enabled() const;
@@ -77,7 +77,7 @@ Error UdpServer::Impl::bind(const Endpoint& endpoint) {
     return Error(uv_status);
 }
 
-Error UdpServer::Impl::start_receive(const Endpoint& endpoint, DataReceivedCallback data_receive_callback) {
+Error UdpServer::Impl::start_receive(const Endpoint& endpoint, const DataReceivedCallback& data_receive_callback) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
     Error bind_error = bind(endpoint);
@@ -96,10 +96,10 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint, DataReceivedCallb
 }
 
 Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
-                                     NewPeerCallback new_peer_callback,
-                                     DataReceivedCallback receive_callback,
+                                     const NewPeerCallback& new_peer_callback,
+                                     const DataReceivedCallback& receive_callback,
                                      std::size_t timeout_ms,
-                                     PeerTimeoutCallback timeout_callback) {
+                                     const PeerTimeoutCallback& timeout_callback) {
     if (timeout_ms == 0) {
         // TODO: error
     }
@@ -128,7 +128,7 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
     return start_receive(endpoint, receive_callback);
 }
 
-void UdpServer::Impl::close(CloseServerCallback close_callback) {
+void UdpServer::Impl::close(const CloseServerCallback& close_callback) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
     if (is_open()) {
@@ -291,19 +291,19 @@ UdpServer::UdpServer(EventLoop& loop) :
 UdpServer::~UdpServer() {
 }
 
-Error UdpServer::start_receive(const Endpoint& endpoint, DataReceivedCallback data_receive_callback) {
+Error UdpServer::start_receive(const Endpoint& endpoint, const DataReceivedCallback& data_receive_callback) {
     return m_impl->start_receive(endpoint, data_receive_callback);
 }
 
-Error UdpServer::start_receive(const Endpoint& endpoint, NewPeerCallback new_peer_callback, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback) {
+Error UdpServer::start_receive(const Endpoint& endpoint, const NewPeerCallback& new_peer_callback, const DataReceivedCallback& receive_callback, std::size_t timeout_ms, const PeerTimeoutCallback& timeout_callback) {
     return m_impl->start_receive(endpoint, new_peer_callback, receive_callback, timeout_ms, timeout_callback);
 }
 
-Error UdpServer::start_receive(const Endpoint& endpoint, DataReceivedCallback receive_callback, std::size_t timeout_ms, PeerTimeoutCallback timeout_callback) {
+Error UdpServer::start_receive(const Endpoint& endpoint, const DataReceivedCallback& receive_callback, std::size_t timeout_ms, const PeerTimeoutCallback& timeout_callback) {
     return m_impl->start_receive(endpoint, nullptr, receive_callback, timeout_ms, timeout_callback);
 }
 
-void UdpServer::close(CloseServerCallback close_callback) {
+void UdpServer::close(const CloseServerCallback& close_callback) {
     return m_impl->close(close_callback);
 }
 

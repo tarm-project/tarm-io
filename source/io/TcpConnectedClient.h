@@ -39,10 +39,10 @@ public:
     IO_DLL_PUBLIC bool is_open() const;
 
     // DOC: in case of char* caller is responsible for buffer to be alive until EndSendCallback is called
-    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(const std::string& message, EndSendCallback callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::string&& message, EndSendCallback callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
+    IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
     IO_DLL_PUBLIC std::size_t pending_send_requesets() const;
 
@@ -53,14 +53,14 @@ public:
     IO_DLL_PUBLIC const TcpServer& server() const;
 
 protected:
-    IO_DLL_PUBLIC TcpConnectedClient(EventLoop& loop, TcpServer& server, CloseCallback cloase_callback);
+    IO_DLL_PUBLIC TcpConnectedClient(EventLoop& loop, TcpServer& server, const CloseCallback& cloase_callback);
     IO_DLL_PUBLIC ~TcpConnectedClient();
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
 private:
     Error init_stream();
-    void start_read(DataReceiveCallback data_receive_callback);
+    void start_read(const DataReceiveCallback& data_receive_callback);
     void* tcp_client_stream();
 
     void set_endpoint(const Endpoint& endpoint);

@@ -28,8 +28,8 @@ public:
 
     Impl(EventLoop& loop,
          DtlsServer& dtls_server,
-         NewConnectionCallback new_connection_callback,
-         CloseCallback close_callback,
+         const NewConnectionCallback& new_connection_callback,
+         const CloseCallback& close_callback,
          UdpPeer& udp_client,
          const detail::DtlsContext& context,
          DtlsConnectedClient& parent);
@@ -39,7 +39,7 @@ public:
 
     void close();
 
-    void set_data_receive_callback(DataReceiveCallback callback);
+    void set_data_receive_callback(const DataReceiveCallback& callback);
 
     DtlsServer& server();
     const DtlsServer& server() const;
@@ -73,8 +73,8 @@ DtlsConnectedClient::Impl::Impl(EventLoop& loop,
 
 DtlsConnectedClient::Impl::Impl(EventLoop& loop,
                                 DtlsServer& dtls_server,
-                                NewConnectionCallback new_connection_callback,
-                                CloseCallback close_callback,
+                                const NewConnectionCallback& new_connection_callback,
+                                const CloseCallback& close_callback,
                                 UdpPeer& udp_client,
                                 const detail::DtlsContext& context,
                                 DtlsConnectedClient& parent) :
@@ -97,7 +97,7 @@ Error DtlsConnectedClient::Impl::init_ssl() {
     return ssl_init(m_dtls_context.ssl_ctx);
 }
 
-void DtlsConnectedClient::Impl::set_data_receive_callback(DataReceiveCallback callback) {
+void DtlsConnectedClient::Impl::set_data_receive_callback(const DataReceiveCallback& callback) {
     m_data_receive_callback = callback;
 }
 
@@ -168,8 +168,8 @@ void DtlsConnectedClient::Impl::on_alert(int code) {
 
 DtlsConnectedClient::DtlsConnectedClient(EventLoop& loop,
                                          DtlsServer& dtls_server,
-                                         NewConnectionCallback new_connection_callback,
-                                         CloseCallback close_callback,
+                                         const NewConnectionCallback& new_connection_callback,
+                                         const CloseCallback& close_callback,
                                          UdpPeer& udp_peer,
                                          void* context) :
     Removable(loop),
@@ -186,7 +186,7 @@ DtlsConnectedClient::DtlsConnectedClient(EventLoop& loop,
 DtlsConnectedClient::~DtlsConnectedClient() {
 }
 
-void DtlsConnectedClient::set_data_receive_callback(DataReceiveCallback callback) {
+void DtlsConnectedClient::set_data_receive_callback(const DataReceiveCallback& callback) {
     return m_impl->set_data_receive_callback(callback);
 }
 
@@ -198,19 +198,19 @@ Error DtlsConnectedClient::init_ssl() {
     return m_impl->init_ssl();
 }
 
-void DtlsConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
+void DtlsConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(buffer, size, callback);
 }
 
-void DtlsConnectedClient::send_data(const std::string& message, EndSendCallback callback) {
+void DtlsConnectedClient::send_data(const std::string& message, const EndSendCallback& callback) {
     return m_impl->send_data(message, callback);
 }
 
-void DtlsConnectedClient::send_data(std::string&& message, EndSendCallback callback) {
+void DtlsConnectedClient::send_data(std::string&& message, const EndSendCallback& callback) {
     return m_impl->send_data(std::move(message), callback);
 }
 
-void DtlsConnectedClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback) {
+void DtlsConnectedClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(c_str, size, callback);
 }
 

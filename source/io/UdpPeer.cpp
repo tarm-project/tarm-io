@@ -78,19 +78,19 @@ std::uint64_t UdpPeer::last_packet_time() const {
     return m_impl->last_packet_time();
 }
 
-void UdpPeer::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback) {
+void UdpPeer::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(c_str, size, callback);
 }
 
-void UdpPeer::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
+void UdpPeer::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(buffer, size, callback);
 }
 
-void UdpPeer::send_data(const std::string& message, EndSendCallback callback) {
+void UdpPeer::send_data(const std::string& message, const EndSendCallback& callback) {
     return m_impl->send_data(message, callback);
 }
 
-void UdpPeer::send_data(std::string&& message, EndSendCallback callback) {
+void UdpPeer::send_data(std::string&& message, const EndSendCallback& callback) {
     return m_impl->send_data(std::move(message), callback);
 }
 

@@ -26,9 +26,9 @@ public:
     ~Impl();
 
     void connect(const Endpoint& endpoint,
-                 ConnectCallback connect_callback,
-                 DataReceiveCallback receive_callback,
-                 CloseCallback close_callback,
+                 const ConnectCallback& connect_callback,
+                 const DataReceiveCallback& receive_callback,
+                 const CloseCallback& close_callback,
                  std::size_t timeout_ms);
     void close();
 
@@ -64,9 +64,9 @@ DtlsClient::Impl::Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClie
 }
 
 void DtlsClient::Impl::connect(const Endpoint& endpoint,
-                               ConnectCallback connect_callback,
-                               DataReceiveCallback receive_callback,
-                               CloseCallback close_callback,
+                               const ConnectCallback& connect_callback,
+                               const DataReceiveCallback& receive_callback,
+                               const CloseCallback& close_callback,
                                std::size_t timeout_ms) {
     if (endpoint.type() == Endpoint::UNDEFINED) {
         if (connect_callback) {
@@ -227,9 +227,9 @@ const Endpoint& DtlsClient::endpoint() const {
 }
 
 void DtlsClient::connect(const Endpoint& endpoint,
-                         ConnectCallback connect_callback,
-                         DataReceiveCallback receive_callback,
-                         CloseCallback close_callback,
+                         const ConnectCallback& connect_callback,
+                         const DataReceiveCallback& receive_callback,
+                         const CloseCallback& close_callback,
                          std::size_t timeout_ms) {
     return m_impl->connect(endpoint, connect_callback, receive_callback, close_callback, timeout_ms);
 }
@@ -242,19 +242,19 @@ bool DtlsClient::is_open() const {
     return m_impl->is_open();
 }
 
-void DtlsClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, EndSendCallback callback) {
+void DtlsClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(buffer, size, callback);
 }
 
-void DtlsClient::send_data(const std::string& message, EndSendCallback callback) {
+void DtlsClient::send_data(const std::string& message, const EndSendCallback& callback) {
     return m_impl->send_data(message, callback);
 }
 
-void DtlsClient::send_data(std::string&& message, EndSendCallback callback) {
+void DtlsClient::send_data(std::string&& message, const EndSendCallback& callback) {
     return m_impl->send_data(std::move(message), callback);
 }
 
-void DtlsClient::send_data(const char* c_str, std::uint32_t size, EndSendCallback callback) {
+void DtlsClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(c_str, size, callback);
 }
 

@@ -23,13 +23,13 @@ public:
     ~Impl();
 
     Error listen(const Endpoint& endpoint,
-                 NewConnectionCallback new_connection_callback,
-                 DataReceivedCallback data_receive_callback,
-                 CloseConnectionCallback close_connection_callback,
+                 const NewConnectionCallback& new_connection_callback,
+                 const DataReceivedCallback& data_receive_callback,
+                 const CloseConnectionCallback& close_connection_callback,
                  int backlog_size);
 
-    void shutdown(ShutdownServerCallback shutdown_callback);
-    void close(CloseServerCallback close_callback);
+    void shutdown(const ShutdownServerCallback& shutdown_callback);
+    void close(const CloseServerCallback& close_callback);
 
     std::size_t connected_clients_count() const;
 
@@ -83,9 +83,9 @@ TcpServer::Impl::~Impl() {
 }
 
 Error TcpServer::Impl::listen(const Endpoint& endpoint,
-                              NewConnectionCallback new_connection_callback,
-                              DataReceivedCallback data_receive_callback,
-                              CloseConnectionCallback close_connection_callback,
+                              const NewConnectionCallback& new_connection_callback,
+                              const DataReceivedCallback& data_receive_callback,
+                              const CloseConnectionCallback& close_connection_callback,
                               int backlog_size) {
     if (endpoint.type() == Endpoint::UNDEFINED) {
         return Error(StatusCode::INVALID_ARGUMENT);
@@ -138,7 +138,7 @@ const Endpoint& TcpServer::Impl::endpoint() const {
     return m_endpoint;
 }
 
-void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
+void TcpServer::Impl::shutdown(const ShutdownServerCallback& shutdown_callback) {
     IO_LOG(m_loop, TRACE, m_parent);
 
     m_end_server_callback = shutdown_callback;
@@ -150,7 +150,7 @@ void TcpServer::Impl::shutdown(ShutdownServerCallback shutdown_callback) {
     close_impl();
 }
 
-void TcpServer::Impl::close(CloseServerCallback close_callback) {
+void TcpServer::Impl::close(const CloseServerCallback& close_callback) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
     m_end_server_callback = close_callback;
@@ -324,18 +324,18 @@ TcpServer::~TcpServer() {
 }
 
 Error TcpServer::listen(const Endpoint& endpoint,
-                        NewConnectionCallback new_connection_callback,
-                        DataReceivedCallback data_receive_callback,
-                        CloseConnectionCallback close_connection_callback,
+                        const NewConnectionCallback& new_connection_callback,
+                        const DataReceivedCallback& data_receive_callback,
+                        const CloseConnectionCallback& close_connection_callback,
                         int backlog_size) {
     return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, close_connection_callback, backlog_size);
 }
 
-void TcpServer::shutdown(ShutdownServerCallback shutdown_callback) {
+void TcpServer::shutdown(const ShutdownServerCallback& shutdown_callback) {
     return m_impl->shutdown(shutdown_callback);
 }
 
-void TcpServer::close(CloseServerCallback close_callback) {
+void TcpServer::close(const CloseServerCallback& close_callback) {
     return m_impl->close(close_callback);
 }
 

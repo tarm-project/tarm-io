@@ -31,18 +31,18 @@ public:
     Impl(EventLoop& loop, File& parent);
     ~Impl();
 
-    void open(const Path& path, OpenCallback callback);
+    void open(const Path& path, const OpenCallback& callback);
     void close();
     bool is_open() const;
 
-    void read(ReadCallback callback);
-    void read(ReadCallback read_callback, EndReadCallback end_read_callback);
+    void read(const ReadCallback& callback);
+    void read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback);
 
-    void read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback);
+    void read_block(off_t offset, unsigned int bytes_count, const ReadCallback& read_callback);
 
     const Path& path() const;
 
-    void stat(StatCallback callback);
+    void stat(const StatCallback& callback);
 
     bool schedule_removal();
 
@@ -153,7 +153,7 @@ void File::Impl::close() {
     m_path.clear();
 }
 
-void File::Impl::open(const Path& path, OpenCallback callback) {
+void File::Impl::open(const Path& path, const OpenCallback& callback) {
     if (is_open()) {
         close();
     }
@@ -169,7 +169,7 @@ void File::Impl::open(const Path& path, OpenCallback callback) {
     uv_fs_open(m_uv_loop, m_open_request, path.string().c_str(), UV_FS_O_RDWR, 0, on_open);
 }
 
-void File::Impl::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
+void File::Impl::read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback) {
     if (!is_open()) {
         if (read_callback) {
             read_callback(*m_parent, DataChunk(), Error(StatusCode::FILE_NOT_OPEN));
@@ -204,7 +204,7 @@ struct ReadBlockReq : public uv_fs_t {
 
 } // namespace
 
-void File::Impl::read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback) {
+void File::Impl::read_block(off_t offset, unsigned int bytes_count, const ReadCallback& read_callback) {
     if (!is_open()) {
         if (read_callback) {
             read_callback(*m_parent, DataChunk(), Error(StatusCode::FILE_NOT_OPEN));
@@ -225,11 +225,11 @@ void File::Impl::read_block(off_t offset, unsigned int bytes_count, ReadCallback
     uv_fs_read(m_uv_loop, req, m_file_handle, &buf, 1, offset, on_read_block);
 }
 
-void File::Impl::read(ReadCallback callback) {
+void File::Impl::read(const ReadCallback& callback) {
     read(callback, nullptr);
 }
 
-void File::Impl::stat(StatCallback callback) {
+void File::Impl::stat(const StatCallback& callback) {
     // TODO: check if open
 
     m_stat_req.data = this;
@@ -466,7 +466,7 @@ File::File(EventLoop& loop) :
 File::~File() {
 }
 
-void File::open(const Path& path, OpenCallback callback) {
+void File::open(const Path& path, const OpenCallback& callback) {
     return m_impl->open(path, callback);
 }
 
@@ -478,15 +478,15 @@ bool File::is_open() const {
     return m_impl->is_open();
 }
 
-void File::read(ReadCallback callback) {
+void File::read(const ReadCallback& callback) {
     return m_impl->read(callback);
 }
 
-void File::read(ReadCallback read_callback, EndReadCallback end_read_callback) {
+void File::read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback) {
     return m_impl->read(read_callback, end_read_callback);
 }
 
-void File::read_block(off_t offset, unsigned int bytes_count, ReadCallback read_callback) {
+void File::read_block(off_t offset, unsigned int bytes_count, const ReadCallback& read_callback) {
     return m_impl->read_block(offset, bytes_count, read_callback);
 }
 
@@ -494,7 +494,7 @@ const Path& File::path() const {
     return m_impl->path();
 }
 
-void File::stat(StatCallback callback) {
+void File::stat(const StatCallback& callback) {
     return m_impl->stat(callback);
 }
 
