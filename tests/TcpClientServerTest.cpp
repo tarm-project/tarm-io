@@ -1157,9 +1157,9 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
     EXPECT_FALSE(listen_error);
 
     // Giving server chance to start
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    std::thread client_thread([this, NUMBER_OF_CLIENTS]() {
+    std::thread client_thread([&]() {
         io::EventLoop clients_loop;
 
         std::vector<io::TcpClient*> all_clients;
@@ -1182,13 +1182,11 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
             auto tcp_client = new io::TcpClient(clients_loop);
             tcp_client->set_user_data(reinterpret_cast<void*>(i));
             tcp_client->connect({m_default_addr, m_default_port},
-                [i, tcp_client, NUMBER_OF_CLIENTS, send_all_clients, &all_clients]
-                (io::TcpClient& client, const io::Error& error) {
+                [&, tcp_client, send_all_clients](io::TcpClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
                     all_clients.push_back(tcp_client);
 
-                    if (i == NUMBER_OF_CLIENTS - 1) {
-                        ASSERT_EQ(NUMBER_OF_CLIENTS, all_clients.size());
+                    if (all_clients.size() == NUMBER_OF_CLIENTS) {
                         send_all_clients();
                     }
                 },
