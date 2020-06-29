@@ -27,16 +27,18 @@ endif()
 # Files
 FILE(GLOB IO_HEADERS_LIST
         io/*.h
+        io/detail/*.h
+        io/detail/net/*.h
         io/fs/*.h
         io/global/*.h
-        io/detail/*.h
+        io/net/*.h
         io/path_impl/*.h)
 
 list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
+        io/detail/net/OpenSslInitHelper.cpp
+        io/detail/net/PeerId.cpp
         io/detail/Common.cpp
-        io/detail/OpenSslInitHelper.cpp
-        io/detail/PeerId.cpp
         io/global/Configuration.cpp
         io/global/Version.cpp
         io/fs/Dir.cpp
@@ -48,12 +50,21 @@ list(APPEND IO_SOURCE_LIST
         io/fs/path_impl/HashRange.cpp
         io/fs/path_impl/Utf8CodecvtFacet.cpp
         io/fs/path_impl/WindowsFileCodecvt.cpp
+        io/net/DtlsClient.cpp
+        io/net/DtlsConnectedClient.cpp
+        io/net/DtlsServer.cpp
+        io/net/Endpoint.cpp
+        io/net/TcpClient.cpp
+        io/net/TcpConnectedClient.cpp
+        io/net/TcpServer.cpp
+        io/net/TlsTcpClient.cpp
+        io/net/TlsTcpConnectedClient.cpp
+        io/net/TlsTcpServer.cpp
+        io/net/UdpClient.cpp
+        io/net/UdpPeer.cpp
+        io/net/UdpServer.cpp
         io/ByteSwap.cpp
         io/Convert.cpp
-        io/DtlsClient.cpp
-        io/DtlsConnectedClient.cpp
-        io/DtlsServer.cpp
-        io/Endpoint.cpp
         io/Error.cpp
         io/EventLoop.cpp
         io/Logger.cpp
@@ -61,15 +72,6 @@ list(APPEND IO_SOURCE_LIST
         io/Removable.cpp
         io/StatusCode.cpp
         io/Timer.cpp
-        io/TcpClient.cpp
-        io/TcpConnectedClient.cpp
-        io/TcpServer.cpp
-        io/TlsTcpClient.cpp
-        io/TlsTcpConnectedClient.cpp
-        io/TlsTcpServer.cpp
-        io/UdpClient.cpp
-        io/UdpPeer.cpp
-        io/UdpServer.cpp
         io/UserDataHolder.cpp
 )
 

@@ -13,10 +13,10 @@ using namespace tarm;
 
 int main(int argc, char* argv[]) {
     io::EventLoop loop;
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
 
     client->connect({argv[1], 443},
-        [](io::TlsTcpClient& client, const io::Error& error) {
+        [](io::net::TlsTcpClient& client, const io::Error& error) {
             if (error) {
                 std::cerr << error.string() << std::endl;
                 return;
@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Connected!" << std::endl;
             client.send_data("GET / HTTP/1.0\r\n\r\n");
         },
-        [](io::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        [](io::net::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
             if (error) {
                 std::cerr << error.string() << std::endl;
                 return;
@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 
             std::cout.write(data.buf.get(), data.size);
         },
-        [](io::TlsTcpClient& client, const io::Error& error) {
+        [](io::net::TlsTcpClient& client, const io::Error& error) {
             if (error) {
                 std::cerr << error.string() << std::endl;
             }

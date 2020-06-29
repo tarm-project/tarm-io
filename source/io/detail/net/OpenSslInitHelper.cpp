@@ -3,43 +3,31 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *----------------------------------------------------------------------------------------------*/
 
-#pragma once
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
-// Forward declarations of all user-level types
+#include <iostream>
+
 namespace tarm {
 namespace io {
 namespace net {
-
-class TcpServer;
-class TcpConnectedClient;
-class TcpClient;
-
-class TlsTcpServer;
-class TlsTcpConnectedClient;
-class TlsTcpClient;
-
-class DtlsServer;
-class DtlsConnectedClient;
-class DtlsClient;
-
-class UdpClient;
-class UdpServer;
-class UdpPeer;
-
-} // namespace net
-
-class RefCounted;
-class Removable;
-
-// ------------------------------- private details -------------------------------
-
-namespace net {
 namespace detail {
 
-struct PeerId;
+class OpenSslInitHelper {
+public:
+    OpenSslInitHelper() {
+        ERR_load_crypto_strings();
+        SSL_load_error_strings();
+        const int result = SSL_library_init();
+        if (!result) {
+            std::cerr << "OpenSslInitHelper: Failed to init OpenSSL" << std::endl;
+        }
+    }
+};
+
+static OpenSslInitHelper openssl_init_helper;
 
 } // namespace detail
 } // namespace net
-
 } // namespace io
 } // namespace tarm

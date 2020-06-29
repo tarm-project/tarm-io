@@ -5,8 +5,8 @@
 
 #include "UTCommon.h"
 
-#include "TlsTcpClient.h"
-#include "TlsTcpServer.h"
+#include "net/TlsTcpClient.h"
+#include "net/TlsTcpServer.h"
 #include "fs/Path.h"
 #include "global/Version.h"
 
@@ -30,17 +30,17 @@ TEST_F(TlsTcpClientServerTest,  constructor) {
     //this->log_to_stdout();
 
     io::EventLoop loop;
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
 
     client->connect("64.233.162.113", 443,
-        [](io::TlsTcpClient& client, const io::Error& error) {
+        [](io::net::TlsTcpClient& client, const io::Error& error) {
             std::cout << "Connected!" << std::endl;
             client.send_data("GET / HTTP/1.0\r\n\r\n");
         },
-        [](io::TlsTcpClient& client, const char* buf, size_t size) {
+        [](io::net::TlsTcpClient& client, const char* buf, size_t size) {
             std::cout.write(buf, size);
         },
-        [](io::TlsTcpClient& client, const io::Error& error) {
+        [](io::net::TlsTcpClient& client, const io::Error& error) {
             client.schedule_removal();
         });
 
@@ -57,12 +57,12 @@ TEST_F(TlsTcpClientServerTest, constructor) {
     const std::string cert_name = "certificate.pem";
     const std::string key_name = "key.pem";
 
-    auto server = new io::TlsTcpServer(loop, cert_name, key_name);
+    auto server = new io::net::TlsTcpServer(loop, cert_name, key_name);
     server.bind("0.0.0.0", 12345);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client) {
+        [&](io::net::TlsTcpConnectedClient& client) {
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data) {
             std::cout.write(buf, size);
 
             std::string str(buf);
@@ -94,7 +94,7 @@ TEST_F(TlsTcpClientServerTest, constructor) {
 
 TEST_F(TlsTcpClientServerTest, schedule_removal_not_connected_client) {
     io::EventLoop loop;
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
     client->schedule_removal();
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -102,7 +102,7 @@ TEST_F(TlsTcpClientServerTest, schedule_removal_not_connected_client) {
 
 TEST_F(TlsTcpClientServerTest, is_open_not_connected_client) {
     io::EventLoop loop;
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
     EXPECT_FALSE(client->is_open());
     client->schedule_removal();
 
@@ -112,9 +112,9 @@ TEST_F(TlsTcpClientServerTest, is_open_not_connected_client) {
 TEST_F(TlsTcpClientServerTest, client_send_without_connect_with_callback) {
     io::EventLoop loop;
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
     client->send_data("Hello",
-        [](io::TlsTcpClient& client, const io::Error& error) {
+        [](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
             client.schedule_removal();
@@ -129,9 +129,9 @@ TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
 
     std::size_t client_on_connect_count = 0;
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
     client->connect({"0.0.0", m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
             EXPECT_FALSE(client.is_open());
@@ -151,7 +151,7 @@ TEST_F(TlsTcpClientServerTest, client_connect_to_invalid_address) {
 TEST_F(TlsTcpClientServerTest, server_listen_on_invalid_address) {
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({"1.2:333333aa.adf", m_default_port},
         nullptr,
         nullptr,
@@ -170,7 +170,7 @@ TEST_F(TlsTcpClientServerTest, server_listen_on_invalid_address) {
 TEST_F(TlsTcpClientServerTest, bind_privileged) {
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, 100},
         nullptr,
         nullptr,
@@ -188,11 +188,11 @@ TEST_F(TlsTcpClientServerTest, bind_privileged) {
 TEST_F(TlsTcpClientServerTest, server_address_in_use) {
     io::EventLoop loop;
 
-    auto server_1 = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server_1 = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error_1 = server_1->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
     EXPECT_FALSE(listen_error_1);
 
-    auto server_2 = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server_2 = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error_2 = server_2->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
     EXPECT_TRUE(listen_error_2);
     EXPECT_EQ(io::StatusCode::ADDRESS_ALREADY_IN_USE, listen_error_2.code());
@@ -206,9 +206,9 @@ TEST_F(TlsTcpClientServerTest, server_address_in_use) {
 TEST_F(TlsTcpClientServerTest, client_send_without_connect_no_callback) {
     io::EventLoop loop;
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
     client->send_data("Hello", // Just do nothing and hope for miracle
-        [](io::TlsTcpClient& client, const io::Error& error){
+        [](io::net::TlsTcpClient& client, const io::Error& error){
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
         }
@@ -227,14 +227,14 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++server_on_connect_callback_count;
             EXPECT_EQ(0, server_on_receive_callback_count);
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(1, server_on_connect_callback_count);
             ++server_on_receive_callback_count;
@@ -243,21 +243,21 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_no_close_callbacks) {
             std::string received_message(data.buf.get(), data.size);
             EXPECT_EQ(message, received_message);
 
-            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {
+            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {
                 server.schedule_removal();
             });
         }
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
 
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++client_on_connect_callback_count;
             client.send_data(message, sizeof(message) - 1,
-                [&](io::TlsTcpClient& client, const io::Error& error) {
+                [&](io::net::TlsTcpClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
                     ++client_on_send_callback_count;
                     client.schedule_removal();
@@ -290,13 +290,13 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_with_close_callbacks) 
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++server_on_connect_callback_count;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++server_on_receive_callback_count;
 
@@ -304,29 +304,29 @@ TEST_F(TlsTcpClientServerTest, client_send_data_to_server_with_close_callbacks) 
             std::string received_message(data.buf.get(), data.size);
             EXPECT_EQ(message, received_message);
 
-            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
         },
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++server_on_close_callback_count;
         }
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
 
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++client_on_connect_callback_count;
-            client.send_data(message, [&](io::TlsTcpClient& client, const io::Error& error) {
+            client.send_data(message, [&](io::net::TlsTcpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
                 ++client_on_send_callback_count;
                 client.close();
             });
         },
         nullptr,
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++client_on_close_callback_count;
             client.schedule_removal();
@@ -373,14 +373,14 @@ TEST_F(TlsTcpClientServerTest, client_send_simultaneous_multiple_chunks_to_serve
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
 
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             const auto& expected_message = messages[server_message_counter++];
 
@@ -392,20 +392,20 @@ TEST_F(TlsTcpClientServerTest, client_send_simultaneous_multiple_chunks_to_serve
         ;
 
         if (server_on_receive_callback_count == messages.size()) {
-            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
         }
     });
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
 
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
 
             for (std::size_t i = 0; i < messages.size(); ++i) {
                 client.send_data(messages[i],
-                    [&](io::TlsTcpClient& client, const io::Error& error) {
+                    [&](io::net::TlsTcpClient& client, const io::Error& error) {
                         EXPECT_FALSE(error);
                         ++client_on_send_callback_count;
 
@@ -443,34 +443,34 @@ TEST_F(TlsTcpClientServerTest, server_send_data_to_client) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
 
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
             client.send_data(message, sizeof(message) - 1, // -1 is for last 0
-                [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+                [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
                     ++server_on_send_callback_count;
-                    server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+                    server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
                 }
             );
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_receive_callback_count;
         });
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
 
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++client_on_connect_callback_count;
         },
-        [&](io::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++client_on_receive_callback_count;
 
@@ -522,41 +522,41 @@ TEST_F(TlsTcpClientServerTest, server_send_simultaneous_multiple_chunks_to_clien
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
 
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
 
             for (std::size_t i = 0; i < messages.size(); ++i) {
                 client.send_data(messages[i],
-                    [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+                    [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
                         EXPECT_FALSE(error);
                         ++server_on_send_callback_count;
 
                         if (server_on_send_callback_count == messages.size()) {
-                            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+                            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
 
                      }
                 }
             );
         }
     },
-    [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+    [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
         ++server_on_receive_callback_count;
     });
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
 
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++client_on_connect_callback_count;
         },
-        [&](io::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             const auto& expected_message = messages[client_message_counter++];
 
@@ -611,26 +611,26 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-            [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+            [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
                 ++server_on_connect_callback_count;
                 EXPECT_EQ(0, server_data_receive_size);
 
                 client.send_data(server_buf, DATA_SIZE,
-                    [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+                    [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
                         ++server_on_data_send_callback_count;
                         EXPECT_FALSE(error);
 
                         if (server_data_receive_size == DATA_SIZE) {
-                            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+                            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
 
                     }
                 }
             );
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
 
             auto previous_size = server_data_receive_size;
@@ -641,20 +641,20 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
             }
 
             if (server_data_receive_size == DATA_SIZE && server_on_data_send_callback_count) {
-                server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+                server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
             }
         }
     );
     EXPECT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
 
             ++client_on_connect_callback_count;
             client.send_data(client_buf, DATA_SIZE,
-                [&](io::TlsTcpClient& client, const io::Error& error) {
+                [&](io::net::TlsTcpClient& client, const io::Error& error) {
                     ++client_on_data_send_callback_count;
                     EXPECT_FALSE(error);
 
@@ -664,7 +664,7 @@ TEST_F(TlsTcpClientServerTest, client_and_server_send_each_other_1_mb_data) {
                 }
             );
         },
-        [&](io::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             auto previous_size = client_data_receive_size;
 
@@ -704,16 +704,16 @@ TEST_F(TlsTcpClientServerTest, server_close_connection_cause_client_close) {
     std::size_t server_on_close_count = 0;
     std::size_t clietn_on_close_count = 0;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             client.close();
         },
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++server_on_close_count;
             server->schedule_removal();
@@ -721,14 +721,14 @@ TEST_F(TlsTcpClientServerTest, server_close_connection_cause_client_close) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             client.send_data("!");
         },
         nullptr,
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++clietn_on_close_count;
             client.schedule_removal();
@@ -747,10 +747,10 @@ TEST_F(TlsTcpClientServerTest, server_close_connection_cause_client_close) {
 TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_some_data) {
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
 
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
 
             std::string str(data.buf.get(), data.size);
@@ -764,22 +764,22 @@ TEST_F(TlsTcpClientServerTest, server_close_client_conection_after_accepting_som
 
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
     unsigned counter = 0;
 
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             client.send_data(std::to_string(counter++));
         },
-        [&](io::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             client.send_data(std::to_string(counter++));
         },
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             client.schedule_removal();
-            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();}); // Note: shutdowning server from client callback
+            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();}); // Note: shutdowning server from client callback
         }
     );
 
@@ -796,17 +796,17 @@ TEST_F(TlsTcpClientServerTest, not_existing_certificate) {
     not_existing_path = "C:\\no\\existing\\path.pem";
 #endif
 
-    auto server = new io::TlsTcpServer(loop, not_existing_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, not_existing_path, m_key_path);
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
 
     auto error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_new_connection_callback_count;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_data_receive_callback_count;
         }
@@ -836,17 +836,17 @@ TEST_F(TlsTcpClientServerTest, not_existing_key) {
     not_existing_path = "C:\\no\\existing\\path.pem";
 #endif
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, not_existing_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, not_existing_path);
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
 
     auto error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_new_connection_callback_count;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_data_receive_callback_count;
         }
@@ -867,17 +867,17 @@ TEST_F(TlsTcpClientServerTest, invalid_certificate) {
     io::EventLoop loop;
 
     io::fs::Path certificate_path = m_test_path / "invalid_certificate.pem";;
-    auto server = new io::TlsTcpServer(loop, certificate_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, certificate_path, m_key_path);
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
 
     auto error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_new_connection_callback_count;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_data_receive_callback_count;
         }
@@ -897,17 +897,17 @@ TEST_F(TlsTcpClientServerTest, invalid_private_key) {
     io::EventLoop loop;
 
     io::fs::Path key_path = m_test_path / "invalid_key.pem";;
-    auto server = new io::TlsTcpServer(loop, m_cert_path, key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, key_path);
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
 
     auto error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_new_connection_callback_count;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_data_receive_callback_count;
         }
@@ -932,17 +932,17 @@ TEST_F(TlsTcpClientServerTest, not_matching_certificate_and_key) {
 
     const io::fs::Path cert_path = m_test_path / "not_matching_certificate.pem";
     const io::fs::Path key_path = m_test_path / "not_matching_key.pem";
-    auto server = new io::TlsTcpServer(loop, cert_path, key_path);
+    auto server = new io::net::TlsTcpServer(loop, cert_path, key_path);
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
 
     auto error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_new_connection_callback_count;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_data_receive_callback_count;
         }
@@ -976,44 +976,44 @@ TEST_F(TlsTcpClientServerTest, callbacks_order) {
     std::size_t client_new_connection_callback_count = 0;
     std::size_t client_data_receive_callback_count = 0;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
 
             ++server_new_connection_callback_count;
             EXPECT_EQ(0, server_data_receive_callback_count);
 
             client.send_data(server_message,
-                [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+                [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
                 }
             );
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_data_receive_callback_count;
-            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
         }
     );
 
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
 
             ++client_new_connection_callback_count;
             EXPECT_EQ(0, client_data_receive_callback_count);
 
             client.send_data(client_message,
-                [&](io::TlsTcpClient& client, const io::Error& error) {
+                [&](io::net::TlsTcpClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
                 }
             );
         },
-        [&](io::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
 
             ++client_data_receive_callback_count;
@@ -1041,23 +1041,23 @@ TEST_F(TlsTcpClientServerTest, tls_negotiated_version) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(io::global::max_supported_tls_version(), client.negotiated_tls_version());
-            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
         },
         nullptr
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
 
-    EXPECT_EQ(io::TlsVersion::UNKNOWN, client->negotiated_tls_version());
+    EXPECT_EQ(io::net::TlsVersion::UNKNOWN, client->negotiated_tls_version());
 
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(io::global::max_supported_tls_version(), client.negotiated_tls_version());
             ++client_on_connect_callback_count;
@@ -1081,14 +1081,14 @@ TEST_F(TlsTcpClientServerTest, server_with_restricted_tls_version) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path,
-        io::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path,
+        io::net::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++server_on_connect_callback_count;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++server_on_receive_callback_count;
 
@@ -1101,13 +1101,13 @@ TEST_F(TlsTcpClientServerTest, server_with_restricted_tls_version) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop);
+    auto client = new io::net::TlsTcpClient(loop);
 
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++client_on_connect_callback_count;
-            client.send_data(message, [&](io::TlsTcpClient& client, const io::Error& error) {
+            client.send_data(message, [&](io::net::TlsTcpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error.string();
                 ++client_on_send_callback_count;
                 client.schedule_removal();
@@ -1137,14 +1137,14 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(io::global::min_supported_tls_version(), client.negotiated_tls_version());
             ++server_on_connect_callback_count;
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_receive_callback_count;
 
@@ -1152,20 +1152,20 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
             std::string received_message(data.buf.get(), data.size);
             EXPECT_EQ(message, received_message);
 
-            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
         }
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop,
-        io::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+    auto client = new io::net::TlsTcpClient(loop,
+        io::net::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
 
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             EXPECT_EQ(io::global::min_supported_tls_version(), client.negotiated_tls_version());
             ++client_on_connect_callback_count;
-            client.send_data(message, [&](io::TlsTcpClient& client, const io::Error& error) {
+            client.send_data(message, [&](io::net::TlsTcpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
                 ++client_on_send_callback_count;
                 client.schedule_removal();
@@ -1199,38 +1199,38 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path,
-        io::TlsVersionRange{io::global::max_supported_tls_version(), io::global::max_supported_tls_version()});
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path,
+        io::net::TlsVersionRange{io::global::max_supported_tls_version(), io::global::max_supported_tls_version()});
     auto listen_error = server->listen({m_default_addr, m_default_port},
-        [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
-            EXPECT_EQ(io::TlsVersion::UNKNOWN, client.negotiated_tls_version());
+            EXPECT_EQ(io::net::TlsVersion::UNKNOWN, client.negotiated_tls_version());
             ++server_on_connect_callback_count;
             server->schedule_removal();
         },
-        [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+        [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_receive_callback_count;
         }
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop,
-        io::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+    auto client = new io::net::TlsTcpClient(loop,
+        io::net::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
-            EXPECT_EQ(io::TlsVersion::UNKNOWN, client.negotiated_tls_version());
+            EXPECT_EQ(io::net::TlsVersion::UNKNOWN, client.negotiated_tls_version());
             ++client_on_connect_callback_count;
             client.schedule_removal();
         },
-        [&](io::TlsTcpClient&, const io::DataChunk&, const io::Error& error) {
+        [&](io::net::TlsTcpClient&, const io::DataChunk&, const io::Error& error) {
             EXPECT_FALSE(error);
             ++client_on_receive_callback_count;
         },
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++client_on_close_callback_count;
         }
@@ -1259,8 +1259,8 @@ TEST_F(TlsTcpClientServerTest, server_with_invalid_tls_version_range) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path,
-        io::TlsVersionRange{io::global::max_supported_tls_version(), io::global::min_supported_tls_version()});
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path,
+        io::net::TlsVersionRange{io::global::max_supported_tls_version(), io::global::min_supported_tls_version()});
     auto listen_error = server->listen({m_default_addr, m_default_port},
         nullptr,
         nullptr
@@ -1281,17 +1281,17 @@ TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
 
     io::EventLoop loop;
 
-    auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+    auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
     auto listen_error = server->listen({m_default_addr, m_default_port},
         nullptr,
         nullptr
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::TlsTcpClient(loop,
-        io::TlsVersionRange{io::global::max_supported_tls_version(), io::global::min_supported_tls_version()});
+    auto client = new io::net::TlsTcpClient(loop,
+        io::net::TlsVersionRange{io::global::max_supported_tls_version(), io::global::min_supported_tls_version()});
     client->connect({m_default_addr, m_default_port},
-        [&](io::TlsTcpClient& client, const io::Error& error) {
+        [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::OPENSSL_ERROR, error.code());
             server->schedule_removal();
@@ -1313,16 +1313,16 @@ TEST_F(TlsTcpClientServerTest, server_works_with_multiple_clients) {
 
         std::size_t on_server_close_count = 0;
 
-        auto server = new io::TlsTcpServer(loop, m_cert_path, m_key_path);
+        auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
         auto listen_error = server->listen({m_default_addr, m_default_port},
-            [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+            [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error;
             },
-            [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
                 EXPECT_FALSE(error) << error;
                 client.send_data(data.buf, data.size);
             },
-            [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+            [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error;
 
                 // TODO: connected_clients_count is unreliable here
@@ -1351,13 +1351,13 @@ TEST_F(TlsTcpClientServerTest, server_works_with_multiple_clients) {
 
             io::EventLoop loop;
 
-            auto client = new io::TlsTcpClient(loop);
+            auto client = new io::net::TlsTcpClient(loop);
             client->connect({m_default_addr, m_default_port},
-                [&](io::TlsTcpClient& client, const io::Error& error) {
+                [&](io::net::TlsTcpClient& client, const io::Error& error) {
                     EXPECT_FALSE(error) << error;
                     client.send_data(buffer, BUF_SIZE);
                 },
-                [&](io::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
+                [&](io::net::TlsTcpClient& client, const io::DataChunk& data, const io::Error& error) {
                     EXPECT_FALSE(error) << error;
                     for (std::size_t i = 0; i < data.size; ++i) {
                         ASSERT_EQ(buffer.get()[i + data.offset], data.buf.get()[i]) << "i: " << i;
@@ -1367,7 +1367,7 @@ TEST_F(TlsTcpClientServerTest, server_works_with_multiple_clients) {
                         client.close();
                     }
                 },
-                [&](io::TlsTcpClient& client, const io::Error& error) {
+                [&](io::net::TlsTcpClient& client, const io::Error& error) {
                     EXPECT_FALSE(error) << error;
                     client.schedule_removal();
                 }

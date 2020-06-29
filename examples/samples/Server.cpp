@@ -24,11 +24,11 @@ int main(int argc, char* argv[]) {
     const std::string cert_name = "certificate.pem";
     const std::string key_name = "key.pem";
 
-    auto server = new io::TlsTcpServer(loop, cert_name, key_name);
+    auto server = new io::net::TlsTcpServer(loop, cert_name, key_name);
     auto listen_result = server->listen({"0.0.0.0", 12345},
-    [&](io::TlsTcpConnectedClient& client, const io::Error& error) {
+    [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
     },
-    [&](io::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+    [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         if (error) {
             std::cerr << error.string() << std::endl;
             return;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     signal(SIGPIPE, SIG_IGN);
 
     io::EventLoop loop;
-    io::TcpServer server(loop);
+    io::net::TcpServer server(loop);
 
     loop.add_work([]() {
         std::cout << "Doing work!" << std::endl;
@@ -128,14 +128,14 @@ int main(int argc, char* argv[]) {
     //     });
     // });
 
-    auto on_new_connection = [](io::TcpServer& server, io::TcpConnectedClient& client) {
+    auto on_new_connection = [](io::net::TcpServer& server, io::net::TcpConnectedClient& client) {
         std::cout << "New connection from " << io::ip4_addr_to_string(client.ipv4_addr()) << ":" << client.port() << std::endl;
 
         // std::memcpy(write_data_buf.get(), "Hello", 5);
         // client_.send_data(write_data_buf, 5);
     };
 
-    auto on_data_read = [&loop](io::TcpServer& server, io::TcpConnectedClient& client, const char* data, size_t len) {
+    auto on_data_read = [&loop](io::net::TcpServer& server, io::net::TcpConnectedClient& client, const char* data, size_t len) {
         std::string message(data, data + len);
         std::cout << message;
 
@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
 
         if (message.find("close") != std::string::npos ) {
             std::cout << "Forcing server shut down..." << std::endl;
-            server->shutdown([](io::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
             //timer.stop();
         }
 
@@ -194,7 +194,7 @@ int main(int argc, char* argv[]) {
                     std::cout << "File size is: " << stat.size << std::endl;
                 });
 
-                client.set_close_callback([&file](io::TcpConnectedClient& client, const io::Error& error){
+                client.set_close_callback([&file](io::net::TcpConnectedClient& client, const io::Error& error){
                     file.schedule_removal();
                 });
 
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
                         //std::cout << "pending_send_requesets " << client.pending_send_requesets() << std::endl;
                     }
 
-                    client.send_data(chunk.buf, chunk.size, [&file](io::TcpConnectedClient& client, const io::Error& error) {
+                    client.send_data(chunk.buf, chunk.size, [&file](io::net::TcpConnectedClient& client, const io::Error& error) {
                         static int counter = 0;
                         std::cout << "TcpClient after send counter: " << counter++ << std::endl;
 
