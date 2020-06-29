@@ -8,9 +8,9 @@
 #include "Convert.h"
 #include "net/DtlsServer.h"
 #include "net/UdpPeer.h"
-#include "detail/net/DtlsContext.h"
+#include "detail/DtlsContext.h"
 #include "detail/ConstexprString.h"
-#include "detail/net/OpenSslClientImplBase.h"
+#include "detail/OpenSslClientImplBase.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

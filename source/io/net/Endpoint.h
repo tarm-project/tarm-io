@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "CommonMacros.h"
-#include "Export.h"
-#include "Forward.h"
+#include "../CommonMacros.h"
+#include "../Export.h"
+#include "../Forward.h"
 
 #include <array>
 #include <cstdint>

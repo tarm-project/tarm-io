@@ -7,7 +7,7 @@
 
 #include "BacklogWithTimeout.h"
 #include "ByteSwap.h"
-#include "detail/net/UdpClientImplBase.h"
+#include "detail/UdpClientImplBase.h"
 
 #include <cstring>
 #include <cstddef>

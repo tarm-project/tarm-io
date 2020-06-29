@@ -8,8 +8,8 @@
 #include "net/UdpServer.h"
 
 #include "ByteSwap.h"
-#include "detail/net/UdpClientImplBase.h"
-#include "detail/net/PeerId.h"
+#include "detail/UdpClientImplBase.h"
+#include "detail/PeerId.h"
 
 #include "detail/Common.h"
 

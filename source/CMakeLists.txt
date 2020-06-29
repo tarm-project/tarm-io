@@ -28,16 +28,14 @@ endif()
 FILE(GLOB IO_HEADERS_LIST
         io/*.h
         io/detail/*.h
-        io/detail/net/*.h
         io/fs/*.h
         io/global/*.h
         io/net/*.h
+        io/net/detail/*.h
         io/path_impl/*.h)
 
 list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
-        io/detail/net/OpenSslInitHelper.cpp
-        io/detail/net/PeerId.cpp
         io/detail/Common.cpp
         io/global/Configuration.cpp
         io/global/Version.cpp
@@ -50,6 +48,8 @@ list(APPEND IO_SOURCE_LIST
         io/fs/path_impl/HashRange.cpp
         io/fs/path_impl/Utf8CodecvtFacet.cpp
         io/fs/path_impl/WindowsFileCodecvt.cpp
+        io/net/detail/OpenSslInitHelper.cpp
+        io/net/detail/PeerId.cpp
         io/net/DtlsClient.cpp
         io/net/DtlsConnectedClient.cpp
         io/net/DtlsServer.cpp

@@ -9,8 +9,8 @@
 #include "net/TcpConnectedClient.h"
 #include "net/TlsTcpServer.h"
 #include "detail/ConstexprString.h"
-#include "detail/net/OpenSslClientImplBase.h"
-#include "detail/net/TlsContext.h"
+#include "detail/OpenSslClientImplBase.h"
+#include "detail/TlsContext.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

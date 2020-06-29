@@ -9,7 +9,7 @@
 #include "detail/Common.h"
 #include "Convert.h"
 #include "net/TcpServer.h"
-#include "detail/net/TcpClientImplBase.h"
+#include "detail/TcpClientImplBase.h"
 
 #include <assert.h>
 

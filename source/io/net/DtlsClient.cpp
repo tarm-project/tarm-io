@@ -9,8 +9,8 @@
 #include "Convert.h"
 #include "net/UdpClient.h"
 #include "detail/ConstexprString.h"
-#include "detail/net/OpenSslClientImplBase.h"
-#include "detail/net/OpenSslContext.h"
+#include "detail/OpenSslClientImplBase.h"
+#include "detail/OpenSslContext.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

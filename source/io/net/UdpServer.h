@@ -5,17 +5,19 @@
 
 #pragma once
 
+#include "../CommonMacros.h"
+#include "../EventLoop.h"
+#include "../Export.h"
+#include "../Forward.h"
+#include "../DataChunk.h"
+#include "../Removable.h"
+#include "../Error.h"
+#include "../UserDataHolder.h"
+
 #include "BufferSizeResult.h"
-#include "CommonMacros.h"
-#include "net/Endpoint.h"
-#include "EventLoop.h"
-#include "Export.h"
-#include "Forward.h"
-#include "DataChunk.h"
-#include "Removable.h"
-#include "Error.h"
-#include "UserDataHolder.h"
-#include "net/UdpPeer.h"
+
+#include "Endpoint.h"
+#include "UdpPeer.h"
 
 #include <memory>
 

@@ -8,7 +8,7 @@
 #include "detail/Common.h"
 #include "Convert.h"
 #include "ByteSwap.h"
-#include "detail/net/TcpClientImplBase.h"
+#include "detail/TcpClientImplBase.h"
 
 #include <assert.h>
 #include <iostream>

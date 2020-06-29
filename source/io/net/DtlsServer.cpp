@@ -9,8 +9,8 @@
 #include "net/UdpServer.h"
 #include "net/UdpPeer.h"
 #include "detail/ConstexprString.h"
-#include "detail/net/DtlsContext.h"
-#include "detail/net/OpenSslContext.h"
+#include "detail/DtlsContext.h"
+#include "detail/OpenSslContext.h"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>

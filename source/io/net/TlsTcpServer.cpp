@@ -8,8 +8,8 @@
 #include "Convert.h"
 #include "net/TcpServer.h"
 #include "detail/ConstexprString.h"
-#include "detail/net/TlsContext.h"
-#include "detail/net/OpenSslContext.h"
+#include "detail/TlsContext.h"
+#include "detail/OpenSslContext.h"
 
 #include <openssl/pem.h>
 #include <openssl/evp.h>

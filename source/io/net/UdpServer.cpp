@@ -11,8 +11,8 @@
 #include "net/UdpPeer.h"
 
 #include "detail/Common.h"
-#include "detail/net/PeerId.h"
-#include "detail/net/UdpImplBase.h"
+#include "detail/PeerId.h"
+#include "detail/UdpImplBase.h"
 
 #include <iostream>
 #include <assert.h>
