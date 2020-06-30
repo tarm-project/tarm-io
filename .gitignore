@@ -1,5 +1,6 @@
 .vscode/
-build*/
+/build*/
+/examples/build*/
 doc/_build
 make_build/
 .DS_Store

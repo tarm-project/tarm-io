@@ -15,7 +15,7 @@ Build for platforms
    articles/build/windows
    articles/build/linux
    articles/build/mac
-..   articles/build/docker
+   articles/build/docker
 
 
 Build system requirements
