@@ -22,5 +22,6 @@ macro(setup_project_for_examples PROJECT_NAME)
     endif()
 endmacro()
 
+add_subdirectory(hello_event_loop)
 add_subdirectory(very_basic_udp_echo_server)
 add_subdirectory(udp_echo_server)

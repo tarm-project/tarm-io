@@ -1,8 +1,8 @@
 .. meta::
    :description: Tarm-io UDP echo server tutorial
 
-01. UDP echo server
-===================
+UDP echo server
+===============
 
 In this small tutorial we create UDP echo server, which replies back received messages.
 Create 2 following files CMakeLists.txt and main.cpp.
