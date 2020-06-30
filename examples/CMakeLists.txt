@@ -15,10 +15,10 @@ macro(setup_project_for_examples PROJECT_NAME)
     target_link_libraries(${PROJECT_NAME} tarm-io::tarm-io)
 
     if (MSVC)
-        add_custom_command(TARGET udp_echo_server POST_BUILD
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "$<TARGET_PROPERTY:tarm-io::tarm-io,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>"
-                $<TARGET_FILE_DIR:udp_echo_server>)
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>)
     endif()
 endmacro()
 
