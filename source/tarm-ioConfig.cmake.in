@@ -13,6 +13,9 @@ set_and_check(tarm-io_INCLUDE_DIR  "${tmp_INCLUDE_DIR}" )
 
 #set_and_check(tarm-io_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
 #set_and_check(tarm-io_SYSCONFIG_DIR "@PACKAGE_SYSCONFIG_INSTALL_DIR@")
+set(TARM_IO_SSL_EAY_DLL_PATH "@TARM_IO_SSL_EAY_DLL_PATH@")
+set(TARM_IO_LIB_EAY_DLL_PATH "@TARM_IO_LIB_EAY_DLL_PATH@")
+
 check_required_components(tarm-io)
 
 message(STATUS "Tarm-io found. Headers: ${tarm-io_INCLUDE_DIR}")

@@ -18,7 +18,16 @@ macro(setup_project_for_examples PROJECT_NAME)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "$<TARGET_PROPERTY:tarm-io::tarm-io,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>"
-                $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
+
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+                "${TARM_IO_SSL_EAY_DLL_PATH}"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMAND ${CMAKE_COMMAND} -E copy
+                "${TARM_IO_LIB_EAY_DLL_PATH}"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        )
     endif()
 endmacro()
 

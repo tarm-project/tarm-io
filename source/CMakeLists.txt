@@ -95,6 +95,23 @@ target_link_libraries(tarm-io PUBLIC ${LIBUV_LIB_DEPS})
 #    COMMAND ${CMAKE_COMMAND} -E echo $<$<CONFIG:DEBUG>:$<TARGET_PROPERTY:tarm-io,DEBUG_POSTFIX>>
 #)
 
+
+# Last parameter is return value
+function(tarm_io_msvc_dll_name_from_lib PATH_TO_LIB_FILE RESULT_DLL_NAME)
+    #message("CMake linker: ${CMAKE_LINKER}")
+    get_filename_component(TARM_IO_LIB_TOOL_DIR "${CMAKE_LINKER}" DIRECTORY CACHE)
+    #message("MSVC tools dir: ${TARM_IO_LIB_TOOL_DIR}")
+
+    set(LIB_EXE_TOOL_OUTPUT)
+    execute_process(COMMAND "${TARM_IO_LIB_TOOL_DIR}/lib.exe" "/list" "/NOLOGO" "${PATH_TO_LIB_FILE}"
+                    OUTPUT_VARIABLE LIB_EXE_TOOL_OUTPUT)
+
+    string(FIND "${LIB_EXE_TOOL_OUTPUT}" ".dll" DLL_NAME_STR_POS)
+    #if (DLL_NAME_STR_POS == -1) # TODO:
+    string(SUBSTRING "${LIB_EXE_TOOL_OUTPUT}" 0 ${DLL_NAME_STR_POS} DLL_NAME)
+    SET(${RESULT_DLL_NAME} "${DLL_NAME}" PARENT_SCOPE)
+endfunction()
+
 # DOC: there are problems with CMake to find different OpenSSL versions.
 # https://gitlab.kitware.com/cmake/cmake/-/issues/18352
 # One part could be found from one version and second from another
@@ -105,6 +122,38 @@ if (IO_OPENSSL_FOUND)
 
     if (OPENSSL_ROOT_DIR)
         target_include_directories(tarm-io PUBLIC ${OPENSSL_ROOT_DIR}/include)
+    endif()
+
+    # Search for DLLs if any available
+    if (MSVC)
+        # TODO: openssl debug build support (if available) LIB_EAY_DEBUG, SSL_EAY_DEBUG ...
+        if (NOT EXISTS "${LIB_EAY_RELEASE}")
+            message(WARNING "LIB_EAY_RELEASE path is not found")
+        endif()
+
+        if (NOT EXISTS "${SSL_EAY_RELEASE}")
+            message(WARNING "SSL_EAY_RELEASE path is not found")
+        endif()
+
+        message("LIB_EAY_RELEASE: ${LIB_EAY_RELEASE}")
+        message("SSL_EAY_RELEASE: ${SSL_EAY_RELEASE}")
+
+        tarm_io_msvc_dll_name_from_lib("${LIB_EAY_RELEASE}" LIB_EAY_DLL_NAME)
+        tarm_io_msvc_dll_name_from_lib("${SSL_EAY_RELEASE}" SSL_EAY_DLL_NAME)
+        message("${LIB_EAY_DLL_NAME}")
+        message("${SSL_EAY_DLL_NAME}")
+
+        find_file(TARM_IO_LIB_EAY_DLL_PATH
+                 ${LIB_EAY_DLL_NAME}.dll
+                 PATHS "${OPENSSL_ROOT_DIR}"
+                 PATH_SUFFIXES bin
+                 NO_DEFAULT_PATH)
+
+        find_file(TARM_IO_SSL_EAY_DLL_PATH
+                  ${SSL_EAY_DLL_NAME}.dll
+                  PATHS "${OPENSSL_ROOT_DIR}"
+                  PATH_SUFFIXES bin
+                  NO_DEFAULT_PATH)
     endif()
 endif()
 

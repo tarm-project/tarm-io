@@ -109,53 +109,17 @@ else()
                 ${CMAKE_BINARY_DIR}/tests/$<$<OR:$<PLATFORM_ID:Windows>,$<PLATFORM_ID:Darwin>>:$<CONFIG>>
     )
 
-	# Copy openssl dlls to the tests folder
-	if (MSVC AND IO_OPENSSL_FOUND)
-		# TODO: openssl debug build support (if available) LIB_EAY_DEBUG, SSL_EAY_DEBUG ...
-		if (NOT EXISTS "${LIB_EAY_RELEASE}")
-			message(WARNING "LIB_EAY_RELEASE path is not found")
-		endif()
-
-		if (NOT EXISTS "${SSL_EAY_RELEASE}")
-			message(WARNING "SSL_EAY_RELEASE path is not found")
-		endif()
-
-		message("LIB_EAY_RELEASE: ${LIB_EAY_RELEASE}")
-		message("SSL_EAY_RELEASE: ${SSL_EAY_RELEASE}")
-
-		get_filename_component(LIB_EAY_NAME "${LIB_EAY_RELEASE}" NAME_WE CACHE)
-		message("LIB_EAY_NAME: ${LIB_EAY_NAME}")
-
-		get_filename_component(SSL_EAY_NAME "${SSL_EAY_RELEASE}" NAME_WE CACHE)
-		message("SSL_EAY_NAME: ${SSL_EAY_NAME}")
-
-		set(LIB_EAY_DLL_NAME "${LIB_EAY_NAME}.dll")
-		set(SSL_EAY_DLL_NAME "${SSL_EAY_NAME}.dll")
-		message("LIB_EAY_DLL_NAME: ${LIB_EAY_DLL_NAME}")
-		message("SSL_EAY_DLL_NAME: ${SSL_EAY_DLL_NAME}")
-
-		get_filename_component(SSL_LIB_DIR "${LIB_EAY_RELEASE}" DIRECTORY CACHE)
-		message("SSL_LIB_DIR: ${SSL_LIB_DIR}")
-		get_filename_component(SSL_DLL_DIR "${SSL_LIB_DIR}/../bin" ABSOLUTE CACHE)
-		message("SSL_DLL_DIR: ${SSL_DLL_DIR}")
-
-		message("FULL_PATH: ${SSL_DLL_DIR}/${LIB_EAY_DLL_NAME}")
-
-		if(EXISTS "${SSL_DLL_DIR}/${LIB_EAY_DLL_NAME}" AND
-		   EXISTS "${SSL_DLL_DIR}/${SSL_EAY_DLL_NAME}")
-
-			add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E copy
-						"${SSL_DLL_DIR}/${LIB_EAY_DLL_NAME}"
-						"${CMAKE_BINARY_DIR}/tests/$<CONFIG>"
-				COMMAND ${CMAKE_COMMAND} -E copy
-						"${SSL_DLL_DIR}/${SSL_EAY_DLL_NAME}"
-						"${CMAKE_BINARY_DIR}/tests/$<CONFIG>"
-			)
-		else()
-			message("OpenSSL dlls not found in the 'bin' folder, skip copying...")
-		endif()
-	endif()
+    if (MSVC AND IO_OPENSSL_FOUND)
+        # Copy openssl dlls to the tests folder
+        add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+                    "${TARM_IO_SSL_EAY_DLL_PATH}"
+                    "${CMAKE_BINARY_DIR}/tests/$<CONFIG>"
+            COMMAND ${CMAKE_COMMAND} -E copy
+                    "${TARM_IO_LIB_EAY_DLL_PATH}"
+                    "${CMAKE_BINARY_DIR}/tests/$<CONFIG>"
+            )
+    endif()
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
@@ -183,7 +147,7 @@ endif()
 
 if(WIN32) # AND BUILD_SHARED_LIBS
     add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
-	    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_PROPERTY:GTest::gtest,INTERFACE_INCLUDE_DIRECTORIES>/../bin/gtest$<$<CONFIG:DEBUG>:d>.dll
             $<TARGET_FILE_DIR:tests> # TODO: replace hardcoded 'tests' with ${TESTS_EXE_NAME}
     )
