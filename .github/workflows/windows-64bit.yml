@@ -40,7 +40,15 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -DTARM_IO_BUILD_TESTS=TRUE -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DBOOST_ROOT="$env:BOOST_ROOT_1_72_0" -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT="$env:GITHUB_WORKSPACE/gtest_install" -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64\" ..
+        cmake -DTARM_IO_BUILD_TESTS=TRUE \
+              -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 \
+              -DCMAKE_GENERATOR_PLATFORM=x64 \
+              -DBOOST_ROOT="$env:BOOST_ROOT_1_72_0" \
+              -DBoost_USE_MULTITHREADED=ON \
+              -DBoost_USE_STATIC_RUNTIME=OFF \
+              -DGTEST_ROOT="$env:GITHUB_WORKSPACE/gtest_install" \
+              -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64\" \
+              ..
         cmake --build . --config ${{ matrix.config }}
     - name: run tests
       run: |
