@@ -20,6 +20,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    #- name: build without OpenSSL
+    #  run: |
+    #    bla_bla
     - name: install OpenSSL
       run: |
         choco install openssl
@@ -54,3 +57,15 @@ jobs:
       run: |
         cd build
         .\tests\${{ matrix.config }}\tests.exe
+    - name: lib install, build and run examples
+        cd build
+        cmake --install . --config ${{ matrix.config }} --prefix $env:GITHUB_WORKSPACE\tarm-io_install
+        cd ..\examples
+        mkdir build
+        cd build
+        cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 `
+              -DCMAKE_GENERATOR_PLATFORM=x64 `
+              -Dtarm-io_DIR="$env:GITHUB_WORKSPACE\tarm-io_install\lib\cmake\tarm-io" `
+              ..
+        cmake --build . --config ${{ matrix.config }}
+        .\hello_event_loop\${{ matrix.config }}\hello_event_loop.exe

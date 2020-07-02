@@ -41,7 +41,7 @@ jobs:
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
           "cd build && \
            make RunTests"
-    - name: lib install and build examples
+    - name: lib install, build and run examples
       run: |
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
           "cd build && \
