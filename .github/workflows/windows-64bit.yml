@@ -58,6 +58,7 @@ jobs:
         cd build
         .\tests\${{ matrix.config }}\tests.exe
     - name: lib install, build and run examples
+      run: |
         cd build
         cmake --install . --config ${{ matrix.config }} --prefix $env:GITHUB_WORKSPACE\tarm-io_install
         cd ..\examples
