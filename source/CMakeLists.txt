@@ -120,19 +120,25 @@ if (IO_OPENSSL_FOUND)
     target_link_libraries(tarm-io PRIVATE OpenSSL::Crypto) # WAS PUBLIC
     target_compile_definitions(tarm-io PRIVATE IO_HAS_OPENSSL)
 
+    target_include_directories(tarm-io PUBLIC "${OPENSSL_INCLUDE_DIR}")
+
     if (OPENSSL_ROOT_DIR)
-        target_include_directories(tarm-io PUBLIC ${OPENSSL_ROOT_DIR}/include)
+        set(TARM_IO_OPENSSL_ROOT_DIR "${OPENSSL_ROOT_DIR}")
+    else()
+        get_filename_component(TARM_IO_OPENSSL_ROOT_DIR "${OPENSSL_INCLUDE_DIR}/.." ABSOLUTE)
     endif()
+
+    message("TARM_IO_OPENSSL_ROOT_DIR: ${TARM_IO_OPENSSL_ROOT_DIR}")
 
     # Search for DLLs if any available
     if (MSVC)
         # TODO: openssl debug build support (if available) LIB_EAY_DEBUG, SSL_EAY_DEBUG ...
         if (NOT EXISTS "${LIB_EAY_RELEASE}")
-            message(WARNING "LIB_EAY_RELEASE path is not found")
+            message(FATAL_ERROR "LIB_EAY_RELEASE path is not found")
         endif()
 
         if (NOT EXISTS "${SSL_EAY_RELEASE}")
-            message(WARNING "SSL_EAY_RELEASE path is not found")
+            message(FATAL_ERROR "SSL_EAY_RELEASE path is not found")
         endif()
 
         message("LIB_EAY_RELEASE: ${LIB_EAY_RELEASE}")
@@ -145,7 +151,7 @@ if (IO_OPENSSL_FOUND)
 
         find_file(TARM_IO_LIB_EAY_DLL_PATH
                  ${LIB_EAY_DLL_NAME}.dll
-                 PATHS "${OPENSSL_ROOT_DIR}"
+                 PATHS "${TARM_IO_OPENSSL_ROOT_DIR}"
                  PATH_SUFFIXES bin
                  NO_DEFAULT_PATH)
         if (TARM_IO_LIB_EAY_DLL_PATH STREQUAL "TARM_IO_LIB_EAY_DLL_PATH-NOTFOUND")
@@ -161,7 +167,7 @@ if (IO_OPENSSL_FOUND)
 
         find_file(TARM_IO_SSL_EAY_DLL_PATH
                   ${SSL_EAY_DLL_NAME}.dll
-                  PATHS "${OPENSSL_ROOT_DIR}"
+                  PATHS "${TARM_IO_OPENSSL_ROOT_DIR}"
                   PATH_SUFFIXES bin
                   NO_DEFAULT_PATH)
         if (TARM_IO_SSL_EAY_DLL_PATH STREQUAL "TARM_IO_SSL_EAY_DLL_PATH-NOTFOUND")
