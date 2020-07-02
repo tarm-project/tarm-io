@@ -140,20 +140,40 @@ if (IO_OPENSSL_FOUND)
 
         tarm_io_msvc_dll_name_from_lib("${LIB_EAY_RELEASE}" LIB_EAY_DLL_NAME)
         tarm_io_msvc_dll_name_from_lib("${SSL_EAY_RELEASE}" SSL_EAY_DLL_NAME)
-        message("${LIB_EAY_DLL_NAME}")
-        message("${SSL_EAY_DLL_NAME}")
+        message("LIB_EAY_DLL_NAME: ${LIB_EAY_DLL_NAME}")
+        message("SSL_EAY_DLL_NAME: ${SSL_EAY_DLL_NAME}")
 
         find_file(TARM_IO_LIB_EAY_DLL_PATH
                  ${LIB_EAY_DLL_NAME}.dll
                  PATHS "${OPENSSL_ROOT_DIR}"
                  PATH_SUFFIXES bin
                  NO_DEFAULT_PATH)
+        if (TARM_IO_LIB_EAY_DLL_PATH STREQUAL "TARM_IO_LIB_EAY_DLL_PATH-NOTFOUND")
+            message("${LIB_EAY_DLL_NAME}.dll not found in specified folders, searching system-wide...")
+            find_file(TARM_IO_LIB_EAY_DLL_PATH
+                      ${LIB_EAY_DLL_NAME}.dll
+                      REQUIRED)
+            message("TARM_IO_LIB_EAY_DLL_PATH: ${TARM_IO_LIB_EAY_DLL_PATH}")
+            set(TARM_IO_LIB_EAY_DLL_PATH "")
+        else()
+            message("TARM_IO_LIB_EAY_DLL_PATH: ${TARM_IO_LIB_EAY_DLL_PATH}")
+        endif()
 
         find_file(TARM_IO_SSL_EAY_DLL_PATH
                   ${SSL_EAY_DLL_NAME}.dll
                   PATHS "${OPENSSL_ROOT_DIR}"
                   PATH_SUFFIXES bin
                   NO_DEFAULT_PATH)
+        if (TARM_IO_SSL_EAY_DLL_PATH STREQUAL "TARM_IO_SSL_EAY_DLL_PATH-NOTFOUND")
+            message("${SSL_EAY_DLL_NAME}.dll not found in specified folders, searching system-wide...")
+            find_file(TARM_IO_SSL_EAY_DLL_PATH
+                      ${SSL_EAY_DLL_NAME}.dll
+                      REQUIRED)
+            message("TARM_IO_SSL_EAY_DLL_PATH: ${TARM_IO_SSL_EAY_DLL_PATH}")
+            set(TARM_IO_SSL_EAY_DLL_PATH "")
+        else()
+            message("TARM_IO_SSL_EAY_DLL_PATH: ${TARM_IO_SSL_EAY_DLL_PATH}")
+        endif()
     endif()
 endif()
 
