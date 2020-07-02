@@ -1,0 +1,23 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
+FROM tarmio/builders:ubuntu20.04-clang9.0.1
+
+LABEL maintainer="av@tarm.io"
+
+RUN cd /usr/bin && \
+    ln -s clang-9 clang && \
+    ln -s clang++-9 clang++
+
+RUN mkdir -p ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget https://cmake.org/files/v3.7/cmake-3.7.2.tar.gz && \
+    tar -xf cmake* && \
+    cd cmake* && \
+    ./configure --parallel=$(nproc) && \
+    make -j $(nporc) && \
+    make install && \
+    ldconfig && \
+    rm -rf ${BUILD_DIR}
