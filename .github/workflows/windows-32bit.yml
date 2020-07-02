@@ -23,6 +23,27 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x86
+    - name: minimal build (no dependencies)
+      run: |
+        mkdir minimal_build
+        cd minimal_build
+        cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 `
+              -DCMAKE_GENERATOR_PLATFORM=Win32 `
+              ..
+        cmake --build . --config ${{ matrix.config }}
+    - name: minimal lib install, build and run examples
+      run: |
+        cd minimal_build
+        cmake --install . --config ${{ matrix.config }} --prefix $env:GITHUB_WORKSPACE\tarm-io_minimal_install
+        cd ..\examples
+        mkdir minimal_build
+        cd minimal_build
+        cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 `
+              -DCMAKE_GENERATOR_PLATFORM=Win32 `
+              -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\tarm-io_minimal_install" `
+              ..
+        cmake --build . --config ${{ matrix.config }}
+        .\hello_event_loop\${{ matrix.config }}\hello_event_loop.exe
     - name: install OpenSSL
       run: |
         pushd $env:TEMP
