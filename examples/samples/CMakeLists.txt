@@ -3,7 +3,7 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
-if (IO_OPENSSL_FOUND)
+if (TARM_IO_OPENSSL_FOUND)
     add_executable(client Client.cpp)
     target_link_libraries(client tarm-io)
 

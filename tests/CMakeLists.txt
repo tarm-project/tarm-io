@@ -65,11 +65,11 @@ list(APPEND TESTS_LIST
     DtlsClientServerTest.cpp
 )
 
-if (NOT DEFINED IO_OPENSSL_FOUND)
-    message(FATAL_ERROR "IO CMake sctipts internal error, IO_OPENSSL_FOUND is not defined.")
+if (NOT DEFINED TARM_IO_OPENSSL_FOUND)
+    message(FATAL_ERROR "IO CMake sctipts internal error, TARM_IO_OPENSSL_FOUND is not defined.")
 endif()
 
-if (NOT IO_OPENSSL_FOUND)
+if (NOT TARM_IO_OPENSSL_FOUND)
     list(FILTER TESTS_LIST EXCLUDE REGEX Tls.*)
     list(FILTER TESTS_LIST EXCLUDE REGEX Dtls.*)
     list(FILTER TESTS_LIST EXCLUDE REGEX VersionTest\.cpp)

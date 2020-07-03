@@ -98,7 +98,7 @@ if (TARM_IO_BUILD_TESTS)
 endif()
 
 message("================ Configuration summary ================")
-message("OpenSSL support: ${IO_OPENSSL_FOUND}")
+message("OpenSSL support: ${TARM_IO_OPENSSL_FOUND}")
 message("Build tests: ${TARM_IO_BUILD_TESTS}")
 message("=======================================================")
 

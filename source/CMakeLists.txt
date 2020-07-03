@@ -11,17 +11,69 @@ if (NOT BUILD_SHARED_LIBS)
     set(OPENSSL_USE_STATIC_LIBS ON)
 endif()
 
-set(IO_OPENSSL_FOUND FALSE PARENT_SCOPE)
+set(TARM_IO_OPENSSL_FOUND FALSE PARENT_SCOPE)
 message(STATUS "Searching for OpenSSL...")
 find_package(OpenSSL)
+
+function(tarm_io_msvc_arch_name_from_lib PATH_TO_LIB_FILE RESULT_ARCH_NAME)
+    get_filename_component(TARM_IO_MSVC_LIB_TOOL_DIR "${CMAKE_LINKER}" DIRECTORY CACHE)
+
+    set(DUMPBIN_EXE_TOOL_OUTPUT)
+    execute_process(COMMAND "${TARM_IO_MSVC_LIB_TOOL_DIR}/dumpbin.exe" "/headers" "/NOLOGO" "${PATH_TO_LIB_FILE}"
+                    OUTPUT_VARIABLE DUMPBIN_EXE_TOOL_OUTPUT)
+    string(REGEX MATCH "machine \\(x[0-9]+\\)" _NOT_USED "${DUMPBIN_EXE_TOOL_OUTPUT}")
+    string(REGEX REPLACE "machine \\((x[0-9]+)\\)"
+       "\\1" ARCH_NAME
+       "${CMAKE_MATCH_0}")
+
+    set(${RESULT_ARCH_NAME} "${ARCH_NAME}" PARENT_SCOPE)
+endfunction()
 
 if (OpenSSL_FOUND)
     # DOC: warn of danger of having openssl installed in /usr/local/include
     # https://langui.sh/2015/07/24/osx-clang-include-lib-search-paths/
     message(STATUS "OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
-    # Yes, need to set this twice. Once for current scope and once for parent scope.
-    set(IO_OPENSSL_FOUND TRUE PARENT_SCOPE)
-    set(IO_OPENSSL_FOUND TRUE)
+
+    if (OPENSSL_ROOT_DIR)
+        set(TARM_IO_OPENSSL_ROOT_DIR "${OPENSSL_ROOT_DIR}")
+    else()
+        get_filename_component(TARM_IO_OPENSSL_ROOT_DIR "${OPENSSL_INCLUDE_DIR}/.." ABSOLUTE)
+    endif()
+    message("TARM_IO_OPENSSL_ROOT_DIR: ${TARM_IO_OPENSSL_ROOT_DIR}")
+
+    if (MSVC)
+        # TODO: openssl debug build support (if available) LIB_EAY_DEBUG, SSL_EAY_DEBUG ...
+        if (NOT EXISTS "${LIB_EAY_RELEASE}")
+            message(FATAL_ERROR "LIB_EAY_RELEASE path is not found")
+        endif()
+
+        if (NOT EXISTS "${SSL_EAY_RELEASE}")
+            message(FATAL_ERROR "SSL_EAY_RELEASE path is not found")
+        endif()
+
+        message("LIB_EAY_RELEASE: ${LIB_EAY_RELEASE}")
+        message("SSL_EAY_RELEASE: ${SSL_EAY_RELEASE}")
+
+        # Examining only one lib because it is unlikely that they both have different architecture
+        tarm_io_msvc_arch_name_from_lib("${LIB_EAY_RELEASE}" LIB_EAY_ARCHITECTURE)
+
+        message("CMAKE_GENERATOR_PLATFORM: ${CMAKE_GENERATOR_PLATFORM}")
+        message("LIB_EAY_ARCHITECTURE: ${LIB_EAY_ARCHITECTURE}")
+        if (DEFINED CMAKE_GENERATOR_PLATFORM AND
+            NOT CMAKE_GENERATOR_PLATFORM STREQUAL ${LIB_EAY_ARCHITECTURE})
+            message("CMake has found OpenSSL in '${OPENSSL_ROOT_DIR}' but its architecture '${LIB_EAY_ARCHITECTURE}' "
+                    "is different from this build one '${CMAKE_GENERATOR_PLATFORM}', "
+                    "so marking OpenSSL as not found")
+        else()
+            # Yes, need to set this twice. Once for current scope and once for parent scope.
+            set(TARM_IO_OPENSSL_FOUND TRUE PARENT_SCOPE)
+            set(TARM_IO_OPENSSL_FOUND TRUE)
+        endif()
+    else()
+        # Yes, need to set this twice. Once for current scope and once for parent scope.
+        set(TARM_IO_OPENSSL_FOUND TRUE PARENT_SCOPE)
+        set(TARM_IO_OPENSSL_FOUND TRUE)
+    endif()
 endif()
 
 # Files
@@ -76,7 +128,7 @@ list(APPEND IO_SOURCE_LIST
 )
 
 set(IO_SOURCE_EXCLUDE_PATTERN "=") # '=' is just a placeholder value which will definately will not be used for paths.
-if (NOT IO_OPENSSL_FOUND)
+if (NOT TARM_IO_OPENSSL_FOUND)
     set(IO_SOURCE_EXCLUDE_PATTERN Tls.*|Dtls.*|OpenSsl.*|Version\..*)
     list(FILTER IO_SOURCE_LIST EXCLUDE REGEX ${IO_SOURCE_EXCLUDE_PATTERN})
 endif()
@@ -98,88 +150,78 @@ target_link_libraries(tarm-io PUBLIC ${LIBUV_LIB_DEPS})
 
 # Last parameter is return value
 function(tarm_io_msvc_dll_name_from_lib PATH_TO_LIB_FILE RESULT_DLL_NAME)
-    #message("CMake linker: ${CMAKE_LINKER}")
-    get_filename_component(TARM_IO_LIB_TOOL_DIR "${CMAKE_LINKER}" DIRECTORY CACHE)
-    #message("MSVC tools dir: ${TARM_IO_LIB_TOOL_DIR}")
+    get_filename_component(TARM_IO_MSVC_LIB_TOOL_DIR "${CMAKE_LINKER}" DIRECTORY CACHE)
 
     set(LIB_EXE_TOOL_OUTPUT)
-    execute_process(COMMAND "${TARM_IO_LIB_TOOL_DIR}/lib.exe" "/list" "/NOLOGO" "${PATH_TO_LIB_FILE}"
+    execute_process(COMMAND "${TARM_IO_MSVC_LIB_TOOL_DIR}/lib.exe" "/list" "/NOLOGO" "${PATH_TO_LIB_FILE}"
                     OUTPUT_VARIABLE LIB_EXE_TOOL_OUTPUT)
 
     string(FIND "${LIB_EXE_TOOL_OUTPUT}" ".dll" DLL_NAME_STR_POS)
     #if (DLL_NAME_STR_POS == -1) # TODO:
     string(SUBSTRING "${LIB_EXE_TOOL_OUTPUT}" 0 ${DLL_NAME_STR_POS} DLL_NAME)
-    SET(${RESULT_DLL_NAME} "${DLL_NAME}" PARENT_SCOPE)
+    set(${RESULT_DLL_NAME} "${DLL_NAME}" PARENT_SCOPE)
+endfunction()
+
+function(tarm_io_msvc_define_openssl_dll_paths SSL_EAY_DLL_PATH LIB_EAY_DLL_PATH)
+    tarm_io_msvc_dll_name_from_lib("${LIB_EAY_RELEASE}" LIB_EAY_DLL_NAME)
+    tarm_io_msvc_dll_name_from_lib("${SSL_EAY_RELEASE}" SSL_EAY_DLL_NAME)
+    message("LIB_EAY_DLL_NAME: ${LIB_EAY_DLL_NAME}")
+    message("SSL_EAY_DLL_NAME: ${SSL_EAY_DLL_NAME}")
+
+    # TODO: introduce function here????? (2 block are very similar)
+    find_file(ROOT_DIR_LIB_EAY_DLL_PATH
+             ${LIB_EAY_DLL_NAME}.dll
+             PATHS "${TARM_IO_OPENSSL_ROOT_DIR}"
+             PATH_SUFFIXES bin
+             NO_DEFAULT_PATH)
+    if (ROOT_DIR_LIB_EAY_DLL_PATH STREQUAL "ROOT_DIR_LIB_EAY_DLL_PATH-NOTFOUND")
+        message("${LIB_EAY_DLL_NAME}.dll not found in specified folders, searching system-wide...")
+        find_file(SYS_DIR_LIB_EAY_DLL_PATH
+                  ${LIB_EAY_DLL_NAME}.dll
+                  REQUIRED)
+        message("System LIB_EAY: ${SYS_DIR_LIB_EAY_DLL_PATH}")
+        set(TMP_LIB_EAY_DLL_PATH "")
+    else()
+        set(TMP_LIB_EAY_DLL_PATH "${ROOT_DIR_LIB_EAY_DLL_PATH}")
+    endif()
+
+    find_file(ROOT_DIR_SSL_EAY_DLL_PATH
+              ${SSL_EAY_DLL_NAME}.dll
+              PATHS "${TARM_IO_OPENSSL_ROOT_DIR}"
+              PATH_SUFFIXES bin
+              NO_DEFAULT_PATH)
+    if (ROOT_DIR_SSL_EAY_DLL_PATH STREQUAL "ROOT_DIR_SSL_EAY_DLL_PATH-NOTFOUND")
+        message("${SSL_EAY_DLL_NAME}.dll not found in specified folders, searching system-wide...")
+        find_file(SYS_DIR_SSL_EAY_DLL_PATH
+                  ${SSL_EAY_DLL_NAME}.dll
+                  REQUIRED)
+        message("System SSL_EAY: ${SYS_DIR_SSL_EAY_DLL_PATH}")
+        set(TMP_SSL_EAY_DLL_PATH "")
+    else()
+        set(TMP_SSL_EAY_DLL_PATH "${ROOT_DIR_SSL_EAY_DLL_PATH}")
+    endif()
+
+    set(${LIB_EAY_DLL_PATH} "${TMP_LIB_EAY_DLL_PATH}" PARENT_SCOPE)
+    set(${SSL_EAY_DLL_PATH} "${TMP_SSL_EAY_DLL_PATH}" PARENT_SCOPE)
 endfunction()
 
 # DOC: there are problems with CMake to find different OpenSSL versions.
 # https://gitlab.kitware.com/cmake/cmake/-/issues/18352
 # One part could be found from one version and second from another
-if (IO_OPENSSL_FOUND)
+if (TARM_IO_OPENSSL_FOUND)
     target_link_libraries(tarm-io PRIVATE OpenSSL::SSL) # WAS PUBLIC
     target_link_libraries(tarm-io PRIVATE OpenSSL::Crypto) # WAS PUBLIC
     target_compile_definitions(tarm-io PRIVATE IO_HAS_OPENSSL)
 
     target_include_directories(tarm-io PUBLIC "${OPENSSL_INCLUDE_DIR}")
 
-    if (OPENSSL_ROOT_DIR)
-        set(TARM_IO_OPENSSL_ROOT_DIR "${OPENSSL_ROOT_DIR}")
-    else()
-        get_filename_component(TARM_IO_OPENSSL_ROOT_DIR "${OPENSSL_INCLUDE_DIR}/.." ABSOLUTE)
-    endif()
-
-    message("TARM_IO_OPENSSL_ROOT_DIR: ${TARM_IO_OPENSSL_ROOT_DIR}")
-
     # Search for DLLs if any available
     if (MSVC)
-        # TODO: openssl debug build support (if available) LIB_EAY_DEBUG, SSL_EAY_DEBUG ...
-        if (NOT EXISTS "${LIB_EAY_RELEASE}")
-            message(FATAL_ERROR "LIB_EAY_RELEASE path is not found")
-        endif()
-
-        if (NOT EXISTS "${SSL_EAY_RELEASE}")
-            message(FATAL_ERROR "SSL_EAY_RELEASE path is not found")
-        endif()
-
-        message("LIB_EAY_RELEASE: ${LIB_EAY_RELEASE}")
-        message("SSL_EAY_RELEASE: ${SSL_EAY_RELEASE}")
-
-        tarm_io_msvc_dll_name_from_lib("${LIB_EAY_RELEASE}" LIB_EAY_DLL_NAME)
-        tarm_io_msvc_dll_name_from_lib("${SSL_EAY_RELEASE}" SSL_EAY_DLL_NAME)
-        message("LIB_EAY_DLL_NAME: ${LIB_EAY_DLL_NAME}")
-        message("SSL_EAY_DLL_NAME: ${SSL_EAY_DLL_NAME}")
-
-        find_file(TARM_IO_LIB_EAY_DLL_PATH
-                 ${LIB_EAY_DLL_NAME}.dll
-                 PATHS "${TARM_IO_OPENSSL_ROOT_DIR}"
-                 PATH_SUFFIXES bin
-                 NO_DEFAULT_PATH)
-        if (TARM_IO_LIB_EAY_DLL_PATH STREQUAL "TARM_IO_LIB_EAY_DLL_PATH-NOTFOUND")
-            message("${LIB_EAY_DLL_NAME}.dll not found in specified folders, searching system-wide...")
-            find_file(TARM_IO_LIB_EAY_DLL_PATH
-                      ${LIB_EAY_DLL_NAME}.dll
-                      REQUIRED)
-            message("TARM_IO_LIB_EAY_DLL_PATH: ${TARM_IO_LIB_EAY_DLL_PATH}")
-            set(TARM_IO_LIB_EAY_DLL_PATH "")
-        else()
-            message("TARM_IO_LIB_EAY_DLL_PATH: ${TARM_IO_LIB_EAY_DLL_PATH}")
-        endif()
-
-        find_file(TARM_IO_SSL_EAY_DLL_PATH
-                  ${SSL_EAY_DLL_NAME}.dll
-                  PATHS "${TARM_IO_OPENSSL_ROOT_DIR}"
-                  PATH_SUFFIXES bin
-                  NO_DEFAULT_PATH)
-        if (TARM_IO_SSL_EAY_DLL_PATH STREQUAL "TARM_IO_SSL_EAY_DLL_PATH-NOTFOUND")
-            message("${SSL_EAY_DLL_NAME}.dll not found in specified folders, searching system-wide...")
-            find_file(TARM_IO_SSL_EAY_DLL_PATH
-                      ${SSL_EAY_DLL_NAME}.dll
-                      REQUIRED)
-            message("TARM_IO_SSL_EAY_DLL_PATH: ${TARM_IO_SSL_EAY_DLL_PATH}")
-            set(TARM_IO_SSL_EAY_DLL_PATH "")
-        else()
-            message("TARM_IO_SSL_EAY_DLL_PATH: ${TARM_IO_SSL_EAY_DLL_PATH}")
-        endif()
+        set(TARM_IO_LIB_EAY_DLL_PATH)
+        set(TARM_IO_SSL_EAY_DLL_PATH)
+        tarm_io_msvc_define_openssl_dll_paths(TARM_IO_LIB_EAY_DLL_PATH TARM_IO_SSL_EAY_DLL_PATH)
+        message("TARM_IO_LIB_EAY_DLL_PATH: ${TARM_IO_LIB_EAY_DLL_PATH}")
+        message("TARM_IO_SSL_EAY_DLL_PATH: ${TARM_IO_SSL_EAY_DLL_PATH}")
     endif()
 endif()
 
