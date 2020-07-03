@@ -61,7 +61,7 @@ if (OpenSSL_FOUND)
         message("LIB_EAY_ARCHITECTURE: ${LIB_EAY_ARCHITECTURE}")
         if (DEFINED CMAKE_GENERATOR_PLATFORM AND
             NOT CMAKE_GENERATOR_PLATFORM STREQUAL ${LIB_EAY_ARCHITECTURE})
-            message("CMake has found OpenSSL in '${OPENSSL_ROOT_DIR}' but its architecture '${LIB_EAY_ARCHITECTURE}' "
+            message("CMake has found OpenSSL in '${TARM_IO_OPENSSL_ROOT_DIR}' but its architecture '${LIB_EAY_ARCHITECTURE}' "
                     "is different from this build one '${CMAKE_GENERATOR_PLATFORM}', "
                     "so marking OpenSSL as not found")
         else()
