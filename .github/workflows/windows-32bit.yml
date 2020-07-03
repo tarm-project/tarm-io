@@ -87,4 +87,5 @@ jobs:
     - name: run tests
       run: |
         cd build
+        ls .\tests\${{ matrix.config }}
         .\tests\${{ matrix.config }}\tests.exe
