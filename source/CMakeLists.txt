@@ -57,12 +57,31 @@ if (OpenSSL_FOUND)
         # Examining only one lib because it is unlikely that they both have different architecture
         tarm_io_msvc_arch_name_from_lib("${LIB_EAY_RELEASE}" LIB_EAY_ARCHITECTURE)
 
+        # TODO: need to generalize and extract this code
+        if (DEFINED CMAKE_GENERATOR_PLATFORM)
+            if (CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
+                set(TARM_IO_TARGET_ARCHITECTURE "x86")
+            else()
+                set(TARM_IO_TARGET_ARCHITECTURE "${CMAKE_GENERATOR_PLATFORM}")
+            endif()
+        else()
+            set(TARM_IO_TARGET_ARCHITECTURE "x86") # default for MSVC
+
+            #if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+            #    set(TARM_IO_TARGET_ARCHITECTURE "x86")
+            #elseif (CMAKE_SIZEOF_VOID_P EQUAL 8)
+            #    set(TARM_IO_TARGET_ARCHITECTURE "x64")
+            #else()
+            #    message(FATAL_ERROR "Unexpected size of void* ${CMAKE_SIZEOF_VOID_P}")
+            #endif() 
+        endif()
+
         message("CMAKE_GENERATOR_PLATFORM: ${CMAKE_GENERATOR_PLATFORM}")
+        message("TARM_IO_TARGET_ARCHITECTURE: ${TARM_IO_TARGET_ARCHITECTURE}")
         message("LIB_EAY_ARCHITECTURE: ${LIB_EAY_ARCHITECTURE}")
-        if (DEFINED CMAKE_GENERATOR_PLATFORM AND
-            NOT CMAKE_GENERATOR_PLATFORM STREQUAL ${LIB_EAY_ARCHITECTURE})
+        if (NOT TARM_IO_TARGET_ARCHITECTURE STREQUAL ${LIB_EAY_ARCHITECTURE})
             message("CMake has found OpenSSL in '${TARM_IO_OPENSSL_ROOT_DIR}' but its architecture '${LIB_EAY_ARCHITECTURE}' "
-                    "is different from this build one '${CMAKE_GENERATOR_PLATFORM}', "
+                    "is different from this build one '${TARM_IO_TARGET_ARCHITECTURE}', "
                     "so marking OpenSSL as not found")
         else()
             # Yes, need to set this twice. Once for current scope and once for parent scope.
