@@ -24,6 +24,7 @@ CMake
 .. code-block:: bash
    :caption: CentOS 7
 
+   # Building from source
    $ sudo yum -y groupinstall "Development Tools"
    $ sudo yum -y install wget
    $ pushd /tmp
@@ -39,6 +40,8 @@ CMake
 
 OpenSSL (optional)
 ~~~~~~~~~~~~~~~~~~
+
+If you need support of secure protocols like TLS or DTLS you need to install OpenSSL development package.
 
 .. code-block:: bash
    :caption: Ubuntu

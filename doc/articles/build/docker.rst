@@ -63,7 +63,7 @@ To start container execute:
 When you start docker container via script you get:
 
 * Checking for a new version of image
-* Tarm-io source root directory bound to container's /source folder. So all changes made to sources in container will affect actual source tree
+* Tarm-io source root directory bound to container's /source folder. So all changes are made to sources in container will affect actual source tree
 * Guest user which is compatible with the host one. So any changes are made on behalf of the host user
 * Passwordless **sudo**, so you can install additional software easily
 * Interactive terminal (if supported)

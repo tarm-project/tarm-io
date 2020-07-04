@@ -31,6 +31,11 @@ div.note {
     border: 1px solid #fbe54e;
 }
 
+div.error {
+    background-color: #ffe1e1;
+    border: 1px solid #fb8080;
+}
+
 /* sidebar */
 div.sphinxsidebar #searchbox input[type="submit"] {
     border: 1px solid #ccc;
@@ -62,7 +67,12 @@ pre {
 }
 
 div.literal-block-wrapper {
-    padding: 0.25em 1em 1em 0.25em
+    padding: 0.0em 0em 0em 0.0em;
+}
+
+div.highlight-bash.notranslate {
+    padding: 0.0em 0em 0em 0.0em;
+    margin: 0.25em 1em 1em 0.25em;
 }
 
 /* search box */
