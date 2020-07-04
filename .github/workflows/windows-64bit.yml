@@ -74,6 +74,7 @@ jobs:
     - name: run tests
       run: |
         cd build
+        ls .\tests\${{ matrix.config }}
         .\tests\${{ matrix.config }}\tests.exe
     - name: lib install, build and run examples
       run: |
