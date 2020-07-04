@@ -70,6 +70,7 @@ if (NOT DEFINED TARM_IO_OPENSSL_FOUND)
 endif()
 
 if (NOT TARM_IO_OPENSSL_FOUND)
+    message("OpenSSL is not found! Building tests without secure protocols!")
     list(FILTER TESTS_LIST EXCLUDE REGEX Tls.*)
     list(FILTER TESTS_LIST EXCLUDE REGEX Dtls.*)
     list(FILTER TESTS_LIST EXCLUDE REGEX VersionTest\.cpp)
@@ -109,7 +110,7 @@ else()
                 ${CMAKE_BINARY_DIR}/tests/$<$<OR:$<PLATFORM_ID:Windows>,$<PLATFORM_ID:Darwin>>:$<CONFIG>>
     )
 
-    if (MSVC AND IO_OPENSSL_FOUND)
+    if (MSVC AND TARM_IO_OPENSSL_FOUND)
         # Copy openssl dlls to the tests folder
         add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
