@@ -97,7 +97,7 @@ during CMake configuration step.
 .. code-block:: bash
    :caption: x64
    
-   cmake -DCMAKE_INSTALL_PREFIX=X:\tarm-io-install `
+   cmake -DCMAKE_INSTALL_PREFIX="X:\tarm-io-install" `
          -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 `
          -DCMAKE_GENERATOR_PLATFORM=x64 `
          ..
@@ -107,7 +107,7 @@ or
 .. code-block:: bash
    :caption: x86
    
-   cmake -DCMAKE_INSTALL_PREFIX=X:\tarm-io-install `
+   cmake -DCMAKE_INSTALL_PREFIX="X:\tarm-io-install" `
          -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 `
          -DCMAKE_GENERATOR_PLATFORM=Win32 `
          ..
@@ -157,8 +157,16 @@ It requires full path to CMake config subfolders in the installation prefix.
    cmake -Dtarm-io_DIR="X:\tarm-io-install\lib\cmake\tarm-io" ..
 
 And one more approach is to define
-`CMAKE_PREFIX_PATH <https://cmake.org/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html>`_
+`CMAKE_PREFIX_PATH <https://cmake.org/cmake/help/latest/variable/CMAKE_PREFIX_PATH.html>`_:
 
 .. code-block:: bash
 
-   cmake -DCMAKE_PREFIX_PATH=X:\tarm-io-install ..
+   cmake -DCMAKE_PREFIX_PATH="X:\tarm-io-install" ..
+
+And finally...
+
+.. code-block:: PowerShell
+
+   cmake --build . --config Release -j4
+   .\hello_event_loop\Release\hello_event_loop.exe
+   Hello EventLoop!
