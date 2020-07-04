@@ -8,14 +8,20 @@ Get Docker
 ----------
 
 If you've never used Docker before I would highly recommend to master this technology as it opens a lot of new possibilities for software development.
-In short, docker is a platform for developers and sysadmins to build, run, and share applications with containers. You can read more at the `Docker website <https://docs.docker.com/get-started/>`_.
+In short, docker is a platform for developers and sysadmins to build, run, and share applications with containers.
+You can read more at the `Docker website <https://docs.docker.com/get-started/>`_.
 
-First `install docker <https://docs.docker.com/get-docker/>`_ for your system. As hosts Linux and Mac OS are supported.
+First `install docker <https://docs.docker.com/get-docker/>`_ for your system. As hosts **Linux** and **Mac OS** are supported.
+
+.. note::
+   For Linux it is recommended to configure Docker to run without sudo. Read the docs!
 
 Images
 ------
 
-Only Linux images are currently supported. There are lot of different Linux distributions and versions are used to test Tarm-io library. Some of them are:
+Docker images are like lightweight virtual machines.
+Only Linux images are currently supported.
+There are lot of different Linux distributions and versions are used to test Tarm-io library. Some of them are:
 
 .. code-block:: bash
 
@@ -23,13 +29,14 @@ Only Linux images are currently supported. There are lot of different Linux dist
     tarmio/builders:alpine3.9.6-gcc8.3.0-boost1.67-cmake3.13.0-gtest1.8.1-openssl1.1.1g
     tarmio/builders:centos7.6.1810-gcc4.8.5-boost1.70-cmake3.15.6-gtest1.8.1-openssl1.1.0
 
-As you can see for image distinction tags (name after the ':' character) are used. Naming scheme is the following:
+All the images reside in tarmio/builders Docker Hub repository.
+As you can see for image distinction tags are used (name after the ':' character). Naming scheme for tags is the following:
 
 .. code-block:: bash
 
     <OS version> - <compiler version> - <boost library> - <cmake> - <google test> - <openssl>
 
-More images you can always find at `Docker Hub <https://hub.docker.com/r/tarmio/builders/tags>`_.
+More images you can always find at `tarmio Docker Hub <https://hub.docker.com/r/tarmio/builders/tags>`_.
 
 Run container from an image
 ---------------------------
@@ -55,11 +62,12 @@ To start container execute:
 
 When you start docker container via script you get:
 
-* Tarm-io source root directory bound to container's /source folder. So all changes made to sources  in container will affect actual source tree
-* User which is compatible with the host one. So any changes are made on behalf of the host user
+* Checking for a new version of image
+* Tarm-io source root directory bound to container's /source folder. So all changes made to sources in container will affect actual source tree
+* Guest user which is compatible with the host one. So any changes are made on behalf of the host user
 * Passwordless **sudo**, so you can install additional software easily
-* Interactive terminal if supported
-* Host network
+* Interactive terminal (if supported)
+* Host network (if supported)
 * Other tweaks which allow to use docker comfortably
 
 To exit container press Ctrl+D.
@@ -74,13 +82,13 @@ Once you've got into container, building and installing Tarm-io library is strai
    $ mkdir build
    $ cd build
    $ cmake ..
-   $ make -j(nproc)
+   $ make -j $(nproc)
    $ sudo make install
    $ cd ../examples
    $ mkdir build
    $ cd build
    $ cmake ..
-   $ make -j(nproc)
+   $ make -j $(nproc)
    $ ./udp_echo_server/udp_echo_server # Run one of the examples
    Started listening on port 1234
 
