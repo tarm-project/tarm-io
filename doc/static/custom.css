@@ -60,6 +60,14 @@ pre {
     -moz-box-shadow: none;
 }
 
+code.bash { /* inline code blocks*/
+    background: #eeeeee;
+    border: 1px solid grey;
+    border-radius: 3px;
+    padding: 2px 5px 2px 5px;
+    white-space:nowrap;
+}
+
 .highlight-bash .highlight {
     background: #eeeeee;
     border: 1px solid grey;

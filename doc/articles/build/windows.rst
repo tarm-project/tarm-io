@@ -1,6 +1,9 @@
 .. meta::
    :description: Tarm-io build instructions for Windows
 
+.. role:: bash(code)
+   :language: bash
+
 Build for Windows
 =================
 
@@ -186,3 +189,45 @@ it means that found target architecture version of the library and architecture 
 
 .. caution::
    You need to clean the build directory if encountered error above.
+
+Build with OpenSSL and secure protocols support
+-----------------------------------------------
+
+If you want to get a build with protocols like TLS and DTLS, you need to get OpenSSL development files.
+There are several ways to get them (from harder and more secure to easier and less secure):
+
+* Build it by yourself
+* Use some "package manager" for Windows like `Chocolatey <https://chocolatey.org/docs/installation>`_
+* Download `installer <https://slproweb.com/products/Win32OpenSSL.html>`_ with prebuilt dlls
+
+If you chose standard directory like 'Program Files' for destination,
+CMake will be able to find this library without specifying a root path.
+
+Add to configurations steps above location of OpenSSL install directory.
+
+.. code-block:: bash
+
+   -DOPENSSL_ROOT_DIR="X:\Some Path\OpenSSL-Win64"
+
+CMake configuration output should look like this:
+
+.. code-block:: bash
+
+   ...
+   -- Selecting Windows SDK version 10.0.17763.0 to target Windows 10.0.19041.
+   -- Platform is: Windows
+   -- Searching for OpenSSL...
+   -- OpenSSL include dir: C:/Program Files/OpenSSL-Win64/include
+   TARM_IO_OPENSSL_ROOT_DIR: C:\Program Files\OpenSSL-Win64
+   ...
+   ================ Configuration summary ================
+   OpenSSL support: TRUE
+   ...
+
+Then build and install as described in previous sections.
+
+.. TODO: test cmake variables described below!
+
+Additionally you may define :bash:`-DOPENSSL_USE_STATIC_LIBS=TRUE` if want to link OpenSSL statically into tarm-io library.
+Add :bash:`-DOPENSSL_MSVC_STATIC_RT=TRUE` to use version of OpenSSL with statically linked runtime (msvcr).
+
