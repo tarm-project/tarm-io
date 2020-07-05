@@ -86,7 +86,7 @@ Note, debug build steps may be skipped if you do not need one.
    Do not forget to replace 'X:\\tarm-io-install' with your own installation path.
 
 .. error::
-   x86 and x64 platform builds should be installed in separate folders.
+   x86 and x64 platform builds should NOT be installed into the same prefix.
 
 CMake prior to 3.15
 ~~~~~~~~~~~~~~~~~~~
@@ -126,8 +126,8 @@ And to build and install execute:
 Build examples
 --------------
 
-Examples could be found in the project root 'examples' folder.
-As usual, examples are built in a separate folder.
+Examples could be found in the project root *'examples'* folder.
+As usual, examples are built in a separate directory.
 
 .. code-block:: bash
 
@@ -170,3 +170,19 @@ And finally...
    cmake --build . --config Release -j4
    .\hello_event_loop\Release\hello_event_loop.exe
    Hello EventLoop!
+
+If you get message like below during configuration step,
+it means that found target architecture version of the library and architecture of a current build do not match.
+
+.. code-block:: bash
+
+  CMake Error at very_basic_udp_echo_server/CMakeLists.txt:8 (find_package):
+  Could not find a configuration file for package "tarm-io" that is
+  compatible with requested version "".
+
+  The following configuration files were considered but not accepted:
+
+    X:/tarm-io-install/lib/cmake/tarm-io/tarm-ioConfig.cmake, version: 1.0.0 (64bit)
+
+.. caution::
+   You need to clean the build directory if encountered error above.
