@@ -31,9 +31,12 @@ release = '1.0.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autosectionlabel'
+    'sphinx.ext.autosectionlabel',
+    'sphinx_sitemap'
 ]
 autosectionlabel_prefix_document = True
+
+html_baseurl = 'https://tarm.io/'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['templates']
