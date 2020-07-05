@@ -1,3 +1,8 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
 cmake_minimum_required(VERSION 3.5.0)
 
 option(BUILD_SHARED_LIBS "Build tarm-io as shared library" ON)

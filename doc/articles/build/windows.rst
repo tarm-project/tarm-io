@@ -197,17 +197,21 @@ If you want to get a build with protocols like TLS and DTLS, you need to get Ope
 There are several ways to get them (from harder and more secure to easier and less secure):
 
 * Build it by yourself
-* Use some "package manager" for Windows like `Chocolatey <https://chocolatey.org/docs/installation>`_
+* Use some "package manager" for Windows like `Chocolatey <https://chocolatey.org/docs/installation>`_ or `vcpkg <https://github.com/microsoft/vcpkg>`_
 * Download `installer <https://slproweb.com/products/Win32OpenSSL.html>`_ with prebuilt dlls
 
 If you chose standard directory like 'Program Files' for destination,
 CMake will be able to find this library without specifying a root path.
 
 Add to configurations steps above location of OpenSSL install directory.
+For example, for x64:
 
 .. code-block:: bash
 
-   -DOPENSSL_ROOT_DIR="X:\Some Path\OpenSSL-Win64"
+   cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 `
+         -DCMAKE_GENERATOR_PLATFORM=x64 `
+         -DOPENSSL_ROOT_DIR="X:\Some Path\OpenSSL-Win64" `
+         ..
 
 CMake configuration output should look like this:
 
@@ -229,5 +233,35 @@ Then build and install as described in previous sections.
 .. TODO: test cmake variables described below!
 
 Additionally you may define :bash:`-DOPENSSL_USE_STATIC_LIBS=TRUE` if want to link OpenSSL statically into tarm-io library.
-Add :bash:`-DOPENSSL_MSVC_STATIC_RT=TRUE` to use version of OpenSSL with statically linked runtime (msvcr).
+And add :bash:`-DOPENSSL_MSVC_STATIC_RT=TRUE` to use version of OpenSSL with statically linked runtime (msvcr).
 
+Getting DLLs into your own build directory
+------------------------------------------
+
+If you did not chose to link everything statically (and most people don't),
+to launch and debug apps tarm-io.dll and OpenSSL DLLs are needed to be reachable.
+
+There are several approaches to make it happen:
+
+* Use CMake's `fixup_bundle <https://cmake.org/cmake/help/latest/module/BundleUtilities.html>`_
+* `SetDllDirectoryA <https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setdlldirectorya>`_ WinAPI call
+* Copy dlls to some system path like 'C:\\Windows\\System32' (see example of OpenSSL installation screenshot below)
+* Copy all DLLs to the executable folder
+
+.. image:: windows_open_ssl_dlls_dir.png
+   :scale: 50%
+   :alt: Windows OpenSLL install options
+
+Every of this approaches has its own benefits and drawbacks. We use the last one.
+Fortunately, tarm-io CMake routines help here.
+The library verifies and remembers location of the OpenSSL dlls during build and has handy variables to make their management easy.
+Below is complete example of tarm-io library integration into some project.
+
+.. literalinclude:: ../../../examples/hello_event_loop/CMakeLists.txt
+   :caption: CMakeLists.txt
+   :language: CMake
+   :linenos:
+   :lines: 11-
+
+Note that tarm-io CMake scripts are smart enough and able to detect if OpenSSL is available in system paths,
+so case the libraries will not be copied and :bash:`TARM_IO_SSL_EAY_DLL_PATH` variable will be empty.

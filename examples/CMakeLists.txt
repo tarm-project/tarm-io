@@ -1,3 +1,8 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
 cmake_minimum_required(VERSION 3.5.0)
 project(examples)
 
@@ -22,10 +27,10 @@ macro(setup_project_for_examples PROJECT_NAME)
 
         if (NOT TARM_IO_SSL_EAY_DLL_PATH STREQUAL "")
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     "${TARM_IO_SSL_EAY_DLL_PATH}"
                     "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                COMMAND ${CMAKE_COMMAND} -E copy
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     "${TARM_IO_LIB_EAY_DLL_PATH}"
                     "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             )
