@@ -15,7 +15,7 @@ jobs:
       matrix:
         build_tool:
           - make
-          - ninja
+          #- ninja
         build_type:
           - 'Debug'
           #- 'Release'
