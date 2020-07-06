@@ -30,7 +30,7 @@ jobs:
         cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 `
               -DCMAKE_GENERATOR_PLATFORM=Win32 `
               ..
-        cmake --build . --config ${{ matrix.config }}
+        cmake --build . --config ${{ matrix.config }} -j 4
     - name: minimal lib install, build and run examples
       run: |
         cd minimal_build
@@ -42,7 +42,7 @@ jobs:
               -DCMAKE_GENERATOR_PLATFORM=Win32 `
               -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\tarm-io_minimal_install" `
               ..
-        cmake --build . --config ${{ matrix.config }}
+        cmake --build . --config ${{ matrix.config }} -j 4
         .\hello_event_loop\${{ matrix.config }}\hello_event_loop.exe
     - name: install OpenSSL
       run: |
@@ -67,7 +67,7 @@ jobs:
               -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 `
               -DCMAKE_GENERATOR_PLATFORM=Win32 `
               ..
-        cmake --build . --config ${{ matrix.config }}
+        cmake --build . --config ${{ matrix.config }} -j 4
         cmake --install . --verbose --config ${{ matrix.config }} --prefix $env:GITHUB_WORKSPACE/gtest_install
         popd
     - name: build
@@ -83,7 +83,7 @@ jobs:
               -DGTEST_ROOT="$env:GITHUB_WORKSPACE/gtest_install" `
               -DOPENSSL_ROOT_DIR="$env:GITHUB_WORKSPACE/OpenSSL-Win32" `
               ..
-        cmake --build . --config ${{ matrix.config }}
+        cmake --build . --config ${{ matrix.config }} -j 4
     - name: run tests
       run: |
         cd build
