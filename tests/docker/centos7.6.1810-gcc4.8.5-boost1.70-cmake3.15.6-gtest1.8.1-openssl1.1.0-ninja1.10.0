@@ -1,0 +1,31 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
+FROM tarmio/builders:centos7.6.1810-gcc4.8.5-boost1.70-cmake3.15.6-gtest1.8.1-openssl1.1.0
+
+LABEL maintainer="av@tarm.io"
+
+RUN pushd /tmp && \
+    wget https://github.com/skvadrik/re2c/releases/download/1.3/re2c-1.3.tar.xz && \
+    tar -xf re2c-* && \
+    cd re2c-* && \
+    ./configure && \
+    make -j $(nproc) && \
+    make install && \
+    ldconfig && \
+    popd && \
+    rm -rf /tmp/*
+
+RUN pushd /tmp && \
+    wget https://github.com/ninja-build/ninja/archive/v1.10.0.tar.gz  && \
+    tar -xf v*tar.gz  && \
+    cd ninja-*  && \
+    ./bootstrap.py && \
+    cp ninja /usr/bin/ && \
+    ninja --version && \
+    popd && \
+    rm -rf /tmp/*
+
+WORKDIR /source
