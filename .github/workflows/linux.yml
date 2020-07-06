@@ -33,15 +33,15 @@ jobs:
     - name: docker pull
       run: docker pull ${IMAGE_PATH}
     - name: define CMake generator
-      run: |
-        export TARM_IO_CMAKE_GENERATOR="Unix Makefiles"
-        if [ ${{ matrix.build_tool }} == "ninja" ]; then export TARM_IO_CMAKE_GENERATOR="Ninja"; fi
+      run: | # Workaround for inability to pass environment variables between workflow steps
+        echo "Unix Makefiles" > TARM_IO_CMAKE_GENERATOR
+        if [ ${{ matrix.build_tool }} == "ninja" ]; then echo "Ninja" > TARM_IO_CMAKE_GENERATOR; fi
     - name: build
       run: |
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
           "mkdir -p build && \
            cd build && \
-           cmake -G "${TARM_IO_CMAKE_GENERATOR}" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTARM_IO_BUILD_TESTS=TRUE .. && \
+           cmake -G \\\"$(cat TARM_IO_CMAKE_GENERATOR)\\\" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTARM_IO_BUILD_TESTS=TRUE .. && \
            ${{ matrix.build_tool }} -j$(nproc)"
     - name: run tests
       run: |
@@ -56,6 +56,6 @@ jobs:
            cd ../examples && \
            mkdir -p build && \
            cd build && \
-           cmake -G "${TARM_IO_CMAKE_GENERATOR}" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && \
+           cmake -G \\\"$(cat TARM_IO_CMAKE_GENERATOR)\\\" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && \
            ${{ matrix.build_tool }} -j$(nproc) && \
            ./hello_event_loop/hello_event_loop"
