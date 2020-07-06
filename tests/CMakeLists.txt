@@ -81,6 +81,7 @@ set(TESTS_EXE_NAME tests)
 
 add_executable(${TESTS_EXE_NAME} ${TESTS_LIST})
 target_link_libraries(${TESTS_EXE_NAME}
+    LibUV::LibUV
     tarm-io
     GTest::gtest
     Boost::system

@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        build_tool:
+          - make
+          - ninja
         build_type:
           - 'Debug'
           #- 'Release'
@@ -29,26 +32,30 @@ jobs:
     - uses: actions/checkout@v2
     - name: docker pull
       run: docker pull ${IMAGE_PATH}
+    - name: define CMake generator
+      run: |
+        export TARM_IO_CMAKE_GENERATOR="Unix Makefiles"
+        if [ ${{ matrix.build_tool }} == "ninja" ]; then export TARM_IO_CMAKE_GENERATOR="Ninja"; fi
     - name: build
       run: |
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
           "mkdir -p build && \
            cd build && \
-           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTARM_IO_BUILD_TESTS=TRUE .. && \
-           make -j$(nproc)"
+           cmake -G "${TARM_IO_CMAKE_GENERATOR}" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DTARM_IO_BUILD_TESTS=TRUE .. && \
+           ${{ matrix.build_tool }} -j$(nproc)"
     - name: run tests
       run: |
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
           "cd build && \
-           make RunTests"
+           ${{ matrix.build_tool }} RunTests"
     - name: lib install, build and run examples
       run: |
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
           "cd build && \
-           sudo make install && \
+           sudo ${{ matrix.build_tool }} install && \
            cd ../examples && \
            mkdir -p build && \
            cd build && \
-           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && \
-           make -j$(nproc) && \
+           cmake -G "${TARM_IO_CMAKE_GENERATOR}" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && \
+           ${{ matrix.build_tool }} -j$(nproc) && \
            ./hello_event_loop/hello_event_loop"

@@ -246,19 +246,11 @@ if (TARM_IO_OPENSSL_FOUND)
     endif()
 endif()
 
-if (IO_USE_EXTERNAL_LIBUV)
-    target_link_libraries(tarm-io PUBLIC LibUV::LibUV)
-else()
-    if (DEFINED IO_SANITIZER)
-        target_link_libraries(tarm-io PRIVATE ${LIBUV_DYNAMIC_LIB_PATH})
-    else()
-        target_link_libraries(tarm-io PRIVATE ${LIBUV_STATIC_LIB_PATH})
-    endif()
-
-    target_include_directories(tarm-io PUBLIC $<BUILD_INTERFACE:${LIBUV_INCLUDE_PATH}>)
-
-    add_dependencies(tarm-io libuv)
+if (NOT TARM_IO_USE_EXTERNAL_LIBUV)
+    # Using bundled version which we need to build
+    add_dependencies(tarm-io LibUV::LibUV)
 endif()
+target_link_libraries(tarm-io PRIVATE LibUV::LibUV)
 
 target_include_directories(tarm-io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/io>)
 target_include_directories(tarm-io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")

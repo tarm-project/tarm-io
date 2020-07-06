@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.5.0)
 
 option(BUILD_SHARED_LIBS "Build tarm-io as shared library" ON)
 option(TARM_IO_BUILD_TESTS "Build tests" OFF)
-option(IO_USE_EXTERNAL_LIBUV "Use system libuv instead of the bundled one" OFF)
+option(TARM_IO_USE_EXTERNAL_LIBUV "Use system libuv instead of the bundled one" OFF)
 
 # TODO: enable only on MacOS X
 # According to docs this variable should be set before 'project' statement
@@ -91,7 +91,7 @@ endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-if (IO_USE_EXTERNAL_LIBUV)
+if (TARM_IO_USE_EXTERNAL_LIBUV)
     find_package(LibUV REQUIRED)
 endif()
 
@@ -105,6 +105,7 @@ endif()
 message("================ Configuration summary ================")
 message("OpenSSL support: ${TARM_IO_OPENSSL_FOUND}")
 message("Build tests: ${TARM_IO_BUILD_TESTS}")
+message("External libuv: ${TARM_IO_USE_EXTERNAL_LIBUV}")
 message("=======================================================")
 
 #############################################################
