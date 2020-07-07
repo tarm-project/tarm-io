@@ -12,6 +12,8 @@
 #include "Error.h"
 #include "global/Configuration.h"
 
+#include <assert.h>
+
 #include <atomic>
 #include <cstring>
 #include <deque>
@@ -111,7 +113,7 @@ private:
     uv_timer_t* m_dummy_idle = nullptr;
     std::int64_t m_dummy_idle_ref_counter = 0;
 
-    std::unique_ptr<uv_async_t, std::function<void(uv_async_t*)>> m_async;
+    std::unique_ptr<uv_async_t, void(*)(uv_async_t*)> m_async;
     std::deque<std::function<void(EventLoop&)>> m_async_callbacks_queue;
     std::mutex m_async_callbacks_queue_mutex;
 
@@ -132,13 +134,15 @@ void on_async_close(uv_handle_t* handle) {
     delete reinterpret_cast<uv_async_t*>(handle);
 }
 
+void async_close(uv_async_t* async) {
+    uv_close(reinterpret_cast<uv_handle_t*>(async), on_async_close);
+}
+
 } // namespace
 
 EventLoop::Impl::Impl(EventLoop& parent) :
     m_parent(&parent),
-    m_async(nullptr, [](uv_async_t* async) {
-        uv_close(reinterpret_cast<uv_handle_t*>(async), on_async_close);
-    }),
+    m_async(nullptr, async_close),
     m_sync_callbacks_executor_function([this](EventLoop&) {
         decltype(m_sync_callbacks_queue) queue_copy;
         queue_copy.swap(m_sync_callbacks_queue);
@@ -210,7 +214,7 @@ void EventLoop::Impl::schedule_callback(const WorkCallback& callback) {
 }
 
 Error EventLoop::Impl::init_async() {
-    m_async.reset();
+    assert(m_async.get() == nullptr);
 
     std::unique_ptr<uv_async_t> async(new uv_async_t);
     Error async_init_error = uv_async_init(this, async.get(), EventLoop::Impl::on_async);
@@ -218,7 +222,7 @@ Error EventLoop::Impl::init_async() {
         return async_init_error;
     }
 
-    m_async = std::move(async);
+    m_async.reset(async.release()); // Can not use std::move() here because of custom deleter in m_async
     m_async->data = this;
 
     // unref is called to make loop exitable if it has no other running handles except this async
