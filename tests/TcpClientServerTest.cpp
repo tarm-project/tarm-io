@@ -2336,7 +2336,7 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
                 }
             }
         );
-        ASSERT_FALSE(listen_error);
+        ASSERT_FALSE(listen_error) << listen_error;
 
         EXPECT_EQ(0, server_on_connect_count);
 

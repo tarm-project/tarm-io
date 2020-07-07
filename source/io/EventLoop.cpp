@@ -210,16 +210,18 @@ void EventLoop::Impl::schedule_callback(const WorkCallback& callback) {
 }
 
 Error EventLoop::Impl::init_async() {
-    m_async.reset(new uv_async_t);
-    Error async_init_error = uv_async_init(this, m_async.get(), EventLoop::Impl::on_async);
+    m_async.reset();
+
+    std::unique_ptr<uv_async_t> async(new uv_async_t);
+    Error async_init_error = uv_async_init(this, async.get(), EventLoop::Impl::on_async);
     if (async_init_error) {
-        m_async.reset();
         return async_init_error;
     }
 
+    m_async = std::move(async);
     m_async->data = this;
 
-    // unref is called to make loop exitable if it has no ohter running handles except this async
+    // unref is called to make loop exitable if it has no other running handles except this async
     uv_unref(reinterpret_cast<uv_handle_t*>(m_async.get()));
 
     return StatusCode::OK;
