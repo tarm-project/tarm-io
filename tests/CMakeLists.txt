@@ -16,33 +16,69 @@ message(STATUS "Processors count: ${N}")
 # Gtest is built during CMake configuration step because it is very lightweight
 # and we want to be able to find it via 'find_package' which is impossible with ExternalProject_Add.
 message(STATUS "Building bundled GTest")
-
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
-        -DCMAKE_INSTALL_PREFIX='${CMAKE_CURRENT_BINARY_DIR}/gtest_install'
-        "${PROJECT_SOURCE_DIR}/thirdparty/googletest-1.10.0"
-    RESULT_VARIABLE result
-    OUTPUT_VARIABLE output
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
-if(result)
-    message(FATAL_ERROR "CMake step for googletest failed: ${output} \nresult: ${result}")
-endif()
 
-execute_process(COMMAND ${CMAKE_COMMAND} --build . -j ${N}
-    RESULT_VARIABLE result
-    OUTPUT_VARIABLE output
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
-if(result)
-    message(FATAL_ERROR "Build step for googletest failed: ${output} \nresult: ${result}")
-endif()
+if (CMAKE_CONFIGURATION_TYPES)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
+            -DCMAKE_INSTALL_PREFIX='${CMAKE_CURRENT_BINARY_DIR}/gtest_install'
+            "${PROJECT_SOURCE_DIR}/thirdparty/googletest-1.10.0"
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE output
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+    if(result)
+        message(FATAL_ERROR "CMake step for googletest failed: ${output} \nresult: ${result}")
+    endif()
 
-execute_process(COMMAND ${CMAKE_COMMAND} --build . --target install
-    RESULT_VARIABLE result
-    OUTPUT_VARIABLE output
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
-if(result)
-      message(FATAL_ERROR "Install step for googletest failed: ${output} \nresult: ${result}")
+    foreach(config_type ${CMAKE_CONFIGURATION_TYPES})
+        message("${config_type}")
+
+        execute_process(COMMAND ${CMAKE_COMMAND} --build . -j ${N} --config "${config_type}"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE output
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+        if(result)
+            message(FATAL_ERROR "Build step for googletest failed: ${output} \nresult: ${result}")
+        endif()
+
+        execute_process(COMMAND ${CMAKE_COMMAND} --build . --target install --config "${config_type}"
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE output
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+        if(result)
+            message(FATAL_ERROR "Install step for googletest failed: ${output} \nresult: ${result}")
+        endif()
+
+        message("${config_type} - done")
+    endforeach()
+else()
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCMAKE_INSTALL_PREFIX='${CMAKE_CURRENT_BINARY_DIR}/gtest_install'
+            "${PROJECT_SOURCE_DIR}/thirdparty/googletest-1.10.0"
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE output
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+    if(result)
+        message(FATAL_ERROR "CMake step for googletest failed: ${output} \nresult: ${result}")
+    endif()
+
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . -j ${N}
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE output
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+    if(result)
+        message(FATAL_ERROR "Build step for googletest failed: ${output} \nresult: ${result}")
+    endif()
+
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target install
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE output
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+    if(result)
+        message(FATAL_ERROR "Install step for googletest failed: ${output} \nresult: ${result}")
+    endif()
 endif()
 
 message(STATUS "Building bundled GTest - done")
