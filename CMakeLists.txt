@@ -44,7 +44,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 endif()
 
-set(IO_LIBUV_VERSION "1.30.1")
+set(TARM_IO_LIBUV_VERSION "1.30.1")
+set(TARM_IO_GTEST_VERSION "1.10.0")
 
 # IO_SANITIZER allows to build the library with sanitizer enabled
 # For details see https://clang.llvm.org/docs/.

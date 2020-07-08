@@ -3,12 +3,39 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
-message(STATUS "Searching for GTest")
-find_package(GTest REQUIRED CONFIG HINTS ${GTEST_ROOT})
-message(STATUS "Found GTest target config in ${GTest_DIR}.")
+message(STATUS "Building bundled GTest...")
 
-#cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_INSTALL_PREFIX=E:\projects\thirdparty\gtest\install ..\googletest-release-1.8.1
-#cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DCMAKE_GENERATOR_PLATFORM=x64 -DBOOST_ROOT="E:\projects\thirdparty\boost\install\include\boost-1_70" -DBOOST_LIBRARYDIR="E:\projects\thirdparty\boost\install\lib" -DBoost_USE_MULTITHREADED=ON -DBoost_USE_STATIC_RUNTIME=OFF -DGTEST_ROOT=E:\projects\thirdparty\gtest\install ..
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
+        -DCMAKE_INSTALL_PREFIX='${CMAKE_CURRENT_BINARY_DIR}/gtest_install'
+        "${PROJECT_SOURCE_DIR}/thirdparty/googletest-1.10.0"
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+if(result)
+    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+endif()
+
+execute_process(COMMAND ${CMAKE_COMMAND} --build . -j 4
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+if(result)
+    message(FATAL_ERROR "Build step for googletest failed: ${result}")
+endif()
+
+execute_process(COMMAND ${CMAKE_COMMAND} --build . --target install
+    RESULT_VARIABLE result
+    OUTPUT_VARIABLE output
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
+if(result)
+      message(FATAL_ERROR "Install step for googletest failed: ${output}")
+endif()
+
+find_package(GTest REQUIRED
+             PATHS "${CMAKE_CURRENT_BINARY_DIR}/gtest_install"
+             CONFIG
+             NO_DEFAULT_PATH)
+message(STATUS "Found GTest target config in ${GTest_DIR}.")
 
 if (WIN32)
    set(Boost_USE_STATIC_LIBS ON) # TODO: need to make this optional
@@ -70,7 +97,7 @@ if (NOT DEFINED TARM_IO_OPENSSL_FOUND)
 endif()
 
 if (NOT TARM_IO_OPENSSL_FOUND)
-    message("OpenSSL is not found! Building tests without secure protocols!")
+    message("OpenSSL is not found! Building tests without secure protocols.")
     list(FILTER TESTS_LIST EXCLUDE REGEX Tls.*)
     list(FILTER TESTS_LIST EXCLUDE REGEX Dtls.*)
     list(FILTER TESTS_LIST EXCLUDE REGEX VersionTest\.cpp)
