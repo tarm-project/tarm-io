@@ -3,7 +3,19 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
-message(STATUS "Building bundled GTest...")
+message(STATUS "Setting up tests.")
+
+include(ProcessorCount)
+ProcessorCount(N)
+
+if (N EQUAL 0)
+    set(N 1)
+endif()
+message(STATUS "Processors count: ${N}")
+
+# Gtest is built during CMake configuration step because it is very lightweight
+# and we want to be able to find it via 'find_package' which is impossible with ExternalProject_Add.
+message(STATUS "Building bundled GTest")
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
 execute_process(
@@ -11,16 +23,18 @@ execute_process(
         -DCMAKE_INSTALL_PREFIX='${CMAKE_CURRENT_BINARY_DIR}/gtest_install'
         "${PROJECT_SOURCE_DIR}/thirdparty/googletest-1.10.0"
     RESULT_VARIABLE result
+    OUTPUT_VARIABLE output
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
 if(result)
-    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+    message(FATAL_ERROR "CMake step for googletest failed: ${output} \nresult: ${result}")
 endif()
 
-execute_process(COMMAND ${CMAKE_COMMAND} --build . -j 4
+execute_process(COMMAND ${CMAKE_COMMAND} --build . -j ${N}
     RESULT_VARIABLE result
+    OUTPUT_VARIABLE output
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
 if(result)
-    message(FATAL_ERROR "Build step for googletest failed: ${result}")
+    message(FATAL_ERROR "Build step for googletest failed: ${output} \nresult: ${result}")
 endif()
 
 execute_process(COMMAND ${CMAKE_COMMAND} --build . --target install
@@ -28,14 +42,16 @@ execute_process(COMMAND ${CMAKE_COMMAND} --build . --target install
     OUTPUT_VARIABLE output
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
 if(result)
-      message(FATAL_ERROR "Install step for googletest failed: ${output}")
+      message(FATAL_ERROR "Install step for googletest failed: ${output} \nresult: ${result}")
 endif()
+
+message(STATUS "Building bundled GTest - done")
 
 find_package(GTest REQUIRED
              PATHS "${CMAKE_CURRENT_BINARY_DIR}/gtest_install"
              CONFIG
              NO_DEFAULT_PATH)
-message(STATUS "Found GTest target config in ${GTest_DIR}.")
+message(STATUS "Found GTest ${GTest_VERSION} target config in ${GTest_DIR}.")
 
 if (WIN32)
    set(Boost_USE_STATIC_LIBS ON) # TODO: need to make this optional
@@ -97,7 +113,7 @@ if (NOT DEFINED TARM_IO_OPENSSL_FOUND)
 endif()
 
 if (NOT TARM_IO_OPENSSL_FOUND)
-    message("OpenSSL is not found! Building tests without secure protocols.")
+    message("OpenSSL is not found! Configuring tests without secure protocols.")
     list(FILTER TESTS_LIST EXCLUDE REGEX Tls.*)
     list(FILTER TESTS_LIST EXCLUDE REGEX Dtls.*)
     list(FILTER TESTS_LIST EXCLUDE REGEX VersionTest\.cpp)
