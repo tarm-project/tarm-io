@@ -30,7 +30,7 @@ if (CMAKE_CONFIGURATION_TYPES)
         message(FATAL_ERROR "CMake step for googletest failed: ${output} \nresult: ${result}")
     endif()
 
-    foreach(config_type ${CMAKE_CONFIGURATION_TYPES})
+    foreach(config_type Debug;Release)
         message("${config_type}")
 
         execute_process(COMMAND ${CMAKE_COMMAND} --build . -j ${N} --config "${config_type}"
@@ -273,7 +273,7 @@ function(print_target_properties tgt)
     endforeach(prop)
 endfunction(print_target_properties)
 
-#print_target_properties(GTest::gtest)
+print_target_properties(GTest::gtest)
 
 # get_cmake_property(_variableNames VARIABLES)
 # list (SORT _variableNames)
