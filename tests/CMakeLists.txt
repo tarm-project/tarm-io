@@ -19,8 +19,17 @@ message(STATUS "Building bundled GTest")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
 
 if (CMAKE_CONFIGURATION_TYPES)
+    set(TARM_IO_MSVC_FLAGS "")
+    if (MSVC)
+        # -DBUILD_SHARED_LIBS=ON
+        set(TARM_IO_MSVC_FLAGS -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=${CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE}
+                               -DCMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}
+                               -Dgtest_force_shared_crt=ON)
+    endif()
+
     execute_process(
         COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
+            ${TARM_IO_MSVC_FLAGS}
             -DCMAKE_INSTALL_PREFIX='${CMAKE_CURRENT_BINARY_DIR}/gtest_install'
             "${PROJECT_SOURCE_DIR}/thirdparty/googletest-1.10.0"
         RESULT_VARIABLE result
@@ -226,7 +235,8 @@ endif()
 #  COMMAND ${CMAKE_COMMAND} -E echo $<CONFIG>
 #)
 
-if(WIN32) # AND BUILD_SHARED_LIBS
+get_target_property(TARM_IO_GTEST_LIBRARY_TYPE GTest::gtest TYPE)
+if(WIN32 AND NOT TARM_IO_GTEST_LIBRARY_TYPE STREQUAL "STATIC_LIBRARY")
     add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_PROPERTY:GTest::gtest,INTERFACE_INCLUDE_DIRECTORIES>/../bin/gtest$<$<CONFIG:DEBUG>:d>.dll
