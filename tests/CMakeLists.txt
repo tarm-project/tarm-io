@@ -31,7 +31,7 @@ if (CMAKE_CONFIGURATION_TYPES)
         COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
             ${TARM_IO_MSVC_FLAGS}
             -DCMAKE_INSTALL_PREFIX='${CMAKE_CURRENT_BINARY_DIR}/gtest_install'
-            "${PROJECT_SOURCE_DIR}/thirdparty/googletest-1.10.0"
+            "${PROJECT_SOURCE_DIR}/thirdparty/googletest-${TARM_IO_GTEST_VERSION}"
         RESULT_VARIABLE result
         OUTPUT_VARIABLE output
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
@@ -65,7 +65,7 @@ else()
         COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DCMAKE_INSTALL_PREFIX='${CMAKE_CURRENT_BINARY_DIR}/gtest_install'
-            "${PROJECT_SOURCE_DIR}/thirdparty/googletest-1.10.0"
+            "${PROJECT_SOURCE_DIR}/thirdparty/googletest-${TARM_IO_GTEST_VERSION}"
         RESULT_VARIABLE result
         OUTPUT_VARIABLE output
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
@@ -251,6 +251,9 @@ add_custom_target(RunTests
 )
 add_dependencies(RunTests ${TESTS_EXE_NAME})
 
+#################################################################################################################
+#                                         Debugging support scripts
+#################################################################################################################
 # Get all propreties that cmake supports
 execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
 
@@ -283,7 +286,7 @@ function(print_target_properties tgt)
     endforeach(prop)
 endfunction(print_target_properties)
 
-print_target_properties(GTest::gtest)
+# print_target_properties(GTest::gtest)
 
 # get_cmake_property(_variableNames VARIABLES)
 # list (SORT _variableNames)
