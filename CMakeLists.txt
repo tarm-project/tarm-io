@@ -141,7 +141,7 @@ if (TARM_IO_BUILD_TESTS)
     message("Bundled GTest.............${TARM_IO_CONFIG_SUMMARY_BUNDLED_GTEST}")
 endif()
 
-if(DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
+if(TARM_IO_PLATFORM_MACOSX)
     message("OSX deployment target.....${CMAKE_OSX_DEPLOYMENT_TARGET}")
 endif()
 

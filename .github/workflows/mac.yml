@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - dev
+      - bundled_gtest # TODO: remove this later
 
 jobs:
   All:
@@ -26,24 +27,31 @@ jobs:
         mkdir build
         cd build/
         cmake -DBUILD_SHARED_LIBS=ON ..
-        make -j $(sysctl hw.physicalcpu | sed 's/hw.physicalcpu: //')
+        make -j $(sysctl hw.physicalcpu | sed 's/hw.physicalcpu: //') # TODO: replace this with some sort of variable
         make install
         popd
     - name: install boost
       run: |
         brew install boost
-    - name: build Make
+    - name: build with Make (bundled GTest)
       run: |
         mkdir -p build_make
         cd build_make
-        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DTARM_IO_BUILD_TESTS=TRUE ..
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+              -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl \
+              -DTARM_IO_BUILD_TESTS=TRUE \
+              ..
         make -j $(sysctl hw.physicalcpu | sed 's/hw.physicalcpu: //')
-    - name: build Xcode
+    - name: build with Xcode (external GTest)
       run: |
         mkdir -p build_xcode
         cd build_xcode
-        cmake -G Xcode -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DTARM_IO_BUILD_TESTS=TRUE ..
-        cmake --build . --config ${{ matrix.config }}
+        cmake -G Xcode \
+              -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl \
+              -DTARM_IO_BUILD_TESTS=TRUE \
+              -DTARM_IO_USE_EXTERNAL_GTEST=TRUE \
+              ..
+        cmake --build . --config ${{ matrix.config }} -j $(sysctl hw.physicalcpu | sed 's/hw.physicalcpu: //')
     - name: run tests
       run: |
         ulimit -a
