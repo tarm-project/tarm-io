@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 3.5.0)
 option(BUILD_SHARED_LIBS "Build tarm-io as shared library" ON)
 option(TARM_IO_BUILD_TESTS "Build tests" OFF)
 option(TARM_IO_USE_EXTERNAL_LIBUV "Use system libuv instead of the bundled one" OFF)
+option(TARM_IO_USE_EXTERNAL_GTEST "Use system GTest instead of the bundled one" OFF)
 
 # TODO: enable only on MacOS X
 # According to docs this variable should be set before 'project' statement
@@ -104,9 +105,46 @@ if (TARM_IO_BUILD_TESTS)
 endif()
 
 message("================ Configuration summary ================")
-message("OpenSSL support: ${TARM_IO_OPENSSL_FOUND}")
-message("Build tests: ${TARM_IO_BUILD_TESTS}")
-message("External libuv: ${TARM_IO_USE_EXTERNAL_LIBUV}")
+# Helper macro to hide weak boolean type support in CMake
+macro(tarm_io_config_summary_vars_set INPUT OUTPUT TRUE_TEXT FALSE_TEXT)
+    if (${INPUT})
+        set(${OUTPUT} ${TRUE_TEXT})
+    else()
+        set(${OUTPUT} ${FALSE_TEXT})
+    endif()
+endmacro()
+
+tarm_io_config_summary_vars_set(TARM_IO_USE_EXTERNAL_LIBUV
+                                TARM_IO_CONFIG_SUMMARY_BUNDLED_LIBUV
+                                "NO"
+                                "YES")
+
+tarm_io_config_summary_vars_set(TARM_IO_USE_EXTERNAL_GTEST
+                                TARM_IO_CONFIG_SUMMARY_BUNDLED_GTEST
+                                "NO"
+                                "YES")
+
+tarm_io_config_summary_vars_set(TARM_IO_BUILD_TESTS
+                                TARM_IO_CONFIG_SUMMARY_BUILD_TESTS
+                                "YES"
+                                "NO")
+
+tarm_io_config_summary_vars_set(TARM_IO_OPENSSL_FOUND
+                                TARM_IO_CONFIG_SUMMARY_OPENSSL
+                                "YES"
+                                "NO")
+
+message("OpenSSL support...........${TARM_IO_CONFIG_SUMMARY_OPENSSL}")
+message("Bundled libuv.............${TARM_IO_CONFIG_SUMMARY_BUNDLED_LIBUV}")
+message("Build tests...............${TARM_IO_CONFIG_SUMMARY_BUILD_TESTS}")
+if (TARM_IO_BUILD_TESTS)
+    message("Bundled GTest.............${TARM_IO_CONFIG_SUMMARY_BUNDLED_GTEST}")
+endif()
+
+if(DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
+    message("OSX deployment target.....${CMAKE_OSX_DEPLOYMENT_TARGET}")
+endif()
+
 message("=======================================================")
 
 #############################################################
