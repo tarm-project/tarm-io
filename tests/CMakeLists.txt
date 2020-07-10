@@ -13,6 +13,11 @@ if (N EQUAL 0)
 endif()
 message(STATUS "Processors count: ${N}")
 
+set(TARM_IO_BUILD_JOBS_FLAGS)
+if (NOT ${CMAKE_VERSION} VERSION_LESS "3.12")
+    set(TARM_IO_BUILD_JOBS_FLAGS -j ${N})
+endif()
+
 unset(GTest_DIR CACHE)
 unset(GTest_DIR CACHE)
 
@@ -29,7 +34,7 @@ else()
         if (MSVC)
             # -DBUILD_SHARED_LIBS=ON
             set(TARM_IO_MSVC_FLAGS -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=${CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE}
-                                   -DCMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}
+        -DCMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}
                                    -Dgtest_force_shared_crt=ON)
         endif()
 
@@ -48,7 +53,7 @@ else()
         foreach(config_type Debug;Release)
             message("${config_type}")
 
-            execute_process(COMMAND ${CMAKE_COMMAND} --build . -j ${N} --config "${config_type}"
+            execute_process(COMMAND ${CMAKE_COMMAND} --build . ${TARM_IO_BUILD_JOBS_FLAGS} --config "${config_type}"
                 RESULT_VARIABLE result
                 OUTPUT_VARIABLE output
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
@@ -79,7 +84,7 @@ else()
             message(FATAL_ERROR "CMake step for googletest failed: ${output} \nresult: ${result}")
         endif()
 
-        execute_process(COMMAND ${CMAKE_COMMAND} --build . -j ${N}
+        execute_process(COMMAND ${CMAKE_COMMAND} --build . ${TARM_IO_BUILD_JOBS_FLAGS}
             RESULT_VARIABLE result
             OUTPUT_VARIABLE output
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gtest_build")
