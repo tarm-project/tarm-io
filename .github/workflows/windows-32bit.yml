@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - dev
+      - bundled_gtest # TODO: remove this later
 
 jobs:
   MSVC:
@@ -54,22 +55,21 @@ jobs:
         set CL=/MP
         nmake
         nmake install
-
-    - name: install gtest
-      run: |
-        pushd $env:TEMP
-        curl -LO https://github.com/google/googletest/archive/release-1.10.0.tar.gz
-        tar -xf release-1.10.0.tar.gz
-        cd googletest-release-1.10.0
-        mkdir build
-        cd build/
-        cmake -DBUILD_SHARED_LIBS=ON `
-              -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 `
-              -DCMAKE_GENERATOR_PLATFORM=Win32 `
-              ..
-        cmake --build . --config ${{ matrix.config }}
-        cmake --install . --verbose --config ${{ matrix.config }} --prefix $env:GITHUB_WORKSPACE/gtest_install
-        popd
+    #- name: install gtest
+    #  run: |
+    #    pushd $env:TEMP
+    #    curl -LO https://github.com/google/googletest/archive/release-1.10.0.tar.gz
+    #    tar -xf release-1.10.0.tar.gz
+    #    cd googletest-release-1.10.0
+    #    mkdir build
+    #    cd build/
+    #    cmake -DBUILD_SHARED_LIBS=ON `
+    #          -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x86 `
+    #          -DCMAKE_GENERATOR_PLATFORM=Win32 `
+    #          ..
+    #    cmake --build . --config ${{ matrix.config }}
+    #    cmake --install . --verbose --config ${{ matrix.config }} --prefix $env:GITHUB_WORKSPACE/gtest_install
+    #    popd
     - name: build
       run: |
         mkdir build
