@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - dev
+      - bundled_gtest # TODO: remove this later
 
 jobs:
   ALL:
