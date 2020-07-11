@@ -139,22 +139,22 @@ div.sphinxsidebar div.sphinxsidebarwrapper div#searchbox p.highlight-link {
     }
 
     /*restructuring mobile tables*/
-    table thead {
+    table.colwidths-given thead {
         display: none;
     }
 
-    table td {
+    table.colwidths-given td {
         display: flex;
     }
     
-    table td::before {
+    table.colwidths-given td::before {
         content: attr(label);
         font-weight: bold;
         width: 120px;
         min-width: 120px;
     }
 
-    tr td:first-child {
+    table.colwidths-given tr td:first-child {
         background-color: #e0e0e0;
     }
 }
