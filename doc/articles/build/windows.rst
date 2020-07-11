@@ -49,7 +49,7 @@ Build is performed in separate directory:
    mkdir build
    cd build
 
-Note that unlike Linux or Mac OS builds with make files you do not need to pass
+Note that unlike Linux or Mac OS builds with make files generator you do not need to pass
 `CMAKE_BUILD_TYPE <https://cmake.org/cmake/help/v3.15/variable/CMAKE_BUILD_TYPE.html>`_
 parameter during configuration.
 

@@ -59,9 +59,9 @@ Build and install tarm-io library
 
 .. code-block:: bash
 
-   $ mkdir build
+   $ mkdir -p build
    $ cd build
    $ cmake -DCMAKE_BUILD_TYPE=Release ..
-   $ make -j$(nproc)
+   $ make -j $(nproc)
    $ sudo make install
    $ sudo ldconfig
