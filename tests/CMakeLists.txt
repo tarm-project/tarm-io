@@ -19,30 +19,7 @@ if (NOT ${CMAKE_VERSION} VERSION_LESS "3.12")
 endif()
 
 include(ResolveGTest.cmake)
-
-if (WIN32)
-   set(Boost_USE_STATIC_LIBS ON) # TODO: need to make this optional
-endif()
-#set(Boost_DEBUG ON)
-find_package(Boost COMPONENTS system filesystem REQUIRED)
-
-# Boost build withoud CMake targets (creating them manually)
-if(NOT TARGET Boost::headers)
-    add_library(Boost::headers IMPORTED INTERFACE GLOBAL)
-    set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-endif()
-
-if(NOT TARGET Boost::system)
-    add_library(Boost::system IMPORTED INTERFACE GLOBAL)
-    set_property(TARGET Boost::system PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-    set_property(TARGET Boost::system PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_SYSTEM_LIBRARY})
-endif()
-
-if(NOT TARGET Boost::filesystem)
-    add_library(Boost::filesystem IMPORTED INTERFACE GLOBAL)
-    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-    set_property(TARGET Boost::filesystem PROPERTY INTERFACE_LINK_LIBRARIES ${Boost_FILESYSTEM_LIBRARY})
-endif()
+include(ResolveBoost.cmake)
 
 # Note: tests are ordered from basic ones to advanced ones to allow check them from
 # top to bottom if multiple tests fail.

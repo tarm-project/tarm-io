@@ -3,6 +3,8 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
+# This file adds GTest:: imported targets to current scope
+
 unset(GTest_DIR CACHE)
 
 if (TARM_IO_USE_EXTERNAL_GTEST)
