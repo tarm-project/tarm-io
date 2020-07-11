@@ -138,3 +138,7 @@ Mac OS variables
    * - CMAKE_OSX_DEPLOYMENT_TARGET
      - Version
      - Deployment target for Mac OS X. Example: "10.13"
+
+.. raw:: html
+
+   <script type="text/javascript">tarm_io_set_table_tr_labels('table')</script>

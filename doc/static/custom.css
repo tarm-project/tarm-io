@@ -137,4 +137,24 @@ div.sphinxsidebar div.sphinxsidebarwrapper div#searchbox p.highlight-link {
     table.highlighttable {
         margin-left: 0px;
     }
+
+    /*restructuring mobile tables*/
+    table thead {
+        display: none;
+    }
+
+    table td {
+        display: flex;
+    }
+    
+    table td::before {
+        content: attr(label);
+        font-weight: bold;
+        width: 120px;
+        min-width: 120px;
+    }
+
+    tr td:first-child {
+        background-color: #e0e0e0;
+    }
 }
