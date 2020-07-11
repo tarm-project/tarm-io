@@ -104,48 +104,7 @@ if (TARM_IO_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-message("================ Configuration summary ================")
-# Helper macro to hide weak boolean type support in CMake
-macro(tarm_io_config_summary_vars_set INPUT OUTPUT TRUE_TEXT FALSE_TEXT)
-    if (${INPUT})
-        set(${OUTPUT} ${TRUE_TEXT})
-    else()
-        set(${OUTPUT} ${FALSE_TEXT})
-    endif()
-endmacro()
-
-tarm_io_config_summary_vars_set(TARM_IO_USE_EXTERNAL_LIBUV
-                                TARM_IO_CONFIG_SUMMARY_BUNDLED_LIBUV
-                                "NO"
-                                "YES")
-
-tarm_io_config_summary_vars_set(TARM_IO_USE_EXTERNAL_GTEST
-                                TARM_IO_CONFIG_SUMMARY_BUNDLED_GTEST
-                                "NO"
-                                "YES")
-
-tarm_io_config_summary_vars_set(TARM_IO_BUILD_TESTS
-                                TARM_IO_CONFIG_SUMMARY_BUILD_TESTS
-                                "YES"
-                                "NO")
-
-tarm_io_config_summary_vars_set(TARM_IO_OPENSSL_FOUND
-                                TARM_IO_CONFIG_SUMMARY_OPENSSL
-                                "YES"
-                                "NO")
-
-message("OpenSSL support...........${TARM_IO_CONFIG_SUMMARY_OPENSSL}")
-message("Bundled libuv.............${TARM_IO_CONFIG_SUMMARY_BUNDLED_LIBUV}")
-message("Build tests...............${TARM_IO_CONFIG_SUMMARY_BUILD_TESTS}")
-if (TARM_IO_BUILD_TESTS)
-    message("Bundled GTest.............${TARM_IO_CONFIG_SUMMARY_BUNDLED_GTEST}")
-endif()
-
-if(TARM_IO_PLATFORM_MACOSX)
-    message("OSX deployment target.....${CMAKE_OSX_DEPLOYMENT_TARGET}")
-endif()
-
-message("=======================================================")
+include(PrintConfigurationSummary )
 
 #############################################################
 # get_cmake_property(_variableNames VARIABLES)

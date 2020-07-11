@@ -1,3 +1,8 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
 name: Windows-32bit
 
 on:
@@ -5,7 +10,6 @@ on:
     branches:
       - master
       - dev
-      - bundled_gtest # TODO: remove this later
 
 jobs:
   MSVC:
