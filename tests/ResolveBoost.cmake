@@ -5,9 +5,10 @@
 
 # This file adds Boost:: imported targets to current scope
 
+unset(Boost_DIR CACHE)
+unset(boost_headers_DIR CACHE)
 unset(boost_filesystem_DIR CACHE)
 unset(boost_system_DIR CACHE)
-unset(boost_headers_DIR CACHE)
 
 if (WIN32)
    set(Boost_USE_STATIC_LIBS ON) # TODO: need to make this optional
