@@ -1,6 +1,9 @@
 .. meta::
    :description: Tarm-io library Tutorials
 
+.. role:: bash(code)
+   :language: bash
+
 Tutorials
 =========
 
@@ -16,9 +19,9 @@ The main reason for this is that all CMake code for almost all samples is identi
    :linenos:
    :lines: 11-19
 
-Please note **find_package** call.
+Please note :bash:`find_package` call.
 Tarm-io library defines set of `imported targets <https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#imported-targets>`_,
-so if library is found, subsequent call to **target_link_libraries** will do the job with populating include directories, preprocessor definitions and setting appropriate linker flags.
+so if library is found the subsequent call to :bash:`target_link_libraries` will do the job with populating include directories, preprocessor definitions and setting appropriate linker flags.
 The simplest way to find the library is to install it to some system-related folder like "Program Files"
 on Windows or "/usr/local" on Linux and Mac OS.
 Or install in folder that is referenced in some system-related environment variable like PATH or INCLUDE.
