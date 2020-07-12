@@ -17,7 +17,7 @@ add_executable(hello_event_loop main.cpp)
 find_package(tarm-io REQUIRED)
 target_link_libraries(hello_event_loop tarm-io::tarm-io)
 
-if (MSVC)
+if (MSVC) # Copy DLLs if required
     add_custom_command(TARGET hello_event_loop POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_PROPERTY:tarm-io::tarm-io,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>"
