@@ -1,6 +1,9 @@
 .. meta::
    :description: Tarm-io build instructions for Linux
 
+.. role:: bash(code)
+   :language: bash
+
 Build for Linux
 ===============
 
@@ -65,3 +68,8 @@ Build and install tarm-io library
    $ make -j $(nproc)
    $ sudo make install
    $ sudo ldconfig
+
+Build examples
+--------------
+
+.. include:: ../../common_chunks/unix_build_examples.rst

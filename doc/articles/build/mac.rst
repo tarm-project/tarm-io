@@ -136,3 +136,8 @@ And to build and install execute:
    cmake --build . --config Debug --target install
 
 .. TODO: installation layout description?
+
+Build examples
+--------------
+
+.. include:: ../../common_chunks/unix_build_examples.rst
