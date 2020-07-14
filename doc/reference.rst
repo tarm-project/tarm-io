@@ -9,3 +9,4 @@ API Reference
 
    articles/reference/EventLoop
    articles/reference/Timer
+   articles/reference/Error

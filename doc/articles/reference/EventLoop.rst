@@ -1,19 +1,45 @@
 .. meta::
    :description: Tarm-io EventLoop class reference
 
-EventLoop
-=========
+:cpp:class:`EventLoop`
+======================
 
-What is event loop? Event loop is an internal cycle around which your application execution is built. As you can see from the name, this kind of cycle works with events. And the word "loop" tels us that it works with events repeatedly. Events could be originated from the system (e.g. network packet is arrived) or a user (like scheduled callback). One thing that you should keep in mind that loop continues to execute only until it expects something to be processed. Otherwise it exits.
+.. cpp:class:: EventLoop
 
-.. TODO: example nothing to process immediate exit
+   Event loop class. Response for all events handling.
+   Usually created one per thread.
+   The only class which is able to create on stack.
 
-.. TODO: example, schedule callback and exit
+Members
+=======
 
-.. TODO: example, schedule long timer, blocks for a while
+Signals
+~~~~~~~
 
-.. TODO: example, schedule TCP listen, blocks forever
+The library provides handling of very few signals.
+The main reason for this is inability to provide cross-platform behavior and
+additionally very strict limitations for some Unix signal handlers.
 
-.. TODO: Event Lopp stages fugure (like for libUV)
+.. cpp:enum-class:: Signal
 
-.. TODO: CPU consumptions and timers
+   .. cpp:enumerator:: INT
+
+   .. cpp:enumerator:: HUP
+
+   .. cpp:enumerator:: WINCH
+
+.. cpp:type:: SignalCallback = std::function<void(EventLoop&, const Error&)>
+
+   Signal handler callback type.
+
+.. cpp:function:: Error handle_signal_once(Signal signal, const SignalCallback& callback)
+
+   Handle signal once and remove handle.
+
+.. cpp:function:: Error add_signal_handler(Signal signal, const SignalCallback& callback)
+
+   Handle signals multiple times. Note that while this handler is present event will not exit.
+
+.. cpp:function::void remove_signal_handler(Signal signal)
+
+   Remove signal handler. If handler was not registered, do nothing.

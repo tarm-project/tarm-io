@@ -131,6 +131,19 @@ summary {
     outline: none;
 }
 
+/* code API */
+dl.cpp.enumerator {
+    margin: 0;
+}
+
+code.xref.cpp {
+    font-size: 1.15em;
+}
+
+code.sig-prename.descclassname {
+    font-size: 1.2em;
+}
+
 /* search box */
 div.sphinxsidebar #searchbox input[type="submit"] {
     margin-left: 3px;

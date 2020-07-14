@@ -1,6 +1,9 @@
 .. meta::
    :description: Tarm-io library design overview
 
+.. role:: cpp_inline(code)
+   :language: cpp
+
 Design overview
 ===============
 
@@ -39,3 +42,22 @@ Almost all such **differences are documented**.
 
 Tarm-io library is implemented in relatively old C++11, compatible with old versions of OpenSSL and libuv and
 use not the most recent cMake version to achieve **maximum portability**.
+
+**Namespaces structure repeats source files structure.**
+This allows easily navigate project via source tree and find required items without constant usage of search.
+Also this approach provide a way to see if some namespace became to overloaded with types.
+And additionally it provides intuitive understanding of includes.
+For example if you know that :cpp:expr:`TcpServer` resides in :cpp:expr:`tarm::io::net` namespace,
+this means that :cpp_inline:`<tarm/io/net/TcpServer.h>` file should be included to access the code.
+
+Basic concepts
+--------------
+
+It's all about event loop
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+What is event loop? Event loop is an internal cycle around which your application execution is built.
+As you can see from the name, this kind of cycle works with events.
+And the word "loop" tells us that it works with events repeatedly.
+Events could be originated from the system (e.g. network packet is arrived) or a user (like scheduled callback).
+One thing that you should keep in mind that loop continues to execute only until it expects something to be processed. Otherwise it exits.

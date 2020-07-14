@@ -1,5 +1,7 @@
 .. meta::
    :description: Tarm-io Timer class reference
 
-Timer
-=====
+:cpp:class:`Timer`
+==================
+
+.. cpp:class:: Timer

@@ -57,3 +57,12 @@ List of tutorials
 
    articles/tutorials/hello_event_loop
    articles/tutorials/udp_echo_server
+
+
+.. TODO: example, schedule long timer, blocks for a while
+
+.. TODO: example, schedule TCP listen, blocks forever
+
+.. TODO: Event Lopp stages fugure (like for libUV)
+
+.. TODO: CPU consumptions and timers
