@@ -46,6 +46,19 @@ Downloads
 
 Tarm-io can be downloaded from `github page <https://github.com/tarm-project/tarm-io>`_.
 
+Documentation
+-------------
+
+.. toctree::
+   :maxdepth: 1
+
+   build_instructions
+   tutorials
+   design_overview
+   memory_management
+   error_handling
+   reference
+
 Quick showcase
 --------------
 
@@ -60,25 +73,6 @@ Just look at the example below. The very basic version of UDP echo server withou
 
 
 For a complete example with explanations see :ref:`tutorials <tutorials:Tutorials>` section.
-
-Documentation
--------------
-
-.. toctree::
-   :maxdepth: 1
-
-   build_instructions
-   tutorials
-   design_overview
-   memory_management
-   error_handling
-   reference
-
-
-
-.. Subsection test
-   ~~~~~~~~~~~~~~~
-   Level 3 text!
 
 Indices and tables
 ------------------
