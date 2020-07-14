@@ -17,12 +17,12 @@ macro(setup_project_for_examples PROJECT_NAME)
     add_executable(${PROJECT_NAME} ${SOURCES_LIST})
 
     find_package(tarm-io REQUIRED)
-    target_link_libraries(${PROJECT_NAME} tarm-io::tarm-io)
+    target_link_libraries(${PROJECT_NAME} TARM::tarm-io)
 
     if (MSVC)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "$<TARGET_PROPERTY:tarm-io::tarm-io,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>"
+                "$<TARGET_PROPERTY:TARM::tarm-io,IMPORTED_LOCATION_$<UPPER_CASE:$<CONFIG>>>"
                 "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
 
         if (NOT TARM_IO_SSL_EAY_DLL_PATH STREQUAL "")
