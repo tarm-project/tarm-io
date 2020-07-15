@@ -153,6 +153,7 @@ add_dependencies(RunTests ${TESTS_EXE_NAME})
 #################################################################################################################
 #                                         Debugging support scripts
 #################################################################################################################
+
 # Get all propreties that cmake supports
 execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
 

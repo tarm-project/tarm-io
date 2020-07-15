@@ -66,14 +66,6 @@ if (OpenSSL_FOUND)
             endif()
         else()
             set(TARM_IO_TARGET_ARCHITECTURE "x86") # default for MSVC
-
-            #if (CMAKE_SIZEOF_VOID_P EQUAL 4)
-            #    set(TARM_IO_TARGET_ARCHITECTURE "x86")
-            #elseif (CMAKE_SIZEOF_VOID_P EQUAL 8)
-            #    set(TARM_IO_TARGET_ARCHITECTURE "x64")
-            #else()
-            #    message(FATAL_ERROR "Unexpected size of void* ${CMAKE_SIZEOF_VOID_P}")
-            #endif() 
         endif()
 
         message("CMAKE_GENERATOR_PLATFORM: ${CMAKE_GENERATOR_PLATFORM}")
@@ -161,11 +153,6 @@ endif()
 add_library(tarm-io ${IO_SOURCE_LIST})
 set_target_properties(tarm-io PROPERTIES DEBUG_POSTFIX _d)
 target_link_libraries(tarm-io PUBLIC ${LIBUV_LIB_DEPS})
-
-#add_custom_target(debug_generator_expressions
-#    COMMAND ${CMAKE_COMMAND} -E echo $<$<CONFIG:DEBUG>:$<TARGET_PROPERTY:tarm-io,DEBUG_POSTFIX>>
-#)
-
 
 # Last parameter is return value
 function(tarm_io_msvc_dll_name_from_lib PATH_TO_LIB_FILE RESULT_DLL_NAME)
@@ -333,3 +320,8 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/tarm-ioConfig.cmake.i
     "${config_file}" INSTALL_DESTINATION ${cmake_files_install_dir})
 install(FILES ${version_file} ${config_file}
     DESTINATION ${cmake_files_install_dir})
+
+
+#add_custom_target(debug_generator_expressions
+#    COMMAND ${CMAKE_COMMAND} -E echo $<$<CONFIG:DEBUG>:$<TARGET_PROPERTY:tarm-io,DEBUG_POSTFIX>>
+#)
