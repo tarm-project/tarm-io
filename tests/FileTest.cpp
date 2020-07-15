@@ -829,13 +829,13 @@ TEST_F(FileTest, stat_time) {
     // Note: unfortunately file creation time may differ by 5-20msec from time get by std::chrono
     // or ::gettimeofday so using fuzzy comparison
 
-    // Here usage of system_clock is essential for correct test run
+    auto path = create_file_for_read(m_tmp_test_dir, 16);
+    ASSERT_FALSE(path.empty());
+
+    // Here usage of system_clock is essential for correct results
     auto unix_time = std::chrono::system_clock::now().time_since_epoch();
     const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(unix_time).count();
     const auto nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(unix_time).count() - seconds * 1000000000ll;
-
-    auto path = create_file_for_read(m_tmp_test_dir, 16);
-    ASSERT_FALSE(path.empty());
 
     io::EventLoop loop;
     auto file = new io::fs::File(loop);
