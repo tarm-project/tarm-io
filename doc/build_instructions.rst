@@ -71,13 +71,13 @@ Common variables
    * - BUILD_SHARED_LIBS
      - Bool
      - Build libtarm-io as shared or static library
-   * - TARM_IO_BUILD_TESTS
+   * - **TARM_IO_BUILD_TESTS**
      - Bool
      - Build tests for tarm-io
-   * - TARM_IO_USE_EXTERNAL_LIBUV
+   * - **TARM_IO_USE_EXTERNAL_LIBUV**
      - Bool
      - Use system libuv instead of the bundled one
-   * - TARM_IO_USE_EXTERNAL_GTEST
+   * - **TARM_IO_USE_EXTERNAL_GTEST**
      - Bool
      - Use system GTest instead of the bundled one
    * - OPENSSL_ROOT_DIR

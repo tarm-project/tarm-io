@@ -316,7 +316,7 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
         io::EventLoop loop;
 
         // Giving a time to start a server
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         auto client = new io::net::DtlsClient(loop);
         client->connect({m_default_addr, m_default_port},
