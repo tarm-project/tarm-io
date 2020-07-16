@@ -84,7 +84,6 @@ if (MSVC)
     target_compile_definitions(${TESTS_EXE_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 
-# TODO: need to improve this somehow
 if (${CMAKE_GENERATOR} MATCHES "Unix Makefiles")
     add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -98,7 +97,7 @@ else()
                 ${CMAKE_BINARY_DIR}/tests/$<$<OR:$<PLATFORM_ID:Windows>,$<PLATFORM_ID:Darwin>>:$<CONFIG>>
     )
 
-    if (MSVC AND TARM_IO_OPENSSL_FOUND)
+    if (MSVC AND BUILD_SHARED_LIBS AND TARM_IO_OPENSSL_FOUND)
         # Copy openssl dlls to the tests folder
         add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
@@ -126,20 +125,16 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
 
     SETUP_TARGET_FOR_COVERAGE(
         NAME       coverage
-        EXECUTABLE tests
+        EXECUTABLE ${TESTS_EXE_NAME}
     )
 endif()
-
-#add_custom_target(printFooKeys
-#  COMMAND ${CMAKE_COMMAND} -E echo $<CONFIG>
-#)
 
 get_target_property(TARM_IO_GTEST_LIBRARY_TYPE GTest::gtest TYPE)
 if(WIN32 AND NOT TARM_IO_GTEST_LIBRARY_TYPE STREQUAL "STATIC_LIBRARY")
     add_custom_command(TARGET ${TESTS_EXE_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_PROPERTY:GTest::gtest,INTERFACE_INCLUDE_DIRECTORIES>/../bin/gtest$<$<CONFIG:DEBUG>:d>.dll
-            $<TARGET_FILE_DIR:tests> # TODO: replace hardcoded 'tests' with ${TESTS_EXE_NAME}
+            $<TARGET_FILE_DIR:${TESTS_EXE_NAME}>
     )
 endif()
 
