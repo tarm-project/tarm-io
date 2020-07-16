@@ -67,7 +67,7 @@ When you start docker container via script you get:
 * Guest user which is compatible with the host one. So any changes are made on behalf of the host user
 * Passwordless **sudo**, so you can install additional software easily
 * Interactive terminal (if supported)
-* Host network (if supported)
+* Host network (if supported), otherwise port 1234 (widely used in examples) bound into container
 * Other tweaks which allow to use docker comfortably
 
 To exit container press Ctrl+D.
