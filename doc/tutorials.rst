@@ -47,7 +47,8 @@ CMake code to copy DLLs may look like this.
 
    </details>
 
-For more details see `Dynamic-Link Library Search Order <https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order>`_.
+For more details about DLLs lookup on Windows see
+`Dynamic-Link Library Search Order <https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order>`_.
 
 List of tutorials
 -----------------
