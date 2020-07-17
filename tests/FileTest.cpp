@@ -826,7 +826,7 @@ TEST_F(FileTest, stat_size) {
 }
 
 TEST_F(FileTest, stat_time) {
-    // Note: unfortunately file creation time may differ by 5-20msec from time get by std::chrono
+    // Note: unfortunately file creation time may differ from time get by std::chrono
     // or ::gettimeofday so using fuzzy comparison
 
     auto path = create_file_for_read(m_tmp_test_dir, 16);
@@ -845,13 +845,13 @@ TEST_F(FileTest, stat_time) {
         file.stat([&](io::fs::File& file, const io::fs::StatData& stat){
             auto file_str = file.path().string().c_str();
             EXPECT_LE(std::abs(stat.last_access_time.seconds - seconds), 1l) << file_str;
-            EXPECT_LE(std::abs(stat.last_access_time.nanoseconds - nano_seconds), 100000000l) << file_str;
+            EXPECT_LE(std::abs(stat.last_access_time.nanoseconds - nano_seconds), 1000000000l) << file_str;
 
             EXPECT_LE(std::abs(stat.last_modification_time.seconds - seconds), 1l) << file_str;
-            EXPECT_LE(std::abs(stat.last_modification_time.nanoseconds - nano_seconds), 100000000l) << file_str;
+            EXPECT_LE(std::abs(stat.last_modification_time.nanoseconds - nano_seconds), 1000000000l) << file_str;
 
             EXPECT_LE(std::abs(stat.last_status_change_time.seconds - seconds), 1l) << file_str;
-            EXPECT_LE(std::abs(stat.last_status_change_time.nanoseconds - nano_seconds), 100000000l) << file_str;
+            EXPECT_LE(std::abs(stat.last_status_change_time.nanoseconds - nano_seconds), 1000000000l) << file_str;
 
             file.schedule_removal();
         });
