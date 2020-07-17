@@ -22,8 +22,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: define CMake generator
+      run: | # Workaround for inability to pass environment variables between workflow steps
+        echo "$(sysctl hw.physicalcpu | sed 's/hw.physicalcpu: //')" > TARM_IO_CPU_COUNT
     - name: install gtest
       run: |
+        TARM_IO_CPU_COUNT=$(cat TARM_IO_CPU_COUNT)
         pushd /tmp
         curl -LO https://github.com/google/googletest/archive/release-1.10.0.tar.gz
         tar -xf release-*
@@ -31,7 +35,7 @@ jobs:
         mkdir build
         cd build/
         cmake -DBUILD_SHARED_LIBS=ON ..
-        make -j $(sysctl hw.physicalcpu | sed 's/hw.physicalcpu: //') # TODO: replace this with some sort of variable
+        make -j ${TARM_IO_CPU_COUNT}
         make install
         popd
     - name: install boost
@@ -39,15 +43,17 @@ jobs:
         brew install boost
     - name: build with Make (bundled GTest)
       run: |
+        TARM_IO_CPU_COUNT=$(cat TARM_IO_CPU_COUNT)
         mkdir -p build_make
         cd build_make
         cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
               -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl \
               -DTARM_IO_BUILD_TESTS=TRUE \
               ..
-        make -j $(sysctl hw.physicalcpu | sed 's/hw.physicalcpu: //')
+        make -j ${TARM_IO_CPU_COUNT}
     - name: build with Xcode (external GTest)
       run: |
+        TARM_IO_CPU_COUNT=$(cat TARM_IO_CPU_COUNT)
         mkdir -p build_xcode
         cd build_xcode
         cmake -G Xcode \
@@ -55,7 +61,7 @@ jobs:
               -DTARM_IO_BUILD_TESTS=TRUE \
               -DTARM_IO_USE_EXTERNAL_GTEST=TRUE \
               ..
-        cmake --build . --config ${{ matrix.config }} -j $(sysctl hw.physicalcpu | sed 's/hw.physicalcpu: //')
+        cmake --build . --config ${{ matrix.config }} -j ${TARM_IO_CPU_COUNT}
     - name: run tests
       run: |
         ulimit -a
