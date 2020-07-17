@@ -135,7 +135,42 @@ And to build and install execute:
    cmake --build . --config Debug -j4
    cmake --build . --config Debug --target install
 
-.. TODO: installation layout description?
+Installation layout
+~~~~~~~~~~~~~~~~~~~
+
+Library follows UNIX structure of destination folders. Below is truncated example.
+
+.. code-block:: bash
+
+   .
+   |-- bin
+   |-- include
+   |   `-- tarm
+   |       `-- io
+   |           |-- BacklogWithTimeout.h
+   |           |-- ByteSwap.h
+   |           |   ...
+   |           |-- UserDataHolder.h
+   |           |-- fs
+   |           |   |-- Dir.h
+   |           |   |-- DirectoryEntryType.h
+   |           |   ...
+   |           |-- global
+   |           |   `-- Configuration.h
+   |           `-- net
+   |               |-- BufferSizeResult.h
+   |               |-- Endpoint.h
+   |               ...
+   `-- lib
+      |-- cmake
+      |   |-- tarm-io
+      |   |-- tarm-ioConfig.cmake
+      |   |-- tarm-ioConfigVersion.cmake
+      |   |-- tarm-ioTargets-debug.cmake
+      |   |-- tarm-ioTargets-release.cmake
+      |   `-- tarm-ioTargets.cmake
+      |-- libtarm-io.dylib
+      `-- libtarm-io_d.dylib
 
 Build examples
 --------------

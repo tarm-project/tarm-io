@@ -69,6 +69,43 @@ Build and install tarm-io library
    $ sudo make install
    $ sudo ldconfig
 
+Installation layout
+~~~~~~~~~~~~~~~~~~~
+
+Library follows UNIX structure of destination folders. Below is truncated example.
+
+.. code-block:: bash
+
+   .
+   |-- bin
+   |-- include
+   |   `-- tarm
+   |       `-- io
+   |           |-- BacklogWithTimeout.h
+   |           |-- ByteSwap.h
+   |           |   ...
+   |           |-- UserDataHolder.h
+   |           |-- fs
+   |           |   |-- Dir.h
+   |           |   |-- DirectoryEntryType.h
+   |           |   ...
+   |           |-- global
+   |           |   `-- Configuration.h
+   |           `-- net
+   |               |-- BufferSizeResult.h
+   |               |-- Endpoint.h
+   |               ...
+   `-- lib
+      |-- cmake
+      |   |-- tarm-io
+      |   |-- tarm-ioConfig.cmake
+      |   |-- tarm-ioConfigVersion.cmake
+      |   |-- tarm-ioTargets-debug.cmake
+      |   |-- tarm-ioTargets-release.cmake
+      |   `-- tarm-ioTargets.cmake
+      |-- libtarm-io.so
+      `-- libtarm-io_d.so
+
 Build examples
 --------------
 
