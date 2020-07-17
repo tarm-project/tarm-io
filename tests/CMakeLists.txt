@@ -145,6 +145,10 @@ add_custom_target(RunTests
 )
 add_dependencies(RunTests ${TESTS_EXE_NAME})
 
+target_compile_definitions(${TESTS_EXE_NAME} PRIVATE "TARM_IO_GTEST_VERSION_MAJOR=${GTest_VERSION_MAJOR}")
+target_compile_definitions(${TESTS_EXE_NAME} PRIVATE "TARM_IO_GTEST_VERSION_MINOR=${GTest_VERSION_MINOR}")
+target_compile_definitions(${TESTS_EXE_NAME} PRIVATE "TARM_IO_GTEST_VERSION_PATCH=${GTest_VERSION_PATCH}")
+
 #################################################################################################################
 #                                         Debugging support scripts
 #################################################################################################################

@@ -23,6 +23,9 @@ std::string create_temp_test_directory();
 
 boost::filesystem::path exe_path();
 
+std::string current_test_suite_name();
+std::string current_test_case_name();
+
 // std::chrono pretty printers for GTest
 namespace std {
 

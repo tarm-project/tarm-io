@@ -95,4 +95,12 @@ else()
                 NO_DEFAULT_PATH)
 endif()
 
+if (NOT DEFINED GTest_VERSION)
+    message(FATAL_ERROR "Looks like GTest found but its version is not defined.")
+endif()
+
+if (GTest_VERSION VERSION_LESS "1.8.0")
+    message(FATAL_ERROR "GTest version should be at least 1.8.0. But found version: ${GTest_VERSION} in ${GTest_DIR}")
+endif()
+
 message(STATUS "Found GTest ${GTest_VERSION} target config in ${GTest_DIR}.")

@@ -4,8 +4,7 @@
  *----------------------------------------------------------------------------------------------*/
 
 #include "global/Configuration.h"
-
-#include <gtest/gtest.h>
+#include "UTCommon.h"
 
 #ifdef TARM_IO_PLATFORM_WINDOWS
     #include <openssl/applink.c>
@@ -36,21 +35,10 @@ void hanged_tests_watchdog() {
         return;
     }
 
-    /*
-        // TODO: API used currently is deprecated since GTEST 1.10.0, need to support both (here and in log redirector)
-        const ::testing::TestInfo* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-        if (test_info) {
-                " seconds, aborting. Last test: " << test_info->test_suite_name() << "." << test_info->name() << std::endl;
-     */
-
-    // looks like data race is possible here, but we don't mind because want to abort anyway
-    const std::string current_test_scope = ::testing::UnitTest::GetInstance()->current_test_case()->name();
-    const std::string current_test_name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
-
-    if (current_test_scope.size() && current_test_name.size()) {
+    if (current_test_suite_name().size() && current_test_case_name().size()) {
         std::cout << "Total tests execution time is over limit of "  <<
             std::chrono::duration_cast<std::chrono::seconds>(LIMIT).count() <<
-            " seconds, aborting. Last test: " << current_test_scope << "." << current_test_name << std::endl;
+            " seconds, aborting. Last test: " << current_test_suite_name() << "." << current_test_case_name() << std::endl;
     }
 
     abort();

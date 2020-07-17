@@ -2195,9 +2195,6 @@ TEST_F(PathTest, self_assign_and_append) {
     EXPECT_EQ(p.append(p.c_str() + 5, p.c_str() + 7), "snafubar" IO_TEST_DIR_SEP "ba");
 }
 
-// TODO: skipped void name_function_tests() from original source code
-// need to return it???
-
 TEST_F(PathTest, replace_extension) {
     EXPECT_TRUE(Path().replace_extension().empty());
     EXPECT_TRUE(Path().replace_extension("a") == ".a");
