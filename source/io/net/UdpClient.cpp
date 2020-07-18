@@ -40,7 +40,7 @@ protected:
     static void on_data_received(
         uv_udp_t* handle, ssize_t nread, const uv_buf_t* uv_buf, const struct sockaddr* addr, unsigned flags);
 
-    static void on_close_on_timeout(uv_handle_t* handle);
+    static void on_close_no_removal(uv_handle_t* handle);
 
 private:
     DataReceivedCallback m_receive_callback = nullptr;
@@ -115,7 +115,7 @@ bool UdpClient::Impl::close_with_removal() {
 }
 
 bool UdpClient::Impl::close_on_timeout() {
-    return close(&on_close_on_timeout);
+    return close(&on_close_no_removal);
 }
 
 bool UdpClient::Impl::close(CloseHandler handler) {
@@ -184,11 +184,11 @@ void UdpClient::Impl::on_data_received(uv_udp_t* handle,
     }
 }
 
-void UdpClient::Impl::on_close_on_timeout(uv_handle_t* handle) {
+void UdpClient::Impl::on_close_no_removal(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<UdpClient::Impl*>(handle->data);
     auto& parent = *this_.m_parent;
 
-    handle->data = nullptr;
+    this_.reset_udp_handle_state();
 
     if (this_.m_timeout_callback) {
         this_.m_timeout_callback(parent, Error(0));

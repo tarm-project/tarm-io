@@ -44,6 +44,7 @@ public:
 
 protected:
     Error check_buffer_size_value(std::size_t size) const;
+    void reset_udp_handle_state();
 
     // statics
     static void on_close_with_removal(uv_handle_t* handle);
@@ -72,7 +73,6 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
     m_udp_handle(new uv_udp_t, std::default_delete<uv_udp_t>()) {
 
     m_udp_handle.get()->u.fd = 0;
-    m_udp_handle->data = this;
 
     this->set_last_packet_time(::uv_hrtime());
 }
@@ -100,8 +100,16 @@ Error UdpImplBase<ParentType, ImplType>::ensure_handle_inited() {
         return init_error;
     }
 
+    m_udp_handle->data = this;
     m_udp_handle_inited = true;
+
     return Error(0);
+}
+
+template<typename ParentType, typename ImplType>
+void UdpImplBase<ParentType, ImplType>::reset_udp_handle_state() {
+    m_udp_handle->data = nullptr;
+    m_udp_handle_inited = false;
 }
 
 template<typename ParentType, typename ImplType>
@@ -109,7 +117,8 @@ void UdpImplBase<ParentType, ImplType>::on_close_with_removal(uv_handle_t* handl
     auto& this_ = *reinterpret_cast<ImplType*>(handle->data);
     auto& parent = *this_.m_parent;
 
-    handle->data = nullptr;
+    this_.reset_udp_handle_state();
+
     parent.schedule_removal();
 }
 
