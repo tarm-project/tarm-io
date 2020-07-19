@@ -1426,8 +1426,6 @@ TEST_F(DtlsClientServerTest, server_schedule_removal_cause_client_close) {
     EXPECT_EQ(1, client_on_close_count);
 }
 
-// TODO:
-/*
 TEST_F(DtlsClientServerTest, client_send_invalid_data_before_handshake) {
     std::size_t server_on_connect_count = 0;
     std::size_t server_on_receive_count = 0;
@@ -1460,16 +1458,17 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_before_handshake) {
     ASSERT_FALSE(listen_error) << listen_error.string();
 
     auto client = new io::net::UdpClient(loop);
-    ASSERT_FALSE(client->set_destination({m_default_addr, m_default_port}));
-    auto client_receive_start_error = client->start_receive(
+    auto set_destination_error = client->set_destination({m_default_addr, m_default_port},
+        [&](io::net::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.send_data("!!!");
+        },
         [&](io::net::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++udp_on_receive_count;
         }
     );
-    ASSERT_FALSE(client_receive_start_error);
-
-    client->send_data("!!!");
+    ASSERT_FALSE(set_destination_error) << set_destination_error;
 
     (new io::Timer(loop))->start(100,
         [&](io::Timer& timer){
@@ -1546,8 +1545,13 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_during_handshake) {
 
 
     auto client = new io::net::UdpClient(loop);
-    ASSERT_FALSE(client->set_destination({m_default_addr, m_default_port}));
-    auto client_receive_start_error = client->start_receive(
+    auto set_destination_error = client->set_destination({m_default_addr, m_default_port},
+        [&](io::net::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+
+            std::shared_ptr<const char> buf_ptr(reinterpret_cast<const char*>(DTLS_1_2_CLIENT_HELLO), [](const char*){});
+            client.send_data(buf_ptr, sizeof(DTLS_1_2_CLIENT_HELLO));
+        },
         [&](io::net::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++udp_on_receive_count;
@@ -1565,10 +1569,7 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_during_handshake) {
             );
         }
     );
-    ASSERT_FALSE(client_receive_start_error);
-
-    std::shared_ptr<const char> buf_ptr(reinterpret_cast<const char*>(DTLS_1_2_CLIENT_HELLO), [](const char*){});
-    client->send_data(buf_ptr, sizeof(DTLS_1_2_CLIENT_HELLO));
+    ASSERT_FALSE(set_destination_error) << set_destination_error;
 
     EXPECT_EQ(0, server_on_connect_count);
     EXPECT_EQ(0, server_on_receive_count);
@@ -1582,7 +1583,6 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_during_handshake) {
     EXPECT_EQ(0, server_on_close_count);
     EXPECT_EQ(1, udp_on_receive_count);
 }
-*/
 
 // TODO: currently incompatible with TLS 1.3 implementation
 TEST_F(DtlsClientServerTest, DISABLED_client_send_invalid_data_after_handshake) {
