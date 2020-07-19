@@ -26,25 +26,29 @@ namespace net {
 class UdpClient : public Removable,
                   public UserDataHolder {
 public:
-    using EndSendCallback = std::function<void(UdpClient&, const Error&)>;
+    using DestinationSetCallback = std::function<void(UdpClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(UdpClient&, const DataChunk&, const Error&)>;
     using TimeoutCallback = std::function<void(UdpClient&, const Error&)>;
+    using EndSendCallback = std::function<void(UdpClient&, const Error&)>;
 
     IO_FORBID_COPY(UdpClient);
     IO_FORBID_MOVE(UdpClient);
 
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
 
-    IO_DLL_PUBLIC Error start_receive(const DataReceivedCallback& receive_callback);
-    IO_DLL_PUBLIC Error start_receive(const DataReceivedCallback& receive_callback,
-                                      std::size_t timeout_ms,
-                                      const TimeoutCallback& timeout_callback);
+    // Analog of connect for TCP
+    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint,
+                                        const DestinationSetCallback& destination_set_callback,
+                                        const DataReceivedCallback& receive_callback = nullptr);
 
-    // DOC: set_destination does not allows to change address family
-    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint);
+    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint,
+                                        const DestinationSetCallback& destination_set_callback,
+                                        const DataReceivedCallback& receive_callback,
+                                        std::size_t timeout_ms,
+                                        const TimeoutCallback& timeout_callback);
+
     IO_DLL_PUBLIC const Endpoint& endpoint() const;
-    // Returns 0 on error
-    IO_DLL_PUBLIC std::uint16_t bound_port() const;
+    IO_DLL_PUBLIC std::uint16_t bound_port() const; // Returns 0 on error
 
     IO_DLL_PUBLIC  bool is_open() const;
 

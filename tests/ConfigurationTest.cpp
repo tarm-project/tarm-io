@@ -42,6 +42,7 @@ TEST_F(ConfigurationTest, buffer_size) {
     //std::cout << io::global::max_send_buffer_size() << std::endl;
 
     // TODO: move this test to Udp
+    /*
     io::EventLoop loop;
     auto client = new io::net::UdpClient(loop);
     EXPECT_FALSE(client->set_destination({"127.0.0.1", 1500}));
@@ -55,6 +56,7 @@ TEST_F(ConfigurationTest, buffer_size) {
     client->schedule_removal();
 
     loop.run();
+    */
 }
 
 TEST_F(ConfigurationTest, thread_pool_size_default) {

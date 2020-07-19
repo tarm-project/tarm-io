@@ -23,18 +23,24 @@ public:
     Impl(EventLoop& loop, const Endpoint& endpoint, UdpClient& parent);
     ~Impl();
 
-    Error start_receive(const DataReceivedCallback& receive_callback);
-    Error start_receive(const DataReceivedCallback& receive_callback, std::size_t timeout_ms, const TimeoutCallback& timeout_callback);
-
     using CloseHandler = void (*)(uv_handle_t* handle);
     bool close_on_timeout();
     bool close_with_removal();
     bool close(CloseHandler handler);
 
-    Error set_destination(const Endpoint& endpoint);
+    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint,
+                                        const DestinationSetCallback& destination_set_callback,
+                                        const DataReceivedCallback& receive_callback);
+
+    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint,
+                                        const DestinationSetCallback& destination_set_callback,
+                                        const DataReceivedCallback& receive_callback,
+                                        std::size_t timeout_ms,
+                                        const TimeoutCallback& timeout_callback);
 
 protected:
     Error start_receive_impl();
+    Error set_destination_impl(const Endpoint& endpoint);
 
     // statics
     static void on_data_received(
@@ -60,6 +66,60 @@ UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     };
 }
 
+Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
+                                       const DestinationSetCallback& destination_set_callback,
+                                       const DataReceivedCallback& receive_callback) {
+    // TODO: generalize the code!
+    Error destination_error = set_destination_impl(endpoint);
+    if (destination_error) {
+        return destination_error;
+    }
+
+    const Error start_receive_error = start_receive_impl();
+    if (start_receive_error) {
+        return start_receive_error;
+    }
+
+    if (destination_set_callback) {
+        m_loop->schedule_callback([this, destination_set_callback](EventLoop&) {
+            destination_set_callback(*m_parent, Error(StatusCode::OK));
+        });
+    }
+
+    m_receive_callback = receive_callback;
+    return Error(0);
+}
+
+Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
+                                       const DestinationSetCallback& destination_set_callback,
+                                       const DataReceivedCallback& receive_callback,
+                                       std::size_t timeout_ms,
+                                       const TimeoutCallback& timeout_callback) {
+    const Error destination_error = set_destination_impl(endpoint);
+    if (destination_error) {
+        return destination_error;
+    }
+
+    const Error start_receive_error = start_receive_impl();
+    if (start_receive_error) {
+        return start_receive_error;
+    }
+
+    if (destination_set_callback) {
+        m_loop->schedule_callback([this, destination_set_callback](EventLoop&) {
+            destination_set_callback(*m_parent, Error(StatusCode::OK));
+        });
+    }
+
+    m_receive_callback = receive_callback;
+    m_timeout_callback = timeout_callback;
+    m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(*m_loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_time, this), &::uv_hrtime));
+    m_timeout_handler->add_item(this);
+
+    return Error(0);
+}
+
+/*
 Error UdpClient::Impl::start_receive(const DataReceivedCallback& receive_callback) {
     m_receive_callback = receive_callback;
     return start_receive_impl();
@@ -74,13 +134,14 @@ Error UdpClient::Impl::start_receive(const DataReceivedCallback& receive_callbac
     m_timeout_handler->add_item(this);
     return start_receive_impl();
 }
+*/
 
 UdpClient::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, m_parent, "Deleted UdpClient");
 }
 
 // TODO: use uv_udp_connect if libuv version is >= 1.27.0
-Error UdpClient::Impl::set_destination(const Endpoint& endpoint) {
+Error UdpClient::Impl::set_destination_impl(const Endpoint& endpoint) {
     const auto handle_init_error = ensure_handle_inited();
     if (handle_init_error) {
         return handle_init_error;
@@ -188,11 +249,11 @@ void UdpClient::Impl::on_close_no_removal(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<UdpClient::Impl*>(handle->data);
     auto& parent = *this_.m_parent;
 
-    this_.reset_udp_handle_state();
-
     if (this_.m_timeout_callback) {
         this_.m_timeout_callback(parent, Error(0));
     }
+
+    this_.reset_udp_handle_state();
 }
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
@@ -205,18 +266,19 @@ UdpClient::UdpClient(EventLoop& loop) :
 UdpClient::~UdpClient() {
 }
 
-Error UdpClient::start_receive(const DataReceivedCallback& receive_callback) {
-    return m_impl->start_receive(receive_callback);
+
+Error UdpClient::set_destination(const Endpoint& endpoint,
+                                 const DestinationSetCallback& destination_set_callback,
+                                 const DataReceivedCallback& receive_callback) {
+    return m_impl->set_destination(endpoint, destination_set_callback, receive_callback);
 }
 
-Error UdpClient::start_receive(const DataReceivedCallback& receive_callback,
-                               std::size_t timeout_ms,
-                               const TimeoutCallback& timeout_callback) {
-    return m_impl->start_receive(receive_callback, timeout_ms, timeout_callback);
-}
-
-Error UdpClient::set_destination(const Endpoint& endpoint) {
-    return m_impl->set_destination(endpoint);
+Error UdpClient::set_destination(const Endpoint& endpoint,
+                                 const DestinationSetCallback& destination_set_callback,
+                                 const DataReceivedCallback& receive_callback,
+                                 std::size_t timeout_ms,
+                                 const TimeoutCallback& timeout_callback) {
+    return m_impl->set_destination(endpoint, destination_set_callback, receive_callback, timeout_ms, timeout_callback);
 }
 
 void UdpClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {

@@ -101,13 +101,10 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
 
     m_client = new UdpClient(*m_loop);
 
-    auto destination_error = m_client->set_destination(endpoint);
-    if (destination_error) {
-        m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, destination_error); });
-        return;
-    }
-
-    auto listen_error = m_client->start_receive(
+    auto listen_error = m_client->set_destination(endpoint,
+        [](UdpClient&, const Error&) {
+            // TODO: use this callback or nullptr?????
+        },
         [this](UdpClient&, const DataChunk& chunk, const Error& error) {
             if (error) {
                 if (m_receive_callback) {
