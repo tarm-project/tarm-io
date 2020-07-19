@@ -39,6 +39,8 @@ public:
 
     bool schedule_removal();
 
+    std::size_t peers_count() const;
+
 protected:
     // statics
     static void on_data_received(
@@ -140,6 +142,8 @@ void UdpServer::Impl::close(const CloseServerCallback& close_callback) {
 }
 
 bool UdpServer::Impl::close_with_removal() {
+    m_parent->set_removal_scheduled();
+
     if (is_open()) {
         Error error = uv_udp_recv_stop(m_udp_handle.get());
         uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), on_close_with_removal);
@@ -185,6 +189,10 @@ void UdpServer::Impl::close_peer(UdpPeer& peer, std::size_t inactivity_timeout_m
 
     m_peers_backlog->remove_item(active_it->second);
     m_peers.erase(active_it);
+}
+
+std::size_t UdpServer::Impl::peers_count() const {
+    return m_peers.size();
 }
 
 ///////////////////////////////////////////  static  ////////////////////////////////////////////
@@ -333,6 +341,10 @@ Error UdpServer::set_receive_buffer_size(std::size_t size) {
 
 Error UdpServer::set_send_buffer_size(std::size_t size) {
     return m_impl->set_send_buffer_size(size);
+}
+
+std::size_t UdpServer::peers_count() const {
+    return m_impl->peers_count();
 }
 
 } // namespace net

@@ -2394,6 +2394,58 @@ TEST_F(UdpClientServerTest, client_set_destination_with_ipv4_address_then_with_i
     EXPECT_EQ(1, server_data_receive_count);
 }
 
+TEST_F(UdpClientServerTest, peers_count) {
+    io::EventLoop loop;
+
+    const std::size_t CLIENTS_COUNT = 5;
+
+    std::set<long> client_ids;
+
+    auto server = new io::net::UdpServer(loop);
+    auto listen_error = server->start_receive({"::", m_default_port},
+        [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            const auto client_index = std::stol(std::string(data.buf.get(), data.size));
+            client_ids.insert(client_index);
+            EXPECT_EQ(client_ids.size(), server->peers_count());
+        },
+        500,
+        [&](io::net::UdpPeer& peer, const io::Error& error) {
+            EXPECT_FALSE(error) << error.string();
+            if (!server->is_removal_scheduled()) {
+                server->schedule_removal();
+            }
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error;
+
+    EXPECT_EQ(0, server->peers_count());
+
+    for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
+        auto client = new io::net::UdpClient(loop);
+        EXPECT_FALSE(client->set_destination({0x7F000001u, m_default_port}));
+
+        client->send_data(std::to_string(i),
+            [&, i](io::net::UdpClient& client, const io::Error& error) {
+                EXPECT_FALSE(error) << error.string();
+
+                client.send_data(std::to_string(i),
+                    [&](io::net::UdpClient& client, const io::Error& error) {
+                        EXPECT_FALSE(error) << error.string();
+                        client.schedule_removal();
+                    }
+                );
+            }
+        );
+    }
+
+    EXPECT_EQ(0, server->peers_count());
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(CLIENTS_COUNT, client_ids.size());
+}
+
 // TODO: multiple start receive (for server) with some random IP address
 
 // TODO: multiple start receive on the same server with different addresses

@@ -62,7 +62,9 @@ public:
     IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
     IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
 
-    // TODO: peers count???
+    IO_DLL_PUBLIC std::size_t peers_count() const;
+
+
     // TODO: method to iterate on peers???
 
 protected:
