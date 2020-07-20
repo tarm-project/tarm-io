@@ -2321,8 +2321,6 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
     EXPECT_TRUE(peer_3);
 }
 
-// TODO: FIXME
-/*
 TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
     std::size_t on_client_receive_from_server_1 = 0;
     std::size_t on_client_receive_from_server_2 = 0;
@@ -2357,37 +2355,66 @@ TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
     );
     ASSERT_FALSE(listen_error_3) << listen_error_3;
 
-    auto client = new io::net::UdpClient(loop);
-    auto set_endpoint_error = client->set_destination({m_default_addr, m_default_port});
-    ASSERT_FALSE(set_endpoint_error) << set_endpoint_error;
+    const std::size_t CLIENT_TIMEOUT_MS = 1000;
 
-    client->start_receive(
-        [&](io::net::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
-            EXPECT_FALSE(error) << error;
-            const std::string s(data.buf.get(), data.size);
-            if (s == "1") {
-                ++on_client_receive_from_server_1;
+    auto client_on_destination_set = [&](io::net::UdpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        client.send_data("!");
+    };
 
-                auto destination_error = client.set_destination({m_default_addr, std::uint16_t(m_default_port + 1)});
-                EXPECT_FALSE(destination_error);
-                client.send_data("!");
-            } else if (s == "2") {
-                ++on_client_receive_from_server_2;
-
-                auto destination_error = client.set_destination({m_default_addr, std::uint16_t(m_default_port + 2)});
-                EXPECT_FALSE(destination_error);
-                client.send_data("!");
-            } else if (s == "3") {
-                ++on_client_receive_from_server_3;
-            } else {
-                FAIL() << "Unexpected data";
-            }
+    auto client_on_data_received = [&](io::net::UdpClient& client, const io::DataChunk& data, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        const std::string s(data.buf.get(), data.size);
+        if (s == "1") {
+            ++on_client_receive_from_server_1;
+            client.close();
+        } else if (s == "2") {
+            ++on_client_receive_from_server_2;
+            client.close();
+        } else if (s == "3") {
+            ++on_client_receive_from_server_3;
+        } else {
+            FAIL() << "Unexpected data";
         }
-    );
+    };
 
-    auto destination_error = client->set_destination({m_default_addr, m_default_port});
-    EXPECT_FALSE(destination_error);
-    client->send_data("!");
+    std::function<void(io::net::UdpClient&, const io::Error&)> client_on_close;
+    client_on_close = [&](io::net::UdpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        ASSERT_FALSE(client.is_open());
+
+        std::uint16_t port = m_default_port;
+        if (on_client_receive_from_server_1) {
+            ++port;
+        }
+
+        if (on_client_receive_from_server_2) {
+            ++port;
+        }
+
+        if (on_client_receive_from_server_1 &&
+            on_client_receive_from_server_2 &&
+            on_client_receive_from_server_3) {
+            return;
+        }
+
+        auto set_destination_error = client.set_destination({m_default_addr, port},
+            client_on_destination_set,
+            client_on_data_received,
+            CLIENT_TIMEOUT_MS,
+            client_on_close
+        );
+        ASSERT_FALSE(set_destination_error) << set_destination_error;
+    };
+
+    auto client = new io::net::UdpClient(loop);
+    auto set_destination_error = client->set_destination({m_default_addr, m_default_port},
+        client_on_destination_set,
+        client_on_data_received,
+        CLIENT_TIMEOUT_MS,
+        client_on_close
+    );
+    ASSERT_FALSE(set_destination_error) << set_destination_error;
 
     (new io::Timer(loop))->start(
         500,
@@ -2410,7 +2437,6 @@ TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
     EXPECT_EQ(1, on_client_receive_from_server_2);
     EXPECT_EQ(1, on_client_receive_from_server_3);
 }
-*/
 
 // TODO: FIXME
 /*

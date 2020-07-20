@@ -64,7 +64,7 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
-    //IO_DLL_PUBLIC void close();
+    IO_DLL_PUBLIC void close();
 
 protected:
     IO_DLL_PUBLIC ~UdpClient();

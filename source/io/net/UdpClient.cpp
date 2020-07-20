@@ -24,9 +24,8 @@ public:
     ~Impl();
 
     using CloseHandler = void (*)(uv_handle_t* handle);
-    bool close_no_removal();
+    void close_no_removal();
     bool close_with_removal();
-    bool close(CloseHandler handler);
 
     IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint,
                                         const DestinationSetCallback& destination_set_callback,
@@ -41,6 +40,7 @@ public:
 protected:
     Error start_receive_impl();
     Error set_destination_impl(const Endpoint& endpoint);
+    bool close_impl(CloseHandler handler);
 
     // statics
     static void on_data_received(
@@ -155,14 +155,14 @@ Error UdpClient::Impl::set_destination_impl(const Endpoint& endpoint) {
 }
 
 bool UdpClient::Impl::close_with_removal() {
-    return close(&on_close_with_removal);
+    return close_impl(&on_close_with_removal);
 }
 
-bool UdpClient::Impl::close_no_removal() {
-    return close(&on_close_no_removal);
+void UdpClient::Impl::close_no_removal() {
+    close_impl(&on_close_no_removal);
 }
 
-bool UdpClient::Impl::close(CloseHandler handler) {
+bool UdpClient::Impl::close_impl(CloseHandler handler) {
     if (is_open()) {
         if (m_receive_callback) {
             uv_udp_recv_stop(m_udp_handle.get());
@@ -232,11 +232,11 @@ void UdpClient::Impl::on_close_no_removal(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<UdpClient::Impl*>(handle->data);
     auto& parent = *this_.m_parent;
 
+    this_.reset_udp_handle_state();
+
     if (this_.m_close_callback) {
         this_.m_close_callback(parent, Error(0));
     }
-
-    this_.reset_udp_handle_state();
 }
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
@@ -313,6 +313,10 @@ Error UdpClient::set_receive_buffer_size(std::size_t size) {
 
 Error UdpClient::set_send_buffer_size(std::size_t size) {
     return m_impl->set_send_buffer_size(size);
+}
+
+void UdpClient::close() {
+    return m_impl->close_no_removal();
 }
 
 } // namespace net
