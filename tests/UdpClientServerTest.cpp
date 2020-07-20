@@ -2438,15 +2438,13 @@ TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
     EXPECT_EQ(1, on_client_receive_from_server_3);
 }
 
-// TODO: FIXME
-/*
 TEST_F(UdpClientServerTest, client_set_destination_with_ipv4_address_then_with_ipv6) {
     io::EventLoop loop;
 
     std::size_t server_data_receive_count = 0;
 
     auto server = new io::net::UdpServer(loop);
-    auto listen_error = server->start_receive({"::", m_default_port},
+    auto listen_error = server->start_receive({"::", std::uint16_t(m_default_port + 1)},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++server_data_receive_count;
@@ -2456,20 +2454,31 @@ TEST_F(UdpClientServerTest, client_set_destination_with_ipv4_address_then_with_i
     ASSERT_FALSE(listen_error) << listen_error;
 
     auto client = new io::net::UdpClient(loop);
-    auto set_endpoint_error = client->set_destination({m_default_addr, m_default_port});
-    ASSERT_FALSE(set_endpoint_error) << set_endpoint_error;
+    auto set_destination_error = client->set_destination({m_default_addr, m_default_port},
+        [&](io::net::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
 
-    // DOC: after set_destination error client remains in a valid state if previously set_destination succeeded
-    set_endpoint_error = client->set_destination({"::1", std::uint16_t(m_default_port + 1)});
-    ASSERT_TRUE(set_endpoint_error);
-    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, set_endpoint_error.code());
+            client.close();
+        },
+        nullptr,
+        1000,
+        [&](io::net::UdpClient& client, const io::Error& error) {
+            auto set_destination_error = client.set_destination({"::1", std::uint16_t(m_default_port + 1)},
+                [&](io::net::UdpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
 
-    client->send_data("!",
-        [](io::net::UdpClient& client, const io::Error& error) {
-            EXPECT_FALSE(error) << error.string();
-            client.schedule_removal();
+                    client.send_data("!",
+                        [](io::net::UdpClient& client, const io::Error& error) {
+                            EXPECT_FALSE(error) << error.string();
+                            client.schedule_removal();
+                        }
+                    );
+                }
+            );
+            ASSERT_FALSE(set_destination_error) << set_destination_error;
         }
     );
+    ASSERT_FALSE(set_destination_error) << set_destination_error;
 
     EXPECT_EQ(0, server_data_receive_count);
 
@@ -2477,7 +2486,6 @@ TEST_F(UdpClientServerTest, client_set_destination_with_ipv4_address_then_with_i
 
     EXPECT_EQ(1, server_data_receive_count);
 }
-*/
 
 TEST_F(UdpClientServerTest, peers_count) {
     io::EventLoop loop;
