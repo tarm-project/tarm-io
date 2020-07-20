@@ -24,7 +24,7 @@ public:
     ~Impl();
 
     using CloseHandler = void (*)(uv_handle_t* handle);
-    bool close_on_timeout();
+    bool close_no_removal();
     bool close_with_removal();
     bool close(CloseHandler handler);
 
@@ -36,7 +36,7 @@ public:
                                         const DestinationSetCallback& destination_set_callback,
                                         const DataReceivedCallback& receive_callback,
                                         std::size_t timeout_ms,
-                                        const TimeoutCallback& timeout_callback);
+                                        const CloseCallback& close_callback);
 
 protected:
     Error start_receive_impl();
@@ -51,7 +51,7 @@ protected:
 private:
     DataReceivedCallback m_receive_callback = nullptr;
 
-    TimeoutCallback m_timeout_callback = nullptr;
+    CloseCallback m_close_callback = nullptr;
 
     // Here is a bit unusual usage of backlog which consists of one single element to track expiration
     std::unique_ptr<BacklogWithTimeout<UdpClient::Impl*>> m_timeout_handler;
@@ -62,7 +62,7 @@ UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     UdpClientImplBase(loop, parent) {
 
     m_on_item_expired = [this](BacklogWithTimeout<UdpClient::Impl*>&, UdpClient::Impl* const & item) {
-        this->close_on_timeout();
+        this->close_no_removal();
     };
 }
 
@@ -94,7 +94,7 @@ Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
                                        const DestinationSetCallback& destination_set_callback,
                                        const DataReceivedCallback& receive_callback,
                                        std::size_t timeout_ms,
-                                       const TimeoutCallback& timeout_callback) {
+                                       const CloseCallback& close_callback) {
     const Error destination_error = set_destination_impl(endpoint);
     if (destination_error) {
         return destination_error;
@@ -112,29 +112,12 @@ Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
     }
 
     m_receive_callback = receive_callback;
-    m_timeout_callback = timeout_callback;
+    m_close_callback = close_callback;
     m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(*m_loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_time, this), &::uv_hrtime));
     m_timeout_handler->add_item(this);
 
     return Error(0);
 }
-
-/*
-Error UdpClient::Impl::start_receive(const DataReceivedCallback& receive_callback) {
-    m_receive_callback = receive_callback;
-    return start_receive_impl();
-}
-
-Error UdpClient::Impl::start_receive(const DataReceivedCallback& receive_callback,
-                                     std::size_t timeout_ms,
-                                     const TimeoutCallback& timeout_callback) {
-    m_receive_callback = receive_callback;
-    m_timeout_callback = timeout_callback;
-    m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(*m_loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_time, this), &::uv_hrtime));
-    m_timeout_handler->add_item(this);
-    return start_receive_impl();
-}
-*/
 
 UdpClient::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, m_parent, "Deleted UdpClient");
@@ -175,7 +158,7 @@ bool UdpClient::Impl::close_with_removal() {
     return close(&on_close_with_removal);
 }
 
-bool UdpClient::Impl::close_on_timeout() {
+bool UdpClient::Impl::close_no_removal() {
     return close(&on_close_no_removal);
 }
 
@@ -249,8 +232,8 @@ void UdpClient::Impl::on_close_no_removal(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<UdpClient::Impl*>(handle->data);
     auto& parent = *this_.m_parent;
 
-    if (this_.m_timeout_callback) {
-        this_.m_timeout_callback(parent, Error(0));
+    if (this_.m_close_callback) {
+        this_.m_close_callback(parent, Error(0));
     }
 
     this_.reset_udp_handle_state();
@@ -277,8 +260,8 @@ Error UdpClient::set_destination(const Endpoint& endpoint,
                                  const DestinationSetCallback& destination_set_callback,
                                  const DataReceivedCallback& receive_callback,
                                  std::size_t timeout_ms,
-                                 const TimeoutCallback& timeout_callback) {
-    return m_impl->set_destination(endpoint, destination_set_callback, receive_callback, timeout_ms, timeout_callback);
+                                 const CloseCallback& close_callback) {
+    return m_impl->set_destination(endpoint, destination_set_callback, receive_callback, timeout_ms, close_callback);
 }
 
 void UdpClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {

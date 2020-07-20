@@ -28,7 +28,7 @@ class UdpClient : public Removable,
 public:
     using DestinationSetCallback = std::function<void(UdpClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(UdpClient&, const DataChunk&, const Error&)>;
-    using TimeoutCallback = std::function<void(UdpClient&, const Error&)>;
+    using CloseCallback = std::function<void(UdpClient&, const Error&)>;
     using EndSendCallback = std::function<void(UdpClient&, const Error&)>;
 
     IO_FORBID_COPY(UdpClient);
@@ -45,7 +45,7 @@ public:
                                         const DestinationSetCallback& destination_set_callback,
                                         const DataReceivedCallback& receive_callback,
                                         std::size_t timeout_ms,
-                                        const TimeoutCallback& timeout_callback);
+                                        const CloseCallback& close_callback);
 
     IO_DLL_PUBLIC const Endpoint& endpoint() const;
     IO_DLL_PUBLIC std::uint16_t bound_port() const; // Returns 0 on error
@@ -64,7 +64,7 @@ public:
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
-    // TODO: implement close with incativity timeout like for UdpPeer
+    //IO_DLL_PUBLIC void close();
 
 protected:
     IO_DLL_PUBLIC ~UdpClient();
