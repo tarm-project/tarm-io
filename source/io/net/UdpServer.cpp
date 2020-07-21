@@ -59,6 +59,8 @@ private:
     std::unordered_map<detail::PeerId, std::shared_ptr<UdpPeer>> m_peers;
     std::unordered_map<detail::PeerId, std::unique_ptr<Timer, typename Timer::DefaultDelete>> m_inactive_peers;
     std::unique_ptr<BacklogWithTimeout<std::shared_ptr<UdpPeer>>> m_peers_backlog;
+
+    bool m_connection_in_progress = false;
 };
 
 UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
@@ -83,10 +85,6 @@ Error UdpServer::Impl::bind(const Endpoint& endpoint) {
 Error UdpServer::Impl::start_receive(const Endpoint& endpoint, const DataReceivedCallback& data_receive_callback) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
-    if (is_open()) {
-        return StatusCode::CONNECTION_ALREADY_IN_PROGRESS;
-    }
-
     Error bind_error = bind(endpoint);
     if (bind_error) {
         return bind_error;
@@ -99,6 +97,8 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint, const DataReceive
         return receive_start_error;
     }
 
+    m_connection_in_progress = true;
+
     return Error(0);
 }
 
@@ -109,6 +109,10 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
                                      const PeerTimeoutCallback& timeout_callback) {
     if (timeout_ms == 0) {
         // TODO: error
+    }
+
+    if (m_connection_in_progress) {
+        return StatusCode::CONNECTION_ALREADY_IN_PROGRESS;
     }
 
     m_new_peer_callback = new_peer_callback;
@@ -149,6 +153,7 @@ bool UdpServer::Impl::close_with_removal() {
     m_parent->set_removal_scheduled();
 
     if (is_open()) {
+        m_connection_in_progress = false;
         Error error = uv_udp_recv_stop(m_udp_handle.get());
         uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), on_close_with_removal);
         return false; // not ready to remove
@@ -279,6 +284,8 @@ void UdpServer::Impl::on_close(uv_handle_t* handle) {
     assert(handle);
     auto& this_ = *reinterpret_cast<UdpServer::Impl*>(handle->data);
     auto& parent = *this_.m_parent;
+
+    this_.m_connection_in_progress = false;
 
     IO_LOG(this_.m_loop, TRACE, &parent, "");
     if (this_.m_server_close_callback) {

@@ -283,8 +283,7 @@ TEST_F(UdpClientServerTest, server_set_buffer_size) {
         [&](io::net::UdpPeer&, const io::DataChunk&, const io::Error&) {
         }
     );
-
-    EXPECT_FALSE(listen_error);
+    EXPECT_FALSE(listen_error) << listen_error;
 
     EXPECT_EQ(io::Error(io::StatusCode::OK), server->set_send_buffer_size(4096));
     EXPECT_EQ(io::Error(io::StatusCode::OK), server->set_receive_buffer_size(4096));
@@ -2568,9 +2567,29 @@ TEST_F(UdpClientServerTest, server_multiple_start_receive_in_row) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
+/*
+TEST_F(UdpClientServerTest, server_multiple_start_receive_sequenced) {
+    io::EventLoop loop;
 
-// TODO: client start receive without destination set???? Allow receive from any peer????
+    auto server = new io::net::UdpServer(loop);
+    auto listen_error_1 = server->start_receive({m_default_addr, m_default_port},
+        nullptr,
+        500,
+        nullptr
+    );
+    ASSERT_FALSE(listen_error_1) << listen_error_1;
 
-// TODO: server receive close and receive again
+    auto listen_error_2 = server->start_receive({"::", std::uint16_t(m_default_port + 1)},
+        nullptr,
+        500,
+        nullptr
+    );
+    ASSERT_TRUE(listen_error_2);
+    EXPECT_EQ(io::StatusCode::CONNECTION_ALREADY_IN_PROGRESS, listen_error_2.code());
 
+    server->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+}
+*/
 // TODO: set destination and send data right away (not in callback). Should be error
