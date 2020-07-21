@@ -2567,7 +2567,7 @@ TEST_F(UdpClientServerTest, server_multiple_start_receive_in_row) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
-/*
+
 TEST_F(UdpClientServerTest, server_multiple_start_receive_sequenced) {
     io::EventLoop loop;
 
@@ -2579,17 +2579,17 @@ TEST_F(UdpClientServerTest, server_multiple_start_receive_sequenced) {
     );
     ASSERT_FALSE(listen_error_1) << listen_error_1;
 
-    auto listen_error_2 = server->start_receive({"::", std::uint16_t(m_default_port + 1)},
-        nullptr,
-        500,
-        nullptr
-    );
-    ASSERT_TRUE(listen_error_2);
-    EXPECT_EQ(io::StatusCode::CONNECTION_ALREADY_IN_PROGRESS, listen_error_2.code());
-
-    server->schedule_removal();
+    server->close([&](io::net::UdpServer& server, const io::Error& error) {
+        auto listen_error_2 = server.start_receive({"::", std::uint16_t(m_default_port + 1)},
+            nullptr,
+            500,
+            nullptr
+        );
+        ASSERT_FALSE(listen_error_2) << listen_error_2;
+        server.schedule_removal();
+    });
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
-*/
+
 // TODO: set destination and send data right away (not in callback). Should be error
