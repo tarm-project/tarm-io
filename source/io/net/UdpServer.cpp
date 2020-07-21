@@ -83,6 +83,10 @@ Error UdpServer::Impl::bind(const Endpoint& endpoint) {
 Error UdpServer::Impl::start_receive(const Endpoint& endpoint, const DataReceivedCallback& data_receive_callback) {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
+    if (is_open()) {
+        return StatusCode::CONNECTION_ALREADY_IN_PROGRESS;
+    }
+
     Error bind_error = bind(endpoint);
     if (bind_error) {
         return bind_error;

@@ -2545,9 +2545,29 @@ TEST_F(UdpClientServerTest, peers_count) {
     EXPECT_EQ(CLIENTS_COUNT, client_ids.size());
 }
 
-// TODO: multiple start receive (for server) with some random IP address
+TEST_F(UdpClientServerTest, server_multiple_start_receive_in_row) {
+    io::EventLoop loop;
 
-// TODO: multiple start receive on the same server with different addresses
+    auto server = new io::net::UdpServer(loop);
+    auto listen_error_1 = server->start_receive({m_default_addr, m_default_port},
+        nullptr,
+        500,
+        nullptr
+    );
+    ASSERT_FALSE(listen_error_1) << listen_error_1;
+
+    auto listen_error_2 = server->start_receive({"::", std::uint16_t(m_default_port + 1)},
+        nullptr,
+        500,
+        nullptr
+    );
+    ASSERT_TRUE(listen_error_2);
+    EXPECT_EQ(io::StatusCode::CONNECTION_ALREADY_IN_PROGRESS, listen_error_2.code());
+
+    server->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+}
 
 // TODO: client start receive without destination set???? Allow receive from any peer????
 
