@@ -78,32 +78,31 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
         return;
     }
 
-    if (!is_ssl_inited()) {
-        auto context_errror = m_openssl_context.init_ssl_context(ssl_method());
-        if (context_errror) {
-            m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, context_errror); });
-            return;
-        }
-
-        auto version_error = m_openssl_context.set_dtls_version(std::get<0>(m_version_range),
-                                                                std::get<1>(m_version_range));
-        if (version_error) {
-            m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, version_error); });
-            return;
-        }
-
-        Error ssl_init_error = ssl_init(m_openssl_context.ssl_ctx());
-        if (ssl_init_error) {
-            m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, ssl_init_error); });
-            return;
-        }
-    }
-
     m_client = new UdpClient(*m_loop);
-
     auto listen_error = m_client->set_destination(endpoint,
-        [](UdpClient&, const Error&) {
-            // TODO: use this callback or nullptr?????
+        [this, connect_callback](UdpClient&, const Error&) {
+            if (!is_ssl_inited()) {
+                auto context_error = m_openssl_context.init_ssl_context(ssl_method());
+                if (context_error) {
+                    m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, context_error); });
+                    return;
+                }
+
+                auto version_error = m_openssl_context.set_dtls_version(std::get<0>(m_version_range),
+                                                                        std::get<1>(m_version_range));
+                if (version_error) {
+                    m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, version_error); });
+                    return;
+                }
+
+                Error ssl_init_error = ssl_init(m_openssl_context.ssl_ctx());
+                if (ssl_init_error) {
+                    m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, ssl_init_error); });
+                    return;
+                }
+            }
+
+            do_handshake();
         },
         [this](UdpClient&, const DataChunk& chunk, const Error& error) {
             if (error) {
@@ -128,6 +127,7 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
             }
         }
     );
+
     if (listen_error) {
         m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, listen_error); });
         return;
@@ -136,17 +136,11 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;
     m_close_callback = close_callback;
-
-    do_handshake();
 }
 
 void DtlsClient::Impl::close() {
     const auto error = this->ssl_shutdown([this](UdpClient& client, const Error& error) {
-        if (m_close_callback) {
-            m_close_callback(*m_parent, Error(0));
-        }
-        // TODO: uncomment when close() will be implemented
-        // m_client->close();
+        m_client->close();
     });
 
     if (error) {
