@@ -291,6 +291,7 @@ void UdpServer::Impl::on_close(uv_handle_t* handle) {
     if (this_.m_server_close_callback) {
         // Scheduling this callback to defer actual close callback execution and allow call uv_endgame on Windows
         this_.m_loop->schedule_callback([&](EventLoop&) {
+            this_.reset_udp_handle_state();
             this_.m_server_close_callback(parent, Error(0));
             this_.m_peers.clear();
             this_.m_inactive_peers.clear();
