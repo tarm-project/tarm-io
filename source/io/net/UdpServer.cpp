@@ -289,12 +289,32 @@ void UdpServer::Impl::on_close(uv_handle_t* handle) {
 
     IO_LOG(this_.m_loop, TRACE, &parent, "");
     if (this_.m_server_close_callback) {
+        // Scheduling this callback to defer actual close callback execution and allow call uv_endgame on Windows
+        this_.m_loop->schedule_callback([&](EventLoop&) {
+            this_.m_server_close_callback(parent, Error(0));
+            this_.m_peers.clear();
+            this_.m_inactive_peers.clear();
+            this_.m_peers_backlog.reset();
+        });
+    }
+
+// TODO: restore or remove
+/*
+    assert(handle);
+    auto& this_ = *reinterpret_cast<UdpServer::Impl*>(handle->data);
+    auto& parent = *this_.m_parent;
+
+    this_.m_connection_in_progress = false;
+
+    IO_LOG(this_.m_loop, TRACE, &parent, "");
+    if (this_.m_server_close_callback) {
         this_.m_server_close_callback(parent, Error(0));
     }
 
     this_.m_peers.clear();
     this_.m_inactive_peers.clear();
     this_.m_peers_backlog.reset();
+*/
 }
 
 void UdpServer::Impl::free_udp_peer(UdpPeer* peer) {
