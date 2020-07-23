@@ -2544,7 +2544,7 @@ TEST_F(UdpClientServerTest, peers_count) {
     EXPECT_EQ(CLIENTS_COUNT, client_ids.size());
 }
 
-TEST_F(UdpClientServerTest, server_multiple_start_receive_in_row) {
+TEST_F(UdpClientServerTest, server_multiple_start_receive_in_row_different_addresses) {
     io::EventLoop loop;
 
     auto server = new io::net::UdpServer(loop);
@@ -2568,7 +2568,7 @@ TEST_F(UdpClientServerTest, server_multiple_start_receive_in_row) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-TEST_F(UdpClientServerTest, server_multiple_start_receive_sequenced) {
+TEST_F(UdpClientServerTest, server_multiple_start_receive_sequenced_different_addresses) {
     io::EventLoop loop;
 
     auto server = new io::net::UdpServer(loop);

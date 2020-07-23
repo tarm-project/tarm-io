@@ -92,6 +92,10 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
         return Error(StatusCode::INVALID_ARGUMENT);
     }
 
+	if (m_server_handle) {
+		return StatusCode::CONNECTION_ALREADY_IN_PROGRESS;
+	}
+
     m_endpoint = endpoint;
 
     m_server_handle = new uv_tcp_t;
