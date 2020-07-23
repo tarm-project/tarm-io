@@ -291,7 +291,7 @@ There are several approaches to make it happen:
 
 Every of this approaches has its own benefits and drawbacks. We use the last one.
 Fortunately, tarm-io CMake routines help here.
-The library verifies and remembers location of the OpenSSL dlls during build and has handy variables to make their management easy.
+The library verifies and remembers location of the OpenSSL dlls during build and has handy variables to make their management easier.
 Below is complete example of tarm-io library integration into some project.
 
 .. literalinclude:: ../../../examples/hello_event_loop/CMakeLists.txt
@@ -301,4 +301,4 @@ Below is complete example of tarm-io library integration into some project.
    :lines: 11-
 
 Note that tarm-io CMake scripts are smart enough and able to detect if OpenSSL is available in system paths,
-so case the libraries will not be copied and :bash:`TARM_IO_SSL_EAY_DLL_PATH` variable will be empty.
+so in this case the libraries will not be copied and :bash:`TARM_IO_SSL_EAY_DLL_PATH` variable will be empty.
