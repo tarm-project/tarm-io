@@ -304,9 +304,11 @@ void TcpServer::Impl::on_close(uv_handle_t* handle) {
         return;
     }
 
-
     if (this_.m_end_server_callback) {
-        this_.m_end_server_callback(*this_.m_parent, Error(0));
+        auto end_callback_copy = std::move(this_.m_end_server_callback);
+        this_.m_loop->schedule_callback([=](EventLoop&) {
+            end_callback_copy(*this_.m_parent, Error(0));
+        });
     }
 
     if (this_.m_parent->is_removal_scheduled()) {

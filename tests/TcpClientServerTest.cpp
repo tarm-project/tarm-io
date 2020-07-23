@@ -3300,31 +3300,30 @@ TEST_F(TcpClientServerTest, server_multiple_listen_in_row_different_addresses) {
 	ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-/*
+
 TEST_F(TcpClientServerTest, server_multiple_start_receive_sequenced_different_addresses) {
-	io::EventLoop loop;
+    io::EventLoop loop;
 
-	auto server = new io::net::UdpServer(loop);
-	auto listen_error_1 = server->start_receive({ m_default_addr, m_default_port },
-		nullptr,
-		500,
-		nullptr
-	);
-	ASSERT_FALSE(listen_error_1) << listen_error_1;
+    auto server = new io::net::TcpServer(loop);
+    auto listen_error_1 = server->listen({ m_default_addr, m_default_port },
+        nullptr,
+        nullptr,
+        nullptr
+    );
+    ASSERT_FALSE(listen_error_1) << listen_error_1;
 
-	server->close([&](io::net::UdpServer& server, const io::Error& error) {
-		auto listen_error_2 = server.start_receive({ "::", std::uint16_t(m_default_port + 1) },
-			nullptr,
-			500,
-			nullptr
-		);
-		ASSERT_FALSE(listen_error_2) << listen_error_2;
-		server.schedule_removal();
-	});
+    server->close([&](io::net::TcpServer& server, const io::Error& error) {
+        auto listen_error_2 = server.listen({ "::", std::uint16_t(m_default_port + 1) },
+            nullptr,
+            nullptr,
+            nullptr
+        );
+        ASSERT_FALSE(listen_error_2) << listen_error_2;
+        server.schedule_removal();
+    });
 
-	ASSERT_EQ(io::StatusCode::OK, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
-*/
 
 // TODO: Get backlog size on different platforms???
 // http://veithen.io/2014/01/01/how-tcp-backlog-works-in-linux.html
