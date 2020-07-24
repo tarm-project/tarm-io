@@ -92,9 +92,9 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
         return Error(StatusCode::INVALID_ARGUMENT);
     }
 
-	if (m_server_handle) {
-		return StatusCode::CONNECTION_ALREADY_IN_PROGRESS;
-	}
+    if (m_server_handle) {
+        return StatusCode::CONNECTION_ALREADY_IN_PROGRESS;
+    }
 
     m_endpoint = endpoint;
 
@@ -306,18 +306,18 @@ void TcpServer::Impl::on_close(uv_handle_t* handle) {
 
     if (this_.m_end_server_callback) {
         auto end_callback_copy = std::move(this_.m_end_server_callback);
-        this_.m_loop->schedule_callback([=](EventLoop&) {
+        this_.m_loop->schedule_callback([end_callback_copy, handle, &this_](EventLoop&) {
             end_callback_copy(*this_.m_parent, Error(0));
+
+            //if (this_.m_parent->is_removal_scheduled()) {
+            //  this_.m_parent->schedule_removal();
+            //}
+
+            delete reinterpret_cast<uv_tcp_t*>(handle);
         });
     }
 
-    if (this_.m_parent->is_removal_scheduled()) {
-        this_.m_parent->schedule_removal();
-    }
-
     this_.m_server_handle = nullptr;
-
-    delete reinterpret_cast<uv_tcp_t*>(handle);
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////

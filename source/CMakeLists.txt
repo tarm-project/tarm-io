@@ -249,8 +249,8 @@ if (TARM_IO_PLATFORM_LINUX)
 endif()
 
 if (MSVC)
-	# https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-3-c4996?view=vs-2019
-	target_compile_definitions(tarm-io PRIVATE _SCL_SECURE_NO_WARNINGS)
+    # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-3-c4996?view=vs-2019
+    target_compile_definitions(tarm-io PRIVATE _SCL_SECURE_NO_WARNINGS)
 endif()
 
 if (IO_IS_BIG_ENDIAN)

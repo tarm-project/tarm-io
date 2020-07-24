@@ -1335,7 +1335,7 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
 
                 client.server().shutdown([&](io::net::TcpServer& server, const io::Error& error) {
                     EXPECT_FALSE(error);
-                    client.server().schedule_removal();
+                    server.schedule_removal();
                 });
             });
         },
