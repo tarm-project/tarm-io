@@ -310,11 +310,16 @@ void TcpServer::Impl::on_close(uv_handle_t* handle) {
             end_callback_copy(*this_.m_parent, Error(0));
 
             //if (this_.m_parent->is_removal_scheduled()) {
-            //  this_.m_parent->schedule_removal();
+            //    this_.m_parent->schedule_removal();
             //}
 
             delete reinterpret_cast<uv_tcp_t*>(handle);
         });
+    } else {
+        if (this_.m_parent->is_removal_scheduled()) {
+            this_.m_parent->schedule_removal();
+        }
+        delete reinterpret_cast<uv_tcp_t*>(handle);
     }
 
     this_.m_server_handle = nullptr;

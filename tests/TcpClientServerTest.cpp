@@ -78,9 +78,9 @@ TEST_F(TcpClientServerTest, schedule_removal_not_connected_client) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
-// Windows does not have privileged ports
 TEST_F(TcpClientServerTest, bind_privileged) {
+// Windows does not have privileged ports
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     io::EventLoop loop;
 
     auto server = new io::net::TcpServer(loop);
@@ -98,8 +98,10 @@ TEST_F(TcpClientServerTest, bind_privileged) {
     server->schedule_removal();
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-}
+#else
+    IO_TEST_SKIP();
 #endif
+}
 
 TEST_F(TcpClientServerTest, server_address_in_use) {
     io::EventLoop loop;
