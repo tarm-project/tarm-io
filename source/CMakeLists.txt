@@ -136,6 +136,7 @@ list(APPEND IO_SOURCE_LIST
         io/StatusCode.cpp
         io/Timer.cpp
         io/UserDataHolder.cpp
+        io/Version.cpp
 )
 
 set(IO_SOURCE_EXCLUDE_PATTERN "=") # '=' is just a placeholder value which will definately will not be used for paths.

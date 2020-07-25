@@ -7,6 +7,9 @@
 
 #include "Export.h"
 
+#define TARM_IO_STRINGIFY(V) TARM_IO_STRINGIFY_HELPER(V)
+#define TARM_IO_STRINGIFY_HELPER(V) #V
+
 #define IO_FORBID_COPY(X)            \
     X(const X&) = delete;            \
     X& operator=(const X&) = delete;
