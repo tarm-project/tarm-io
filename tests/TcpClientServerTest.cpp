@@ -600,8 +600,9 @@ TEST_F(TcpClientServerTest, server_close_callback_1) {
     server->close([&](io::net::TcpServer& server, const io::Error& error) {
         EXPECT_TRUE(error);
         EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
-        ++on_server_close_call_count; // TODO: if put this line after schedule_removal it corrupts memory (see valgrind)
         server.schedule_removal();
+        // The line below should come after schedule_removal to test in valgrind that lambda is valid at exit
+        ++on_server_close_call_count;
     });
 
     EXPECT_EQ(0, on_server_close_call_count);
