@@ -101,7 +101,6 @@ list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
         io/detail/Common.cpp
         io/global/Configuration.cpp
-        io/global/Version.cpp
         io/fs/Dir.cpp
         io/fs/File.cpp
         io/fs/Path.cpp
@@ -117,6 +116,7 @@ list(APPEND IO_SOURCE_LIST
         io/net/DtlsConnectedClient.cpp
         io/net/DtlsServer.cpp
         io/net/Endpoint.cpp
+        io/net/ProtocolVersion.cpp
         io/net/TcpClient.cpp
         io/net/TcpConnectedClient.cpp
         io/net/TcpServer.cpp

@@ -5,10 +5,10 @@
 
 #include "UTCommon.h"
 
+#include "net/ProtocolVersion.h"
 #include "net/TlsTcpClient.h"
 #include "net/TlsTcpServer.h"
 #include "fs/Path.h"
-#include "global/Version.h"
 
 #include <thread>
 #include <vector>
@@ -1045,7 +1045,7 @@ TEST_F(TlsTcpClientServerTest, tls_negotiated_version) {
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            EXPECT_EQ(io::global::max_supported_tls_version(), client.negotiated_tls_version());
+            EXPECT_EQ(io::net::max_supported_tls_version(), client.negotiated_tls_version());
             server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
         },
         nullptr
@@ -1059,7 +1059,7 @@ TEST_F(TlsTcpClientServerTest, tls_negotiated_version) {
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            EXPECT_EQ(io::global::max_supported_tls_version(), client.negotiated_tls_version());
+            EXPECT_EQ(io::net::max_supported_tls_version(), client.negotiated_tls_version());
             ++client_on_connect_callback_count;
             client.schedule_removal();
         }
@@ -1082,7 +1082,7 @@ TEST_F(TlsTcpClientServerTest, server_with_restricted_tls_version) {
     io::EventLoop loop;
 
     auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path,
-        io::net::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+        io::net::TlsVersionRange{io::net::min_supported_tls_version(), io::net::min_supported_tls_version()});
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1141,7 +1141,7 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            EXPECT_EQ(io::global::min_supported_tls_version(), client.negotiated_tls_version());
+            EXPECT_EQ(io::net::min_supported_tls_version(), client.negotiated_tls_version());
             ++server_on_connect_callback_count;
         },
         [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
@@ -1158,12 +1158,12 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
     ASSERT_FALSE(listen_error);
 
     auto client = new io::net::TlsTcpClient(loop,
-        io::net::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+        io::net::TlsVersionRange{io::net::min_supported_tls_version(), io::net::min_supported_tls_version()});
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            EXPECT_EQ(io::global::min_supported_tls_version(), client.negotiated_tls_version());
+            EXPECT_EQ(io::net::min_supported_tls_version(), client.negotiated_tls_version());
             ++client_on_connect_callback_count;
             client.send_data(message, [&](io::net::TlsTcpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -1187,7 +1187,7 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
 }
 
 TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
-    if (io::global::min_supported_tls_version() == io::global::max_supported_tls_version()) {
+    if (io::net::min_supported_tls_version() == io::net::max_supported_tls_version()) {
         IO_TEST_SKIP();
     }
 
@@ -1200,7 +1200,7 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
     io::EventLoop loop;
 
     auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path,
-        io::net::TlsVersionRange{io::global::max_supported_tls_version(), io::global::max_supported_tls_version()});
+        io::net::TlsVersionRange{io::net::max_supported_tls_version(), io::net::max_supported_tls_version()});
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1217,7 +1217,7 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
     ASSERT_FALSE(listen_error);
 
     auto client = new io::net::TlsTcpClient(loop,
-        io::net::TlsVersionRange{io::global::min_supported_tls_version(), io::global::min_supported_tls_version()});
+        io::net::TlsVersionRange{io::net::min_supported_tls_version(), io::net::min_supported_tls_version()});
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1253,14 +1253,14 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
 
 TEST_F(TlsTcpClientServerTest, server_with_invalid_tls_version_range) {
     // Note: min is greater than max
-    if (io::global::min_supported_tls_version() == io::global::max_supported_tls_version()) {
+    if (io::net::min_supported_tls_version() == io::net::max_supported_tls_version()) {
         IO_TEST_SKIP();
     }
 
     io::EventLoop loop;
 
     auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path,
-        io::net::TlsVersionRange{io::global::max_supported_tls_version(), io::global::min_supported_tls_version()});
+        io::net::TlsVersionRange{io::net::max_supported_tls_version(), io::net::min_supported_tls_version()});
     auto listen_error = server->listen({m_default_addr, m_default_port},
         nullptr,
         nullptr
@@ -1275,7 +1275,7 @@ TEST_F(TlsTcpClientServerTest, server_with_invalid_tls_version_range) {
 
 TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
     // Note: min is greater than max
-    if (io::global::min_supported_tls_version() == io::global::max_supported_tls_version()) {
+    if (io::net::min_supported_tls_version() == io::net::max_supported_tls_version()) {
         IO_TEST_SKIP();
     }
 
@@ -1289,7 +1289,7 @@ TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
     ASSERT_FALSE(listen_error);
 
     auto client = new io::net::TlsTcpClient(loop,
-        io::net::TlsVersionRange{io::global::max_supported_tls_version(), io::global::min_supported_tls_version()});
+        io::net::TlsVersionRange{io::net::max_supported_tls_version(), io::net::min_supported_tls_version()});
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsTcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);

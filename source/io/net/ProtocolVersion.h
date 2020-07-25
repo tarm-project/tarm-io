@@ -6,12 +6,12 @@
 #pragma once
 
 #include "Export.h"
-#include "net/TlsVersion.h"
-#include "net/DtlsVersion.h"
+#include "TlsVersion.h"
+#include "DtlsVersion.h"
 
 namespace tarm {
 namespace io {
-namespace global {
+namespace net {
 
 IO_DLL_PUBLIC net::TlsVersion min_supported_tls_version();
 IO_DLL_PUBLIC net::TlsVersion max_supported_tls_version();
@@ -19,6 +19,6 @@ IO_DLL_PUBLIC net::TlsVersion max_supported_tls_version();
 IO_DLL_PUBLIC net::DtlsVersion min_supported_dtls_version();
 IO_DLL_PUBLIC net::DtlsVersion max_supported_dtls_version();
 
-} // namespace global
+} // namespace net
 } // namespace io
 } // namespace tarm

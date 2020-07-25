@@ -37,7 +37,7 @@ list(APPEND TESTS_LIST
     RemovableTest.cpp
     RefCountedTest.cpp
     ScopeExitGuardTest.cpp
-    VersionTest.cpp
+    ProtoclVersionTest.cpp
     ConfigurationTest.cpp
     PathTest.cpp
     EndpointTest.cpp

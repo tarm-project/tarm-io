@@ -10,10 +10,10 @@
 #include "net/DtlsServer.h"
 #include "ScopeExitGuard.h"
 #include "Timer.h"
+#include "net/ProtocolVersion.h"
 #include "net/UdpClient.h"
 #include "net/UdpServer.h"
 #include "fs/Path.h"
-#include "global/Version.h"
 
 #include <chrono>
 #include <string>
@@ -452,7 +452,7 @@ TEST_F(DtlsClientServerTest, dtls_negotiated_version) {
     server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            EXPECT_EQ(io::global::max_supported_dtls_version(), client.negotiated_dtls_version());
+            EXPECT_EQ(io::net::max_supported_dtls_version(), client.negotiated_dtls_version());
             server->schedule_removal();
         },
         nullptr
@@ -464,7 +464,7 @@ TEST_F(DtlsClientServerTest, dtls_negotiated_version) {
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++client_new_connection_counter;
-            EXPECT_EQ(io::global::max_supported_dtls_version(), client.negotiated_dtls_version());
+            EXPECT_EQ(io::net::max_supported_dtls_version(), client.negotiated_dtls_version());
             client.schedule_removal();
         },
         nullptr
@@ -533,7 +533,7 @@ TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
-            EXPECT_EQ(io::global::min_supported_dtls_version(), client.negotiated_dtls_version());
+            EXPECT_EQ(io::net::min_supported_dtls_version(), client.negotiated_dtls_version());
         },
         [&](io::net::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -549,12 +549,12 @@ TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
     ASSERT_FALSE(listen_error);
 
     auto client = new io::net::DtlsClient(loop,
-        io::net::DtlsVersionRange{io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
+        io::net::DtlsVersionRange{io::net::min_supported_dtls_version(), io::net::min_supported_dtls_version()});
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            EXPECT_EQ(io::global::min_supported_dtls_version(), client.negotiated_dtls_version());
+            EXPECT_EQ(io::net::min_supported_dtls_version(), client.negotiated_dtls_version());
             ++client_on_connect_callback_count;
             client.send_data(message, [&](io::net::DtlsClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -587,12 +587,12 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
     io::EventLoop loop;
 
     auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path,
-        io::net::DtlsVersionRange{io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
+        io::net::DtlsVersionRange{io::net::min_supported_dtls_version(), io::net::min_supported_dtls_version()});
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
             ++server_on_connect_callback_count;
-            EXPECT_EQ(io::global::min_supported_dtls_version(), client.negotiated_dtls_version());
+            EXPECT_EQ(io::net::min_supported_dtls_version(), client.negotiated_dtls_version());
         },
         [&](io::net::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -612,7 +612,7 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
-            EXPECT_EQ(io::global::min_supported_dtls_version(), client.negotiated_dtls_version());
+            EXPECT_EQ(io::net::min_supported_dtls_version(), client.negotiated_dtls_version());
             ++client_on_connect_callback_count;
             client.send_data(message, [&](io::net::DtlsClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -636,7 +636,7 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
 }
 
 TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
-    if (io::global::min_supported_dtls_version() == io::global::max_supported_dtls_version()) {
+    if (io::net::min_supported_dtls_version() == io::net::max_supported_dtls_version()) {
         IO_TEST_SKIP();
     }
 
@@ -648,7 +648,7 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
     io::EventLoop loop;
 
     auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path,
-        io::net::DtlsVersionRange{io::global::max_supported_dtls_version(), io::global::max_supported_dtls_version()});
+        io::net::DtlsVersionRange{io::net::max_supported_dtls_version(), io::net::max_supported_dtls_version()});
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -665,7 +665,7 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
     ASSERT_FALSE(listen_error);
 
     auto client = new io::net::DtlsClient(loop,
-        io::net::DtlsVersionRange{io::global::min_supported_dtls_version(), io::global::min_supported_dtls_version()});
+        io::net::DtlsVersionRange{io::net::min_supported_dtls_version(), io::net::min_supported_dtls_version()});
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1021,7 +1021,7 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_with_data_se
 }
 
 TEST_F(DtlsClientServerTest, client_with_invalid_dtls_version) {
-    if (io::global::min_supported_dtls_version() == io::global::max_supported_dtls_version()) {
+    if (io::net::min_supported_dtls_version() == io::net::max_supported_dtls_version()) {
         IO_TEST_SKIP();
     }
 
@@ -1030,8 +1030,8 @@ TEST_F(DtlsClientServerTest, client_with_invalid_dtls_version) {
     // Note: Min > Max in this test
     io::EventLoop loop;
     auto client = new io::net::DtlsClient(loop,
-        io::net::DtlsVersionRange{io::global::max_supported_dtls_version(),
-                             io::global::min_supported_dtls_version()});
+        io::net::DtlsVersionRange{io::net::max_supported_dtls_version(),
+                             io::net::min_supported_dtls_version()});
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
@@ -1050,7 +1050,7 @@ TEST_F(DtlsClientServerTest, client_with_invalid_dtls_version) {
 }
 
 TEST_F(DtlsClientServerTest, server_with_invalid_dtls_version) {
-    if (io::global::min_supported_dtls_version() == io::global::max_supported_dtls_version()) {
+    if (io::net::min_supported_dtls_version() == io::net::max_supported_dtls_version()) {
         IO_TEST_SKIP();
     }
 
@@ -1061,8 +1061,8 @@ TEST_F(DtlsClientServerTest, server_with_invalid_dtls_version) {
     // Note: Min > Max in this test
     io::EventLoop loop;
     auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path,
-        io::net::DtlsVersionRange{io::global::max_supported_dtls_version(),
-                             io::global::min_supported_dtls_version()});
+        io::net::DtlsVersionRange{io::net::max_supported_dtls_version(),
+                             io::net::min_supported_dtls_version()});
     auto error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
