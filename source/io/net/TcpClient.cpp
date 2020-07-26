@@ -13,6 +13,64 @@
 #include <assert.h>
 #include <iostream>
 
+// TODO: custom implementation of uv_tcp_close_reset
+/*
+uv_os_fd_t handle;
+int status = uv_fileno((uv_handle_t*)m_tcp_stream, &handle);
+if (status < 0) {
+    std::cout << uv_strerror(status) << std::endl;
+}
+struct linger l = { 1, 0 };
+if (0 != setsockopt(handle, SOL_SOCKET, SO_LINGER, &l, sizeof(l)))
+    return false;
+//*/
+
+// Reimplementation of uv_tcp_close_reset for old versions of libuv
+
+// TODO: check libuv VERSION
+// TODO: fix and move
+#ifdef TARM_IO_PLATFORM_WINDOWS
+int uv_tcp_close_reset(uv_tcp_t* handle, uv_close_cb close_cb) {
+/*
+    struct linger l = { 1, 0 };
+
+    // Disallow setting SO_LINGER to zero due to some platform inconsistencies
+    if (handle->flags & IO_UV_HANDLE_SHUTTING) {
+        return UV_EINVAL;
+    }
+
+    if (0 != setsockopt(handle->socket, SOL_SOCKET, SO_LINGER, (const char*)&l, sizeof(l))) {
+        return uv_translate_sys_error(WSAGetLastError());
+    }
+*/
+    uv_close(reinterpret_cast<uv_handle_t*>(handle), close_cb);
+
+    return 0;
+}
+#else
+int uv_tcp_close_reset(uv_tcp_t* handle, uv_close_cb close_cb) {
+    struct linger l = { 1, 0 };
+
+    // Disallow setting SO_LINGER to zero due to some platform inconsistencies
+    if (handle->flags & IO_UV_HANDLE_SHUTTING) {
+        return UV_EINVAL;
+    }
+
+    uv_os_fd_t native_handle;
+    int status = uv_fileno(reinterpret_cast<uv_handle_t*>(handle), &native_handle);
+    if (status < 0) {
+        return status;
+    }
+
+    if (setsockopt(native_handle, SOL_SOCKET, SO_LINGER, &l, sizeof(l)) != 0) {
+        return uv_translate_sys_error(errno);
+    }
+
+    uv_close(reinterpret_cast<uv_handle_t*>(handle), close_cb);
+    return 0;
+}
+#endif
+
 namespace tarm {
 namespace io {
 namespace net {
@@ -30,6 +88,7 @@ public:
                  const DataReceiveCallback& receive_callback,
                  const CloseCallback& close_callback);
     bool close();
+    void close_with_reset();
 
     void shutdown();
 
@@ -157,22 +216,26 @@ bool TcpClient::Impl::close() {
     m_is_open = false;
 
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
-        // TODO: custom implementation of uv_tcp_close_reset
-        /*
-        uv_os_fd_t handle;
-        int status = uv_fileno((uv_handle_t*)m_tcp_stream, &handle);
-        if (status < 0) {
-            std::cout << uv_strerror(status) << std::endl;
-        }
-        struct linger l = { 1, 0 };
-        if (0 != setsockopt(handle, SOL_SOCKET, SO_LINGER, &l, sizeof(l)))
-            return false;
-        //*/
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
         m_tcp_stream = nullptr;
     }
 
     return false;
+}
+
+void TcpClient::Impl::close_with_reset() {
+    if (!is_open()) {
+        return;
+    }
+
+    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", m_destination_endpoint);
+
+    m_is_open = false;
+
+    if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
+        uv_tcp_close_reset(m_tcp_stream, on_close);
+        m_tcp_stream = nullptr;
+    }
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
@@ -274,8 +337,6 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-
-
 TcpClient::TcpClient(EventLoop& loop) :
     Removable(loop),
     m_impl(new Impl(loop, *this)) {
@@ -342,6 +403,10 @@ void TcpClient::delay_send(bool enabled) {
 
 bool TcpClient::is_delay_send() const {
     return m_impl->is_delay_send();
+}
+
+void TcpClient::close_with_reset() {
+    return m_impl->close_with_reset();
 }
 
 } // namespace net

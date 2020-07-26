@@ -44,6 +44,9 @@ public:
                  const CloseCallback& close_callback = nullptr);
     IO_DLL_PUBLIC void close();
 
+    // TODO: describe motivation
+    IO_DLL_PUBLIC void close_with_reset();
+
     IO_DLL_PUBLIC bool is_open() const;
 
     // DOC: successful EndSendCallback does not mean that client has received that message successfully.

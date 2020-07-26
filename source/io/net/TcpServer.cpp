@@ -109,17 +109,6 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
         return init_error;
     }
 
-    /*
-    uv_os_fd_t handle;
-    int status = uv_fileno((uv_handle_t*)m_server_handle, &handle);
-    if (status < 0) {
-        std::cout << uv_strerror(status) << std::endl;
-    }
-    // Enable SO_REUSEPORT on it, before we have a chance to listen on it.
-    int enable = 1;
-    setsockopt(handle, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
-    */
-
     const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(m_endpoint.raw_endpoint()), 0);
     if (bind_status < 0) {
         IO_LOG(m_loop, ERROR, m_parent, "Bind failed:", uv_strerror(bind_status));
@@ -274,7 +263,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
             IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", getpeername_error.string());
             if (this_.m_new_connection_callback) {
                 if (getpeername_error.code() == StatusCode::INVALID_ARGUMENT) {
-                    // Thanks to Apple and incompatibility
+                    // Apple has incompatibility here
                     // https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/getpeername.2.html
                     // The same is true for Mac OS X
                     this_.m_new_connection_callback(*tcp_client, StatusCode::CONNECTION_RESET_BY_PEER);
@@ -283,7 +272,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
                 }
             }
 
-            tcp_client->schedule_removal();
+            tcp_client.reset();
         }
     } else {
         this_.m_new_connection_callback(*tcp_client, Error(accept_status));
