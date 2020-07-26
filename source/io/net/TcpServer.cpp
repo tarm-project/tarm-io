@@ -266,7 +266,9 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
                     // Apple has incompatibility here
                     // https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/getpeername.2.html
                     // The same is true for Mac OS X
-                    this_.m_new_connection_callback(*tcp_client, StatusCode::CONNECTION_RESET_BY_PEER);
+                    // It is safe for other Unix-es because they do not return EINVAL in this case
+                    this_.m_new_connection_callback(*tcp_client, StatusCode::OK);
+                    this_.m_close_connection_callback(*tcp_client, StatusCode::CONNECTION_RESET_BY_PEER);
                 } else {
                     this_.m_new_connection_callback(*tcp_client, getpeername_error);
                 }

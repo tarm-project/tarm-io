@@ -3329,7 +3329,6 @@ TEST_F(TcpClientServerTest, server_multiple_start_receive_sequenced_different_ad
 }
 
 TEST_F(TcpClientServerTest, client_close_reset) {
-this->log_to_stdout();
     io::EventLoop loop;
 
     std::size_t server_on_connect_counter = 0;
@@ -3343,20 +3342,18 @@ this->log_to_stdout();
     auto server = new io::net::TcpServer(loop);
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
-            EXPECT_TRUE(error);
-            EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
-
+            EXPECT_FALSE(error) << error;
             ++server_on_connect_counter;
-            //server->schedule_removal();
-            //server->close();
         },
         [&](io::net::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++server_on_receive_counter;
         },
         [&](io::net::TcpConnectedClient& /*client*/, const io::Error& error) {
-            EXPECT_FALSE(error) << error;
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
             ++server_on_close_counter;
+            server->schedule_removal();
         }
     );
     ASSERT_FALSE(listen_error) << listen_error;
@@ -3390,7 +3387,7 @@ this->log_to_stdout();
 
     EXPECT_EQ(1, server_on_connect_counter);
     EXPECT_EQ(0, server_on_receive_counter);
-    EXPECT_EQ(0, server_on_close_counter);
+    EXPECT_EQ(1, server_on_close_counter);
     EXPECT_EQ(1, client_on_connect_count);
     EXPECT_EQ(0, client_on_receive_count);
     EXPECT_EQ(1, client_on_close_count);
