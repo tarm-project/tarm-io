@@ -7,6 +7,7 @@
 
 #include "ByteSwap.h"
 #include "detail/Common.h"
+#include "detail/LibuvCompatibility.h"
 #include "Convert.h"
 #include "net/TcpServer.h"
 #include "detail/TcpClientImplBase.h"
@@ -25,7 +26,7 @@ public:
     void set_endpoint(const Endpoint& endpoint);
 
     void close();
-
+    void close_with_reset();
     void shutdown();
 
     void start_read(const DataReceiveCallback& data_receive_callback);
@@ -92,6 +93,18 @@ void TcpConnectedClient::Impl::close() {
     m_is_open = false;
 
     uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
+}
+
+void TcpConnectedClient::Impl::close_with_reset() {
+    if (!is_open()) {
+        return;
+    }
+
+    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", this->endpoint());
+
+    m_is_open = false;
+
+    uv_tcp_close_reset(m_tcp_stream, on_close);
 }
 
 void TcpConnectedClient::Impl::start_read(const DataReceiveCallback& data_receive_callback) {
@@ -275,6 +288,10 @@ void TcpConnectedClient::set_endpoint(const Endpoint& endpoint) {
 
 Error TcpConnectedClient::init_stream() {
     return m_impl->init_stream();
+}
+
+void TcpConnectedClient::close_with_reset() {
+    return m_impl->close_with_reset();
 }
 
 } // namespace net

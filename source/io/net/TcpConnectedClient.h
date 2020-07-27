@@ -50,6 +50,9 @@ public:
     IO_DLL_PUBLIC void delay_send(bool enabled);
     IO_DLL_PUBLIC bool is_delay_send() const;
 
+    // TODO: describe motivation
+    IO_DLL_PUBLIC void close_with_reset();
+
     IO_DLL_PUBLIC TcpServer& server();
     IO_DLL_PUBLIC const TcpServer& server() const;
 
