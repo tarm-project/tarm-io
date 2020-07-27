@@ -3328,7 +3328,7 @@ TEST_F(TcpClientServerTest, server_multiple_start_receive_sequenced_different_ad
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-TEST_F(TcpClientServerTest, client_close_reset) {
+TEST_F(TcpClientServerTest, client_close_reset_from_connect_callback) {
     io::EventLoop loop;
 
     std::size_t server_on_connect_counter = 0;
@@ -3391,6 +3391,10 @@ TEST_F(TcpClientServerTest, client_close_reset) {
     EXPECT_EQ(1, client_on_connect_count);
     EXPECT_EQ(0, client_on_receive_count);
     EXPECT_EQ(1, client_on_close_count);
+}
+
+TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback) {
+    // TODO:
 }
 
 // TODO: Get backlog size on different platforms???

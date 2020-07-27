@@ -100,6 +100,7 @@ FILE(GLOB IO_HEADERS_LIST
 list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
         io/detail/Common.cpp
+        io/detail/LibuvCompatibility.cpp
         io/global/Configuration.cpp
         io/fs/Dir.cpp
         io/fs/File.cpp

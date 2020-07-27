@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "detail/LibuvCompatibility.h"
+
 #include "net/BufferSizeResult.h"
 #include "net/Endpoint.h"
 #include "EventLoop.h"
