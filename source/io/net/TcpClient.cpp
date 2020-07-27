@@ -207,8 +207,19 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
     Error error(uv_status);
     this_.m_is_open = !error;
 
-    if (this_.m_connect_callback) {
-        this_.m_connect_callback(*this_.m_parent, error);
+    if (error == StatusCode::CONNECTION_RESET_BY_PEER) {
+        // Unification of behavior between platforms
+        if (this_.m_connect_callback) {
+            this_.m_connect_callback(*this_.m_parent, StatusCode::OK);
+        }
+
+        if (this_.m_close_callback) {
+            this_.m_close_callback(*this_.m_parent, error);
+        }
+    } else {
+        if (this_.m_connect_callback) {
+            this_.m_connect_callback(*this_.m_parent, error);
+        }
     }
 
     if (error && this_.m_tcp_stream) {
