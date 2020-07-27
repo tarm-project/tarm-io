@@ -14,6 +14,8 @@ enum {
     IO_UV_HANDLE_SHUTTING = 0x00000100
 };
 
+
 // Reimplementation of uv_tcp_close_reset for old versions of libuv
-// TODO: check libuv VERSION
+#if !(UV_VERSION_MAJOR >= 1 && UV_VERSION_MINOR >= 32 && UV_VERSION_PATCH >= 0)
 int uv_tcp_close_reset(uv_tcp_t* handle, uv_close_cb close_cb);
+#endif
