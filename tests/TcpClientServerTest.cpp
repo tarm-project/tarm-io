@@ -3397,7 +3397,6 @@ TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback) {
     io::EventLoop loop;
 
     std::size_t server_on_connect_counter = 0;
-    std::size_t server_on_receive_counter = 0;
     std::size_t server_on_close_counter = 0;
 
     std::size_t client_on_connect_count = 0;
@@ -3413,7 +3412,7 @@ TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback) {
         },
         [&](io::net::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
-            ++server_on_receive_counter;
+            // Windows does not receive data here in case of connection reset
         },
         [&](io::net::TcpConnectedClient& /*client*/, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -3444,7 +3443,6 @@ TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback) {
     );
 
     EXPECT_EQ(0, server_on_connect_counter);
-    EXPECT_EQ(0, server_on_receive_counter);
     EXPECT_EQ(0, server_on_close_counter);
     EXPECT_EQ(0, client_on_connect_count);
     EXPECT_EQ(0, client_on_receive_count);
@@ -3453,7 +3451,6 @@ TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, server_on_connect_counter);
-    EXPECT_EQ(1, server_on_receive_counter);
     EXPECT_EQ(1, server_on_close_counter);
     EXPECT_EQ(1, client_on_connect_count);
     EXPECT_EQ(1, client_on_receive_count);
@@ -3533,7 +3530,6 @@ TEST_F(TcpClientServerTest, server_close_reset_from_receive_callback) {
     std::size_t server_on_close_counter = 0;
 
     std::size_t client_on_connect_count = 0;
-    std::size_t client_on_receive_count = 0;
     std::size_t client_on_close_count = 0;
 
     auto server = new io::net::TcpServer(loop);
@@ -3565,7 +3561,7 @@ TEST_F(TcpClientServerTest, server_close_reset_from_receive_callback) {
         },
         [&](io::net::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
-            ++client_on_receive_count;
+            // Windows does not receive data here in case of connection reset
         },
         [&](io::net::TcpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -3579,7 +3575,6 @@ TEST_F(TcpClientServerTest, server_close_reset_from_receive_callback) {
     EXPECT_EQ(0, server_on_receive_counter);
     EXPECT_EQ(0, server_on_close_counter);
     EXPECT_EQ(0, client_on_connect_count);
-    EXPECT_EQ(0, client_on_receive_count);
     EXPECT_EQ(0, client_on_close_count);
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -3588,11 +3583,12 @@ TEST_F(TcpClientServerTest, server_close_reset_from_receive_callback) {
     EXPECT_EQ(1, server_on_receive_counter);
     EXPECT_EQ(1, server_on_close_counter);
     EXPECT_EQ(1, client_on_connect_count);
-    EXPECT_EQ(1, client_on_receive_count);
     EXPECT_EQ(1, client_on_close_count);
 }
 
 // TODO: close TCP connection in close callback? :-)
+
+// TODO: test close reset with shutdown????
 
 // TODO: Get backlog size on different platforms???
 // http://veithen.io/2014/01/01/how-tcp-backlog-works-in-linux.html
