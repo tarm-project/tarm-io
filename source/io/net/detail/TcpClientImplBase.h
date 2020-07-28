@@ -38,6 +38,8 @@ public:
     void delay_send(bool enabled);
     bool is_delay_send() const;
 
+    Error get_socket_error() const;
+
 protected:
     template<typename T>
     void send_data_impl(T buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
@@ -208,6 +210,17 @@ void TcpClientImplBase<ParentType, ImplType>::on_read_error(const Error& error) 
             m_close_callback(*m_parent, error);
         }
     }
+}
+
+template<typename ParentType, typename ImplType>
+Error TcpClientImplBase<ParentType, ImplType>::get_socket_error() const {
+    int value = 0;
+    const Error getter_error = tarm_io_socket_option(reinterpret_cast<uv_handle_t*>(m_tcp_stream), SO_ERROR, &value);
+    if (getter_error) {
+        return getter_error;
+    }
+
+    return uv_translate_sys_error(value);
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////

@@ -19,3 +19,8 @@ enum {
 #if !(UV_VERSION_MAJOR >= 1 && UV_VERSION_MINOR >= 32 && UV_VERSION_PATCH >= 0)
 int uv_tcp_close_reset(uv_tcp_t* handle, uv_close_cb close_cb);
 #endif
+
+// Reimplementation of internal uv__socket_sockopt.
+// Supports TCP, UDP and named pipe.
+// if value == 0, acts as getter, otherwise as setter
+int tarm_io_socket_option(uv_handle_t* handle, int optname, int* value);

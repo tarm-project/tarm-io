@@ -47,3 +47,59 @@
     }
     #endif
 #endif
+
+int tarm_io_socket_option(uv_handle_t* handle, int optname, int* value) {
+    if (handle == NULL || value == NULL) {
+      return UV_EINVAL;
+    }
+
+#ifdef TARM_IO_PLATFORM_WINDOWS
+    SOCKET socket = 0;
+
+    if (handle->type == UV_TCP) {
+        socket = reinterpret_cast<uv_tcp_t*>(handle)->socket;
+    } else if (handle->type == UV_UDP) {
+        socket = reinterpret_cast<uv_udp_t*>(handle)->socket;
+    } else {
+        return UV_ENOTSUP;
+    }
+
+    int len = sizeof(*value);
+    int r = 0;
+    if (*value == 0) {
+        r = getsockopt(socket, SOL_SOCKET, optname, reinterpret_cast<char*>(value), &len);
+    } else {
+        r = setsockopt(socket, SOL_SOCKET, optname, reinterpret_cast<const char*>(value), len);
+    }
+
+    if (r == SOCKET_ERROR) {
+        return uv_translate_sys_error(::WSAGetLastError());
+    }
+#else
+    uv_os_fd_t native_handle = 0;
+    if (handle->type == UV_TCP || handle->type == UV_NAMED_PIPE) {
+        int status = uv_fileno(reinterpret_cast<uv_handle_t*>(handle), &native_handle);
+        if (status < 0) {
+            return status;
+        }
+    } else if (handle->type == UV_UDP) {
+        native_handle = reinterpret_cast<uv_udp_t*>(handle)->io_watcher.fd;
+    } else {
+        return UV_ENOTSUP;
+    }
+
+    socklen_t len = sizeof(*value);
+    int r = 0;
+    if (*value == 0) {
+        r = getsockopt(native_handle, SOL_SOCKET, optname, value, &len);
+    } else {
+        r = setsockopt(native_handle, SOL_SOCKET, optname, reinterpret_cast<const void*>(value), len);
+    }
+
+    if (r < 0) {
+        return uv_translate_sys_error(errno);
+    }
+#endif
+
+    return 0;
+}

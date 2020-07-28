@@ -272,22 +272,12 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
 
         this_.m_data_offset += static_cast<std::size_t>(nread);
     } else {
-    // TODO: copypaste!!!
 #ifdef TARM_IO_PLATFORM_LINUX
         // libuv on Linux does not handle (propagate) RST state if some data was sent.
-        // The code below is a workaround for that problem
         if (error == StatusCode::END_OF_FILE) {
-            uv_os_fd_t native_handle;
-            const Error handle_error = uv_fileno(reinterpret_cast<uv_handle_t*>(handle), &native_handle);
-            if (handle_error) {
-                error = handle_error;
-            } else {
-                int socket_error_code = 0;
-                socklen_t error_size = sizeof(socket_error_code);
-                getsockopt(native_handle, SOL_SOCKET, SO_ERROR, &socket_error_code, &error_size);
-                if (socket_error_code == ECONNRESET) {
-                    error = Error(StatusCode::CONNECTION_RESET_BY_PEER);
-                }
+            const Error socket_error = this_.get_socket_error();
+            if (socket_error == StatusCode::CONNECTION_RESET_BY_PEER) {
+                error = socket_error;
             }
         }
 #endif
