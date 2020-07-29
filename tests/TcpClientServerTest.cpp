@@ -3393,7 +3393,7 @@ TEST_F(TcpClientServerTest, client_close_reset_from_connect_callback) {
     EXPECT_EQ(1, client_on_close_count);
 }
 
-TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback) {
+TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback_with_send) {
     io::EventLoop loop;
 
     std::size_t server_on_connect_counter = 0;
@@ -3433,6 +3433,77 @@ TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback) {
             EXPECT_FALSE(error) << error;
             client.send_data("???");
             client.close_with_reset();
+            ++client_on_receive_count;
+        },
+        [&](io::net::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_close_count;
+            client.schedule_removal();
+        }
+    );
+
+    EXPECT_EQ(0, server_on_connect_counter);
+    EXPECT_EQ(0, server_on_close_counter);
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, server_on_connect_counter);
+    EXPECT_EQ(1, server_on_close_counter);
+    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(1, client_on_receive_count);
+    EXPECT_EQ(1, client_on_close_count);
+}
+
+TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback_after_send) {
+    // Test description: this test is different from previous ones because libuv
+    // handles close differently in case when it is initiated from on_send callback.
+
+    io::EventLoop loop;
+
+    std::size_t server_on_connect_counter = 0;
+    std::size_t server_on_close_counter = 0;
+
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    auto server = new io::net::TcpServer(loop);
+    auto listen_error = server->listen({m_default_addr, m_default_port},
+        [&](io::net::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.send_data("!!!");
+            ++server_on_connect_counter;
+        },
+        [&](io::net::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            // Windows does not receive data here in case of connection reset
+        },
+        [&](io::net::TcpConnectedClient& /*client*/, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
+            ++server_on_close_counter;
+            server->schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error;
+
+    auto client = new io::net::TcpClient(loop);
+    client->connect({m_default_addr,m_default_port},
+        [&](io::net::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_connect_count;
+        },
+        [&](io::net::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.send_data("???",
+                [&](io::net::TcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    client.close_with_reset();
+                }
+            );
             ++client_on_receive_count;
         },
         [&](io::net::TcpClient& client, const io::Error& error) {
@@ -3522,7 +3593,7 @@ TEST_F(TcpClientServerTest, server_close_reset_from_connect_callback) {
     EXPECT_EQ(1, client_on_close_count);
 }
 
-TEST_F(TcpClientServerTest, server_close_reset_from_receive_callback) {
+TEST_F(TcpClientServerTest, server_close_reset_from_receive_callback_with_send) {
     io::EventLoop loop;
 
     std::size_t server_on_connect_counter = 0;
