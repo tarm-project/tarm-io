@@ -19,6 +19,10 @@
             return uv_translate_sys_error(WSAGetLastError());
         }
 
+        // Reseting UV_HANDLE_READ_PENDING is experimental workaround because libuv on Windows in some cases may
+        // close socket via shutdown and not generate RST packet. (TODO: file bugreport????)
+        handle->flags &= ~IO_UV_HANDLE_READ_PENDING;
+
         uv_close(reinterpret_cast<uv_handle_t*>(handle), close_cb);
 
         return 0;
