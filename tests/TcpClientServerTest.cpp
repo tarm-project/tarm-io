@@ -3727,6 +3727,8 @@ TEST_F(TcpClientServerTest, server_close_reset_from_receive_callback_after_send)
     EXPECT_EQ(1, client_on_close_count);
 }
 
+// TODO: connect and next call send data, should fail
+
 // TODO: close TCP connection in close callback? :-)
 
 // TODO: test close reset with shutdown????

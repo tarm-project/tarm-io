@@ -2593,7 +2593,7 @@ TEST_F(UdpClientServerTest, server_multiple_start_receive_sequenced_different_ad
 }
 
 // TODO: implement
-TEST_F(UdpClientServerTest, DISABLED_client_set_destination_and_simultaneously) {
+TEST_F(UdpClientServerTest, DISABLED_client_set_destination_and_simultaneously_send) {
     io::EventLoop loop;
     // Test description: set destination and send data right away (not in callback). Should be error
     auto client = new io::net::UdpClient(loop);
@@ -2610,6 +2610,22 @@ TEST_F(UdpClientServerTest, DISABLED_client_set_destination_and_simultaneously) 
             EXPECT_EQ(io::StatusCode::NO_ADDRESS_AVAILABLE, error.code());
         }
     );
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+}
+
+TEST_F(UdpClientServerTest, server_0_ms_timeout_for_peer) {
+    io::EventLoop loop;
+
+    auto server = new io::net::UdpServer(loop);
+    auto listen_error = server->start_receive({m_default_addr, m_default_port},
+        nullptr,
+        0,
+        nullptr
+    );
+    EXPECT_TRUE(listen_error);
+    EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, listen_error.code());
+    server->schedule_removal();
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }

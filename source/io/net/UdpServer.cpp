@@ -108,7 +108,7 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
                                      std::size_t timeout_ms,
                                      const PeerTimeoutCallback& timeout_callback) {
     if (timeout_ms == 0) {
-        // TODO: error
+        return StatusCode::INVALID_ARGUMENT;
     }
 
     if (m_connection_in_progress) {

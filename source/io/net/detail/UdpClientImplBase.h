@@ -76,7 +76,6 @@ void UdpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint
         schedule_send_error(callback, Error(StatusCode::INVALID_ARGUMENT));
         return;
     }
-
     if (!UdpImplBase<ParentType, ImplType>::is_open()) {
         schedule_send_error(callback, Error(StatusCode::OPERATION_CANCELED));
         return;
