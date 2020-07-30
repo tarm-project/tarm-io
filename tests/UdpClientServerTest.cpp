@@ -2592,4 +2592,24 @@ TEST_F(UdpClientServerTest, server_multiple_start_receive_sequenced_different_ad
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-// TODO: set destination and send data right away (not in callback). Should be error
+// TODO: implement
+TEST_F(UdpClientServerTest, DISABLED_client_set_destination_and_simultaneously) {
+    io::EventLoop loop;
+    // Test description: set destination and send data right away (not in callback). Should be error
+    auto client = new io::net::UdpClient(loop);
+    auto set_destination_error = client->set_destination({m_default_addr, m_default_port},
+        [&](io::net::UdpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+        }
+    );
+    EXPECT_FALSE(set_destination_error) << set_destination_error;
+
+    client->send_data("!!!",
+        [&](io::net::UdpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::NO_ADDRESS_AVAILABLE, error.code());
+        }
+    );
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+}
