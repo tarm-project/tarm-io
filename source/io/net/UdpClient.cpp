@@ -39,7 +39,7 @@ public:
 
 protected:
     Error start_receive_impl();
-    Error set_destination_impl(const Endpoint& endpoint);
+    Error setup_udp_handle(const Endpoint& endpoint);
     bool close_impl(CloseHandler handler);
 
     // statics
@@ -69,8 +69,7 @@ UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
 Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
                                        const DestinationSetCallback& destination_set_callback,
                                        const DataReceivedCallback& receive_callback) {
-    // TODO: generalize the code!
-    Error destination_error = set_destination_impl(endpoint);
+    Error destination_error = setup_udp_handle(endpoint);
     if (destination_error) {
         return destination_error;
     }
@@ -95,23 +94,11 @@ Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
                                        const DataReceivedCallback& receive_callback,
                                        std::size_t timeout_ms,
                                        const CloseCallback& close_callback) {
-    const Error destination_error = set_destination_impl(endpoint);
-    if (destination_error) {
-        return destination_error;
+    const auto basic_error = set_destination(endpoint, destination_set_callback, receive_callback);
+    if (basic_error) {
+        return basic_error;
     }
 
-    const Error start_receive_error = start_receive_impl();
-    if (start_receive_error) {
-        return start_receive_error;
-    }
-
-    if (destination_set_callback) {
-        m_loop->schedule_callback([this, destination_set_callback](EventLoop&) {
-            destination_set_callback(*m_parent, Error(StatusCode::OK));
-        });
-    }
-
-    m_receive_callback = receive_callback;
     m_close_callback = close_callback;
     m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(*m_loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_time, this), &::uv_hrtime));
     m_timeout_handler->add_item(this);
@@ -124,7 +111,7 @@ UdpClient::Impl::~Impl() {
 }
 
 // TODO: use uv_udp_connect if libuv version is >= 1.27.0
-Error UdpClient::Impl::set_destination_impl(const Endpoint& endpoint) {
+Error UdpClient::Impl::setup_udp_handle(const Endpoint& endpoint) {
     const auto handle_init_error = ensure_handle_inited();
     if (handle_init_error) {
         return handle_init_error;
