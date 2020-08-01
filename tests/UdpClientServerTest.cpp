@@ -113,8 +113,7 @@ TEST_F(UdpClientServerTest, client_invalid_address) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-//  TODO: fixme
-TEST_F(UdpClientServerTest, DISABLED_client_remove_after_set_destination) {
+TEST_F(UdpClientServerTest, client_remove_after_set_destination) {
     io::EventLoop loop;
 
     auto client = new io::net::UdpClient(loop);

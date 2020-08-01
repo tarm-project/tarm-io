@@ -89,6 +89,10 @@ void  UdpClient::Impl::set_destination(const Endpoint& endpoint,
                                        const DestinationSetCallback& destination_set_callback,
                                        const DataReceivedCallback& receive_callback) {
     m_loop->schedule_callback([this, endpoint, destination_set_callback, receive_callback](EventLoop&) {
+        if (m_parent->is_removal_scheduled()) {
+            return;
+        }
+
         auto error = set_destination_impl(endpoint, receive_callback);
         if (destination_set_callback) {
             destination_set_callback(*m_parent, error);
@@ -102,6 +106,10 @@ void UdpClient::Impl::set_destination(const Endpoint& endpoint,
                                       std::size_t timeout_ms,
                                       const CloseCallback& close_callback) {
     m_loop->schedule_callback([=](EventLoop&) {
+        if (m_parent->is_removal_scheduled()) {
+            return;
+        }
+
         auto error = set_destination_impl(endpoint, receive_callback);
         if (destination_set_callback) {
             destination_set_callback(*m_parent, error);
@@ -270,6 +278,7 @@ void UdpClient::send_data(std::string&& message, const EndSendCallback& callback
 }
 
 void UdpClient::schedule_removal() {
+    set_removal_scheduled();
     const bool ready_to_remove = m_impl->close_with_removal();
     if (ready_to_remove) {
         Removable::schedule_removal();
