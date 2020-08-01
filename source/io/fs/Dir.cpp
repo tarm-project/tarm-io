@@ -39,6 +39,7 @@ private:
     static constexpr std::size_t DIRENTS_NUMBER = 1;
 
     Dir* m_parent = nullptr;
+    EventLoop* m_loop;
     uv_loop_t* m_uv_loop;
 
     OpenCallback m_open_callback = nullptr;
@@ -76,11 +77,9 @@ DirectoryEntryType convert_direntry_type(uv_dirent_type_t type) {
         default:
             return DirectoryEntryType::UNKNOWN;
     }
-
-    //return DirectoryEntryType::UNKNOWN;
 }
 
-}
+} // namespace
 
 const Path& Dir::Impl::path() const {
     return m_path;
@@ -88,6 +87,7 @@ const Path& Dir::Impl::path() const {
 
 Dir::Impl::Impl(EventLoop& loop, Dir& parent) :
     m_parent(&parent),
+    m_loop(&loop),
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
     memset(&m_open_dir_req, 0, sizeof(m_open_dir_req));
     memset(&m_read_dir_req, 0, sizeof(m_read_dir_req));
@@ -143,11 +143,12 @@ void Dir::Impl::close() {
 void Dir::Impl::on_open_dir(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<Dir::Impl*>(req->data);
 
-    if (req->result < 0 ) {
+    Error error(req->result);
+
+    if (error) {
         uv_fs_req_cleanup(&this_.m_open_dir_req);
 
-        //std::cerr << "Failed to open dir: " << req->path << std::endl;
-        // TODO: error handling
+        IO_LOG(this_.m_loop, ERROR, "Failed to open dir:", req->path ? req->path : "");
     } else {
         this_.m_uv_dir = reinterpret_cast<uv_dir_t*>(req->ptr);
         this_.m_uv_dir->dirents = this_.m_dirents;
@@ -155,11 +156,10 @@ void Dir::Impl::on_open_dir(uv_fs_t* req) {
     }
 
     if (this_.m_open_callback) {
-        Error error(req->result);
         this_.m_open_callback(*this_.m_parent, error);
     }
 
-    if (req->result < 0 ) { // TODO: replace with if error
+    if (error) {
         this_.m_path.clear();
     }
 }
@@ -184,8 +184,6 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
-
-
 
 Dir::Dir(EventLoop& loop) :
     Removable(loop),
