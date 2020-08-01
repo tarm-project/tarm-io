@@ -2592,8 +2592,10 @@ TEST_F(UdpClientServerTest, server_multiple_start_receive_sequenced_different_ad
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-// TODO: implement
 TEST_F(UdpClientServerTest, DISABLED_client_set_destination_and_simultaneously_send) {
+
+    std::size_t on_send_callback_count = 0;
+
     io::EventLoop loop;
     // Test description: set destination and send data right away (not in callback). Should be error
     auto client = new io::net::UdpClient(loop);
@@ -2608,10 +2610,16 @@ TEST_F(UdpClientServerTest, DISABLED_client_set_destination_and_simultaneously_s
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::NO_ADDRESS_AVAILABLE, error.code());
+            ++on_send_callback_count;
+            //client.schedule_removal();
         }
     );
 
+    EXPECT_EQ(0, on_send_callback_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_send_callback_count);
 }
 
 TEST_F(UdpClientServerTest, server_0_ms_timeout_for_peer) {

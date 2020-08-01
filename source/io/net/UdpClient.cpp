@@ -38,7 +38,7 @@ public:
                                         const CloseCallback& close_callback);
 
 protected:
-    Error start_receive_impl();
+    Error start_receive();
     Error setup_udp_handle(const Endpoint& endpoint);
     bool close_impl(CloseHandler handler);
 
@@ -74,7 +74,7 @@ Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
         return destination_error;
     }
 
-    const Error start_receive_error = start_receive_impl();
+    const Error start_receive_error = start_receive();
     if (start_receive_error) {
         return start_receive_error;
     }
@@ -162,12 +162,7 @@ bool UdpClient::Impl::close_impl(CloseHandler handler) {
     return true;
 }
 
-Error UdpClient::Impl::start_receive_impl() {
-    const auto handle_init_error = ensure_handle_inited();
-    if (handle_init_error) {
-        return handle_init_error;
-    }
-
+Error UdpClient::Impl::start_receive() {
     Error recv_start_error = uv_udp_recv_start(m_udp_handle.get(), io::detail::default_alloc_buffer, on_data_received);
     if (recv_start_error) {
         return recv_start_error;
