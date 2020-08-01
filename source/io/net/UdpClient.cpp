@@ -27,20 +27,23 @@ public:
     void close_no_removal();
     bool close_with_removal();
 
-    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint,
-                                        const DestinationSetCallback& destination_set_callback,
-                                        const DataReceivedCallback& receive_callback);
+    void set_destination(const Endpoint& endpoint,
+                    const DestinationSetCallback& destination_set_callback,
+                    const DataReceivedCallback& receive_callback);
 
-    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint,
-                                        const DestinationSetCallback& destination_set_callback,
-                                        const DataReceivedCallback& receive_callback,
-                                        std::size_t timeout_ms,
-                                        const CloseCallback& close_callback);
+    void set_destination(const Endpoint& endpoint,
+                         const DestinationSetCallback& destination_set_callback,
+                         const DataReceivedCallback& receive_callback,
+                         std::size_t timeout_ms,
+                         const CloseCallback& close_callback);
 
 protected:
     Error start_receive();
     Error setup_udp_handle(const Endpoint& endpoint);
     bool close_impl(CloseHandler handler);
+
+    Error set_destination_impl(const Endpoint& endpoint,
+                               const DataReceivedCallback& receive_callback);
 
     // statics
     static void on_data_received(
@@ -66,9 +69,8 @@ UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
     };
 }
 
-Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
-                                       const DestinationSetCallback& destination_set_callback,
-                                       const DataReceivedCallback& receive_callback) {
+Error UdpClient::Impl::set_destination_impl(const Endpoint& endpoint,
+                                            const DataReceivedCallback& receive_callback) {
     Error destination_error = setup_udp_handle(endpoint);
     if (destination_error) {
         return destination_error;
@@ -79,31 +81,36 @@ Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
         return start_receive_error;
     }
 
-    if (destination_set_callback) {
-        m_loop->schedule_callback([this, destination_set_callback](EventLoop&) {
-            destination_set_callback(*m_parent, Error(StatusCode::OK));
-        });
-    }
-
     m_receive_callback = receive_callback;
     return Error(0);
 }
 
-Error UdpClient::Impl::set_destination(const Endpoint& endpoint,
+void  UdpClient::Impl::set_destination(const Endpoint& endpoint,
                                        const DestinationSetCallback& destination_set_callback,
-                                       const DataReceivedCallback& receive_callback,
-                                       std::size_t timeout_ms,
-                                       const CloseCallback& close_callback) {
-    const auto basic_error = set_destination(endpoint, destination_set_callback, receive_callback);
-    if (basic_error) {
-        return basic_error;
-    }
+                                       const DataReceivedCallback& receive_callback) {
+    m_loop->schedule_callback([this, endpoint, destination_set_callback, receive_callback](EventLoop&) {
+        auto error = set_destination_impl(endpoint, receive_callback);
+        if (destination_set_callback) {
+            destination_set_callback(*m_parent, error);
+        }
+    });
+}
 
-    m_close_callback = close_callback;
-    m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(*m_loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_time, this), &::uv_hrtime));
-    m_timeout_handler->add_item(this);
+void UdpClient::Impl::set_destination(const Endpoint& endpoint,
+                                      const DestinationSetCallback& destination_set_callback,
+                                      const DataReceivedCallback& receive_callback,
+                                      std::size_t timeout_ms,
+                                      const CloseCallback& close_callback) {
+    m_loop->schedule_callback([=](EventLoop&) {
+        auto error = set_destination_impl(endpoint, receive_callback);
+        if (destination_set_callback) {
+            destination_set_callback(*m_parent, error);
+        }
 
-    return Error(0);
+        m_close_callback = close_callback;
+        m_timeout_handler.reset(new BacklogWithTimeout<UdpClient::Impl*>(*m_loop, timeout_ms, m_on_item_expired, std::bind(&UdpClient::Impl::last_packet_time, this), &::uv_hrtime));
+        m_timeout_handler->add_item(this);
+    });
 }
 
 UdpClient::Impl::~Impl() {
@@ -232,17 +239,17 @@ UdpClient::~UdpClient() {
 }
 
 
-Error UdpClient::set_destination(const Endpoint& endpoint,
-                                 const DestinationSetCallback& destination_set_callback,
-                                 const DataReceivedCallback& receive_callback) {
+void UdpClient::set_destination(const Endpoint& endpoint,
+                                const DestinationSetCallback& destination_set_callback,
+                                const DataReceivedCallback& receive_callback) {
     return m_impl->set_destination(endpoint, destination_set_callback, receive_callback);
 }
 
-Error UdpClient::set_destination(const Endpoint& endpoint,
-                                 const DestinationSetCallback& destination_set_callback,
-                                 const DataReceivedCallback& receive_callback,
-                                 std::size_t timeout_ms,
-                                 const CloseCallback& close_callback) {
+void UdpClient::set_destination(const Endpoint& endpoint,
+                                const DestinationSetCallback& destination_set_callback,
+                                const DataReceivedCallback& receive_callback,
+                                std::size_t timeout_ms,
+                                const CloseCallback& close_callback) {
     return m_impl->set_destination(endpoint, destination_set_callback, receive_callback, timeout_ms, close_callback);
 }
 

@@ -79,8 +79,15 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
     }
 
     m_client = new UdpClient(*m_loop);
-    auto listen_error = m_client->set_destination(endpoint,
-        [this, connect_callback](UdpClient&, const Error&) {
+    m_client->set_destination(endpoint,
+        [this, connect_callback](UdpClient&, const Error& error) {
+            if (error) {
+                if (connect_callback) {
+                    connect_callback(*this->m_parent, error);
+                }
+                return;
+            }
+
             if (!is_ssl_inited()) {
                 auto context_error = m_openssl_context.init_ssl_context(ssl_method());
                 if (context_error) {
@@ -127,11 +134,6 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
             }
         }
     );
-
-    if (listen_error) {
-        m_loop->schedule_callback([=](EventLoop&) { connect_callback(*this->m_parent, listen_error); });
-        return;
-    }
 
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;

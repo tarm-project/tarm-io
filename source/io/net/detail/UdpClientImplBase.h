@@ -157,6 +157,10 @@ void UdpClientImplBase<ParentType, ImplType>::on_send(uv_udp_send_t* req, int uv
 
 template<typename ParentType, typename ImplType>
 std::uint16_t  UdpClientImplBase<ParentType, ImplType>::bound_port() const  {
+    if (!UdpImplBase<ParentType, ImplType>::is_open()) {
+        return 0;
+    }
+
     sockaddr_storage address;
     int uv_size = sizeof(address);
 

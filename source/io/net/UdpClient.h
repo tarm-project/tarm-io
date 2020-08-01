@@ -37,15 +37,15 @@ public:
     IO_DLL_PUBLIC UdpClient(EventLoop& loop);
 
     // Analog of connect for TCP
-    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint,
-                                        const DestinationSetCallback& destination_set_callback,
-                                        const DataReceivedCallback& receive_callback = nullptr);
+    IO_DLL_PUBLIC void set_destination(const Endpoint& endpoint,
+                                       const DestinationSetCallback& destination_set_callback,
+                                       const DataReceivedCallback& receive_callback = nullptr);
 
-    IO_DLL_PUBLIC Error set_destination(const Endpoint& endpoint,
-                                        const DestinationSetCallback& destination_set_callback,
-                                        const DataReceivedCallback& receive_callback,
-                                        std::size_t timeout_ms,
-                                        const CloseCallback& close_callback);
+    IO_DLL_PUBLIC void set_destination(const Endpoint& endpoint,
+                                       const DestinationSetCallback& destination_set_callback,
+                                       const DataReceivedCallback& receive_callback,
+                                       std::size_t timeout_ms,
+                                       const CloseCallback& close_callback);
 
     IO_DLL_PUBLIC const Endpoint& endpoint() const;
     IO_DLL_PUBLIC std::uint16_t bound_port() const; // Returns 0 on error
