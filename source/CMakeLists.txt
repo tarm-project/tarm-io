@@ -274,6 +274,17 @@ else()
     message(FATAL_ERROR "Can not determine platform of libtarm-io build.")
 endif()
 
+if (TARM_IO_PLATFORM_LINUX OR
+    TARM_IO_PLATFORM_MACOSX OR
+    CMAKE_BUILD_TYPE STREQUAL "Coverage")
+
+    if (NOT DEFINED IO_SANITIZER)
+        target_compile_options(tarm-io PRIVATE -fno-exceptions)
+    endif()
+elseif (TARM_IO_PLATFORM_WINDOWS) # TODO:
+
+endif()
+
 # TODO: no exceptions even in regular builds????
 if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
 #    target_compile_options(tarm-io PRIVATE -fno-exceptions)

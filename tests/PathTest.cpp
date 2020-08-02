@@ -2495,7 +2495,9 @@ protected:
 
 } // namespace
 
-TEST_F(PathTest, error_handling) {
+// Disabled because we do not throw exceptions
+// It is a bit rewritten original test from Boost.Filesystem
+TEST_F(PathTest, DISABLED_error_handling) {
     std::locale global_loc = std::locale();
     std::locale loc(global_loc, new error_codecvt);
     std::locale old_loc = Path::imbue(loc);

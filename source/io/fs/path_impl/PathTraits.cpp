@@ -12,6 +12,8 @@
 
 #include "fs/Path.h"   // for path::codecvt()
 
+#include <assert.h>
+
 #include <locale>   // for codecvt_base::result
 #include <cstring>  // for strlen
 #include <cwchar>   // for wcslen
@@ -55,8 +57,8 @@ const std::size_t default_codecvt_buf_size = IO_FILESYSTEM_CODECVT_BUF_SIZE;
     std::codecvt_base::result res;
 
     if ((res=cvt.in(state, from, from_end, from_next, to, to_end, to_next)) != std::codecvt_base::ok) {
-        // TODO: we do not want to throw exceptions
-        throw std::system_error(res, tarm::io::fs::codecvt_error_category(), "io::Path codecvt to wstring");
+        assert(false && "tarm::io::Path codecvt to wstring");
+        //throw std::system_error(res, tarm::io::fs::codecvt_error_category(), "tarm::io::Path codecvt to wstring");
     }
     target.append(to, to_next);
 }
@@ -77,8 +79,8 @@ const std::size_t default_codecvt_buf_size = IO_FILESYSTEM_CODECVT_BUF_SIZE;
     std::codecvt_base::result res;
 
     if ((res=cvt.out(state, from, from_end, from_next, to, to_end, to_next)) != std::codecvt_base::ok) {
-        // TODO: we do not want to throw exceptions
-        throw std::system_error(res, tarm::io::fs::codecvt_error_category(), "io::Path codecvt to string");
+        assert(false && "tarm::io::Path codecvt to string");
+        // throw std::system_error(res, tarm::io::fs::codecvt_error_category(), "tarm::io::Path codecvt to string");
     }
     target.append(to, to_next);
 }
