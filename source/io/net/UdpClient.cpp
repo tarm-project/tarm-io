@@ -166,10 +166,7 @@ void UdpClient::Impl::close_no_removal() {
 
 bool UdpClient::Impl::close_impl(CloseHandler handler) {
     if (is_open()) {
-        if (m_receive_callback) {
-            uv_udp_recv_stop(m_udp_handle.get());
-        }
-
+        uv_udp_recv_stop(m_udp_handle.get());
         uv_close(reinterpret_cast<uv_handle_t*>(m_udp_handle.get()), handler);
         return false; // not ready to remove
     }

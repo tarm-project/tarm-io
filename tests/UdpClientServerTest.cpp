@@ -2630,7 +2630,7 @@ TEST_F(UdpClientServerTest, client_set_destination_and_simultaneously_send_2) {
             EXPECT_TRUE(client.is_open());
         },
         nullptr,
-        0,
+        200,
         nullptr
     );
     EXPECT_FALSE(client->is_open());
@@ -2666,3 +2666,5 @@ TEST_F(UdpClientServerTest, server_0_ms_timeout_for_peer) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
+
+// TOOD: test 0 expiration timeout for UDP client as invalid
