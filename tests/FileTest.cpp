@@ -92,10 +92,13 @@ TEST_F(FileTest, open_existing) {
     EXPECT_FALSE(file->is_open());
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
+
     EXPECT_EQ(io::StatusCode::OK, open_status_code);
     EXPECT_EQ(path, file->path());
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, DISABLED_double_open) {
@@ -138,9 +141,11 @@ TEST_F(FileTest, open_in_open_callback) {
 
     auto file = new io::fs::File(loop);
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
         opened_1 = true;
 
         file.open(path, [&](io::fs::File& file, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
             opened_2 = true;
             file.schedule_removal();
         });
@@ -177,6 +182,8 @@ TEST_F(FileTest, open_not_existing) {
 
     EXPECT_EQ("", file->path());
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, open_existing_open_not_existing) {
@@ -199,6 +206,8 @@ TEST_F(FileTest, open_existing_open_not_existing) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, close_in_open_callback) {
@@ -207,16 +216,27 @@ TEST_F(FileTest, close_in_open_callback) {
 
     io::EventLoop loop;
 
+    std::size_t file_on_close_count = 0;
+
     auto file = new io::fs::File(loop);
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(file.is_open());
 
-        file.close();
-        EXPECT_FALSE(file.is_open());
+        file.close([&](io::fs::File& file, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            EXPECT_FALSE(file.is_open());
+            EXPECT_EQ(path, file.path());
+            ++file_on_close_count;
+            file.schedule_removal();
+        });
+        EXPECT_TRUE(file.is_open());
     });
 
+    EXPECT_EQ(0, file_on_close_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    file->schedule_removal();
+
+    EXPECT_EQ(1, file_on_close_count);
 }
 
 TEST_F(FileTest, close_not_open_file) {
@@ -231,9 +251,11 @@ TEST_F(FileTest, close_not_open_file) {
     file->schedule_removal();
 }
 
-TEST_F(FileTest, double_close) {
+TEST_F(FileTest, double_close_parallel) {
     auto path = create_empty_file(m_tmp_test_dir);
     ASSERT_FALSE(path.empty());
+
+    std::size_t close_count = 0;
 
     io::EventLoop loop;
 
@@ -241,17 +263,60 @@ TEST_F(FileTest, double_close) {
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(file.is_open());
 
-        file.close();
-        EXPECT_FALSE(file.is_open());
-        file.close();
-        EXPECT_FALSE(file.is_open());
+        file.close([&](io::fs::File& file, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++close_count;
+        });
+        file.close([&](io::fs::File& file, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::BAD_FILE_DESCRIPTOR, error.code());
+            ++close_count;
+        });
     });
+
+    EXPECT_EQ(0, close_count);
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
+
+    EXPECT_EQ(2, close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-// TODO: open in read callback
+TEST_F(FileTest, double_close_sequential) {
+    auto path = create_empty_file(m_tmp_test_dir);
+    ASSERT_FALSE(path.empty());
+
+    std::size_t close_count = 0;
+
+    io::EventLoop loop;
+
+    auto file = new io::fs::File(loop);
+    file->open(path, [&](io::fs::File& file, const io::Error& error) {
+        EXPECT_TRUE(file.is_open());
+
+        file.close([&](io::fs::File& file, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++close_count;
+
+            file.close([&](io::fs::File& file, const io::Error& error) {
+                // Not executed
+                EXPECT_FALSE(error) << error;
+                ++close_count;
+            });
+        });
+    });
+
+    EXPECT_EQ(0, close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+    file->schedule_removal();
+
+    EXPECT_EQ(1, close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+}
 
 TEST_F(FileTest, simple_read) {
     const std::size_t SIZE = 128;
@@ -300,6 +365,8 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
     const std::size_t SIZE_1 = 1024 * 2;
     const std::size_t SIZE_2 = 1024 * 32;
 
+    std::size_t on_end_read_count  = 0;
+
     auto path_1 = create_file_for_read(m_tmp_test_dir, SIZE_1);
     ASSERT_FALSE(path_1.empty());
     auto path_2 = create_file_for_read(m_tmp_test_dir, SIZE_2);
@@ -308,7 +375,7 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
     std::function<void(io::fs::File&, const io::Error&)> open;
 
     auto read = [&](io::fs::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
-        ASSERT_TRUE(!read_error);
+        EXPECT_FALSE(read_error) << read_error;
         ASSERT_EQ(0, chunk.size % 4);
 
         for(std::size_t i = 0; i < chunk.size / 4; i ++) {
@@ -318,16 +385,19 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
     };
 
     auto end_read = [&](io::fs::File& file) {
+        ++on_end_read_count;
         if (file.path() == path_1) {
-            file.close();
-            file.open(path_2, open);
+            file.close([&](io::fs::File& file, const io::Error& error) {
+                ASSERT_FALSE(error) << error;
+                file.open(path_2, open);
+            });
         } else {
             file.schedule_removal();
         }
     };
 
     open = [&](io::fs::File& file, const io::Error& open_error) {
-        ASSERT_TRUE(!open_error);
+        ASSERT_FALSE(open_error) << open_error;
 
         file.read(read, end_read);
     };
@@ -336,7 +406,11 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
     auto file = new io::fs::File(loop);
     file->open(path_1, open);
 
+    EXPECT_EQ(0, on_end_read_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(2, on_end_read_count);
 }
 
 TEST_F(FileTest, read_10mb_file) {
@@ -369,6 +443,8 @@ TEST_F(FileTest, read_10mb_file) {
     ASSERT_EQ(SIZE, read_counter * 4);
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 // TODO: test schedure removal in open, read, ... callback
@@ -394,6 +470,8 @@ TEST_F(FileTest, read_not_open_file) {
     ASSERT_FALSE(end_read_called);
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, sequential_read_data_past_eof) {
@@ -422,6 +500,8 @@ TEST_F(FileTest, sequential_read_data_past_eof) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
     ASSERT_FALSE(second_read_called);
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, close_in_read) {
@@ -440,12 +520,11 @@ TEST_F(FileTest, close_in_read) {
         ASSERT_TRUE(!open_error);
 
         file.read([&counter](io::fs::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
-            ASSERT_TRUE(!read_error);
+            ASSERT_FALSE(read_error) << read_error;
             EXPECT_LE(counter, 5);
 
             if (counter == 5) {
                 file.close();
-                EXPECT_FALSE(file.is_open());
                 return;
             }
 
@@ -461,6 +540,8 @@ TEST_F(FileTest, close_in_read) {
     EXPECT_FALSE(file->is_open());
     EXPECT_FALSE(end_read_called);
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, DISABLED_read_sequential_of_closed_file) {
@@ -488,6 +569,8 @@ TEST_F(FileTest, DISABLED_read_sequential_of_closed_file) {
     EXPECT_TRUE(read_called);
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 // read in failed to opened file
@@ -524,6 +607,8 @@ TEST_F(FileTest, read_block) {
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, read_block_past_edge) {
@@ -553,6 +638,8 @@ TEST_F(FileTest, read_block_past_edge) {
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, DISABLED_read_block_not_existing_chunk) {
@@ -581,6 +668,8 @@ TEST_F(FileTest, DISABLED_read_block_not_existing_chunk) {
     ASSERT_EQ(io::StatusCode::OK, read_status_code);
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, read_block_not_opened) {
@@ -601,6 +690,8 @@ TEST_F(FileTest, read_block_not_opened) {
     ASSERT_EQ(read_status, io::StatusCode::FILE_NOT_OPEN);
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 // TODO: data race here between file read and close operations which are performed in separate threads each
@@ -629,6 +720,8 @@ TEST_F(FileTest, DISABLED_read_block_of_closed_file) {
     EXPECT_TRUE(read_called);
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, slow_read_data_consumer) {
@@ -730,9 +823,12 @@ TEST_F(FileTest, slow_read_data_consumer) {
     }
 
     file->schedule_removal();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, schedule_file_removal_from_read) {
+this->log_to_stdout();
     // Test description: checking that File is removed only when all of its read buffers are released
 
     const std::size_t SIZE = io::fs::File::READ_BUF_SIZE; // space for one read operation
@@ -752,6 +848,8 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
         }
     });
     auto file = new io::fs::File(loop);
+
+    std::size_t file_on_read_count = 0;
 
     std::mutex mutex;
     std::thread t([&mutex, &captured_buf, &loop]() {
@@ -775,25 +873,29 @@ TEST_F(FileTest, schedule_file_removal_from_read) {
         t.join();
     });
 
-    file->open(path, [&end_read_called, &captured_buf, &mutex](io::fs::File& file, const io::Error& open_error) {
+    file->open(path, [&end_read_called, &captured_buf, &mutex, &file_on_read_count](io::fs::File& file, const io::Error& open_error) {
         ASSERT_TRUE(!open_error);
 
-        file.read([&captured_buf, &mutex](io::fs::File& file, const io::DataChunk& chunk, const io::Error& read_error){
+        file.read([&captured_buf, &mutex, &file_on_read_count](io::fs::File& file, const io::DataChunk& chunk, const io::Error& read_error){
             {
                 std::lock_guard<decltype(mutex)> guard(mutex);
                 captured_buf = chunk.buf;
             }
 
+            ++file_on_read_count;
             EXPECT_TRUE(file.is_open());
             file.schedule_removal();
-            EXPECT_FALSE(file.is_open());
         },
         [&end_read_called](io::fs::File& file) {
             end_read_called = true;
         });
     });
 
+    EXPECT_EQ(0, file_on_read_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, file_on_read_count);
     EXPECT_FALSE(end_read_called);
     EXPECT_TRUE(file_buffers_in_use_event_occured);
 }
@@ -823,6 +925,8 @@ TEST_F(FileTest, stat_size) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
     ASSERT_EQ(1, stat_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(FileTest, stat_time) {
@@ -860,8 +964,6 @@ TEST_F(FileTest, stat_time) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-// TODO: more tests for various fields of StatData
-
 TEST_F(FileTest, try_open_dir) {
 
     std::size_t on_open_call_count = 0;
@@ -882,5 +984,10 @@ TEST_F(FileTest, try_open_dir) {
     EXPECT_EQ(1, on_open_call_count);
 }
 
+// TODO: more tests for various fields of StatData
+
 // TODO: test copy file larger than 4 GB
 // For details see https://github.com/libuv/libuv/commit/2bbf7d5c8cd070cc8541698fe72136328bc18eae
+
+// TODO: open in read callback
+

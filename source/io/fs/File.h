@@ -35,6 +35,7 @@ public:
     using ReadCallback = std::function<void(File&, const DataChunk&, const Error&)>;
     using EndReadCallback = std::function<void(File&)>;
     using StatCallback = std::function<void(File&, const StatData&)>;
+    using CloseCallback = std::function<void(File&, const Error&)>;
 
     IO_FORBID_COPY(File);
     IO_FORBID_MOVE(File);
@@ -42,8 +43,8 @@ public:
     IO_DLL_PUBLIC File(EventLoop& loop);
 
     IO_DLL_PUBLIC void open(const Path& path, const OpenCallback& callback); // TODO: pass open flags
-    IO_DLL_PUBLIC void close();
     IO_DLL_PUBLIC bool is_open() const;
+    IO_DLL_PUBLIC void close(const CloseCallback& close_callback = nullptr);
 
     IO_DLL_PUBLIC void read(const ReadCallback& callback);
     IO_DLL_PUBLIC void read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback);

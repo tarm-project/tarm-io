@@ -12,9 +12,11 @@ namespace tarm {
 namespace io {
 namespace fs {
 
+namespace {
+
 struct ReadRequest : public uv_fs_t {
     ReadRequest() {
-        memset(this, 0, sizeof(uv_fs_t));
+        memset(reinterpret_cast<uv_fs_t*>(this), 0, sizeof(uv_fs_t));
     }
 
     ~ReadRequest() {
@@ -27,13 +29,38 @@ struct ReadRequest : public uv_fs_t {
     char* raw_buf = nullptr;
 };
 
+struct CloseRequest : public uv_fs_t {
+    CloseRequest() {
+    }
+
+    ~CloseRequest() {
+    }
+
+    File::CloseCallback close_callback;
+};
+
+} // namespace
+
+struct ReadBlockReq : public uv_fs_t {
+    std::shared_ptr<char> buf;
+    std::size_t offset = 0;
+};
+
 class File::Impl {
 public:
+    enum class State {
+        INITIAL = 0,
+        OPENING,
+        OPENED,
+        CLOSING,
+        CLOSED
+    };
+
     Impl(EventLoop& loop, File& parent);
     ~Impl();
 
     void open(const Path& path, const OpenCallback& callback);
-    void close();
+    void close(const CloseCallback& close_callback);
     bool is_open() const;
 
     void read(const ReadCallback& callback);
@@ -51,6 +78,7 @@ protected:
     // statics
     static void on_open(uv_fs_t* req);
     static void on_read(uv_fs_t* req);
+    static void on_close(uv_fs_t* req);
     static void on_read_block(uv_fs_t* req);
     static void on_stat(uv_fs_t* req);
 
@@ -58,6 +86,7 @@ private:
     void schedule_read();
     void schedule_read(ReadRequest& req);
     bool has_read_buffers_in_use() const;
+    void finish_close();
 
     OpenCallback m_open_callback = nullptr;
     ReadCallback m_read_callback = nullptr;
@@ -85,6 +114,8 @@ private:
     uv_fs_t m_write_req;
 
     Path m_path;
+
+    State m_state = State::INITIAL;
 };
 
 File::Impl::Impl(EventLoop& loop, File& parent) :
@@ -99,8 +130,6 @@ File::Impl::Impl(EventLoop& loop, File& parent) :
 File::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, "");
 
-    close();
-
     uv_fs_req_cleanup(&m_write_req);
 
     for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
@@ -111,13 +140,22 @@ File::Impl::~Impl() {
 bool File::Impl::schedule_removal() {
     IO_LOG(m_loop, TRACE, "path:", m_path);
 
-    close();
-
-    if (has_read_buffers_in_use()) {
+    if (is_open()) {
+        close([this](File&, const Error&) {
+            if (has_read_buffers_in_use()) {
+                m_need_reschedule_remove = true;
+                IO_LOG(m_loop, TRACE, "File has read buffers in use, postponing removal");
+            } else {
+                this->m_parent->schedule_removal();
+            }
+        });
+        return false;
+    } else if (has_read_buffers_in_use()) {
         m_need_reschedule_remove = true;
         IO_LOG(m_loop, TRACE, "File has read buffers in use, postponing removal");
         return false;
     }
+
 
     return true;
 }
@@ -126,40 +164,66 @@ bool File::Impl::is_open() const {
     return m_file_handle != -1;
 }
 
-void File::Impl::close() {
+void File::Impl::close(const CloseCallback& close_callback) {
     if (!is_open()) {
         return;
     }
 
+    m_state = State::CLOSING;
+
     IO_LOG(m_loop, DEBUG, "path: ", m_path);
 
-    uv_fs_t close_req;
-    int status = uv_fs_close(m_uv_loop, &close_req, m_file_handle, nullptr);
-    if (status != 0) {
-        IO_LOG(m_loop, WARNING, "status: ", uv_strerror(status));
-        // TODO: error handing????
+    auto close_req = new CloseRequest;
+    close_req->data = this;
+    close_req->close_callback = close_callback;
+    Error close_error = uv_fs_close(m_uv_loop, close_req, m_file_handle, on_close);
+    if (close_error) {
+        IO_LOG(m_loop, ERROR, "Error:", close_error);
+        m_file_handle = -1;
+        if (close_callback) {
+            m_loop->schedule_callback([=](EventLoop&) {
+                close_callback(*m_parent, close_error);
+            });
+        }
+        finish_close();
     }
+}
 
+void File::Impl::finish_close() {
     // Setting request data to nullptr to allow any pending callback exit properly
-    m_file_handle = -1;
     if (m_open_request) {
         m_open_request->data = nullptr;
         m_open_request = nullptr;
     }
 
-    //m_open_callback = nullptr;
-    //m_read_callback = nullptr;
-    //m_end_read_callback = nullptr;
-
     m_path.clear();
+    m_state = State::CLOSED;
 }
 
 void File::Impl::open(const Path& path, const OpenCallback& callback) {
     if (is_open()) {
-        close();
+        close([=](File& file, const Error& error) {
+            if (error) {
+                if(callback) {
+                    callback(file, error);
+                }
+            } else {
+                this->m_loop->schedule_callback([=](EventLoop&) {
+                    this->open(path, callback);
+                });
+            }
+        });
+        return;
+    } else if (!(m_state == State::INITIAL || m_state == State::CLOSED)) {
+        this->m_loop->schedule_callback([=](EventLoop&) {
+            this->open(path, callback);
+        });
+        return;
     }
 
     IO_LOG(m_loop, DEBUG, "path:", path);
+
+    m_state = State::OPENING;
 
     m_path = path;
     m_current_offset = 0;
@@ -185,25 +249,6 @@ void File::Impl::read(const ReadCallback& read_callback, const EndReadCallback& 
 
     schedule_read();
 }
-
-namespace {
-
-struct ReadBlockReq : public uv_fs_t {
-    // TODO: remove this code
-    /*
-    ReadBlockReq() {
-        // TODO: remove memset????
-        memset(this, 0, sizeof(uv_fs_t));
-    }
-
-    ~ReadBlockReq() {
-    }*/
-
-    std::shared_ptr<char> buf;
-    std::size_t offset = 0;
-};
-
-} // namespace
 
 void File::Impl::read_block(off_t offset, unsigned int bytes_count, const ReadCallback& read_callback) {
     if (!is_open()) {
@@ -245,6 +290,14 @@ const Path& File::Impl::path() const {
 
 void File::Impl::schedule_read() {
     if (!is_open()) {
+        return;
+    }
+
+    if (m_parent->is_removal_scheduled()) {
+        return;
+    }
+
+    if (m_state == State::CLOSING) {
         return;
     }
 
@@ -344,8 +397,8 @@ void File::Impl::on_open(uv_fs_t* req) {
         if (this_.m_open_callback) {
             this_.m_open_callback(*this_.m_parent, error);
         }
-
         this_.m_path.clear();
+        this_.m_state = State::CLOSED;
         return;
     } else {
         this_.m_file_handle = static_cast<uv_file>(req->result);
@@ -356,11 +409,17 @@ void File::Impl::on_open(uv_fs_t* req) {
     this_.stat([&this_](File& f, const StatData& d) {
         if (this_.m_open_callback) {
             if (d.mode & S_IFDIR) {
-                this_.m_open_callback(*this_.m_parent, StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY);
-                this_.m_path.clear();
+                this_.m_loop->schedule_callback([&this_](EventLoop&){
+                    this_.m_open_callback(*this_.m_parent, StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY);
+                    this_.m_path.clear();
+                    this_.m_state = State::CLOSED;
+                });
             }
             else {
-                this_.m_open_callback(*this_.m_parent, StatusCode::OK);
+                this_.m_loop->schedule_callback([&this_](EventLoop&){
+                    this_.m_open_callback(*this_.m_parent, StatusCode::OK);
+                    this_.m_state = State::OPENED;
+                });
             }
         }
     });
@@ -445,6 +504,21 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
     }
 }
 
+void File::Impl::on_close(uv_fs_t* req) {
+    auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
+    auto& request = *reinterpret_cast<CloseRequest*>(req);
+
+    this_.m_file_handle = -1;
+    Error error(req->result);
+    if (request.close_callback) {
+        request.close_callback(*this_.m_parent, error);
+    }
+
+    this_.finish_close();
+
+    delete &request;
+}
+
 void File::Impl::on_stat(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
 
@@ -471,8 +545,8 @@ void File::open(const Path& path, const OpenCallback& callback) {
     return m_impl->open(path, callback);
 }
 
-void File::close() {
-    return m_impl->close();
+void File::close(const CloseCallback& close_callback) {
+    return m_impl->close(close_callback);
 }
 
 bool File::is_open() const {
@@ -500,6 +574,7 @@ void File::stat(const StatCallback& callback) {
 }
 
 void File::schedule_removal() {
+    Removable::set_removal_scheduled();
     const bool ready_to_remove = m_impl->schedule_removal();
     if (ready_to_remove) {
         Removable::schedule_removal();
