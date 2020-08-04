@@ -112,7 +112,7 @@ TEST_F(DirTest, list_elements) {
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error&) {
-        dir.read([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
             if (std::string(name) == "dir_1") {
                 EXPECT_FALSE(dir_1_listed);
                 EXPECT_EQ(io::fs::DirectoryEntryType::DIR, entry_type);
@@ -155,49 +155,56 @@ TEST_F(DirTest, empty_dir) {
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
 
-    // TODO: rename???? "read -> list"
-    bool read_called = false;
-    bool end_read_called = false;
+    std::size_t list_call_count = 0;
+    std::size_t end_list_call_count = 0;
 
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error&) {
-        dir.read([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
-            read_called = true;
-        }, // end_read
+        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+            ++list_call_count;
+        },
         [&](io::fs::Dir& dir) {
-            end_read_called = true;
+            ++end_list_call_count;
         });
     });
 
-    ASSERT_EQ(io::StatusCode::OK, loop.run());
-    dir->schedule_removal();
+    EXPECT_EQ(0, list_call_count);
+    EXPECT_EQ(0, end_list_call_count);
 
-    EXPECT_FALSE(read_called);
-    EXPECT_TRUE(end_read_called);
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(0, list_call_count);
+    EXPECT_EQ(1, end_list_call_count);
+
+    dir->schedule_removal();
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-TEST_F(DirTest, no_read_callback) {
+TEST_F(DirTest, no_list_callback) {
     {
         std::ofstream ofile((m_tmp_test_dir/ "some_file").string());
         ASSERT_FALSE(ofile.fail());
     }
 
+    std::size_t end_list_call_count = 0;
+
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
 
-    // TODO: rename???? to "read -> list"
-    bool end_read_called = false;
-
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error&) {
-        dir.read(nullptr,
-        [&](io::fs::Dir& dir) { // end_read
-            end_read_called = true;
+        dir.list(nullptr,
+        [&](io::fs::Dir& dir) {
+            ++end_list_call_count;
         });
     });
 
-    ASSERT_EQ(io::StatusCode::OK, loop.run());
-    dir->schedule_removal();
+    EXPECT_EQ(0, end_list_call_count);
 
-    EXPECT_TRUE(end_read_called);
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, end_list_call_count);
+
+    dir->schedule_removal();
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 #if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
@@ -216,7 +223,7 @@ TEST_F(DirTest, list_symlink) {
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error&) {
-        dir.read([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
             if (std::string(name) == "some_file") {
                 EXPECT_EQ(io::fs::DirectoryEntryType::FILE, entry_type);
             } else if (std::string(name) == "link") {
@@ -229,10 +236,12 @@ TEST_F(DirTest, list_symlink) {
     });
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    dir->schedule_removal();
 
     EXPECT_TRUE(link_found);
     EXPECT_EQ(2, entries_count);
+
+    dir->schedule_removal();
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DirTest, list_block_and_char_devices) {
@@ -244,7 +253,7 @@ TEST_F(DirTest, list_block_and_char_devices) {
     dir->open("/dev", [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_TRUE(!error);
 
-        dir.read([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
             if (entry_type == io::fs::DirectoryEntryType::BLOCK) {
                 ++block_devices_count;
             } else if (entry_type == io::fs::DirectoryEntryType::CHAR) {
@@ -253,11 +262,16 @@ TEST_F(DirTest, list_block_and_char_devices) {
         });
     });
 
+    EXPECT_EQ(0, block_devices_count);
+    EXPECT_EQ(0, char_devices_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    dir->schedule_removal();
 
     EXPECT_GT(block_devices_count, 0);
     EXPECT_GT(char_devices_count, 0);
+
+    dir->schedule_removal();
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DirTest, list_domain_sockets) {
@@ -268,17 +282,21 @@ TEST_F(DirTest, list_domain_sockets) {
     dir->open("/var/run", [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_TRUE(!error);
 
-        dir.read([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
             if (entry_type == io::fs::DirectoryEntryType::SOCKET) {
                 ++domain_sockets_count;
             }
         });
     });
 
+    EXPECT_EQ(0, domain_sockets_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    dir->schedule_removal();
 
     EXPECT_GT(domain_sockets_count, 0);
+
+    dir->schedule_removal();
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DirTest, list_fifo) {
@@ -290,19 +308,23 @@ TEST_F(DirTest, list_fifo) {
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
-        EXPECT_TRUE(!error);
+        EXPECT_FALSE(error) << error;
 
-        dir.read([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
             if (entry_type == io::fs::DirectoryEntryType::FIFO) {
                 ++fifo_count;
             }
         });
     });
 
+    EXPECT_EQ(0, fifo_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    dir->schedule_removal();
 
     EXPECT_EQ(1, fifo_count);
+
+    dir->schedule_removal();
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 #endif

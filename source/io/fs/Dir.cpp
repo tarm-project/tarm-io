@@ -26,7 +26,7 @@ public:
     bool is_open() const;
     void close();
 
-    void read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback = nullptr);
+    void list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback);
 
     const Path& path() const;
 
@@ -43,8 +43,8 @@ private:
     uv_loop_t* m_uv_loop;
 
     OpenCallback m_open_callback = nullptr;
-    ReadCallback m_read_callback = nullptr;
-    EndReadCallback m_end_read_callback = nullptr;
+    ListEntryCallback m_list_callback = nullptr;
+    EndListCallback m_end_list_callback = nullptr;
 
     Path m_path;
 
@@ -104,11 +104,11 @@ void Dir::Impl::open(const Path& path, const OpenCallback& callback) {
     uv_fs_opendir(m_uv_loop, &m_open_dir_req, path.string().c_str(), on_open_dir);
 }
 
-void Dir::Impl::read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback) {
+void Dir::Impl::list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback) {
     // TODO: check if open
     m_read_dir_req.data = this;
-    m_read_callback = read_callback;
-    m_end_read_callback = end_read_callback;
+    m_list_callback = list_callback;
+    m_end_list_callback = end_list_callback;
 
     uv_fs_readdir(m_uv_loop, &m_read_dir_req, m_uv_dir, on_read_dir);
 }
@@ -170,12 +170,12 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
 
     if (req->result == 0) {
-        if (this_.m_end_read_callback) {
-            this_.m_end_read_callback(*this_.m_parent);
+        if (this_.m_end_list_callback) {
+            this_.m_end_list_callback(*this_.m_parent);
         }
     } else {
-        if (this_.m_read_callback) {
-            this_.m_read_callback(*this_.m_parent, this_.m_dirents[0].name, convert_direntry_type(this_.m_dirents[0].type));
+        if (this_.m_list_callback) {
+            this_.m_list_callback(*this_.m_parent, this_.m_dirents[0].name, convert_direntry_type(this_.m_dirents[0].type));
         }
 
         uv_fs_req_cleanup(&this_.m_read_dir_req); // cleaning up previous request
@@ -205,8 +205,8 @@ void Dir::close() {
     return m_impl->close();
 }
 
-void Dir::read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback) {
-    return m_impl->read(read_callback, end_read_callback);
+void Dir::list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback) {
+    return m_impl->list(list_callback, end_list_callback);
 }
 
 const Path& Dir::path() const {

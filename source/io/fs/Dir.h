@@ -26,9 +26,9 @@ class Dir : public Removable,
             public UserDataHolder {
 public:
     using OpenCallback = std::function<void(Dir&, const Error&)>;
-    using ReadCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
+    using ListEntryCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
+    using EndListCallback = std::function<void(Dir&)>;
     using CloseCallback = std::function<void(Dir&)>;
-    using EndReadCallback = std::function<void(Dir&)>;
 
     IO_FORBID_COPY(Dir);
     IO_FORBID_MOVE(Dir);
@@ -39,7 +39,7 @@ public:
     IO_DLL_PUBLIC bool is_open() const;
     IO_DLL_PUBLIC void close();
 
-    IO_DLL_PUBLIC void read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback = nullptr);
+    IO_DLL_PUBLIC void list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback = nullptr);
 
     IO_DLL_PUBLIC void schedule_removal() override;
 
