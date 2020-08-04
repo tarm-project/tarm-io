@@ -69,25 +69,38 @@ TEST_F(DirTest, open_not_existing) {
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
 
-    bool callback_called = false;
+    std::size_t on_open_call_count = 0;
 
     auto path = (m_tmp_test_dir / "not_exists").string();
     dir->open(path, [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_TRUE(error);
         EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, error.code());
 
-        callback_called = true;
+        ++on_open_call_count;
 
-        // TODO: error check here
         EXPECT_EQ(path, dir.path());
         EXPECT_FALSE(dir.is_open());
     });
 
+    EXPECT_EQ(0, on_open_call_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 
-    EXPECT_TRUE(callback_called);
+    EXPECT_EQ(1, on_open_call_count);
+
     EXPECT_EQ("", dir->path());
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
+}
+
+TEST_F(DirTest, list_not_opened) {
+    /*
+    io::EventLoop loop;
+    auto dir = new io::fs::Dir(loop);
+
+    boost::filesystem::create_directories(m_tmp_test_dir/ "dir_1");
+    */
 }
 
 TEST_F(DirTest, list_elements) {
