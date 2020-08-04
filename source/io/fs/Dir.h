@@ -27,7 +27,7 @@ class Dir : public Removable,
 public:
     using OpenCallback = std::function<void(Dir&, const Error&)>;
     using ListEntryCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
-    using EndListCallback = std::function<void(Dir&)>;
+    using EndListCallback = std::function<void(Dir&, const Error&)>;
     using CloseCallback = std::function<void(Dir&)>;
 
     IO_FORBID_COPY(Dir);

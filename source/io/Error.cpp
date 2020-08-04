@@ -40,6 +40,8 @@ std::string Error::string() const {
             return "Unknown error";
         case StatusCode::FILE_NOT_OPEN:
             return "File is not opened";
+        case StatusCode::DIR_NOT_OPEN:
+            return "Directory is not opened";
         case StatusCode::TRANSPORT_INIT_FAILURE:
             return "Failed to init underlying transport or protocol";
         case StatusCode::TLS_CERTIFICATE_FILE_NOT_EXIST:

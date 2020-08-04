@@ -95,12 +95,30 @@ TEST_F(DirTest, open_not_existing) {
 }
 
 TEST_F(DirTest, list_not_opened) {
-    /*
+    std::size_t list_call_count = 0;
+    std::size_t end_list_call_count = 0;
+
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
+    dir->list(
+        [&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+            ++list_call_count;
+        },
+        [&](io::fs::Dir& dir, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::DIR_NOT_OPEN, error.code());
+            ++end_list_call_count;
+            dir.schedule_removal();
+        }
+    );
 
-    boost::filesystem::create_directories(m_tmp_test_dir/ "dir_1");
-    */
+    EXPECT_EQ(0, list_call_count);
+    EXPECT_EQ(0, end_list_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(0, list_call_count);
+    EXPECT_EQ(1, end_list_call_count);
 }
 
 TEST_F(DirTest, list_elements) {
@@ -171,11 +189,13 @@ TEST_F(DirTest, empty_dir) {
     std::size_t list_call_count = 0;
     std::size_t end_list_call_count = 0;
 
-    dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error&) {
+    dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
         dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
             ++list_call_count;
         },
-        [&](io::fs::Dir& dir) {
+        [&](io::fs::Dir& dir, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
             ++end_list_call_count;
         });
     });
@@ -203,11 +223,15 @@ TEST_F(DirTest, no_list_callback) {
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
 
-    dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error&) {
-        dir.list(nullptr,
-        [&](io::fs::Dir& dir) {
-            ++end_list_call_count;
-        });
+    dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        dir.list(
+            nullptr,
+            [&](io::fs::Dir& dir, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+                ++end_list_call_count;
+            }
+        );
     });
 
     EXPECT_EQ(0, end_list_call_count);

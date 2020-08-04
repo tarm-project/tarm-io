@@ -105,12 +105,24 @@ void Dir::Impl::open(const Path& path, const OpenCallback& callback) {
 }
 
 void Dir::Impl::list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback) {
-    // TODO: check if open
+    if (!is_open()) {
+        if (end_list_callback) {
+            m_loop->schedule_callback([=](EventLoop&) { end_list_callback(*this->m_parent, StatusCode::DIR_NOT_OPEN); });
+        }
+        return;
+    }
+
+    const Error read_dir_error = uv_fs_readdir(m_uv_loop, &m_read_dir_req, m_uv_dir, on_read_dir);
+    if (read_dir_error) {
+        if (end_list_callback) {
+            m_loop->schedule_callback([=](EventLoop&) { end_list_callback(*this->m_parent, read_dir_error); });
+        }
+        return;
+    }
+
     m_read_dir_req.data = this;
     m_list_callback = list_callback;
     m_end_list_callback = end_list_callback;
-
-    uv_fs_readdir(m_uv_loop, &m_read_dir_req, m_uv_dir, on_read_dir);
 }
 
 bool Dir::Impl::is_open() const {
@@ -171,7 +183,7 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
 
     if (req->result == 0) {
         if (this_.m_end_list_callback) {
-            this_.m_end_list_callback(*this_.m_parent);
+            this_.m_end_list_callback(*this_.m_parent, StatusCode::OK);
         }
     } else {
         if (this_.m_list_callback) {
