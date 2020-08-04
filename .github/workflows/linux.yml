@@ -36,7 +36,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: docker pull
-      run: docker pull ${IMAGE_PATH}
+      run: |
+        env
+        docker pull ${IMAGE_PATH}
     - name: define CMake generator
       run: | # Workaround for inability to pass environment variables between workflow steps
         echo "Unix Makefiles" > TARM_IO_CMAKE_GENERATOR
