@@ -181,6 +181,7 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
 
+    // TODO: handle req->result == UV_ECANCELED and other possible errors???
     if (req->result == 0) {
         if (this_.m_end_list_callback) {
             this_.m_end_list_callback(*this_.m_parent, StatusCode::OK);

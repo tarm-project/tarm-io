@@ -369,13 +369,13 @@ TEST_F(DirTest, list_fifo) {
 TEST_F(DirTest, make_temp_dir) {
     io::EventLoop loop;
 
-    bool callback_called = false;
+    std::size_t on_temp_dir_call_count = 0;
 
     const std::string template_path = (m_tmp_test_dir / "temp-XXXXXX").string();
 
     io::fs::make_temp_dir(loop, template_path,
         [&](const std::string& dir, const io::Error& error) {
-            callback_called = true;
+            ++on_temp_dir_call_count;
             EXPECT_FALSE(error);
             EXPECT_EQ(template_path.size(), dir.size());
             EXPECT_EQ(0, dir.find((m_tmp_test_dir / "temp-").string()));
@@ -383,101 +383,111 @@ TEST_F(DirTest, make_temp_dir) {
         }
     );
 
-    EXPECT_FALSE(callback_called); // Checking that operation is really async
+    EXPECT_EQ(0, on_temp_dir_call_count); // Checking that operation is really async
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    EXPECT_TRUE(callback_called);
+
+    EXPECT_EQ(1, on_temp_dir_call_count);
 }
 
 // TOOD: this test is passing on OS X. Need to hide pattern inside the call
 TEST_F(DirTest, DISABLED_make_temp_dir_invalid_template) {
     io::EventLoop loop;
 
-    bool callback_called = false;
+    std::size_t on_temp_dir_call_count = 0;
 
     // There should be 6 'X' chars
     const std::string template_path = (m_tmp_test_dir / "temp-XXXXX").string();
 
     io::fs::make_temp_dir(loop, template_path,
         [&](const std::string& dir, const io::Error& error) {
-            callback_called = true;
+            ++on_temp_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
         }
     );
 
-    EXPECT_FALSE(callback_called);
+    EXPECT_EQ(0, on_temp_dir_call_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    EXPECT_TRUE(callback_called);
+
+    EXPECT_EQ(1, on_temp_dir_call_count);
 }
 
 TEST_F(DirTest, make_dir) {
     io::EventLoop loop;
 
-    bool callback_called = false;
+    std::size_t on_make_dir_call_count = 0;
 
     const std::string path = (m_tmp_test_dir / "new_dir").string();
 
     io::fs::make_dir(loop, path,
         [&](const io::Error& error) {
-            callback_called = true;
+            ++on_make_dir_call_count;
             EXPECT_FALSE(error);
             EXPECT_TRUE(boost::filesystem::exists(path));
         }
     );
 
-    EXPECT_FALSE(callback_called);
+    EXPECT_EQ(0, on_make_dir_call_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    EXPECT_TRUE(callback_called);
+
+    EXPECT_EQ(1, on_make_dir_call_count);
 }
 
 TEST_F(DirTest, make_dir_no_such_dir_error) {
     io::EventLoop loop;
 
-    bool callback_called = false;
+    std::size_t on_make_dir_call_count = 0;
 
     const std::string path = (m_tmp_test_dir / "no_exists" / "new_dir").string();
 
     io::fs::make_dir(loop, path,
         [&](const io::Error& error) {
-            callback_called = true;
+            ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, error.code());
         }
     );
 
-    EXPECT_FALSE(callback_called);
+    EXPECT_EQ(0, on_make_dir_call_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    EXPECT_TRUE(callback_called);
+
+    EXPECT_EQ(1, on_make_dir_call_count);
 }
 
 TEST_F(DirTest, make_dir_exists_error) {
     io::EventLoop loop;
 
-    bool callback_called = false;
+    std::size_t on_make_dir_call_count = 0;
 
     const std::string path = (m_tmp_test_dir).string();
 
     io::fs::make_dir(loop, path,
         [&](const io::Error& error) {
-            callback_called = true;
+            ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::FILE_OR_DIR_ALREADY_EXISTS, error.code());
         }
     );
 
-    EXPECT_FALSE(callback_called);
+    EXPECT_EQ(0, on_make_dir_call_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    EXPECT_TRUE(callback_called);
+
+    EXPECT_EQ(1, on_make_dir_call_count);
 }
 
 TEST_F(DirTest, make_dir_empty_path_error) {
     io::EventLoop loop;
 
-    bool callback_called = false;
+    std::size_t on_make_dir_call_count = 0;
 
     io::fs::make_dir(loop, "",
         [&](const io::Error& error) {
-            callback_called = true;
+            ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             // TODO:
             // On Linux io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY is returned here
@@ -485,40 +495,44 @@ TEST_F(DirTest, make_dir_empty_path_error) {
         }
     );
 
-    EXPECT_FALSE(callback_called);
+    EXPECT_EQ(0, on_make_dir_call_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    EXPECT_TRUE(callback_called);
+
+    EXPECT_EQ(1, on_make_dir_call_count);
 }
 
 TEST_F(DirTest, make_dir_name_to_long_error) {
     io::EventLoop loop;
 
-    bool callback_called = false;
+    std::size_t on_make_dir_call_count = 0;
 
     const std::string path = (m_tmp_test_dir / "1234567890qwertyuiopasdfgghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm").string();
 
     io::fs::make_dir(loop, path,
         [&](const io::Error& error) {
-            callback_called = true;
+            ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::NAME_TOO_LONG, error.code());
         }
     );
 
-    EXPECT_FALSE(callback_called);
+    EXPECT_EQ(0, on_make_dir_call_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    EXPECT_TRUE(callback_called);
+
+    EXPECT_EQ(1, on_make_dir_call_count);
 }
 
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
 TEST_F(DirTest, make_dir_root_dir_error) {
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     io::EventLoop loop;
 
-    bool callback_called = false;
+    std::size_t on_make_dir_call_count = 0;
 
     io::fs::make_dir(loop, "/",
         [&](const io::Error& error) {
-            callback_called = true;
+            ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             // TODO:
             // On Linux another error: io::StatusCode::FILE_OR_DIR_ALREADY_EXISTS
@@ -526,11 +540,16 @@ TEST_F(DirTest, make_dir_root_dir_error) {
         }
     );
 
-    EXPECT_FALSE(callback_called);
+    EXPECT_EQ(0, on_make_dir_call_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    EXPECT_TRUE(callback_called);
-}
+
+    EXPECT_EQ(1, on_make_dir_call_count);
+#else
+    IO_TEST_SKIP();
 #endif
+}
+
 
 TEST_F(DirTest, remove_dir) {
     // If directory creation fail, exception will be thrown
