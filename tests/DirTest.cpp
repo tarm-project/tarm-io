@@ -56,8 +56,10 @@ TEST_F(DirTest, open_then_close) {
         EXPECT_EQ(m_tmp_test_dir, dir.path().string());
         EXPECT_TRUE(dir.is_open());
         dir.close();
-        EXPECT_TRUE(dir.path().empty());
-        EXPECT_FALSE(dir.is_open());
+        // basic properties are not changed immediately, but only after async close execution.
+        // In callback which is not present here
+        EXPECT_EQ(m_tmp_test_dir, dir.path().string());
+        EXPECT_TRUE(dir.is_open());
     });
     EXPECT_FALSE(dir->is_open());
 
@@ -92,6 +94,35 @@ TEST_F(DirTest, open_not_existing) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
     dir->schedule_removal();
+}
+
+TEST_F(DirTest, open_close_open) {
+    io::EventLoop loop;
+    auto dir = new io::fs::Dir(loop);
+
+    std::size_t on_open_count = 0;
+
+    const io::fs::Path dir_1 = io::fs::Path(m_tmp_test_dir.string()) / "dir_1";
+    const io::fs::Path dir_2 = io::fs::Path(m_tmp_test_dir.string()) / "dir_2";
+    boost::filesystem::create_directories(dir_1.string());
+    boost::filesystem::create_directories(dir_2.string());
+
+    dir->open(dir_1, [&](io::fs::Dir& dir, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        ++on_open_count;
+
+        dir.close([&](io::fs::Dir& dir, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            dir.open(dir_2, [&](io::fs::Dir& dir, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+                ++on_open_count;
+                EXPECT_EQ(dir_2.string(), dir.path().string());
+                dir.schedule_removal();
+            });
+        });
+    });
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DirTest, list_not_opened) {
@@ -169,13 +200,15 @@ TEST_F(DirTest, list_elements) {
     });
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-    dir->schedule_removal();
 
     EXPECT_TRUE(dir_1_listed);
     EXPECT_TRUE(dir_2_listed);
     EXPECT_TRUE(dir_3_listed);
     EXPECT_TRUE(file_1_listed);
     EXPECT_TRUE(file_2_listed);
+
+    dir->schedule_removal();
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
 TEST_F(DirTest, close_in_list_callback) {

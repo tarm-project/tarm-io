@@ -17,6 +17,10 @@ namespace tarm {
 namespace io {
 namespace fs {
 
+struct CloseDirRequest : public uv_fs_t {
+    Dir::CloseCallback close_callback;
+};
+
 class Dir::Impl {
 public:
     Impl(EventLoop& loop, Dir& parent);
@@ -24,16 +28,19 @@ public:
 
     void open(const Path& path, const OpenCallback& callback);
     bool is_open() const;
-    void close();
+    void close(const CloseCallback& callback);
 
     void list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback);
 
     const Path& path() const;
 
+    bool schedule_removal();
+
 protected:
     // statics
     static void on_open_dir(uv_fs_t* req);
     static void on_read_dir(uv_fs_t* req);
+    static void on_close_dir(uv_fs_t* req);
 
 private:
     static constexpr std::size_t DIRENTS_NUMBER = 1;
@@ -129,12 +136,10 @@ bool Dir::Impl::is_open() const {
     return m_uv_dir != nullptr;
 }
 
-void Dir::Impl::close() {
-    if (!is_open()) { // did not open // TODO: revise this for case when open occured with error
+void Dir::Impl::close(const CloseCallback& callback) {
+    if (!is_open()) {
         return;
     }
-
-    m_path.clear();
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(m_open_dir_req.ptr);
 
@@ -144,11 +149,23 @@ void Dir::Impl::close() {
     m_open_dir_req.data = nullptr;
     m_read_dir_req.data = nullptr;
 
-    // synchronous
-    uv_fs_t closedir_req;
-    uv_fs_closedir(m_uv_loop, &closedir_req, dir, nullptr);
+    auto closedir_req = new CloseDirRequest;
+    closedir_req->close_callback = callback;
+    closedir_req->data = this;
+    uv_fs_closedir(m_uv_loop, closedir_req, dir, on_close_dir);
+}
 
-    m_uv_dir = nullptr;
+bool Dir::Impl::schedule_removal() {
+    IO_LOG(m_loop, TRACE, "path:", m_path);
+
+    if (is_open()) {
+        close([this](Dir&, const Error&) {
+            this->m_parent->schedule_removal();
+        });
+        return false;
+    }
+
+    return true;
 }
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
@@ -196,6 +213,22 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
     }
 }
 
+void Dir::Impl::on_close_dir(uv_fs_t* req) {
+    auto& this_ = *reinterpret_cast<Dir::Impl*>(req->data);
+    auto& request = *reinterpret_cast<CloseDirRequest*>(req);
+
+    IO_LOG(this_.m_loop, TRACE, this_.m_parent);
+    this_.m_uv_dir = nullptr;
+    this_.m_path.clear();
+
+    Error error(req->result);
+    if (request.close_callback) {
+        request.close_callback(*this_.m_parent, error);
+    }
+
+    delete &request;
+}
+
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 Dir::Dir(EventLoop& loop) :
@@ -214,8 +247,8 @@ bool Dir::is_open() const {
     return m_impl->is_open();
 }
 
-void Dir::close() {
-    return m_impl->close();
+void Dir::close(const CloseCallback& callback) {
+    return m_impl->close(callback);
 }
 
 void Dir::list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback) {
@@ -227,9 +260,11 @@ const Path& Dir::path() const {
 }
 
 void Dir::schedule_removal() {
-    m_impl->close();
-
-    Removable::schedule_removal();
+    Removable::set_removal_scheduled();
+    const bool ready_to_remove = m_impl->schedule_removal();
+    if (ready_to_remove) {
+        Removable::schedule_removal();
+    }
 }
 
 /////////////////////////////////////////// functions //////////////////////////////////////////////
