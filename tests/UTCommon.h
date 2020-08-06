@@ -14,9 +14,9 @@
 using namespace tarm;
 
 #ifdef GTEST_SKIP
-    #define IO_TEST_SKIP() GTEST_SKIP()
+    #define TARM_IO_TEST_SKIP() GTEST_SKIP()
 #else
-    #define IO_TEST_SKIP() return
+    #define TARM_IO_TEST_SKIP() return
 #endif
 
 std::string create_temp_test_directory();

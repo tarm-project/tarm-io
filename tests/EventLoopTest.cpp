@@ -708,7 +708,7 @@ TEST_F(EventLoopTest, signal_repeating) {
 
     EXPECT_EQ(1, callback_counter);
 #else
-    IO_TEST_SKIP();
+    TARM_IO_TEST_SKIP();
 #endif
 }
 
@@ -742,7 +742,7 @@ TEST_F(EventLoopTest, signal_once) {
 
     EXPECT_EQ(1, callback_counter);
 #else
-    IO_TEST_SKIP();
+    TARM_IO_TEST_SKIP();
 #endif
 }
 
@@ -812,7 +812,7 @@ TEST_F(EventLoopTest, signal_once_schedule_cancel_and_scgedule_again) {
     EXPECT_EQ(0, callback_counter_1);
     EXPECT_EQ(1, callback_counter_2);
 #else
-    IO_TEST_SKIP();
+    TARM_IO_TEST_SKIP();
 #endif
 }
 
@@ -859,6 +859,6 @@ TEST_F(EventLoopTest, signal_force_out_one_callback_with_another) {
     EXPECT_EQ(0, callback_counter_1);
     EXPECT_EQ(1, callback_counter_2);
 #else
-    IO_TEST_SKIP();
+    TARM_IO_TEST_SKIP();
 #endif
 }

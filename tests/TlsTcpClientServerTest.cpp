@@ -1188,7 +1188,7 @@ TEST_F(TlsTcpClientServerTest, client_with_restricted_tls_version) {
 
 TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
     if (io::net::min_supported_tls_version() == io::net::max_supported_tls_version()) {
-        IO_TEST_SKIP();
+        TARM_IO_TEST_SKIP();
     }
 
     std::size_t client_on_connect_callback_count = 0;
@@ -1254,7 +1254,7 @@ TEST_F(TlsTcpClientServerTest, client_and_server_tls_version_mismatch) {
 TEST_F(TlsTcpClientServerTest, server_with_invalid_tls_version_range) {
     // Note: min is greater than max
     if (io::net::min_supported_tls_version() == io::net::max_supported_tls_version()) {
-        IO_TEST_SKIP();
+        TARM_IO_TEST_SKIP();
     }
 
     io::EventLoop loop;
@@ -1276,7 +1276,7 @@ TEST_F(TlsTcpClientServerTest, server_with_invalid_tls_version_range) {
 TEST_F(TlsTcpClientServerTest, client_with_invalid_tls_version_range) {
     // Note: min is greater than max
     if (io::net::min_supported_tls_version() == io::net::max_supported_tls_version()) {
-        IO_TEST_SKIP();
+        TARM_IO_TEST_SKIP();
     }
 
     io::EventLoop loop;

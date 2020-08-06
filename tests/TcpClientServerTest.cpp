@@ -99,7 +99,7 @@ TEST_F(TcpClientServerTest, bind_privileged) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 #else
-    IO_TEST_SKIP();
+    TARM_IO_TEST_SKIP();
 #endif
 }
 
@@ -1516,7 +1516,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
     //        when it is happened entire buffer was consumed and successfull callback returned,
     //        so operation will not be cancelled and result will be OK.
 #ifdef WIN32
-    IO_TEST_SKIP();
+    TARM_IO_TEST_SKIP();
 #endif // WIN32
 
     const std::size_t DATA_SIZE = 64 * 1024 * 1024;
@@ -1587,7 +1587,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
     //       which does not allow to complete that sending operation, thus it is cancelled
 
 #ifdef WIN32
-    IO_TEST_SKIP();
+    TARM_IO_TEST_SKIP();
 #endif // WIN32
 
     const std::size_t DATA_SIZE = 64 * 1024 * 1024;

@@ -62,7 +62,7 @@ TEST_F(UdpClientServerTest, bind_privileged) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 #else
-    IO_TEST_SKIP();
+    TARM_IO_TEST_SKIP();
 #endif
 }
 
@@ -1492,7 +1492,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
 TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads) {
     const std::size_t SERVER_RECEIVE_BUFFER_SIZE = 128 * 1024;
     if (SERVER_RECEIVE_BUFFER_SIZE > io::global::max_receive_buffer_size()) {
-        IO_TEST_SKIP();
+        TARM_IO_TEST_SKIP();
     }
 
     const std::size_t SIZE = 200;
