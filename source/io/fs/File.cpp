@@ -169,6 +169,13 @@ void File::Impl::close(const CloseCallback& close_callback) {
         return;
     }
 
+    if (m_state == State::CLOSING) {
+        if (close_callback) {
+            close_callback(*m_parent, StatusCode::OPERATION_ALREADY_IN_PROGRESS);
+        }
+        return;
+    }
+
     m_state = State::CLOSING;
 
     IO_LOG(m_loop, DEBUG, "path: ", m_path);

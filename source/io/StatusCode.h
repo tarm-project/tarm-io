@@ -30,6 +30,7 @@ namespace io {
     X(TLS_PRIVATE_KEY_INVALID) \
     X(TLS_PRIVATE_KEY_AND_CERTIFICATE_NOT_MATCH) \
     X(NOT_CONNECTED) \
+    X(OPERATION_ALREADY_IN_PROGRESS) \
     /* compound error which usually includes custom message string */ \
     X(OPENSSL_ERROR) \
     /*libuv codes*/ \

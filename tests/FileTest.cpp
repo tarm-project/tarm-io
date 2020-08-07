@@ -269,7 +269,7 @@ TEST_F(FileTest, double_close_parallel) {
         });
         file.close([&](io::fs::File& file, const io::Error& error) {
             EXPECT_TRUE(error);
-            EXPECT_EQ(io::StatusCode::BAD_FILE_DESCRIPTOR, error.code());
+            EXPECT_EQ(io::StatusCode::OPERATION_ALREADY_IN_PROGRESS, error.code());
             ++close_count;
         });
     });

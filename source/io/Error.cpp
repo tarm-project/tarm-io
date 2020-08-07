@@ -56,6 +56,8 @@ std::string Error::string() const {
             return "Private key and certificate do not match";
         case StatusCode::NOT_CONNECTED:
             return "Not connected";
+        case StatusCode::OPERATION_ALREADY_IN_PROGRESS:
+            return "Operation already in progress";
         case StatusCode::OPENSSL_ERROR:
             return "Openssl error: " + m_custom_error_message;
 

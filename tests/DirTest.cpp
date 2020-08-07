@@ -125,6 +125,42 @@ TEST_F(DirTest, open_close_open) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
+// TODO: rewrite this test for Dir
+/*
+TEST_F(FileTest, double_close_parallel) {
+     auto path = create_empty_file(m_tmp_test_dir);
+     ASSERT_FALSE(path.empty());
+
+     std::size_t close_count = 0;
+
+     io::EventLoop loop;
+
+     auto file = new io::fs::File(loop);
+     file->open(path, [&](io::fs::File& file, const io::Error& error) {
+         EXPECT_TRUE(file.is_open());
+
+         file.close([&](io::fs::File& file, const io::Error& error) {
+             EXPECT_FALSE(error) << error;
+             ++close_count;
+         });
+         file.close([&](io::fs::File& file, const io::Error& error) {
+             EXPECT_TRUE(error);
+             EXPECT_EQ(io::StatusCode::OPERATION_ALREADY_IN_PROGRESS, error.code());
+             ++close_count;
+         });
+     });
+
+     EXPECT_EQ(0, close_count);
+
+     ASSERT_EQ(io::StatusCode::OK, loop.run());
+     file->schedule_removal();
+
+     EXPECT_EQ(2, close_count);
+
+     ASSERT_EQ(io::StatusCode::OK, loop.run());
+ }
+ */
+
 TEST_F(DirTest, list_not_opened) {
     std::size_t list_call_count = 0;
     std::size_t end_list_call_count = 0;
