@@ -103,8 +103,8 @@ TEST_F(DirTest, open_close_open) {
     std::size_t on_open_count = 0;
 
     const io::fs::Path dir_1 = io::fs::Path(m_tmp_test_dir.string()) / "dir_1";
-    const io::fs::Path dir_2 = io::fs::Path(m_tmp_test_dir.string()) / "dir_2";
     boost::filesystem::create_directories(dir_1.string());
+    const io::fs::Path dir_2 = io::fs::Path(m_tmp_test_dir.string()) / "dir_2";
     boost::filesystem::create_directories(dir_2.string());
 
     dir->open(dir_1, [&](io::fs::Dir& dir, const io::Error& error) {
@@ -125,25 +125,23 @@ TEST_F(DirTest, open_close_open) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-// TODO: rewrite this test for Dir
-/*
-TEST_F(FileTest, double_close_parallel) {
-     auto path = create_empty_file(m_tmp_test_dir);
-     ASSERT_FALSE(path.empty());
+TEST_F(DirTest, double_close_parallel) {
+     const io::fs::Path dir_path = io::fs::Path(m_tmp_test_dir.string()) / "dir_1";
+     boost::filesystem::create_directories(dir_path.string());
 
      std::size_t close_count = 0;
 
      io::EventLoop loop;
 
-     auto file = new io::fs::File(loop);
-     file->open(path, [&](io::fs::File& file, const io::Error& error) {
-         EXPECT_TRUE(file.is_open());
+     auto dir = new io::fs::Dir(loop);
+     dir->open(dir_path, [&](io::fs::Dir& dir, const io::Error& error) {
+         EXPECT_TRUE(dir.is_open());
 
-         file.close([&](io::fs::File& file, const io::Error& error) {
+         dir.close([&](io::fs::Dir& dir, const io::Error& error) {
              EXPECT_FALSE(error) << error;
              ++close_count;
          });
-         file.close([&](io::fs::File& file, const io::Error& error) {
+         dir.close([&](io::fs::Dir& dir, const io::Error& error) {
              EXPECT_TRUE(error);
              EXPECT_EQ(io::StatusCode::OPERATION_ALREADY_IN_PROGRESS, error.code());
              ++close_count;
@@ -153,13 +151,12 @@ TEST_F(FileTest, double_close_parallel) {
      EXPECT_EQ(0, close_count);
 
      ASSERT_EQ(io::StatusCode::OK, loop.run());
-     file->schedule_removal();
 
      EXPECT_EQ(2, close_count);
 
+    dir->schedule_removal();
      ASSERT_EQ(io::StatusCode::OK, loop.run());
  }
- */
 
 TEST_F(DirTest, list_not_opened) {
     std::size_t list_call_count = 0;

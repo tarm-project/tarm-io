@@ -23,6 +23,14 @@ struct CloseDirRequest : public uv_fs_t {
 
 class Dir::Impl {
 public:
+    enum class State {
+        INITIAL = 0,
+        OPENING,
+        OPENED,
+        CLOSING,
+        CLOSED
+    };
+
     Impl(EventLoop& loop, Dir& parent);
     ~Impl();
 
@@ -60,6 +68,8 @@ private:
     uv_dir_t* m_uv_dir = nullptr;
 
     uv_dirent_t m_dirents[DIRENTS_NUMBER];
+
+    State m_state = State::INITIAL;
 };
 
 namespace {
@@ -104,9 +114,12 @@ Dir::Impl::~Impl() {
 }
 
 void Dir::Impl::open(const Path& path, const OpenCallback& callback) {
+    // TODO: close previous dir if was opened. Much like for File
     m_path = path;
     m_open_callback = callback;
     m_open_dir_req.data = this;
+
+    m_state = State::OPENING;
 
     uv_fs_opendir(m_uv_loop, &m_open_dir_req, path.string().c_str(), on_open_dir);
 }
@@ -140,6 +153,15 @@ void Dir::Impl::close(const CloseCallback& callback) {
     if (!is_open()) {
         return;
     }
+
+    if (m_state == State::CLOSING) {
+       if (callback) {
+           callback(*m_parent, StatusCode::OPERATION_ALREADY_IN_PROGRESS);
+       }
+       return;
+   }
+
+   m_state = State::CLOSING;
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(m_open_dir_req.ptr);
 
@@ -188,6 +210,8 @@ void Dir::Impl::on_open_dir(uv_fs_t* req) {
         this_.m_open_callback(*this_.m_parent, error);
     }
 
+    this_.m_state = State::OPENED;
+
     if (error) {
         this_.m_path.clear();
     }
@@ -225,6 +249,8 @@ void Dir::Impl::on_close_dir(uv_fs_t* req) {
     if (request.close_callback) {
         request.close_callback(*this_.m_parent, error);
     }
+
+    this_.m_state = State::CLOSED;
 
     delete &request;
 }
