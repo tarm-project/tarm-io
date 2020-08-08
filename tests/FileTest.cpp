@@ -155,7 +155,6 @@ TEST_F(FileTest, open_in_open_callback) {
 
     EXPECT_TRUE(opened_1);
     EXPECT_TRUE(opened_2);
-
 }
 
 TEST_F(FileTest, open_not_existing) {
@@ -1008,6 +1007,7 @@ TEST_F(FileTest, try_open_dir) {
 }
 
 // TODO: more tests for various fields of StatData
+// TODO: open_close_open test like for Dir
 
 // TODO: test copy file larger than 4 GB
 // For details see https://github.com/libuv/libuv/commit/2bbf7d5c8cd070cc8541698fe72136328bc18eae

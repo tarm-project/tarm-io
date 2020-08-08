@@ -195,9 +195,12 @@ void File::Impl::close(const CloseCallback& close_callback) {
         if (close_callback) {
             m_loop->schedule_callback([=](EventLoop&) {
                 close_callback(*m_parent, close_error);
+
+                if (m_state == State::CLOSED) {
+                    finish_close();
+                }
             });
         }
-        finish_close();
     }
 }
 
@@ -209,7 +212,6 @@ void File::Impl::finish_close() {
     }
 
     m_path.clear();
-    m_state = State::CLOSED;
 }
 
 void File::Impl::open(const Path& path, const OpenCallback& callback) {
@@ -418,6 +420,7 @@ void File::Impl::on_open(uv_fs_t* req) {
 
     // Making stat here because Windows allows open directory as a file, so the call is successful on this
     // platform. But Linux and Mac return errro immediately.
+    // TODO: wrap this stat into plafrom macros for Windos only???
     this_.stat([&this_](File& f, const StatData& d) {
         if (this_.m_open_callback) {
             if (d.mode & S_IFDIR) {
@@ -429,8 +432,8 @@ void File::Impl::on_open(uv_fs_t* req) {
             }
             else {
                 this_.m_loop->schedule_callback([&this_](EventLoop&){
-                    this_.m_open_callback(*this_.m_parent, StatusCode::OK);
                     this_.m_state = State::OPENED;
+                    this_.m_open_callback(*this_.m_parent, StatusCode::OK);
                 });
             }
         }
@@ -521,12 +524,16 @@ void File::Impl::on_close(uv_fs_t* req) {
     auto& request = *reinterpret_cast<CloseRequest*>(req);
 
     this_.m_file_handle = -1;
+    this_.m_state = State::CLOSED;
+
     Error error(req->result);
     if (request.close_callback) {
         request.close_callback(*this_.m_parent, error);
     }
 
-    this_.finish_close();
+    if (this_.m_state == State::CLOSED) {
+        this_.finish_close();
+    }
 
     delete &request;
 }
