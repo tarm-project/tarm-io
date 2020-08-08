@@ -166,6 +166,11 @@ bool File::Impl::is_open() const {
 
 void File::Impl::close(const CloseCallback& close_callback) {
     if (!is_open()) {
+        if (close_callback) {
+            m_loop->schedule_callback([this, close_callback](EventLoop&) {
+                close_callback(*this->m_parent, StatusCode::FILE_NOT_OPEN);
+            });
+        }
         return;
     }
 

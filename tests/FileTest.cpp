@@ -239,7 +239,7 @@ TEST_F(FileTest, close_in_open_callback) {
     EXPECT_EQ(1, file_on_close_count);
 }
 
-TEST_F(FileTest, close_not_open_file) {
+TEST_F(FileTest, close_not_open_file_no_callback) {
     io::EventLoop loop;
 
     auto file = new io::fs::File(loop);
@@ -249,6 +249,28 @@ TEST_F(FileTest, close_not_open_file) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
+}
+
+TEST_F(FileTest, close_not_open_file_with_callback) {
+    io::EventLoop loop;
+
+    std::size_t on_close_count = 0;
+
+    auto file = new io::fs::File(loop);
+    EXPECT_FALSE(file->is_open());
+    file->close([&](io::fs::File& file, const io::Error& error) {
+        EXPECT_FALSE(file.is_open());
+        EXPECT_TRUE(error);
+        EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, error.code());
+        ++on_close_count;
+        file.schedule_removal();
+    });
+
+    EXPECT_EQ(0, on_close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_close_count);
 }
 
 TEST_F(FileTest, double_close_parallel) {
@@ -301,8 +323,9 @@ TEST_F(FileTest, double_close_sequential) {
             ++close_count;
 
             file.close([&](io::fs::File& file, const io::Error& error) {
-                // Not executed
-                EXPECT_FALSE(error) << error;
+                EXPECT_TRUE(error);
+                EXPECT_EQ(io::StatusCode::FILE_NOT_OPEN, error.code());
+                EXPECT_FALSE(file.is_open());
                 ++close_count;
             });
         });
@@ -313,7 +336,7 @@ TEST_F(FileTest, double_close_sequential) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
     file->schedule_removal();
 
-    EXPECT_EQ(1, close_count);
+    EXPECT_EQ(2, close_count);
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
