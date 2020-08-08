@@ -213,7 +213,7 @@ void File::Impl::finish_close() {
 }
 
 void File::Impl::open(const Path& path, const OpenCallback& callback) {
-    if (is_open()) {
+    if (m_state == State::OPENED) {
         close([=](File& file, const Error& error) {
             if (error) {
                 if(callback) {
