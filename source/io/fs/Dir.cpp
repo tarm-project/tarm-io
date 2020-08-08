@@ -114,7 +114,28 @@ Dir::Impl::~Impl() {
 }
 
 void Dir::Impl::open(const Path& path, const OpenCallback& callback) {
-    // TODO: close previous dir if was opened. Much like for File
+    // TODO: almost exact copypaste form File::open. Generalize???
+    if (m_state == State::OPENED) {
+        close([=](Dir& dir, const Error& error) {
+            if (error) {
+                if(callback) {
+                    callback(dir, error);
+                }
+            } else {
+                this->m_loop->schedule_callback([=](EventLoop&) {
+                    this->open(path, callback);
+                });
+            }
+        });
+        return;
+    } else if (!(m_state == State::INITIAL || m_state == State::CLOSED)) {
+        this->m_loop->schedule_callback([=](EventLoop&) {
+            this->open(path, callback);
+        });
+        return;
+    }
+
+    IO_LOG(m_loop, DEBUG, "path:", path);
     m_path = path;
     m_open_callback = callback;
     m_open_dir_req.data = this;
@@ -206,11 +227,11 @@ void Dir::Impl::on_open_dir(uv_fs_t* req) {
         this_.m_uv_dir->nentries = Dir::Impl::DIRENTS_NUMBER;
     }
 
+    this_.m_state = State::OPENED;
+
     if (this_.m_open_callback) {
         this_.m_open_callback(*this_.m_parent, error);
     }
-
-    this_.m_state = State::OPENED;
 
     if (error) {
         this_.m_path.clear();
@@ -245,12 +266,12 @@ void Dir::Impl::on_close_dir(uv_fs_t* req) {
     this_.m_uv_dir = nullptr;
     this_.m_path.clear();
 
+    this_.m_state = State::CLOSED;
+
     Error error(req->result);
     if (request.close_callback) {
         request.close_callback(*this_.m_parent, error);
     }
-
-    this_.m_state = State::CLOSED;
 
     delete &request;
 }

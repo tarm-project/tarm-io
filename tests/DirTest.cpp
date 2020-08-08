@@ -122,41 +122,78 @@ TEST_F(DirTest, open_close_open) {
         });
     });
 
+    EXPECT_EQ(0, on_open_count);
+
     ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(2, on_open_count);
 }
 
 TEST_F(DirTest, double_close_parallel) {
-     const io::fs::Path dir_path = io::fs::Path(m_tmp_test_dir.string()) / "dir_1";
-     boost::filesystem::create_directories(dir_path.string());
+    const io::fs::Path dir_path = io::fs::Path(m_tmp_test_dir.string()) / "dir_1";
+    boost::filesystem::create_directories(dir_path.string());
 
-     std::size_t close_count = 0;
+    std::size_t close_count = 0;
 
-     io::EventLoop loop;
+    io::EventLoop loop;
 
-     auto dir = new io::fs::Dir(loop);
-     dir->open(dir_path, [&](io::fs::Dir& dir, const io::Error& error) {
-         EXPECT_TRUE(dir.is_open());
+    auto dir = new io::fs::Dir(loop);
+    dir->open(dir_path, [&](io::fs::Dir& dir, const io::Error& error) {
+        EXPECT_TRUE(dir.is_open());
 
-         dir.close([&](io::fs::Dir& dir, const io::Error& error) {
-             EXPECT_FALSE(error) << error;
-             ++close_count;
-         });
-         dir.close([&](io::fs::Dir& dir, const io::Error& error) {
-             EXPECT_TRUE(error);
-             EXPECT_EQ(io::StatusCode::OPERATION_ALREADY_IN_PROGRESS, error.code());
-             ++close_count;
-         });
-     });
+        dir.close([&](io::fs::Dir& dir, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++close_count;
+        });
+        dir.close([&](io::fs::Dir& dir, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::OPERATION_ALREADY_IN_PROGRESS, error.code());
+            ++close_count;
+        });
+    });
 
-     EXPECT_EQ(0, close_count);
+    EXPECT_EQ(0, close_count);
 
-     ASSERT_EQ(io::StatusCode::OK, loop.run());
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
 
-     EXPECT_EQ(2, close_count);
+    EXPECT_EQ(2, close_count);
 
     dir->schedule_removal();
-     ASSERT_EQ(io::StatusCode::OK, loop.run());
- }
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+}
+
+TEST_F(DirTest, open_in_open_callback) {
+    const io::fs::Path dir_path_1 = io::fs::Path(m_tmp_test_dir.string()) / "dir_1";
+    boost::filesystem::create_directories(dir_path_1.string());
+
+    const io::fs::Path dir_path_2 = io::fs::Path(m_tmp_test_dir.string()) / "dir_2";
+    boost::filesystem::create_directories(dir_path_2.string());
+
+    io::EventLoop loop;
+
+    size_t on_open_1_count = 0;
+    size_t on_open_2_count = 0;
+
+    auto file = new io::fs::Dir(loop);
+    file->open(dir_path_1, [&](io::fs::Dir& dir, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        ++on_open_1_count;
+
+        dir.open(dir_path_2, [&](io::fs::Dir& dir, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++on_open_2_count;
+            dir.schedule_removal();
+        });
+    });
+
+    EXPECT_EQ(0, on_open_1_count);
+    EXPECT_EQ(0, on_open_2_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_open_1_count);
+    EXPECT_EQ(1, on_open_2_count);
+}
 
 TEST_F(DirTest, list_not_opened) {
     std::size_t list_call_count = 0;
