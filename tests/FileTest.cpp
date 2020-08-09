@@ -272,6 +272,40 @@ TEST_F(FileTest, close_not_open_file_with_callback) {
     EXPECT_EQ(1, on_close_count);
 }
 
+TEST_F(FileTest, open_close_open) {
+    auto path_1 = create_empty_file(m_tmp_test_dir);
+    ASSERT_FALSE(path_1.empty());
+
+    auto path_2 = create_empty_file(m_tmp_test_dir);
+    ASSERT_FALSE(path_2.empty());
+
+    io::EventLoop loop;
+    auto file = new io::fs::File(loop);
+
+    std::size_t on_open_count = 0;
+
+    file->open(path_1, [&](io::fs::File& file, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        ++on_open_count;
+
+        file.close([&](io::fs::File& file, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            file.open(path_2, [&](io::fs::File& file, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+                ++on_open_count;
+                EXPECT_EQ(path_2, file.path().string());
+                file.schedule_removal();
+            });
+        });
+    });
+
+    EXPECT_EQ(0, on_open_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(2, on_open_count);
+}
+
 TEST_F(FileTest, double_close_parallel) {
     auto path = create_empty_file(m_tmp_test_dir);
     ASSERT_FALSE(path.empty());
@@ -1007,7 +1041,6 @@ TEST_F(FileTest, try_open_dir) {
 }
 
 // TODO: more tests for various fields of StatData
-// TODO: open_close_open test like for Dir
 
 // TODO: test copy file larger than 4 GB
 // For details see https://github.com/libuv/libuv/commit/2bbf7d5c8cd070cc8541698fe72136328bc18eae
