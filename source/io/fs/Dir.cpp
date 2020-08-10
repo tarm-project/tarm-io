@@ -484,7 +484,7 @@ void remove_dir_impl(EventLoop& loop, const Path& path, const RemoveDirCallback&
                 } else {
                     if (progress_callback) {
                         loop.execute_on_loop_thread([progress_callback, rmdir_path](EventLoop&){
-                            progress_callback(rmdir_path.string().c_str()); // TODO: remove c_str in future
+                            progress_callback(rmdir_path.string());
                         });
                     }
                 }
