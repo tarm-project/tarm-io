@@ -243,10 +243,9 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
 
-    // TODO: handle req->result == UV_ECANCELED and other possible errors???
-    if (req->result == 0) {
+    if (req->result <= 0) {
         if (this_.m_end_list_callback) {
-            this_.m_end_list_callback(*this_.m_parent, StatusCode::OK);
+            this_.m_end_list_callback(*this_.m_parent, Error(req->result));
         }
     } else {
         if (this_.m_list_callback) {
@@ -254,6 +253,7 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
         }
 
         uv_fs_req_cleanup(&this_.m_read_dir_req); // cleaning up previous request
+        // Not handling return value because all data is inited and not NULL at this point
         uv_fs_readdir(req->loop, &this_.m_read_dir_req, dir, on_read_dir);
     }
 }

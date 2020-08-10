@@ -39,6 +39,7 @@ public:
     IO_DLL_PUBLIC bool is_open() const;
     IO_DLL_PUBLIC void close(const CloseCallback& callback = nullptr);
 
+    // TODO: option to cancel list???
     IO_DLL_PUBLIC void list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback = nullptr);
 
     IO_DLL_PUBLIC void schedule_removal() override;
