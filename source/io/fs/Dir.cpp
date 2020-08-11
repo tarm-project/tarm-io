@@ -370,9 +370,10 @@ void on_make_dir(uv_fs_t* uv_request) {
     delete &request;
 }
 
-void make_dir(EventLoop& loop, const Path& path, const MakeDirCallback& callback) {
+void make_dir(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
     auto request = new RequestWithCallback<MakeDirCallback>(callback);
-    const Error error = uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.string().c_str(), 0, on_make_dir);
+    const Error error =
+        uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.string().c_str(), mode, on_make_dir);
     if (error) {
         if (callback) {
             callback(error);

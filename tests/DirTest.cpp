@@ -530,14 +530,14 @@ TEST_F(DirTest, DISABLED_make_temp_dir_invalid_template) {
     EXPECT_EQ(1, on_temp_dir_call_count);
 }
 
-TEST_F(DirTest, make_dir) {
+TEST_F(DirTest, make_dir_default_mode) {
     io::EventLoop loop;
 
     std::size_t on_make_dir_call_count = 0;
 
     const std::string path = (m_tmp_test_dir / "new_dir").string();
 
-    io::fs::make_dir(loop, path,
+    io::fs::make_dir(loop, path, 0,
         [&](const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_FALSE(error);
@@ -552,6 +552,33 @@ TEST_F(DirTest, make_dir) {
     EXPECT_EQ(1, on_make_dir_call_count);
 }
 
+TEST_F(DirTest, make_dir_with_mode) {
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    io::EventLoop loop;
+
+    std::size_t on_make_dir_call_count = 0;
+
+    const std::string path = (m_tmp_test_dir / "new_dir").string();
+
+    io::fs::make_dir(loop, path, S_IRWXU,
+        [&](const io::Error& error) {
+            ++on_make_dir_call_count;
+            EXPECT_FALSE(error);
+            EXPECT_TRUE(boost::filesystem::exists(path));
+            // TODO: stat dir and check that mode
+        }
+    );
+
+    EXPECT_EQ(0, on_make_dir_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_make_dir_call_count);
+#else
+    TARM_IO_TEST_SKIP();
+#endif
+}
+
 TEST_F(DirTest, make_dir_no_such_dir_error) {
     io::EventLoop loop;
 
@@ -559,7 +586,7 @@ TEST_F(DirTest, make_dir_no_such_dir_error) {
 
     const std::string path = (m_tmp_test_dir / "no_exists" / "new_dir").string();
 
-    io::fs::make_dir(loop, path,
+    io::fs::make_dir(loop, path, 0,
         [&](const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
@@ -581,7 +608,7 @@ TEST_F(DirTest, make_dir_exists_error) {
 
     const std::string path = (m_tmp_test_dir).string();
 
-    io::fs::make_dir(loop, path,
+    io::fs::make_dir(loop, path, 0,
         [&](const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
@@ -601,7 +628,7 @@ TEST_F(DirTest, make_dir_empty_path_error) {
 
     std::size_t on_make_dir_call_count = 0;
 
-    io::fs::make_dir(loop, "",
+    io::fs::make_dir(loop, "", 0,
         [&](const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
@@ -625,7 +652,7 @@ TEST_F(DirTest, make_dir_name_to_long_error) {
 
     const std::string path = (m_tmp_test_dir / "1234567890qwertyuiopasdfgghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm").string();
 
-    io::fs::make_dir(loop, path,
+    io::fs::make_dir(loop, path, 0,
         [&](const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
@@ -646,7 +673,7 @@ TEST_F(DirTest, make_dir_root_dir_error) {
 
     std::size_t on_make_dir_call_count = 0;
 
-    io::fs::make_dir(loop, "/",
+    io::fs::make_dir(loop, "/", 0,
         [&](const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
@@ -710,7 +737,6 @@ TEST_F(DirTest, remove_dir) {
 }
 
 TEST_F(DirTest, remove_dir_with_progress) {
-    // TODO: need to check if directories creation succeeded
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c");
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "e" / "f");
     boost::filesystem::create_directories(m_tmp_test_dir / "h");

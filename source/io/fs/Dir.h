@@ -54,15 +54,14 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
-// TODO: transfer mode ???
 using MakeTempDirCallback = std::function<void(const std::string&, const Error&)>;
 IO_DLL_PUBLIC
 void make_temp_dir(EventLoop& loop, const Path& name_template, const MakeTempDirCallback& callback);
 
-// TODO: transfer mode
+// Note: mode does nothing on Windows, should be 0
 using MakeDirCallback = std::function<void(const Error&)>;
 IO_DLL_PUBLIC
-void make_dir(EventLoop& loop, const Path& path, const MakeDirCallback& callback);
+void make_dir(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback);
 
 using RemoveDirCallback = std::function<void(const Error&)>;
 using ProgressCallback = std::function<void(const std::string&)>;
