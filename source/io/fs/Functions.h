@@ -23,3 +23,8 @@ IO_DLL_PUBLIC void stat(EventLoop& loop, const Path& path, const StatCallback& c
 } // namespace fs
 } // namespace io
 } // namespace tarm
+
+// TOOD: implement as functions???
+#if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
+#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+#endif

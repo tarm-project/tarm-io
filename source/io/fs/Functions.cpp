@@ -44,7 +44,7 @@ void stat_impl(EventLoop& loop, const Path& path, const StatCallback& callback) 
     request->callback = callback;
     const Error stat_error = uv_fs_stat(reinterpret_cast<uv_loop_t*>(loop.raw_loop()),
                                         request,
-                                        path.c_str(),
+                                        path.string().c_str(),
                                         on_stat);
     if (stat_error) {
         StatData data;
