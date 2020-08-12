@@ -21,17 +21,6 @@
 
 namespace {
 
-std::string create_empty_file(const std::string& path_where_create) {
-    std::string file_path = path_where_create + "/empty";
-    std::ofstream ofile(file_path);
-    if (ofile.fail()) {
-        return "";
-    }
-    ofile.close();
-
-    return file_path;
-}
-
 std::string create_file_for_read(const std::string& path_where_create, std::size_t size) {
     if (size % 4 != 0) {
         return "";

@@ -104,6 +104,7 @@ list(APPEND IO_SOURCE_LIST
         io/global/Configuration.cpp
         io/fs/Dir.cpp
         io/fs/File.cpp
+        io/fs/Functions.cpp
         io/fs/Path.cpp
         io/fs/StatData.cpp
         io/fs/path_impl/CodecvtErrorCategory.cpp

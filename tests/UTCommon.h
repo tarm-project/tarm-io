@@ -20,6 +20,7 @@ using namespace tarm;
 #endif
 
 std::string create_temp_test_directory();
+std::string create_empty_file(const std::string& path_where_create);
 
 boost::filesystem::path exe_path();
 

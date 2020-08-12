@@ -63,6 +63,17 @@ boost::filesystem::path exe_path() {
     return result;
 }
 
+std::string create_empty_file(const std::string& path_where_create) {
+    std::string file_path = path_where_create + "/empty";
+    std::ofstream ofile(file_path);
+    if (ofile.fail()) {
+        return "";
+    }
+    ofile.close();
+
+    return file_path;
+}
+
 std::string current_test_suite_name() {
 #if TARM_IO_GTEST_VERSION_MAJOR >= 1 && TARM_IO_GTEST_VERSION_MINOR >= 10 && TARM_IO_GTEST_VERSION_PATCH >= 0
     const ::testing::TestInfo* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();

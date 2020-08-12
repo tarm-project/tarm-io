@@ -44,6 +44,7 @@ list(APPEND TESTS_LIST
     EventLoopTest.cpp
     TimerTest.cpp
     BacklogWithTimeoutTest.cpp
+    FunctionsTest.cpp
     FileTest.cpp
     DirTest.cpp
     UdpClientServerTest.cpp
