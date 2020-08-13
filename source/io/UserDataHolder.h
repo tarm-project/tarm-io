@@ -15,14 +15,14 @@ namespace io {
 
 class UserDataHolder {
 public:
-    IO_FORBID_COPY(UserDataHolder);
-    IO_FORBID_MOVE(UserDataHolder);
+    TARM_IO_FORBID_COPY(UserDataHolder);
+    TARM_IO_FORBID_MOVE(UserDataHolder);
 
-    IO_DLL_PUBLIC UserDataHolder();
-    IO_DLL_PUBLIC ~UserDataHolder();
+    TARM_IO_DLL_PUBLIC UserDataHolder();
+    TARM_IO_DLL_PUBLIC ~UserDataHolder();
 
-    IO_DLL_PUBLIC void set_user_data(void* data);
-    IO_DLL_PUBLIC void* user_data();
+    TARM_IO_DLL_PUBLIC void set_user_data(void* data);
+    TARM_IO_DLL_PUBLIC void* user_data();
 
     template<typename T>
     T* user_data_as_ptr() {

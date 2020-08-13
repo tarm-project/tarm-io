@@ -180,7 +180,7 @@ void Endpoint::Impl::clear() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-IO_DEFINE_DEFAULT_MOVE(Endpoint);
+TARM_IO_DEFINE_DEFAULT_MOVE(Endpoint);
 
 Endpoint::Endpoint() :
     m_impl(new Impl()) {

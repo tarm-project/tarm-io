@@ -96,8 +96,8 @@ public:
 
     using Callback = std::function<void(FakeTimer&)>;
 
-    IO_FORBID_COPY(FakeTimer);
-    IO_FORBID_MOVE(FakeTimer);
+    TARM_IO_FORBID_COPY(FakeTimer);
+    TARM_IO_FORBID_MOVE(FakeTimer);
 
     FakeTimer(FakeLoop& loop) {
         auto& test_suite = *reinterpret_cast<BacklogWithTimeoutTest*>(loop.user_data());

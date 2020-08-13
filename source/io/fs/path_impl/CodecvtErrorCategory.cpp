@@ -68,7 +68,7 @@ namespace tarm {
 namespace io {
 namespace fs {
 
-IO_DLL_PUBLIC const std::error_category& codecvt_error_category()
+TARM_IO_DLL_PUBLIC const std::error_category& codecvt_error_category()
 {
     static const codecvt_error_cat codecvt_error_cat_const;
     return codecvt_error_cat_const;

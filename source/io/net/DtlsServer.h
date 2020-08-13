@@ -36,38 +36,38 @@ public:
 
     static const std::size_t DEFAULT_TIMEOUT_MS = 1000;
 
-    IO_FORBID_COPY(DtlsServer);
-    IO_FORBID_MOVE(DtlsServer);
+    TARM_IO_FORBID_COPY(DtlsServer);
+    TARM_IO_FORBID_MOVE(DtlsServer);
 
-    IO_DLL_PUBLIC DtlsServer(EventLoop& loop,
+    TARM_IO_DLL_PUBLIC DtlsServer(EventLoop& loop,
                              const fs::Path& certificate_path,
                              const fs::Path& private_key_path,
                              DtlsVersionRange version_range = DEFAULT_DTLS_VERSION_RANGE);
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     Error listen(const Endpoint& endpoint,
                  const DataReceivedCallback& data_receive_callback);
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     Error listen(const Endpoint& endpoint,
                  const NewConnectionCallback& new_connection_callback,
                  const DataReceivedCallback& data_receive_callback);
 
-   IO_DLL_PUBLIC
+   TARM_IO_DLL_PUBLIC
    Error listen(const Endpoint& endpoint,
                 const NewConnectionCallback& new_connection_callback,
                 const DataReceivedCallback& data_receive_callback,
                 std::size_t timeout_ms,
                 const CloseConnectionCallback& close_callback);
 
-    IO_DLL_PUBLIC void close(const CloseServerCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void close(const CloseServerCallback& callback = nullptr);
 
-    IO_DLL_PUBLIC std::size_t connected_clients_count() const;
+    TARM_IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 
-    IO_DLL_PUBLIC void schedule_removal() override;
+    TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
 protected:
-    IO_DLL_PUBLIC ~DtlsServer();
+    TARM_IO_DLL_PUBLIC ~DtlsServer();
 
 private:
     void remove_client(DtlsConnectedClient& client);

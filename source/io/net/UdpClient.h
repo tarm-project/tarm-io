@@ -31,43 +31,43 @@ public:
     using CloseCallback = std::function<void(UdpClient&, const Error&)>;
     using EndSendCallback = std::function<void(UdpClient&, const Error&)>;
 
-    IO_FORBID_COPY(UdpClient);
-    IO_FORBID_MOVE(UdpClient);
+    TARM_IO_FORBID_COPY(UdpClient);
+    TARM_IO_FORBID_MOVE(UdpClient);
 
-    IO_DLL_PUBLIC UdpClient(EventLoop& loop);
+    TARM_IO_DLL_PUBLIC UdpClient(EventLoop& loop);
 
     // Analog of connect for TCP
-    IO_DLL_PUBLIC void set_destination(const Endpoint& endpoint,
+    TARM_IO_DLL_PUBLIC void set_destination(const Endpoint& endpoint,
                                        const DestinationSetCallback& destination_set_callback,
                                        const DataReceivedCallback& receive_callback = nullptr);
 
-    IO_DLL_PUBLIC void set_destination(const Endpoint& endpoint,
+    TARM_IO_DLL_PUBLIC void set_destination(const Endpoint& endpoint,
                                        const DestinationSetCallback& destination_set_callback,
                                        const DataReceivedCallback& receive_callback,
                                        std::size_t timeout_ms,
                                        const CloseCallback& close_callback);
 
-    IO_DLL_PUBLIC const Endpoint& endpoint() const;
-    IO_DLL_PUBLIC std::uint16_t bound_port() const; // Returns 0 on error
+    TARM_IO_DLL_PUBLIC const Endpoint& endpoint() const;
+    TARM_IO_DLL_PUBLIC std::uint16_t bound_port() const; // Returns 0 on error
 
-    IO_DLL_PUBLIC  bool is_open() const;
+    TARM_IO_DLL_PUBLIC  bool is_open() const;
 
-    IO_DLL_PUBLIC BufferSizeResult receive_buffer_size() const;
-    IO_DLL_PUBLIC BufferSizeResult send_buffer_size() const;
-    IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
-    IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
+    TARM_IO_DLL_PUBLIC BufferSizeResult receive_buffer_size() const;
+    TARM_IO_DLL_PUBLIC BufferSizeResult send_buffer_size() const;
+    TARM_IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
+    TARM_IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
 
-    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
-    IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
-    IO_DLL_PUBLIC void schedule_removal() override;
+    TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC void close();
+    TARM_IO_DLL_PUBLIC void close();
 
 protected:
-    IO_DLL_PUBLIC ~UdpClient();
+    TARM_IO_DLL_PUBLIC ~UdpClient();
 
 private:
     class Impl;

@@ -13,11 +13,11 @@ namespace tarm {
 namespace io {
 namespace net {
 
-IO_DLL_PUBLIC net::TlsVersion min_supported_tls_version();
-IO_DLL_PUBLIC net::TlsVersion max_supported_tls_version();
+TARM_IO_DLL_PUBLIC net::TlsVersion min_supported_tls_version();
+TARM_IO_DLL_PUBLIC net::TlsVersion max_supported_tls_version();
 
-IO_DLL_PUBLIC net::DtlsVersion min_supported_dtls_version();
-IO_DLL_PUBLIC net::DtlsVersion max_supported_dtls_version();
+TARM_IO_DLL_PUBLIC net::DtlsVersion min_supported_dtls_version();
+TARM_IO_DLL_PUBLIC net::DtlsVersion max_supported_dtls_version();
 
 } // namespace net
 } // namespace io

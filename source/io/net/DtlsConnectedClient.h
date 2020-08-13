@@ -33,23 +33,23 @@ public:
     using CloseCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
     using EndSendCallback = std::function<void(DtlsConnectedClient&, const Error&)>;
 
-    IO_FORBID_COPY(DtlsConnectedClient);
-    IO_FORBID_MOVE(DtlsConnectedClient);
+    TARM_IO_FORBID_COPY(DtlsConnectedClient);
+    TARM_IO_FORBID_MOVE(DtlsConnectedClient);
 
-    IO_DLL_PUBLIC void close();
-    IO_DLL_PUBLIC bool is_open() const;
+    TARM_IO_DLL_PUBLIC void close();
+    TARM_IO_DLL_PUBLIC bool is_open() const;
 
-    IO_DLL_PUBLIC const Endpoint& endpoint() const;
+    TARM_IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
-    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
-    IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
-    IO_DLL_PUBLIC DtlsVersion negotiated_dtls_version() const;
+    TARM_IO_DLL_PUBLIC DtlsVersion negotiated_dtls_version() const;
 
-    IO_DLL_PUBLIC DtlsServer& server();
-    IO_DLL_PUBLIC const DtlsServer& server() const;
+    TARM_IO_DLL_PUBLIC DtlsServer& server();
+    TARM_IO_DLL_PUBLIC const DtlsServer& server() const;
 
 protected:
     ~DtlsConnectedClient();

@@ -40,29 +40,29 @@ public:
     using CloseServerCallback = std::function<void(TcpServer&, const Error&)>;
     using ShutdownServerCallback = std::function<void(TcpServer&, const Error&)>;
 
-    IO_FORBID_COPY(TcpServer);
-    IO_FORBID_MOVE(TcpServer);
+    TARM_IO_FORBID_COPY(TcpServer);
+    TARM_IO_FORBID_MOVE(TcpServer);
 
-    IO_DLL_PUBLIC TcpServer(EventLoop& loop);
+    TARM_IO_DLL_PUBLIC TcpServer(EventLoop& loop);
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     Error listen(const Endpoint& endpoint,
                  const NewConnectionCallback& new_connection_callback,
                  const DataReceivedCallback& data_receive_callback,
                  const CloseConnectionCallback& close_connection_callback,
                  int backlog_size = 128);
 
-    IO_DLL_PUBLIC void close(const CloseServerCallback& close_callback = nullptr);
-    IO_DLL_PUBLIC void shutdown(const ShutdownServerCallback& shutdown_callback = nullptr);
+    TARM_IO_DLL_PUBLIC void close(const CloseServerCallback& close_callback = nullptr);
+    TARM_IO_DLL_PUBLIC void shutdown(const ShutdownServerCallback& shutdown_callback = nullptr);
 
-    IO_DLL_PUBLIC std::size_t connected_clients_count() const;
+    TARM_IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 
-    IO_DLL_PUBLIC void schedule_removal() override;
+    TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC const Endpoint& endpoint() const;
+    TARM_IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
 protected:
-    IO_DLL_PUBLIC ~TcpServer();
+    TARM_IO_DLL_PUBLIC ~TcpServer();
 
 private:
     void remove_client_connection(TcpConnectedClient* client);

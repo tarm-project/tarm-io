@@ -15,7 +15,7 @@ namespace tarm {
 namespace io {
 namespace fs {
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void hash_combine_impl(std::size_t& h, std::uint64_t k);
 
 template <class T>

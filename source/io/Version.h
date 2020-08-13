@@ -20,10 +20,10 @@
 namespace tarm {
 namespace io {
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 unsigned version_number(void);
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 std::string version_string(void);
 
 } // namespace io

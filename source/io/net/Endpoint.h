@@ -30,10 +30,10 @@ public:
 
     struct sockaddr_placeholder {};
 
-    IO_DECLARE_DLL_PUBLIC_MOVE(Endpoint);;
+    TARM_IO_DECLARE_DLL_PUBLIC_MOVE(Endpoint);;
 
-    IO_DLL_PUBLIC Endpoint& operator=(const Endpoint& other);
-    IO_DLL_PUBLIC Endpoint(const Endpoint& other);
+    TARM_IO_DLL_PUBLIC Endpoint& operator=(const Endpoint& other);
+    TARM_IO_DLL_PUBLIC Endpoint(const Endpoint& other);
 
     enum Type {
         UNDEFINED = 0,
@@ -41,25 +41,25 @@ public:
         IP_V6
     };
 
-    IO_DLL_PUBLIC Endpoint();
-    IO_DLL_PUBLIC Endpoint(const std::string& address, std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(std::uint32_t address, std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(unsigned long address, std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(std::initializer_list<std::uint8_t> address_bytes, std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(std::uint8_t (&address_bytes)[4], std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(std::uint8_t (&address_bytes)[16], std::uint16_t port);
-    IO_DLL_PUBLIC Endpoint(const sockaddr_placeholder* raw_address);
-    IO_DLL_PUBLIC ~Endpoint();
+    TARM_IO_DLL_PUBLIC Endpoint();
+    TARM_IO_DLL_PUBLIC Endpoint(const std::string& address, std::uint16_t port);
+    TARM_IO_DLL_PUBLIC Endpoint(std::uint32_t address, std::uint16_t port);
+    TARM_IO_DLL_PUBLIC Endpoint(unsigned long address, std::uint16_t port);
+    TARM_IO_DLL_PUBLIC Endpoint(const std::uint8_t* address_bytes, std::size_t address_size, std::uint16_t port);
+    TARM_IO_DLL_PUBLIC Endpoint(std::initializer_list<std::uint8_t> address_bytes, std::uint16_t port);
+    TARM_IO_DLL_PUBLIC Endpoint(std::uint8_t (&address_bytes)[4], std::uint16_t port);
+    TARM_IO_DLL_PUBLIC Endpoint(std::uint8_t (&address_bytes)[16], std::uint16_t port);
+    TARM_IO_DLL_PUBLIC Endpoint(const sockaddr_placeholder* raw_address);
+    TARM_IO_DLL_PUBLIC ~Endpoint();
 
-    IO_DLL_PUBLIC std::string address_string() const;
-    IO_DLL_PUBLIC std::uint16_t port() const;
+    TARM_IO_DLL_PUBLIC std::string address_string() const;
+    TARM_IO_DLL_PUBLIC std::uint16_t port() const;
 
-    IO_DLL_PUBLIC Type type() const;
+    TARM_IO_DLL_PUBLIC Type type() const;
 
-    IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
+    TARM_IO_DLL_PUBLIC std::uint32_t ipv4_addr() const;
 
-    IO_DLL_PUBLIC void clear();
+    TARM_IO_DLL_PUBLIC void clear();
 
 private:
     void* raw_endpoint();
@@ -69,7 +69,7 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 std::ostream& operator <<(std::ostream& o, const Endpoint& e);
 
 } // namespace net

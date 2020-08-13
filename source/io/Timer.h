@@ -25,36 +25,36 @@ class Timer : public Removable,
 public:
     using Callback = std::function<void(Timer&)>;
 
-    IO_DLL_PUBLIC Timer(EventLoop& loop);
+    TARM_IO_DLL_PUBLIC Timer(EventLoop& loop);
 
-    IO_FORBID_COPY(Timer);
-    IO_FORBID_MOVE(Timer);
+    TARM_IO_FORBID_COPY(Timer);
+    TARM_IO_FORBID_MOVE(Timer);
 
     // If timeout is zero, the callback fires on the next event loop iteration.
     // If repeat is non-zero, the callback fires first after timeout milliseconds
     // and then repeatedly after repeat milliseconds.
-    IO_DLL_PUBLIC void start(std::uint64_t timeout_ms, uint64_t repeat_ms, const Callback& callback);
+    TARM_IO_DLL_PUBLIC void start(std::uint64_t timeout_ms, uint64_t repeat_ms, const Callback& callback);
 
     // one shot timer
-    IO_DLL_PUBLIC void start(std::uint64_t timeout_ms, const Callback& callback);
+    TARM_IO_DLL_PUBLIC void start(std::uint64_t timeout_ms, const Callback& callback);
 
     // Multiple timeouts and then stop
-    IO_DLL_PUBLIC void start(const std::deque<std::uint64_t>& timeouts_ms, const Callback& callback);
+    TARM_IO_DLL_PUBLIC void start(const std::deque<std::uint64_t>& timeouts_ms, const Callback& callback);
 
-    IO_DLL_PUBLIC void stop();
+    TARM_IO_DLL_PUBLIC void stop();
 
-    IO_DLL_PUBLIC void schedule_removal() override;
+    TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC std::uint64_t timeout_ms() const;
-    IO_DLL_PUBLIC std::uint64_t repeat_ms() const;
+    TARM_IO_DLL_PUBLIC std::uint64_t timeout_ms() const;
+    TARM_IO_DLL_PUBLIC std::uint64_t repeat_ms() const;
 
-    IO_DLL_PUBLIC std::size_t callback_call_counter() const;
+    TARM_IO_DLL_PUBLIC std::size_t callback_call_counter() const;
 
     // As timeouts of timers are not precise you could call this to get real time passed
     // This is not expected to be called outside of timer callback
-    IO_DLL_PUBLIC std::chrono::milliseconds real_time_passed_since_last_callback() const;
+    TARM_IO_DLL_PUBLIC std::chrono::milliseconds real_time_passed_since_last_callback() const;
 protected:
-    IO_DLL_PUBLIC ~Timer();
+    TARM_IO_DLL_PUBLIC ~Timer();
 
 private:
     class Impl;

@@ -62,8 +62,8 @@ public:
     Impl(EventLoop& loop);
     ~Impl();
 
-    IO_FORBID_COPY(Impl)
-    IO_FORBID_MOVE(Impl);
+    TARM_IO_FORBID_COPY(Impl)
+    TARM_IO_FORBID_MOVE(Impl);
 
     template<typename WorkCallbackType, typename WorkDoneCallbackType>
     WorkHandle add_work(const WorkCallbackType& work_callback, const WorkDoneCallbackType& work_done_callback);

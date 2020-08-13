@@ -26,7 +26,7 @@ namespace tarm {
 namespace io {
 namespace fs {
 
-IO_DLL_PUBLIC const std::error_category& codecvt_error_category();
+TARM_IO_DLL_PUBLIC const std::error_category& codecvt_error_category();
 //  uses std::codecvt_base::result used for error codes:
 //
 //    ok:       Conversion successful.
@@ -81,66 +81,66 @@ inline bool empty(T (&x)[N]) {
 //  with codecvt
 
 // from_end is 0 for null terminated MBCS
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const char* from, const char* from_end, std::wstring& to, const codecvt_type& cvt);
 
 // from_end is 0 for null terminated MBCS
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const wchar_t* from, const wchar_t* from_end, std::string& to, const codecvt_type& cvt);
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const char* from, std::wstring& to, const codecvt_type& cvt);
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const wchar_t* from, std::string& to, const codecvt_type& cvt);
 
 //  without codecvt
 
 // from_end is 0 for null terminated MBCS
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const char* from, const char* from_end, std::wstring& to);
 
 // from_end is 0 for null terminated MBCS
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const wchar_t* from, const wchar_t* from_end, std::string& to);
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const char* from, std::wstring& to);
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const wchar_t* from, std::string& to);
 
 // value types same  -----------------------------------------------------------------//
 
 // char with codecvt
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const char* from, const char* from_end, std::string& to, const codecvt_type&);
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const char* from, std::string& to, const codecvt_type&);
 
 // wchar_t with codecvt
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const wchar_t* from, const wchar_t* from_end, std::wstring& to, const codecvt_type&);
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const wchar_t* from, std::wstring& to, const codecvt_type&);
 
 // char without codecvt
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const char* from, const char* from_end, std::string& to);
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const char* from, std::string& to);
 
 // wchar_t without codecvt
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const wchar_t* from, const wchar_t* from_end, std::wstring& to);
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 void convert(const wchar_t* from, std::wstring& to);
 
 //  Source dispatch  -----------------------------------------------------------------//

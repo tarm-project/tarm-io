@@ -96,7 +96,7 @@ namespace detail {
 //            See utf8_codecvt_facet.ipp for the implementation.              //
 //----------------------------------------------------------------------------//
 
-struct IO_DLL_PUBLIC utf8_codecvt_facet : public std::codecvt<wchar_t, char, std::mbstate_t> {
+struct TARM_IO_DLL_PUBLIC utf8_codecvt_facet : public std::codecvt<wchar_t, char, std::mbstate_t> {
 public:
     explicit utf8_codecvt_facet(std::size_t no_locale_manage=0);
     virtual ~utf8_codecvt_facet();

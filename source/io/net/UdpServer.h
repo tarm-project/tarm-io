@@ -34,41 +34,41 @@ public:
 
     using CloseServerCallback = std::function<void(UdpServer&, const Error&)>;
 
-    IO_FORBID_COPY(UdpServer);
-    IO_FORBID_MOVE(UdpServer);
+    TARM_IO_FORBID_COPY(UdpServer);
+    TARM_IO_FORBID_MOVE(UdpServer);
 
-    IO_DLL_PUBLIC UdpServer(EventLoop& loop);
+    TARM_IO_DLL_PUBLIC UdpServer(EventLoop& loop);
 
-    IO_DLL_PUBLIC void schedule_removal() override;
+    TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
+    TARM_IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
                                       const DataReceivedCallback& receive_callback);
 
-    IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
+    TARM_IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
                                       const NewPeerCallback& new_peer_callback,
                                       const DataReceivedCallback& receive_callback,
                                       std::size_t timeout_ms,
                                       const PeerTimeoutCallback& timeout_callback);
 
-    IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
+    TARM_IO_DLL_PUBLIC Error start_receive(const Endpoint& endpoint,
                                       const DataReceivedCallback& receive_callback,
                                       std::size_t timeout_ms,
                                       const PeerTimeoutCallback& timeout_callback);
 
-    IO_DLL_PUBLIC void close(const CloseServerCallback& close_callback = nullptr);
+    TARM_IO_DLL_PUBLIC void close(const CloseServerCallback& close_callback = nullptr);
 
-    IO_DLL_PUBLIC BufferSizeResult receive_buffer_size() const;
-    IO_DLL_PUBLIC BufferSizeResult send_buffer_size() const;
-    IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
-    IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
+    TARM_IO_DLL_PUBLIC BufferSizeResult receive_buffer_size() const;
+    TARM_IO_DLL_PUBLIC BufferSizeResult send_buffer_size() const;
+    TARM_IO_DLL_PUBLIC Error set_receive_buffer_size(std::size_t size);
+    TARM_IO_DLL_PUBLIC Error set_send_buffer_size(std::size_t size);
 
-    IO_DLL_PUBLIC std::size_t peers_count() const;
+    TARM_IO_DLL_PUBLIC std::size_t peers_count() const;
 
 
     // TODO: method to iterate on peers???
 
 protected:
-    IO_DLL_PUBLIC ~UdpServer();
+    TARM_IO_DLL_PUBLIC ~UdpServer();
 
 private:
     friend class UdpPeer;

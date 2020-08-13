@@ -296,7 +296,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  if a separator is added, it is the preferred separator for the platform;
     //  slash for POSIX, backslash for Windows
 
-    IO_DLL_PUBLIC Path& operator/=(const Path& p);
+    TARM_IO_DLL_PUBLIC Path& operator/=(const Path& p);
 
     template <class Source>
     typename std::enable_if<path_traits::is_pathable<typename std::decay<Source>::type>::value, Path&>::type
@@ -304,7 +304,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
       return append(source);
     }
 
-    IO_DLL_PUBLIC Path& operator/=(const value_type* ptr);
+    TARM_IO_DLL_PUBLIC Path& operator/=(const value_type* ptr);
     Path& operator/=(value_type* ptr)
     {
       return this->operator/=(const_cast<const value_type*>(ptr));
@@ -340,13 +340,13 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     void clear() noexcept { m_pathname.clear(); }
 #   ifdef TARM_IO_PLATFORM_WINDOWS
-    IO_DLL_PUBLIC Path& make_preferred();  // change slashes to backslashes
+    TARM_IO_DLL_PUBLIC Path& make_preferred();  // change slashes to backslashes
 #   else // IO_POSIX_API
     Path& make_preferred() { return *this; }  // POSIX no effect
 #   endif
-    IO_DLL_PUBLIC Path& remove_filename();
-    IO_DLL_PUBLIC Path& remove_trailing_separator();
-    IO_DLL_PUBLIC Path& replace_extension(const Path& new_extension = Path());
+    TARM_IO_DLL_PUBLIC Path& remove_filename();
+    TARM_IO_DLL_PUBLIC Path& remove_trailing_separator();
+    TARM_IO_DLL_PUBLIC Path& replace_extension(const Path& new_extension = Path());
     void swap(Path& rhs) noexcept { m_pathname.swap(rhs.m_pathname); }
 
     //  -----  observers  -----
@@ -429,7 +429,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  are forward slashes). Motivation: simpler than a family of generic_*string
     //  functions.
 #   ifdef TARM_IO_PLATFORM_WINDOWS
-    IO_DLL_PUBLIC Path generic_path() const;
+    TARM_IO_DLL_PUBLIC Path generic_path() const;
 #   else
     Path generic_path() const { return Path(*this); }
 #   endif
@@ -455,21 +455,21 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     //  -----  compare  -----
 
-    IO_DLL_PUBLIC int compare(const Path& p) const noexcept;  // generic, lexicographical
+    TARM_IO_DLL_PUBLIC int compare(const Path& p) const noexcept;  // generic, lexicographical
     int compare(const std::string& s) const { return compare(Path(s)); }
     int compare(const value_type* s) const  { return compare(Path(s)); }
 
     //  -----  decomposition  -----
 
-    IO_DLL_PUBLIC Path  root_path() const;
-    IO_DLL_PUBLIC Path  root_name() const;         // returns 0 or 1 element path
+    TARM_IO_DLL_PUBLIC Path  root_path() const;
+    TARM_IO_DLL_PUBLIC Path  root_name() const;         // returns 0 or 1 element path
                                                    // even on POSIX, root_name() is non-empty() for network paths
-    IO_DLL_PUBLIC Path  root_directory() const;    // returns 0 or 1 element path
-    IO_DLL_PUBLIC Path  relative_path() const;
-    IO_DLL_PUBLIC Path  parent_path() const;
-    IO_DLL_PUBLIC Path  filename() const;          // returns 0 or 1 element path
-    IO_DLL_PUBLIC Path  stem() const;              // returns 0 or 1 element path
-    IO_DLL_PUBLIC Path  extension() const;         // returns 0 or 1 element path
+    TARM_IO_DLL_PUBLIC Path  root_directory() const;    // returns 0 or 1 element path
+    TARM_IO_DLL_PUBLIC Path  relative_path() const;
+    TARM_IO_DLL_PUBLIC Path  parent_path() const;
+    TARM_IO_DLL_PUBLIC Path  filename() const;          // returns 0 or 1 element path
+    TARM_IO_DLL_PUBLIC Path  stem() const;              // returns 0 or 1 element path
+    TARM_IO_DLL_PUBLIC Path  extension() const;         // returns 0 or 1 element path
 
     //  -----  query  -----
 
@@ -497,8 +497,8 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     //  -----  lexical operations  -----
 
-    IO_DLL_PUBLIC Path lexically_normal() const;
-    IO_DLL_PUBLIC Path lexically_relative(const Path& base) const;
+    TARM_IO_DLL_PUBLIC Path lexically_normal() const;
+    TARM_IO_DLL_PUBLIC Path lexically_relative(const Path& base) const;
     Path lexically_proximate(const Path& base) const {
       Path tmp(lexically_relative(base));
       return tmp.empty() ? *this : tmp;
@@ -511,15 +511,15 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     class ReverseIterator;
     typedef ReverseIterator const_ReverseIterator;
 
-    IO_DLL_PUBLIC Iterator begin() const;
-    IO_DLL_PUBLIC Iterator end() const;
+    TARM_IO_DLL_PUBLIC Iterator begin() const;
+    TARM_IO_DLL_PUBLIC Iterator end() const;
     ReverseIterator rbegin() const;
     ReverseIterator rend() const;
 
     //  -----  static member functions  -----
 
-    static IO_DLL_PUBLIC std::locale imbue(const std::locale& loc);
-    static IO_DLL_PUBLIC const codecvt_type&  codecvt();
+    static TARM_IO_DLL_PUBLIC std::locale imbue(const std::locale& loc);
+    static TARM_IO_DLL_PUBLIC const codecvt_type&  codecvt();
 
 //--------------------------------------------------------------------------------------//
 //                            class path private members                                //
@@ -539,10 +539,10 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
 
     //  Returns: If separator is to be appended, m_pathname.size() before append. Otherwise 0.
     //  Note: An append is never performed if size()==0, so a returned 0 is unambiguous.
-    IO_DLL_PUBLIC string_type::size_type m_append_separator_if_needed();
+    TARM_IO_DLL_PUBLIC string_type::size_type m_append_separator_if_needed();
 
-    IO_DLL_PUBLIC void m_erase_redundant_separator(string_type::size_type sep_pos);
-    IO_DLL_PUBLIC string_type::size_type m_parent_path_end() const;
+    TARM_IO_DLL_PUBLIC void m_erase_redundant_separator(string_type::size_type sep_pos);
+    TARM_IO_DLL_PUBLIC string_type::size_type m_parent_path_end() const;
 
     // Was qualified; como433beta8 reports:
     //    warning #427-D: qualified name is not allowed in member declaration
@@ -550,18 +550,18 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     friend bool operator<(const Path& lhs, const Path& rhs);
 
     // see Path::Iterator::increment/decrement comment below
-    static IO_DLL_PUBLIC void m_path_iterator_increment(Path::Iterator& it);
-    static IO_DLL_PUBLIC void m_path_iterator_decrement(Path::Iterator& it);
+    static TARM_IO_DLL_PUBLIC void m_path_iterator_increment(Path::Iterator& it);
+    static TARM_IO_DLL_PUBLIC void m_path_iterator_decrement(Path::Iterator& it);
 
   };  // class path
 
   namespace detail
   {
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
       int lex_compare(Path::Iterator first1, Path::Iterator last1, Path::Iterator first2, Path::Iterator last2);
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
       const Path& dot_path();
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
       const Path& dot_dot_path();
   } // namespace detail
 
@@ -775,12 +775,12 @@ private:
   //  These functions are holdovers from version 1. It isn't clear they have much
   //  usefulness, or how to generalize them for later versions.
 
-  IO_DLL_PUBLIC bool portable_posix_name(const std::string & name);
-  IO_DLL_PUBLIC bool windows_name(const std::string & name);
-  IO_DLL_PUBLIC bool portable_name(const std::string & name);
-  IO_DLL_PUBLIC bool portable_directory_name(const std::string & name);
-  IO_DLL_PUBLIC bool portable_file_name(const std::string & name);
-  IO_DLL_PUBLIC bool native(const std::string & name);
+  TARM_IO_DLL_PUBLIC bool portable_posix_name(const std::string & name);
+  TARM_IO_DLL_PUBLIC bool windows_name(const std::string & name);
+  TARM_IO_DLL_PUBLIC bool portable_name(const std::string & name);
+  TARM_IO_DLL_PUBLIC bool portable_directory_name(const std::string & name);
+  TARM_IO_DLL_PUBLIC bool portable_file_name(const std::string & name);
+  TARM_IO_DLL_PUBLIC bool native(const std::string & name);
 
   namespace detail
   {

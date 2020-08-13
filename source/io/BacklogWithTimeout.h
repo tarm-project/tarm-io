@@ -27,7 +27,7 @@ public:
     using ItemTimeGetter = std::function<std::uint64_t(const T&)>;
     using MonothonicClockGetterType = std::uint64_t(*)();
 
-    IO_FORBID_COPY(BacklogWithTimeout);
+    TARM_IO_FORBID_COPY(BacklogWithTimeout);
 
     BacklogWithTimeout(BacklogWithTimeout&& other) :
         m_entity_timeout(other.m_entity_timeout),

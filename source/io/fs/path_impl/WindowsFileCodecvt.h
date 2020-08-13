@@ -27,7 +27,7 @@
   //                                                                                    //
   //------------------------------------------------------------------------------------//
 
-  class IO_DLL_PUBLIC windows_file_codecvt
+  class TARM_IO_DLL_PUBLIC windows_file_codecvt
     : public std::codecvt< wchar_t, char, std::mbstate_t >
   {
   public:

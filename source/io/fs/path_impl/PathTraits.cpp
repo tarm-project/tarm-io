@@ -100,7 +100,7 @@ namespace path_traits {
 //                          convert const char* to wstring                              //
 //--------------------------------------------------------------------------------------//
 
-  IO_DLL_PUBLIC
+  TARM_IO_DLL_PUBLIC
   void convert(const char* from,
                 const char* from_end,    // 0 for null terminated MBCS
                 std::wstring & to,
@@ -130,7 +130,7 @@ namespace path_traits {
 //                         convert const wchar_t* to string                            //
 //--------------------------------------------------------------------------------------//
 
-  IO_DLL_PUBLIC
+  TARM_IO_DLL_PUBLIC
   void convert(const wchar_t* from,
                 const wchar_t* from_end,  // 0 for null terminated MBCS
                 std::string & to,

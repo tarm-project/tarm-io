@@ -14,13 +14,13 @@ namespace io {
 
 struct DataChunk {
     DataChunk() = default;
-    IO_DLL_PUBLIC DataChunk(std::shared_ptr<const char> b, std::size_t s, std::size_t o) :
+    TARM_IO_DLL_PUBLIC DataChunk(std::shared_ptr<const char> b, std::size_t s, std::size_t o) :
         buf(b),
         size(s),
         offset(o){
     }
 
-    IO_DLL_PUBLIC DataChunk(std::shared_ptr<const char> b, std::size_t s) :
+    TARM_IO_DLL_PUBLIC DataChunk(std::shared_ptr<const char> b, std::size_t s) :
         buf(b),
         size(s),
         offset(0) {

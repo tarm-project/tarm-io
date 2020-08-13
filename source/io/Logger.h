@@ -37,13 +37,13 @@ public:
 
     using Callback = std::function<void(const std::string& message)>;
 
-    IO_FORBID_COPY(Logger);
-    IO_FORBID_MOVE(Logger);
+    TARM_IO_FORBID_COPY(Logger);
+    TARM_IO_FORBID_MOVE(Logger);
 
-    IO_DLL_PUBLIC Logger();
-    IO_DLL_PUBLIC Logger(const std::string& prefix);
+    TARM_IO_DLL_PUBLIC Logger();
+    TARM_IO_DLL_PUBLIC Logger(const std::string& prefix);
 
-    IO_DLL_PUBLIC void enable_log(const Callback& callback);
+    TARM_IO_DLL_PUBLIC void enable_log(const Callback& callback);
 
     template<typename... T>
     void log(Severity severity, T... t);
@@ -90,7 +90,7 @@ private:
         os << " " << message_chunk;
     }
 
-    IO_DLL_PUBLIC void out_common_prefix(std::ostream& ss, Logger::Severity severity);
+    TARM_IO_DLL_PUBLIC void out_common_prefix(std::ostream& ss, Logger::Severity severity);
 
     Callback m_callback = nullptr;
     std::string m_prefix;

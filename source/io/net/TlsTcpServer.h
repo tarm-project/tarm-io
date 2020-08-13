@@ -33,43 +33,43 @@ public:
     using CloseServerCallback = std::function<void(TlsTcpServer&, const Error&)>;
     using ShutdownServerCallback = std::function<void(TlsTcpServer&, const Error&)>;
 
-    IO_FORBID_COPY(TlsTcpServer);
-    IO_FORBID_MOVE(TlsTcpServer);
+    TARM_IO_FORBID_COPY(TlsTcpServer);
+    TARM_IO_FORBID_MOVE(TlsTcpServer);
 
-    IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,
+    TARM_IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,
                                const fs::Path& certificate_path,
                                const fs::Path& private_key_path,
                                TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
-    IO_DLL_PUBLIC void schedule_removal() override;
+    TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     Error listen(const Endpoint endpoint,
                  const NewConnectionCallback& new_connection_callback,
                  const DataReceivedCallback& data_receive_callback,
                  const CloseConnectionCallback& close_connection_callback,
                  int backlog_size = 128);
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     Error listen(const Endpoint endpoint,
                  const NewConnectionCallback& new_connection_callback,
                  const DataReceivedCallback& data_receive_callback,
                  int backlog_size = 128);
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     Error listen(const Endpoint endpoint,
                  const DataReceivedCallback& data_receive_callback,
                  int backlog_size = 128);
 
-    IO_DLL_PUBLIC void shutdown(const ShutdownServerCallback& shutdown_callback = nullptr);
-    IO_DLL_PUBLIC void close(const CloseServerCallback& close_callback = nullptr);
+    TARM_IO_DLL_PUBLIC void shutdown(const ShutdownServerCallback& shutdown_callback = nullptr);
+    TARM_IO_DLL_PUBLIC void close(const CloseServerCallback& close_callback = nullptr);
 
-    IO_DLL_PUBLIC std::size_t connected_clients_count() const;
+    TARM_IO_DLL_PUBLIC std::size_t connected_clients_count() const;
 
-    IO_DLL_PUBLIC TlsVersionRange version_range() const;
+    TARM_IO_DLL_PUBLIC TlsVersionRange version_range() const;
 
 protected:
-    IO_DLL_PUBLIC ~TlsTcpServer();
+    TARM_IO_DLL_PUBLIC ~TlsTcpServer();
 
 private:
     class Impl;

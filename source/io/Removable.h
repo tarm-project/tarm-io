@@ -14,7 +14,7 @@
 namespace tarm {
 namespace io {
 
-class IO_DLL_PUBLIC_CLASS_UNIX_ONLY Removable {
+class TARM_IO_DLL_PUBLIC_CLASS_UNIX_ONLY Removable {
 public:
     friend class RefCounted;
 
@@ -23,23 +23,23 @@ public:
 
     using OnScheduleRemovalCallback = std::function<void(const Removable&)>;
 
-    IO_FORBID_COPY(Removable);
-    IO_FORBID_MOVE(Removable);
+    TARM_IO_FORBID_COPY(Removable);
+    TARM_IO_FORBID_MOVE(Removable);
 
-    IO_DLL_PUBLIC Removable(EventLoop& loop);
-    IO_DLL_PUBLIC virtual ~Removable();
+    TARM_IO_DLL_PUBLIC Removable(EventLoop& loop);
+    TARM_IO_DLL_PUBLIC virtual ~Removable();
 
-    IO_DLL_PUBLIC virtual void schedule_removal();
+    TARM_IO_DLL_PUBLIC virtual void schedule_removal();
 
     // Does nothing if removal was scheduled
-    IO_DLL_PUBLIC void set_on_schedule_removal(const OnScheduleRemovalCallback& callback);
+    TARM_IO_DLL_PUBLIC void set_on_schedule_removal(const OnScheduleRemovalCallback& callback);
 
-    IO_DLL_PUBLIC bool is_removal_scheduled() const;
+    TARM_IO_DLL_PUBLIC bool is_removal_scheduled() const;
 
-    IO_DLL_PUBLIC static DefaultDelete default_delete();
+    TARM_IO_DLL_PUBLIC static DefaultDelete default_delete();
 
 protected:
-    IO_DLL_PUBLIC void set_removal_scheduled();
+    TARM_IO_DLL_PUBLIC void set_removal_scheduled();
 
 private:
     class Impl;

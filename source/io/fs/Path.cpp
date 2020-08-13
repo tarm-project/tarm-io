@@ -95,7 +95,7 @@ namespace tarm {
 namespace io {
 namespace fs {
 
-  IO_DLL_PUBLIC Path& Path::operator/=(const Path& p)
+  TARM_IO_DLL_PUBLIC Path& Path::operator/=(const Path& p)
   {
     if (p.empty())
       return *this;
@@ -115,7 +115,7 @@ namespace fs {
     return *this;
   }
 
-  IO_DLL_PUBLIC Path& Path::operator/=(const value_type* ptr)
+  TARM_IO_DLL_PUBLIC Path& Path::operator/=(const value_type* ptr)
   {
     if (!ptr)
       return *this;
@@ -138,7 +138,7 @@ namespace fs {
 
 # ifdef TARM_IO_PLATFORM_WINDOWS
 
-  IO_DLL_PUBLIC Path Path::generic_path() const
+  TARM_IO_DLL_PUBLIC Path Path::generic_path() const
   {
     Path tmp(*this);
     std::replace(tmp.m_pathname.begin(), tmp.m_pathname.end(), L'\\', L'/');
@@ -147,14 +147,14 @@ namespace fs {
 
 # endif  // TARM_IO_PLATFORM_WINDOWS
 
-  IO_DLL_PUBLIC int Path::compare(const Path& p) const noexcept
+  TARM_IO_DLL_PUBLIC int Path::compare(const Path& p) const noexcept
   {
     return detail::lex_compare(begin(), end(), p.begin(), p.end());
   }
 
   //  m_append_separator_if_needed  ----------------------------------------------------//
 
-  IO_DLL_PUBLIC Path::string_type::size_type Path::m_append_separator_if_needed()
+  TARM_IO_DLL_PUBLIC Path::string_type::size_type Path::m_append_separator_if_needed()
   {
     if (!m_pathname.empty() &&
 #     ifdef TARM_IO_PLATFORM_WINDOWS
@@ -171,7 +171,7 @@ namespace fs {
 
   //  m_erase_redundant_separator  -----------------------------------------------------//
 
-  IO_DLL_PUBLIC void Path::m_erase_redundant_separator(string_type::size_type sep_pos)
+  TARM_IO_DLL_PUBLIC void Path::m_erase_redundant_separator(string_type::size_type sep_pos)
   {
     if (sep_pos                         // a separator was added
       && sep_pos < m_pathname.size()         // and something was appended
@@ -185,20 +185,20 @@ namespace fs {
   //  modifiers  -----------------------------------------------------------------------//
 
 # ifdef TARM_IO_PLATFORM_WINDOWS
-  IO_DLL_PUBLIC Path& Path::make_preferred()
+  TARM_IO_DLL_PUBLIC Path& Path::make_preferred()
   {
     std::replace(m_pathname.begin(), m_pathname.end(), L'/', L'\\');
     return *this;
   }
 # endif
 
-  IO_DLL_PUBLIC Path& Path::remove_filename()
+  TARM_IO_DLL_PUBLIC Path& Path::remove_filename()
   {
     m_pathname.erase(m_parent_path_end());
     return *this;
   }
 
-  IO_DLL_PUBLIC Path& Path::remove_trailing_separator()
+  TARM_IO_DLL_PUBLIC Path& Path::remove_trailing_separator()
   {
     if (!m_pathname.empty()
       && detail::is_directory_separator(m_pathname[m_pathname.size() - 1]))
@@ -206,7 +206,7 @@ namespace fs {
     return *this;
   }
 
-  IO_DLL_PUBLIC Path& Path::replace_extension(const Path& new_extension)
+  TARM_IO_DLL_PUBLIC Path& Path::replace_extension(const Path& new_extension)
   {
     // erase existing extension, including the dot, if any
     m_pathname.erase(m_pathname.size()-extension().m_pathname.size());
@@ -224,14 +224,14 @@ namespace fs {
 
   //  decomposition  -------------------------------------------------------------------//
 
-  IO_DLL_PUBLIC Path Path::root_path() const
+  TARM_IO_DLL_PUBLIC Path Path::root_path() const
   {
     Path temp(root_name());
     if (!root_directory().empty()) temp.m_pathname += root_directory().c_str();
     return temp;
   }
 
-  IO_DLL_PUBLIC Path Path::root_name() const
+  TARM_IO_DLL_PUBLIC Path Path::root_name() const
   {
     Iterator itr(begin());
 
@@ -248,7 +248,7 @@ namespace fs {
       : Path();
   }
 
-  IO_DLL_PUBLIC Path Path::root_directory() const
+  TARM_IO_DLL_PUBLIC Path Path::root_directory() const
   {
     size_type pos(root_directory_start(m_pathname, m_pathname.size()));
 
@@ -257,7 +257,7 @@ namespace fs {
       : Path(m_pathname.c_str() + pos, m_pathname.c_str() + pos + 1);
   }
 
-  IO_DLL_PUBLIC Path Path::relative_path() const
+  TARM_IO_DLL_PUBLIC Path Path::relative_path() const
   {
     Iterator itr(begin());
 
@@ -271,7 +271,7 @@ namespace fs {
     return Path(m_pathname.c_str() + itr.m_pos);
   }
 
-  IO_DLL_PUBLIC string_type::size_type Path::m_parent_path_end() const
+  TARM_IO_DLL_PUBLIC string_type::size_type Path::m_parent_path_end() const
   {
     size_type end_pos(filename_pos(m_pathname, m_pathname.size()));
 
@@ -292,7 +292,7 @@ namespace fs {
      : end_pos;
   }
 
-  IO_DLL_PUBLIC Path Path::parent_path() const
+  TARM_IO_DLL_PUBLIC Path Path::parent_path() const
   {
    size_type end_pos(m_parent_path_end());
    return end_pos == string_type::npos
@@ -300,7 +300,7 @@ namespace fs {
      : Path(m_pathname.c_str(), m_pathname.c_str() + end_pos);
   }
 
-  IO_DLL_PUBLIC Path Path::filename() const
+  TARM_IO_DLL_PUBLIC Path Path::filename() const
   {
     size_type pos(filename_pos(m_pathname, m_pathname.size()));
     return (m_pathname.size()
@@ -311,7 +311,7 @@ namespace fs {
       : Path(m_pathname.c_str() + pos);
   }
 
-  IO_DLL_PUBLIC Path Path::stem() const
+  TARM_IO_DLL_PUBLIC Path Path::stem() const
   {
     Path name(filename());
     if (name == detail::dot_path() || name == detail::dot_dot_path()) return name;
@@ -321,7 +321,7 @@ namespace fs {
       : Path(name.m_pathname.c_str(), name.m_pathname.c_str() + pos);
   }
 
-  IO_DLL_PUBLIC Path Path::extension() const
+  TARM_IO_DLL_PUBLIC Path Path::extension() const
   {
     Path name(filename());
     if (name == detail::dot_path() || name == detail::dot_dot_path()) return Path();
@@ -350,7 +350,7 @@ namespace fs {
     }
   }
 
-  IO_DLL_PUBLIC Path Path::lexically_relative(const Path& base) const
+  TARM_IO_DLL_PUBLIC Path Path::lexically_relative(const Path& base) const
   {
     std::pair<Path::Iterator, Path::Iterator> mm
       = detail::mismatch(begin(), end(), base.begin(), base.end());
@@ -368,7 +368,7 @@ namespace fs {
 
   //  normal  --------------------------------------------------------------------------//
 
-  IO_DLL_PUBLIC Path Path::lexically_normal() const
+  TARM_IO_DLL_PUBLIC Path Path::lexically_normal() const
   {
     if (m_pathname.empty())
       return *this;
@@ -630,7 +630,7 @@ namespace io {
 namespace fs {
   namespace detail
   {
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     int lex_compare(Path::Iterator first1, Path::Iterator last1,
         Path::Iterator first2, Path::Iterator last2)
     {
@@ -647,7 +647,7 @@ namespace fs {
       return first1 == last1 ? -1 : 1;
     }
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     const Path&  dot_path()
     {
 #   ifdef TARM_IO_PLATFORM_WINDOWS
@@ -658,7 +658,7 @@ namespace fs {
       return dot_pth;
     }
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     const Path&  dot_dot_path()
     {
 #   ifdef TARM_IO_PLATFORM_WINDOWS
@@ -676,7 +676,7 @@ namespace fs {
 //                                                                                      //
 //--------------------------------------------------------------------------------------//
 
-  IO_DLL_PUBLIC Path::Iterator Path::begin() const
+  TARM_IO_DLL_PUBLIC Path::Iterator Path::begin() const
   {
     Iterator itr;
     itr.m_path_ptr = this;
@@ -688,7 +688,7 @@ namespace fs {
     return itr;
   }
 
-  IO_DLL_PUBLIC Path::Iterator Path::end() const
+  TARM_IO_DLL_PUBLIC Path::Iterator Path::end() const
   {
     Iterator itr;
     itr.m_path_ptr = this;
@@ -696,7 +696,7 @@ namespace fs {
     return itr;
   }
 
-  IO_DLL_PUBLIC void Path::m_path_iterator_increment(Path::Iterator & it)
+  TARM_IO_DLL_PUBLIC void Path::m_path_iterator_increment(Path::Iterator & it)
   {
     assert(it.m_pos < it.m_path_ptr->m_pathname.size() && "Path::basic_Iterator increment past end()");
 
@@ -754,7 +754,7 @@ namespace fs {
     it.m_element = it.m_path_ptr->m_pathname.substr(it.m_pos, end_pos - it.m_pos);
   }
 
-  IO_DLL_PUBLIC void Path::m_path_iterator_decrement(Path::Iterator & it)
+  TARM_IO_DLL_PUBLIC void Path::m_path_iterator_decrement(Path::Iterator & it)
   {
     assert(it.m_pos && "Path::Iterator decrement past begin()");
 
@@ -879,11 +879,11 @@ namespace io {
 namespace fs {
   // See comments above
 
-  IO_DLL_PUBLIC const Path::codecvt_type& Path::codecvt() {
+  TARM_IO_DLL_PUBLIC const Path::codecvt_type& Path::codecvt() {
     return std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >(path_locale());
   }
 
-  IO_DLL_PUBLIC std::locale Path::imbue(const std::locale& loc)
+  TARM_IO_DLL_PUBLIC std::locale Path::imbue(const std::locale& loc)
   {
     std::locale temp(path_locale());
     path_locale() = loc;

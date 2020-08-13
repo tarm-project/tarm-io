@@ -14,19 +14,19 @@ namespace io {
 
 class RefCounted : public Removable {
 public:
-    IO_FORBID_COPY(RefCounted);
-    IO_FORBID_MOVE(RefCounted);
+    TARM_IO_FORBID_COPY(RefCounted);
+    TARM_IO_FORBID_MOVE(RefCounted);
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     RefCounted(EventLoop& loop);
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     void ref();
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     void unref();
 
-    IO_DLL_PUBLIC
+    TARM_IO_DLL_PUBLIC
     std::size_t ref_count();
 
 private:

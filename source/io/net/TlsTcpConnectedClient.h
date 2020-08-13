@@ -33,22 +33,22 @@ public:
 
     using NewConnectionCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
 
-    IO_FORBID_COPY(TlsTcpConnectedClient);
-    IO_FORBID_MOVE(TlsTcpConnectedClient);
+    TARM_IO_FORBID_COPY(TlsTcpConnectedClient);
+    TARM_IO_FORBID_MOVE(TlsTcpConnectedClient);
 
-    IO_DLL_PUBLIC void close();
-    IO_DLL_PUBLIC void shutdown();
-    IO_DLL_PUBLIC bool is_open() const;
+    TARM_IO_DLL_PUBLIC void close();
+    TARM_IO_DLL_PUBLIC void shutdown();
+    TARM_IO_DLL_PUBLIC bool is_open() const;
 
-    IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
-    IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
-    IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
+    TARM_IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
-    IO_DLL_PUBLIC TlsTcpServer& server();
-    IO_DLL_PUBLIC const TlsTcpServer& server() const;
+    TARM_IO_DLL_PUBLIC TlsTcpServer& server();
+    TARM_IO_DLL_PUBLIC const TlsTcpServer& server() const;
 
-    IO_DLL_PUBLIC TlsVersion negotiated_tls_version() const;
+    TARM_IO_DLL_PUBLIC TlsVersion negotiated_tls_version() const;
 
 protected:
     ~TlsTcpConnectedClient();

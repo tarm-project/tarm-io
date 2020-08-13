@@ -37,27 +37,27 @@ public:
     using StatCallback = std::function<void(File&, const StatData&)>;
     using CloseCallback = std::function<void(File&, const Error&)>;
 
-    IO_FORBID_COPY(File);
-    IO_FORBID_MOVE(File);
+    TARM_IO_FORBID_COPY(File);
+    TARM_IO_FORBID_MOVE(File);
 
-    IO_DLL_PUBLIC File(EventLoop& loop);
+    TARM_IO_DLL_PUBLIC File(EventLoop& loop);
 
-    IO_DLL_PUBLIC void open(const Path& path, const OpenCallback& callback); // TODO: pass open flags
-    IO_DLL_PUBLIC bool is_open() const;
-    IO_DLL_PUBLIC void close(const CloseCallback& close_callback = nullptr);
+    TARM_IO_DLL_PUBLIC void open(const Path& path, const OpenCallback& callback); // TODO: pass open flags
+    TARM_IO_DLL_PUBLIC bool is_open() const;
+    TARM_IO_DLL_PUBLIC void close(const CloseCallback& close_callback = nullptr);
 
-    IO_DLL_PUBLIC void read(const ReadCallback& callback);
-    IO_DLL_PUBLIC void read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback);
-    IO_DLL_PUBLIC void read_block(off_t offset, unsigned int bytes_count, const ReadCallback& read_callback);
+    TARM_IO_DLL_PUBLIC void read(const ReadCallback& callback);
+    TARM_IO_DLL_PUBLIC void read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback);
+    TARM_IO_DLL_PUBLIC void read_block(off_t offset, unsigned int bytes_count, const ReadCallback& read_callback);
 
-    IO_DLL_PUBLIC const Path& path() const;
+    TARM_IO_DLL_PUBLIC const Path& path() const;
 
-    IO_DLL_PUBLIC void stat(const StatCallback& callback);
+    TARM_IO_DLL_PUBLIC void stat(const StatCallback& callback);
 
-    IO_DLL_PUBLIC void schedule_removal() override;
+    TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
 protected:
-    IO_DLL_PUBLIC ~File();
+    TARM_IO_DLL_PUBLIC ~File();
 
 private:
     class Impl;

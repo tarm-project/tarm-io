@@ -260,7 +260,7 @@ std::size_t max_send_buffer_size() {
     #define MAX_THREADPOOL_SIZE 1024
 #endif
 
-IO_DLL_PUBLIC
+TARM_IO_DLL_PUBLIC
 std::size_t thread_pool_size() {
     int nthreads = 4;
     const char* val = ::getenv("UV_THREADPOOL_SIZE");
