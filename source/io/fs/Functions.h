@@ -20,11 +20,11 @@ namespace fs {
 using StatCallback = std::function<void(const Path&, const StatData&, const Error&)>;
 IO_DLL_PUBLIC void stat(EventLoop& loop, const Path& path, const StatCallback& callback);
 
+IO_DLL_PUBLIC bool is_regular_file(const StatData& stat_data);
+IO_DLL_PUBLIC bool is_directory(const StatData& stat_data);
+
+
 } // namespace fs
 } // namespace io
 } // namespace tarm
 
-// TOOD: implement as functions???
-#if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
-#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-#endif

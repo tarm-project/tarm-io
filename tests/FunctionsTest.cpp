@@ -29,7 +29,7 @@ TEST_F(FunctionsTest, stat_file) {
             EXPECT_FALSE(error) << error;
             EXPECT_EQ(path_str, path.string());
             EXPECT_EQ(0, data.size);
-            EXPECT_TRUE(S_ISREG(data.mode)); // is regular file
+            EXPECT_TRUE(io::fs::is_regular_file(data));
             ++on_stat_call_count;
         }
     );
@@ -61,5 +61,21 @@ TEST_F(FunctionsTest, stat_not_existing) {
 }
 
 TEST_F(FunctionsTest, stat_dir) {
-    // TOOD: implement
+    std::size_t on_stat_call_count = 0;
+
+    io::EventLoop loop;
+    io::fs::stat(loop, m_tmp_test_dir,
+        [&](const io::fs::Path& path, const io::fs::StatData& data, const io::Error& error){
+            EXPECT_FALSE(error) << error;
+            EXPECT_EQ(m_tmp_test_dir.string(), path.string());
+            EXPECT_TRUE(io::fs::is_directory(data));
+            ++on_stat_call_count;
+        }
+    );
+
+    EXPECT_EQ(0, on_stat_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_stat_call_count);
 }
