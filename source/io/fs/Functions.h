@@ -22,6 +22,11 @@ IO_DLL_PUBLIC void stat(EventLoop& loop, const Path& path, const StatCallback& c
 
 IO_DLL_PUBLIC bool is_regular_file(const StatData& stat_data);
 IO_DLL_PUBLIC bool is_directory(const StatData& stat_data);
+IO_DLL_PUBLIC bool is_symbolic_link(const StatData& stat_data);
+IO_DLL_PUBLIC bool is_block_special(const StatData& stat_data);
+IO_DLL_PUBLIC bool is_char_special(const StatData& stat_data);
+IO_DLL_PUBLIC bool is_fifo(const StatData& stat_data);
+IO_DLL_PUBLIC bool is_socket(const StatData& stat_data);
 
 
 } // namespace fs

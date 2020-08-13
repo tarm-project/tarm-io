@@ -25,6 +25,8 @@ void defer_execution_if_required(EventLoop& loop, const F& f, Params&&... params
     }
 }
 
+namespace stat_detail {
+
 struct StatRequest : public uv_fs_t {
     StatCallback callback;
 };
@@ -57,34 +59,39 @@ void stat_impl(EventLoop& loop, const Path& path, const StatCallback& callback) 
     }
 }
 
-void stat(EventLoop& loop, const Path& path, const StatCallback& callback) {
-    defer_execution_if_required(loop, stat_impl, path, callback);
-}
+} // namespace stat_detail
 
-#if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
-    #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-#endif
+void stat(EventLoop& loop, const Path& path, const StatCallback& callback) {
+    defer_execution_if_required(loop, stat_detail::stat_impl, path, callback);
+}
 
 bool is_regular_file(const StatData& stat_data) {
-    return S_ISREG(stat_data.mode);
+    return (stat_data.mode & S_IFMT) == S_IFREG;
 }
-
-#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
-    #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-#endif
 
 bool is_directory(const StatData& stat_data) {
-    return S_ISDIR(stat_data.mode);
+    return (stat_data.mode & S_IFMT) == S_IFDIR;
 }
 
+bool is_symbolic_link(const StatData& stat_data) {
+    return (stat_data.mode & S_IFMT) == S_IFLNK;
+}
 
-//#define S_ISBLK(m)      (((m) & S_IFMT) == S_IFBLK)     /* block special */
-//#define S_ISCHR(m)      (((m) & S_IFMT) == S_IFCHR)     /* char special */
-//#define S_ISDIR(m)      (((m) & S_IFMT) == S_IFDIR)     /* directory */
-//#define S_ISFIFO(m)     (((m) & S_IFMT) == S_IFIFO)     /* fifo or socket */
-//#define S_ISREG(m)      (((m) & S_IFMT) == S_IFREG)     /* regular file */
-//#define S_ISLNK(m)      (((m) & S_IFMT) == S_IFLNK)     /* symbolic link */
-//#define S_ISSOCK(m)     (((m) & S_IFMT) == S_IFSOCK)    /* socket */
+bool is_block_special(const StatData& stat_data) {
+    return (stat_data.mode & S_IFMT) == S_IFBLK;
+}
+
+bool is_char_special(const StatData& stat_data) {
+    return (stat_data.mode & S_IFMT) == S_IFCHR;
+}
+
+bool is_fifo(const StatData& stat_data) {
+    return (stat_data.mode & S_IFMT) == S_IFIFO;
+}
+
+bool is_socket(const StatData& stat_data) {
+    return (stat_data.mode & S_IFMT) == S_IFSOCK;
+}
 
 } // namespace fs
 } // namespace io
