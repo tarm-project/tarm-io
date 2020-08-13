@@ -78,7 +78,11 @@ bool is_symbolic_link(const StatData& stat_data) {
 }
 
 bool is_block_special(const StatData& stat_data) {
+#ifdef TARM_IO_PLATFORM_WINDOWS
+    return false;
+#else
     return (stat_data.mode & S_IFMT) == S_IFBLK;
+#endif
 }
 
 bool is_char_special(const StatData& stat_data) {
@@ -86,11 +90,19 @@ bool is_char_special(const StatData& stat_data) {
 }
 
 bool is_fifo(const StatData& stat_data) {
+#ifdef TARM_IO_PLATFORM_WINDOWS
+    return false;
+#else
     return (stat_data.mode & S_IFMT) == S_IFIFO;
+#endif
 }
 
 bool is_socket(const StatData& stat_data) {
+#ifdef TARM_IO_PLATFORM_WINDOWS
+    return false;
+#else
     return (stat_data.mode & S_IFMT) == S_IFSOCK;
+#endif
 }
 
 } // namespace fs
