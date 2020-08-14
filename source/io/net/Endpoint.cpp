@@ -271,6 +271,17 @@ std::ostream& operator <<(std::ostream& o, const Endpoint& e) {
     return o;
 }
 
+int raw_type(Endpoint::Type type) {
+    switch (type) {
+        case Endpoint::Type::IP_V4:
+            return AF_INET;
+        case Endpoint::Type::IP_V6:
+            return AF_INET6;
+        default:
+            return AF_UNSPEC;
+    }
+}
+
 } // namespace net
 } // namespace io
 } // namespace tarm

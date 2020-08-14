@@ -10,6 +10,9 @@ option(TARM_IO_BUILD_TESTS "Build tests" OFF)
 option(TARM_IO_USE_EXTERNAL_LIBUV "Use system libuv instead of the bundled one" OFF)
 option(TARM_IO_USE_EXTERNAL_GTEST "Use system GTest instead of the bundled one" OFF)
 
+set(TARM_IO_LIBUV_VERSION "1.30.1")
+set(TARM_IO_GTEST_VERSION "1.10.0")
+
 # According to docs this variable should be set before 'project' statement
 if(APPLE AND NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.10" CACHE STRING "Minimum OS X deployment version")
@@ -43,9 +46,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 #    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 endif()
-
-set(TARM_IO_LIBUV_VERSION "1.30.1")
-set(TARM_IO_GTEST_VERSION "1.10.0")
 
 # IO_SANITIZER allows to build the library with sanitizer enabled
 # For details see https://clang.llvm.org/docs/.

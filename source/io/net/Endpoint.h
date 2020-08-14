@@ -38,7 +38,8 @@ public:
     enum Type {
         UNDEFINED = 0,
         IP_V4,
-        IP_V6
+        IP_V6,
+        ANY = UNDEFINED
     };
 
     TARM_IO_DLL_PUBLIC Endpoint();
@@ -71,6 +72,9 @@ private:
 
 TARM_IO_DLL_PUBLIC
 std::ostream& operator <<(std::ostream& o, const Endpoint& e);
+
+TARM_IO_DLL_PUBLIC
+int raw_type(Endpoint::Type type);
 
 } // namespace net
 } // namespace io

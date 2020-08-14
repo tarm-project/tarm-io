@@ -51,6 +51,7 @@ list(APPEND TESTS_LIST
     TcpClientServerTest.cpp
     TlsTcpClientServerTest.cpp
     DtlsClientServerTest.cpp
+    DnsTest.cpp
 )
 
 if (NOT DEFINED TARM_IO_OPENSSL_FOUND)

@@ -114,6 +114,7 @@ list(APPEND IO_SOURCE_LIST
         io/fs/path_impl/WindowsFileCodecvt.cpp
         io/net/detail/OpenSslInitHelper.cpp
         io/net/detail/PeerId.cpp
+        io/net/Dns.cpp
         io/net/DtlsClient.cpp
         io/net/DtlsConnectedClient.cpp
         io/net/DtlsServer.cpp
