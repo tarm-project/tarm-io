@@ -56,7 +56,7 @@ TEST_F(DnsTest, look_up_ipv6) {
     std::size_t on_resolve_callback_count = 0;
 
     io::EventLoop loop;
-    io::net::resolve_host(loop, "ipv6.google.com",
+    io::net::resolve_host(loop, "google.com",
         [&](const std::vector<io::net::Endpoint>& endpoints, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++on_resolve_callback_count;
