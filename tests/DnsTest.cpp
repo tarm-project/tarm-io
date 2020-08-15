@@ -53,7 +53,8 @@ TEST_F(DnsTest, look_up_ipv4) {
 }
 
 TEST_F(DnsTest, look_up_ipv6) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     std::size_t on_resolve_callback_count = 0;
 
     io::EventLoop loop;
@@ -72,9 +73,6 @@ TEST_F(DnsTest, look_up_ipv6) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_resolve_callback_count);
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(DnsTest, look_up_unknown) {

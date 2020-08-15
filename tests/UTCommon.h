@@ -19,6 +19,13 @@ using namespace tarm;
     #define TARM_IO_TEST_SKIP() return
 #endif
 
+#ifdef TARM_IO_PLATFORM_WINDOWS
+    #define TARM_IO_TEST_SKIP_ON_WINDOWS() TARM_IO_TEST_SKIP()
+#else
+    #define TARM_IO_TEST_SKIP_ON_WINDOWS() // do nothing
+#endif
+
+
 std::string create_temp_test_directory();
 std::string create_empty_file(const std::string& path_where_create);
 
