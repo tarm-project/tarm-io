@@ -92,10 +92,10 @@ TEST_F(DtlsClientServerTest, server_with_invalid_address) {
     EXPECT_EQ(0, server_on_close_count);
 }
 
-// TODO: skip these tests
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
-// Windows does not have privileged ports
 TEST_F(DtlsClientServerTest, bind_privileged) {
+    // Windows does not have privileged ports
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     io::EventLoop loop;
 
     auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
@@ -109,7 +109,6 @@ TEST_F(DtlsClientServerTest, bind_privileged) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
-#endif
 
 TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     io::EventLoop loop;

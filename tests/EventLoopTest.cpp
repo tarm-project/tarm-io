@@ -678,7 +678,8 @@ TEST_F(EventLoopTest, signal_no_callback) {
 
 // lldb, to not stop on signal type: process handle SIGHUP -s false
 TEST_F(EventLoopTest, signal_repeating) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     io::EventLoop loop;
 
     std::size_t callback_counter = 0;
@@ -707,13 +708,11 @@ TEST_F(EventLoopTest, signal_repeating) {
     ASSERT_FALSE(loop.run());
 
     EXPECT_EQ(1, callback_counter);
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(EventLoopTest, signal_once) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     io::EventLoop loop;
 
     std::size_t callback_counter = 0;
@@ -741,9 +740,6 @@ TEST_F(EventLoopTest, signal_once) {
     ASSERT_FALSE(loop.run());
 
     EXPECT_EQ(1, callback_counter);
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(EventLoopTest, signal_schedule_once_and_cancel) {
@@ -769,7 +765,8 @@ TEST_F(EventLoopTest, signal_schedule_once_and_cancel) {
 }
 
 TEST_F(EventLoopTest, signal_once_schedule_cancel_and_scgedule_again) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     io::EventLoop loop;
 
     std::size_t callback_counter_1 = 0;
@@ -811,13 +808,11 @@ TEST_F(EventLoopTest, signal_once_schedule_cancel_and_scgedule_again) {
 
     EXPECT_EQ(0, callback_counter_1);
     EXPECT_EQ(1, callback_counter_2);
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(EventLoopTest, signal_force_out_one_callback_with_another) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     io::EventLoop loop;
 
     std::size_t callback_counter_1 = 0;
@@ -858,7 +853,4 @@ TEST_F(EventLoopTest, signal_force_out_one_callback_with_another) {
 
     EXPECT_EQ(0, callback_counter_1);
     EXPECT_EQ(1, callback_counter_2);
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }

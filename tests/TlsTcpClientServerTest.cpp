@@ -165,9 +165,11 @@ TEST_F(TlsTcpClientServerTest, server_listen_on_invalid_address) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
-// Windows does not have privileged ports
+
 TEST_F(TlsTcpClientServerTest, bind_privileged) {
+    // Windows does not have privileged ports
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     io::EventLoop loop;
 
     auto server = new io::net::TlsTcpServer(loop, m_cert_path, m_key_path);
@@ -183,7 +185,6 @@ TEST_F(TlsTcpClientServerTest, bind_privileged) {
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
-#endif
 
 TEST_F(TlsTcpClientServerTest, server_address_in_use) {
     io::EventLoop loop;

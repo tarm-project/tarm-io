@@ -51,9 +51,10 @@ TEST_F(UdpClientServerTest, server_bind) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
-// Windows does not have privileged ports
 TEST_F(UdpClientServerTest, bind_privileged) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    // Windows does not have privileged ports
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     io::EventLoop loop;
 
     auto server = new io::net::UdpServer(loop);
@@ -61,9 +62,6 @@ TEST_F(UdpClientServerTest, bind_privileged) {
     server->schedule_removal();
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(UdpClientServerTest, server_address_in_use) {

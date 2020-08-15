@@ -348,7 +348,8 @@ TEST_F(DirTest, no_list_callback) {
 }
 
 TEST_F(DirTest, list_symlink) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     auto file_path = m_tmp_test_dir / "some_file";
     {
         std::ofstream ofile(file_path.string());
@@ -382,13 +383,11 @@ TEST_F(DirTest, list_symlink) {
 
     dir->schedule_removal();
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(DirTest, list_block_and_char_devices) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     std::size_t block_devices_count = 0;
     std::size_t char_devices_count = 0;
 
@@ -416,13 +415,11 @@ TEST_F(DirTest, list_block_and_char_devices) {
 
     dir->schedule_removal();
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(DirTest, list_domain_sockets) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     std::size_t domain_sockets_count = 0;
 
     io::EventLoop loop;
@@ -445,13 +442,11 @@ TEST_F(DirTest, list_domain_sockets) {
 
     dir->schedule_removal();
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(DirTest, list_fifo) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     std::size_t fifo_count = 0;
 
     auto fifo_status = mkfifo((m_tmp_test_dir / "fifo").string().c_str(), S_IRWXU);
@@ -477,9 +472,6 @@ TEST_F(DirTest, list_fifo) {
 
     dir->schedule_removal();
     ASSERT_EQ(io::StatusCode::OK, loop.run());
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(DirTest, make_temp_dir) {
@@ -553,7 +545,8 @@ TEST_F(DirTest, make_dir_default_mode) {
 }
 
 TEST_F(DirTest, make_dir_with_mode) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     io::EventLoop loop;
 
     std::size_t on_make_dir_call_count = 0;
@@ -574,9 +567,6 @@ TEST_F(DirTest, make_dir_with_mode) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_make_dir_call_count);
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 TEST_F(DirTest, make_dir_no_such_dir_error) {
@@ -668,7 +658,8 @@ TEST_F(DirTest, make_dir_name_to_long_error) {
 }
 
 TEST_F(DirTest, make_dir_root_dir_error) {
-#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     io::EventLoop loop;
 
     std::size_t on_make_dir_call_count = 0;
@@ -688,9 +679,6 @@ TEST_F(DirTest, make_dir_root_dir_error) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_make_dir_call_count);
-#else
-    TARM_IO_TEST_SKIP();
-#endif
 }
 
 
