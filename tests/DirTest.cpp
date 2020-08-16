@@ -447,6 +447,7 @@ TEST_F(DirTest, list_domain_sockets) {
 TEST_F(DirTest, list_fifo) {
     TARM_IO_TEST_SKIP_ON_WINDOWS();
 
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     std::size_t fifo_count = 0;
 
     auto fifo_status = mkfifo((m_tmp_test_dir / "fifo").string().c_str(), S_IRWXU);
@@ -472,6 +473,7 @@ TEST_F(DirTest, list_fifo) {
 
     dir->schedule_removal();
     ASSERT_EQ(io::StatusCode::OK, loop.run());
+#endif
 }
 
 TEST_F(DirTest, make_temp_dir) {
@@ -547,6 +549,7 @@ TEST_F(DirTest, make_dir_default_mode) {
 TEST_F(DirTest, make_dir_with_mode) {
     TARM_IO_TEST_SKIP_ON_WINDOWS();
 
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     io::EventLoop loop;
 
     std::size_t on_make_dir_call_count = 0;
@@ -567,6 +570,7 @@ TEST_F(DirTest, make_dir_with_mode) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 
     EXPECT_EQ(1, on_make_dir_call_count);
+#endif
 }
 
 TEST_F(DirTest, make_dir_no_such_dir_error) {

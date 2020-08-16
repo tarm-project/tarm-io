@@ -680,6 +680,7 @@ TEST_F(EventLoopTest, signal_no_callback) {
 TEST_F(EventLoopTest, signal_repeating) {
     TARM_IO_TEST_SKIP_ON_WINDOWS();
 
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     io::EventLoop loop;
 
     std::size_t callback_counter = 0;
@@ -708,11 +709,13 @@ TEST_F(EventLoopTest, signal_repeating) {
     ASSERT_FALSE(loop.run());
 
     EXPECT_EQ(1, callback_counter);
+#endif
 }
 
 TEST_F(EventLoopTest, signal_once) {
     TARM_IO_TEST_SKIP_ON_WINDOWS();
 
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     io::EventLoop loop;
 
     std::size_t callback_counter = 0;
@@ -740,6 +743,7 @@ TEST_F(EventLoopTest, signal_once) {
     ASSERT_FALSE(loop.run());
 
     EXPECT_EQ(1, callback_counter);
+#endif
 }
 
 TEST_F(EventLoopTest, signal_schedule_once_and_cancel) {
@@ -767,6 +771,7 @@ TEST_F(EventLoopTest, signal_schedule_once_and_cancel) {
 TEST_F(EventLoopTest, signal_once_schedule_cancel_and_scgedule_again) {
     TARM_IO_TEST_SKIP_ON_WINDOWS();
 
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     io::EventLoop loop;
 
     std::size_t callback_counter_1 = 0;
@@ -808,11 +813,13 @@ TEST_F(EventLoopTest, signal_once_schedule_cancel_and_scgedule_again) {
 
     EXPECT_EQ(0, callback_counter_1);
     EXPECT_EQ(1, callback_counter_2);
+#endif
 }
 
 TEST_F(EventLoopTest, signal_force_out_one_callback_with_another) {
     TARM_IO_TEST_SKIP_ON_WINDOWS();
 
+#if defined(TARM_IO_PLATFORM_MACOSX) || defined(TARM_IO_PLATFORM_LINUX)
     io::EventLoop loop;
 
     std::size_t callback_counter_1 = 0;
@@ -853,4 +860,5 @@ TEST_F(EventLoopTest, signal_force_out_one_callback_with_another) {
 
     EXPECT_EQ(0, callback_counter_1);
     EXPECT_EQ(1, callback_counter_2);
+#endif
 }
