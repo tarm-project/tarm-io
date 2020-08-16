@@ -6,6 +6,7 @@
 #include "Dir.h"
 
 #include "detail/Common.h"
+#include "detail/EventLoopHelpers.h"
 #include "ScopeExitGuard.h"
 
 //#include <locale>
@@ -370,7 +371,7 @@ void on_make_dir(uv_fs_t* uv_request) {
     delete &request;
 }
 
-void make_dir(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
+void make_dir_impl(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
     auto request = new RequestWithCallback<MakeDirCallback>(callback);
     const Error error =
         uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.string().c_str(), mode, on_make_dir);
@@ -381,6 +382,10 @@ void make_dir(EventLoop& loop, const Path& path, int mode, const MakeDirCallback
 
         delete request;
     }
+}
+
+void make_dir(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
+    ::tarm::io::detail::defer_execution_if_required(loop, make_dir_impl, path, mode, callback);
 }
 
 namespace {
@@ -505,13 +510,7 @@ void remove_dir_impl(EventLoop& loop, const Path& path, const RemoveDirCallback&
 }
 
 void remove_dir(EventLoop& loop, const Path& path, const RemoveDirCallback& remove_callback, const ProgressCallback& progress_callback) {
-    if (loop.is_running()) {
-        remove_dir_impl(loop, path, remove_callback, progress_callback);
-    } else {
-        loop.execute_on_loop_thread([=](EventLoop& loop){
-            remove_dir_impl(loop, path, remove_callback, progress_callback);
-        });
-    }
+    ::tarm::io::detail::defer_execution_if_required(loop, remove_dir_impl, path, remove_callback, progress_callback);
 }
 
 } // namespace fs

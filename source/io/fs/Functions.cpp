@@ -5,25 +5,13 @@
 
 #include "Functions.h"
 
-#include <uv.h>
+#include "detail/EventLoopHelpers.h"
 
-#include <utility>
+#include <uv.h>
 
 namespace tarm {
 namespace io {
 namespace fs {
-
-// TODO: move to some common location and reuse
-template<typename F, typename... Params>
-void defer_execution_if_required(EventLoop& loop, const F& f, Params&&... params) {
-    if (loop.is_running()) {
-        f(loop, std::forward<Params>(params)...);
-    } else {
-        loop.execute_on_loop_thread(std::bind(std::forward<F>(f),
-                                              std::placeholders::_1,
-                                              std::forward<Params>(params)...));
-    }
-}
 
 namespace stat_detail {
 
@@ -62,7 +50,7 @@ void stat_impl(EventLoop& loop, const Path& path, const StatCallback& callback) 
 } // namespace stat_detail
 
 void stat(EventLoop& loop, const Path& path, const StatCallback& callback) {
-    defer_execution_if_required(loop, stat_detail::stat_impl, path, callback);
+    ::tarm::io::detail::defer_execution_if_required(loop, stat_detail::stat_impl, path, callback);
 }
 
 bool is_regular_file(const StatData& stat_data) {
