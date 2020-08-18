@@ -26,7 +26,7 @@ class Dir : public Removable,
             public UserDataHolder {
 public:
     using OpenCallback = std::function<void(Dir&, const Error&)>;
-    using ListEntryCallback = std::function<void(Dir&, const char*, DirectoryEntryType)>;
+    using ListEntryCallback = std::function<void(Dir&, const std::string&, DirectoryEntryType)>;
     using EndListCallback = std::function<void(Dir&, const Error&)>;
     using CloseCallback = std::function<void(Dir&, const Error&)>;
 

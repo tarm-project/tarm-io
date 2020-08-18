@@ -202,7 +202,7 @@ TEST_F(DirTest, list_not_opened) {
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
     dir->list(
-        [&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        [&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
             ++list_call_count;
         },
         [&](io::fs::Dir& dir, const io::Error& error) {
@@ -244,24 +244,24 @@ TEST_F(DirTest, list_elements) {
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error&) {
-        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
-            if (std::string(name) == "dir_1") {
+        dir.list([&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
+            if (name == "dir_1") {
                 EXPECT_FALSE(dir_1_listed);
                 EXPECT_EQ(io::fs::DirectoryEntryType::DIR, entry_type);
                 dir_1_listed = true;
-            } else if (std::string(name) == "dir_2") {
+            } else if (name == "dir_2") {
                 EXPECT_FALSE(dir_2_listed);
                 EXPECT_EQ(io::fs::DirectoryEntryType::DIR, entry_type);
                 dir_2_listed = true;
-            } else if (std::string(name) == "dir_3") {
+            } else if (name == "dir_3") {
                 EXPECT_FALSE(dir_3_listed);
                 EXPECT_EQ(io::fs::DirectoryEntryType::DIR, entry_type);
                 dir_3_listed = true;
-            } else if (std::string(name) == "file_1") {
+            } else if (name == "file_1") {
                 EXPECT_FALSE(file_1_listed);
                 EXPECT_EQ(io::fs::DirectoryEntryType::FILE, entry_type);
                 file_1_listed = true;
-            } else if (std::string(name) == "file_2") {
+            } else if (name == "file_2") {
                 EXPECT_FALSE(file_2_listed);
                 EXPECT_EQ(io::fs::DirectoryEntryType::FILE, entry_type);
                 file_2_listed = true;
@@ -294,7 +294,7 @@ TEST_F(DirTest, empty_dir) {
 
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_FALSE(error) << error;
-        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        dir.list([&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
             ++list_call_count;
         },
         [&](io::fs::Dir& dir, const io::Error& error) {
@@ -364,10 +364,10 @@ TEST_F(DirTest, list_symlink) {
     io::EventLoop loop;
     auto dir = new io::fs::Dir(loop);
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error&) {
-        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
-            if (std::string(name) == "some_file") {
+        dir.list([&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
+            if (name == "some_file") {
                 EXPECT_EQ(io::fs::DirectoryEntryType::FILE, entry_type);
-            } else if (std::string(name) == "link") {
+            } else if (name == "link") {
                 EXPECT_EQ(io::fs::DirectoryEntryType::LINK, entry_type);
                 link_found = true;
             }
@@ -396,7 +396,7 @@ TEST_F(DirTest, list_block_and_char_devices) {
     dir->open("/dev", [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_TRUE(!error);
 
-        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        dir.list([&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
             if (entry_type == io::fs::DirectoryEntryType::BLOCK) {
                 ++block_devices_count;
             } else if (entry_type == io::fs::DirectoryEntryType::CHAR) {
@@ -427,7 +427,7 @@ TEST_F(DirTest, list_domain_sockets) {
     dir->open("/var/run", [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_TRUE(!error);
 
-        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        dir.list([&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
             if (entry_type == io::fs::DirectoryEntryType::SOCKET) {
                 ++domain_sockets_count;
             }
@@ -458,7 +458,7 @@ TEST_F(DirTest, list_fifo) {
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_FALSE(error) << error;
 
-        dir.list([&](io::fs::Dir& dir, const char* name, io::fs::DirectoryEntryType entry_type) {
+        dir.list([&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
             if (entry_type == io::fs::DirectoryEntryType::FIFO) {
                 ++fifo_count;
             }
