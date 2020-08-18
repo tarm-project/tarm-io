@@ -9,7 +9,6 @@
 #include "detail/EventLoopHelpers.h"
 #include "ScopeExitGuard.h"
 
-//#include <locale>
 #include <cstring>
 #include <vector>
 #include <assert.h>
@@ -20,6 +19,11 @@ namespace fs {
 
 struct CloseDirRequest : public uv_fs_t {
     Dir::CloseCallback close_callback;
+};
+
+struct ReadDirRequest : public uv_fs_t {
+    Dir::ListEntryCallback list_callback;
+    Dir::EndListCallback end_list_callback;
 };
 
 class Dir::Impl {
@@ -59,13 +63,11 @@ private:
     uv_loop_t* m_uv_loop;
 
     OpenCallback m_open_callback = nullptr;
-    ListEntryCallback m_list_callback = nullptr;
-    EndListCallback m_end_list_callback = nullptr;
 
     Path m_path;
 
     uv_fs_t m_open_dir_req;
-    uv_fs_t m_read_dir_req;
+    ReadDirRequest* m_read_request = nullptr;
     uv_dir_t* m_uv_dir = nullptr;
 
     uv_dirent_t m_dirents[DIRENTS_NUMBER];
@@ -108,10 +110,10 @@ Dir::Impl::Impl(EventLoop& loop, Dir& parent) :
     m_loop(&loop),
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
     memset(&m_open_dir_req, 0, sizeof(m_open_dir_req));
-    memset(&m_read_dir_req, 0, sizeof(m_read_dir_req));
 }
 
 Dir::Impl::~Impl() {
+    assert(m_read_request == nullptr && "Leaked m_read_request");
 }
 
 void Dir::Impl::open(const Path& path, const OpenCallback& callback) {
@@ -154,17 +156,24 @@ void Dir::Impl::list(const ListEntryCallback& list_callback, const EndListCallba
         return;
     }
 
-    const Error read_dir_error = uv_fs_readdir(m_uv_loop, &m_read_dir_req, m_uv_dir, on_read_dir);
+    if (m_read_request) {
+        if (end_list_callback) {
+            m_loop->schedule_callback([=](EventLoop&) { end_list_callback(*this->m_parent, StatusCode::OPERATION_ALREADY_IN_PROGRESS); });
+        }
+        return;
+    }
+
+    m_read_request = new ReadDirRequest;
+    m_read_request->list_callback = list_callback;
+    m_read_request->end_list_callback = end_list_callback;
+    m_read_request->data = this;
+    const Error read_dir_error = uv_fs_readdir(m_uv_loop, m_read_request, m_uv_dir, on_read_dir);
     if (read_dir_error) {
         if (end_list_callback) {
             m_loop->schedule_callback([=](EventLoop&) { end_list_callback(*this->m_parent, read_dir_error); });
         }
         return;
     }
-
-    m_read_dir_req.data = this;
-    m_list_callback = list_callback;
-    m_end_list_callback = end_list_callback;
 }
 
 bool Dir::Impl::is_open() const {
@@ -188,10 +197,8 @@ void Dir::Impl::close(const CloseCallback& callback) {
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(m_open_dir_req.ptr);
 
     uv_fs_req_cleanup(&m_open_dir_req);
-    uv_fs_req_cleanup(&m_read_dir_req);
 
     m_open_dir_req.data = nullptr;
-    m_read_dir_req.data = nullptr;
 
     auto closedir_req = new CloseDirRequest;
     closedir_req->close_callback = callback;
@@ -241,21 +248,26 @@ void Dir::Impl::on_open_dir(uv_fs_t* req) {
 
 void Dir::Impl::on_read_dir(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<Dir::Impl*>(req->data);
+    auto& request = *reinterpret_cast<ReadDirRequest*>(req);
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
 
     if (req->result <= 0) {
-        if (this_.m_end_list_callback) {
-            this_.m_end_list_callback(*this_.m_parent, Error(req->result));
-        }
-    } else {
-        if (this_.m_list_callback) {
-            this_.m_list_callback(*this_.m_parent, this_.m_dirents[0].name, convert_direntry_type(this_.m_dirents[0].type));
+        this_.m_read_request = nullptr;
+        if (request.end_list_callback) {
+            request.end_list_callback(*this_.m_parent, Error(req->result));
         }
 
-        uv_fs_req_cleanup(&this_.m_read_dir_req); // cleaning up previous request
+        uv_fs_req_cleanup(&request);
+        delete &request;
+    } else {
+        if (request.list_callback) {
+            request.list_callback(*this_.m_parent, this_.m_dirents[0].name, convert_direntry_type(this_.m_dirents[0].type));
+        }
+
+        uv_fs_req_cleanup(&request); // cleaning up previous request
         // Not handling return value because all data is inited and not NULL at this point
-        uv_fs_readdir(req->loop, &this_.m_read_dir_req, dir, on_read_dir);
+        uv_fs_readdir(req->loop, &request, dir, on_read_dir);
     }
 }
 

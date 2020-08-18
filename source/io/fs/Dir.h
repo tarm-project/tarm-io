@@ -20,6 +20,21 @@
 
 namespace tarm {
 namespace io {
+/*
+class TARM_IO_DLL_PUBLIC Continuation {
+public:
+    void proceed() { // default
+        m_continue = true;
+    }
+
+    void stop() {
+        m_continue = false;
+    }
+
+private:
+    bool m_continue = true;
+};
+*/
 namespace fs {
 
 class Dir : public Removable,
