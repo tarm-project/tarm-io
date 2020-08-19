@@ -957,7 +957,8 @@ TEST_F(FileTest, stat_size) {
     file->open(path, [&SIZE, &stat_call_count](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(!error);
 
-        file.stat([&SIZE, &stat_call_count](io::fs::File& file, const io::fs::StatData& stat){
+        file.stat([&SIZE, &stat_call_count](io::fs::File& file, const io::fs::StatData& stat, const io::Error& error){
+            EXPECT_FALSE(error) << error;
             EXPECT_EQ(SIZE, stat.size);
             ++stat_call_count;
         });
@@ -991,7 +992,9 @@ TEST_F(FileTest, stat_time) {
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(!error);
 
-        file.stat([&](io::fs::File& file, const io::fs::StatData& stat){
+        file.stat([&](io::fs::File& file, const io::fs::StatData& stat, const io::Error& error){
+            EXPECT_FALSE(error) << error;
+
             auto file_str = file.path().string().c_str();
             EXPECT_LE(std::abs(stat.last_access_time.seconds - seconds), 1l) << file_str;
             EXPECT_LE(std::abs(stat.last_access_time.nanoseconds - nano_seconds), 1000000000l) << file_str;

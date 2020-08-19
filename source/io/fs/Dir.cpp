@@ -258,7 +258,6 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
             request.end_list_callback(*this_.m_parent, Error(req->result));
         }
 
-        //uv_fs_req_cleanup(&request); // TODO: remove
         delete &request;
     } else {
         if (request.list_callback) {

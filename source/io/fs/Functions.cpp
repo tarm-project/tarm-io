@@ -38,7 +38,6 @@ void stat_impl(EventLoop& loop, const Path& path, const StatCallback& callback) 
                                         on_stat);
     if (stat_error) {
         StatData data;
-        std::memset(&data, 0, sizeof(data));
         if (callback) {
             callback(path, data, stat_error);
         }

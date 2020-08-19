@@ -14,12 +14,13 @@ namespace fs {
 
 namespace {
 
-struct ReadRequest : public uv_fs_t {
-    ReadRequest() {
+struct FileReadRequest : public uv_fs_t {
+    FileReadRequest() {
+        // This memset is needed while we stor request by value
         memset(reinterpret_cast<uv_fs_t*>(this), 0, sizeof(uv_fs_t));
     }
 
-    ~ReadRequest() {
+    ~FileReadRequest() {
         delete[] raw_buf;
     }
 
@@ -29,22 +30,20 @@ struct ReadRequest : public uv_fs_t {
     char* raw_buf = nullptr;
 };
 
-struct CloseRequest : public uv_fs_t {
-    CloseRequest() {
-    }
-
-    ~CloseRequest() {
-    }
-
+struct FileCloseRequest : public uv_fs_t {
     File::CloseCallback close_callback;
 };
 
-} // namespace
-
-struct ReadBlockReq : public uv_fs_t {
+struct FileReadBlockReq : public uv_fs_t {
     std::shared_ptr<char> buf;
     std::size_t offset = 0;
 };
+
+struct FileStatRequest : public uv_fs_t {
+    File::StatCallback callback;
+};
+
+} // namespace
 
 class File::Impl {
 public:
@@ -84,21 +83,20 @@ protected:
 
 private:
     void schedule_read();
-    void schedule_read(ReadRequest& req);
+    void schedule_read(FileReadRequest& req);
     bool has_read_buffers_in_use() const;
     void finish_close();
 
     OpenCallback m_open_callback = nullptr;
     ReadCallback m_read_callback = nullptr;
     EndReadCallback m_end_read_callback = nullptr;
-    StatCallback m_stat_callback = nullptr;
 
     File* m_parent = nullptr;
 
     EventLoop* m_loop = nullptr;
     uv_loop_t* m_uv_loop = nullptr;
 
-    ReadRequest m_read_reqs[READ_BUFS_NUM];
+    FileReadRequest m_read_reqs[READ_BUFS_NUM];
     std::size_t m_current_offset = 0;
 
     // TODO: make some states instead bunch of flags
@@ -106,11 +104,11 @@ private:
     bool m_done_read = false;
     bool m_need_reschedule_remove = false;
 
-    // TODO: it may be not reasonable to store by value here because they take to much space (>400b)
-    //       also memory pool will help a lot
     uv_fs_t* m_open_request = nullptr;
     uv_file m_file_handle = -1;
-    uv_fs_t m_stat_req;
+    FileStatRequest* m_stat_req = nullptr;
+
+    // TODO: not store by value
     uv_fs_t m_write_req;
 
     Path m_path;
@@ -124,7 +122,6 @@ File::Impl::Impl(EventLoop& loop, File& parent) :
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
 
     memset(&m_write_req, 0, sizeof(m_write_req));
-    memset(&m_stat_req, 0, sizeof(m_stat_req));
 }
 
 File::Impl::~Impl() {
@@ -185,7 +182,7 @@ void File::Impl::close(const CloseCallback& close_callback) {
 
     IO_LOG(m_loop, DEBUG, "path: ", m_path);
 
-    auto close_req = new CloseRequest;
+    auto close_req = new FileCloseRequest;
     close_req->data = this;
     close_req->close_callback = close_callback;
     Error close_error = uv_fs_close(m_uv_loop, close_req, m_file_handle, on_close);
@@ -275,7 +272,7 @@ void File::Impl::read_block(off_t offset, unsigned int bytes_count, const ReadCa
 
     m_read_callback = read_callback;
 
-    auto req = new ReadBlockReq;
+    auto req = new FileReadBlockReq;
     req->buf = std::shared_ptr<char>(new char[bytes_count], [](char* p) {delete[] p;});
     req->data = this;
     req->offset = offset;
@@ -290,12 +287,31 @@ void File::Impl::read(const ReadCallback& callback) {
 }
 
 void File::Impl::stat(const StatCallback& callback) {
-    // TODO: check if open
+    if (!is_open()) {
+        if (callback) {
+            m_loop->schedule_callback([=](EventLoop&) {
+                StatData data;
+                callback(*this->m_parent, data, StatusCode::FILE_NOT_OPEN);
+            });
+        }
+        return;
+    }
 
-    m_stat_req.data = this;
-    m_stat_callback = callback;
+    if (m_stat_req) {
+        if (callback) {
+            m_loop->schedule_callback([=](EventLoop&) {
+                StatData data;
+                callback(*this->m_parent, data, StatusCode::OPERATION_ALREADY_IN_PROGRESS);
+            });
+        }
+        return;
+    }
 
-    uv_fs_fstat(m_uv_loop, &m_stat_req, m_file_handle, on_stat);
+    m_stat_req = new FileStatRequest;
+    m_stat_req->data = this;
+    m_stat_req->callback = callback;
+
+    uv_fs_fstat(m_uv_loop, m_stat_req, m_file_handle, on_stat);
 }
 
 const Path& File::Impl::path() const {
@@ -335,14 +351,14 @@ void File::Impl::schedule_read() {
 
     IO_LOG(m_loop, TRACE, "File", m_path, "using buffer with index: ", i);
 
-    ReadRequest& read_req = m_read_reqs[i];
+    FileReadRequest& read_req = m_read_reqs[i];
     read_req.is_free = false;
     read_req.data = this;
 
     schedule_read(read_req);
 }
 
-void File::Impl::schedule_read(ReadRequest& req) {
+void File::Impl::schedule_read(FileReadRequest& req) {
     m_read_in_progress = true;
     m_loop->start_block_loop_from_exit();
 
@@ -421,7 +437,16 @@ void File::Impl::on_open(uv_fs_t* req) {
     // Making stat here because Windows allows open directory as a file, so the call is successful on this
     // platform. But Linux and Mac return errro immediately.
     // TODO: wrap this stat into plafrom macros for Windos only???
-    this_.stat([&this_](File& f, const StatData& d) {
+    this_.stat([&this_](File& f, const StatData& d, const Error& error) {
+        if (error) {
+            if (this_.m_open_callback) {
+                this_.m_open_callback(*this_.m_parent, error);
+                this_.m_path.clear();
+                this_.m_state = State::CLOSED;
+            }
+            return;
+        }
+
         if (this_.m_open_callback) {
             if (d.mode & S_IFDIR) {
                 this_.m_loop->schedule_callback([&this_](EventLoop&){
@@ -441,7 +466,7 @@ void File::Impl::on_open(uv_fs_t* req) {
 }
 
 void File::Impl::on_read_block(uv_fs_t* uv_req) {
-    auto& req = *reinterpret_cast<ReadBlockReq*>(uv_req);
+    auto& req = *reinterpret_cast<FileReadBlockReq*>(uv_req);
     auto& this_ = *reinterpret_cast<File::Impl*>(req.data);
 
     ScopeExitGuard req_guard([&req]() {
@@ -470,7 +495,7 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
 }
 
 void File::Impl::on_read(uv_fs_t* uv_req) {
-    auto& req = *reinterpret_cast<ReadRequest*>(uv_req);
+    auto& req = *reinterpret_cast<FileReadRequest*>(uv_req);
     auto& this_ = *reinterpret_cast<File::Impl*>(req.data);
 
     if (!this_.is_open()) {
@@ -521,7 +546,7 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
 
 void File::Impl::on_close(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
-    auto& request = *reinterpret_cast<CloseRequest*>(req);
+    auto& request = *reinterpret_cast<FileCloseRequest*>(req);
 
     this_.m_file_handle = -1;
     this_.m_state = State::CLOSED;
@@ -540,12 +565,16 @@ void File::Impl::on_close(uv_fs_t* req) {
 
 void File::Impl::on_stat(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<File::Impl*>(req->data);
+    auto& request = *reinterpret_cast<FileStatRequest*>(req);
+
+    this_.m_stat_req = nullptr;
 
     Error error(req->result);
-    // TODO: error handling (need to expand StatCallback)
-    if (this_.m_stat_callback) {
-        this_.m_stat_callback(*this_.m_parent, *reinterpret_cast<StatData*>(&this_.m_stat_req.statbuf));
+    if (request.callback) {
+        request.callback(*this_.m_parent, *reinterpret_cast<StatData*>(&request.statbuf), error);
     }
+
+    delete &request;
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
