@@ -6,6 +6,7 @@
 #include "File.h"
 
 #include "detail/Common.h"
+#include "detail/EventLoopHelpers.h"
 #include "ScopeExitGuard.h"
 
 namespace tarm {
@@ -271,8 +272,16 @@ void File::Impl::read_block(off_t offset, unsigned int bytes_count, const ReadCa
     req->offset = offset;
 
     uv_buf_t buf = uv_buf_init(req->buf.get(), bytes_count);
-    // TODO: error handling for uv_fs_read return value
-    uv_fs_read(m_uv_loop, req, m_file_handle, &buf, 1, offset, on_read_block);
+
+    const Error read_error = uv_fs_read(m_uv_loop, req, m_file_handle, &buf, 1, offset, on_read_block);
+    if (read_error) {
+        if (read_callback) {
+            m_loop->schedule_callback([this, read_callback, read_error](io::EventLoop&) {
+                DataChunk data;
+                read_callback(*this->m_parent, data, read_error);
+            });
+        }
+    }
 }
 
 void File::Impl::read(const ReadCallback& callback) {
