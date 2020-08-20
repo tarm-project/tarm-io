@@ -108,9 +108,6 @@ private:
     uv_file m_file_handle = -1;
     FileStatRequest* m_stat_req = nullptr;
 
-    // TODO: not store by value
-    uv_fs_t m_write_req;
-
     Path m_path;
 
     State m_state = State::INITIAL;
@@ -120,14 +117,10 @@ File::Impl::Impl(EventLoop& loop, File& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
-
-    memset(&m_write_req, 0, sizeof(m_write_req));
 }
 
 File::Impl::~Impl() {
     IO_LOG(m_loop, TRACE, "");
-
-    uv_fs_req_cleanup(&m_write_req);
 
     for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
         uv_fs_req_cleanup(&m_read_reqs[i]);
