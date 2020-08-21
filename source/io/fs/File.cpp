@@ -490,13 +490,13 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
         return;
     }
 
-    if (req.result < 0) {
-        // TODO: error handling!
-
-        IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(static_cast<int>(req.result)));
-    } else if (req.result > 0) {
-        if (this_.m_read_callback) {
-            Error error(0);
+    Error error(req.result);
+    if (this_.m_read_callback) {
+        if (req.result < 0) {
+            IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, error);
+            DataChunk data_chunk;
+            this_.m_read_callback(*this_.m_parent, data_chunk, error);
+        } else if (req.result > 0) {
             DataChunk data_chunk(req.buf, req.result, req.offset);
             this_.m_read_callback(*this_.m_parent, data_chunk, error);
         }
