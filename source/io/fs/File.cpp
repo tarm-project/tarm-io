@@ -436,9 +436,10 @@ void File::Impl::on_open(uv_fs_t* req) {
         this_.m_file_handle = static_cast<uv_file>(req->result);
     }
 
+#ifdef TARM_IO_PLATFORM_WINDOWS
     // Making stat here because Windows allows open directory as a file, so the call is successful on this
-    // platform. But Linux and Mac return errro immediately.
-    // TODO: wrap this stat into plafrom macros for Windos only???
+    // platform. But Linux and Mac return error immediately.
+    // This should not be perfromance bottleneck because filesystem meta-data already resides in OS cache.
     this_.stat([&this_](File& f, const StatData& d, const Error& error) {
         if (error) {
             if (this_.m_open_callback) {
@@ -465,6 +466,12 @@ void File::Impl::on_open(uv_fs_t* req) {
             }
         }
     });
+#else
+    if (this_.m_open_callback) {
+        this_.m_state = State::OPENED;
+        this_.m_open_callback(*this_.m_parent, StatusCode::OK);
+    }
+#endif
 }
 
 void File::Impl::on_read_block(uv_fs_t* uv_req) {
