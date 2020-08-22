@@ -396,7 +396,7 @@ void make_dir_impl(EventLoop& loop, const Path& path, int mode, const MakeDirCal
 }
 
 void make_dir(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
-    ::tarm::io::detail::defer_execution_if_required(loop, make_dir_impl, path, mode, callback);
+    ::tarm::io::detail::defer_execution_if_required(loop, make_dir_impl, loop, path, mode, callback);
 }
 
 namespace {
@@ -526,7 +526,7 @@ void remove_dir_impl(EventLoop& loop, const Path& path, const RemoveDirCallback&
 }
 
 void remove_dir(EventLoop& loop, const Path& path, const RemoveDirCallback& remove_callback, const ProgressCallback& progress_callback) {
-    ::tarm::io::detail::defer_execution_if_required(loop, remove_dir_impl, path, remove_callback, progress_callback);
+    ::tarm::io::detail::defer_execution_if_required(loop, remove_dir_impl, loop, path, remove_callback, progress_callback);
 }
 
 } // namespace fs

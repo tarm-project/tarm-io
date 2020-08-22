@@ -49,7 +49,7 @@ void stat_impl(EventLoop& loop, const Path& path, const StatCallback& callback) 
 } // namespace stat_detail
 
 void stat(EventLoop& loop, const Path& path, const StatCallback& callback) {
-    ::tarm::io::detail::defer_execution_if_required(loop, stat_detail::stat_impl, path, callback);
+    ::tarm::io::detail::defer_execution_if_required(loop, stat_detail::stat_impl, loop, path, callback);
 }
 
 bool is_regular_file(const StatData& stat_data) {

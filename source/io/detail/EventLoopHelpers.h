@@ -15,13 +15,32 @@ namespace io {
 namespace detail {
 
 template<typename F, typename... Params>
-void defer_execution_if_required(EventLoop& loop, const F& f, Params&&... params) {
+void defer_execution_if_required(EventLoop& loop, F&& f) {
     if (loop.is_running()) {
-        f(loop, std::forward<Params>(params)...);
+        f();
     } else {
-        loop.execute_on_loop_thread(std::bind(std::forward<F>(f),
-                                              std::placeholders::_1,
-                                              std::forward<Params>(params)...));
+        loop.execute_on_loop_thread([=](io::EventLoop&) {
+            f();
+        });
+    }
+}
+
+template<typename F, typename... Params>
+void defer_execution_if_required(EventLoop& loop, F&& f, Params&&... params) {
+    if (loop.is_running()) {
+        f(std::forward<Params>(params)...);
+    } else {
+        auto foo = std::bind(std::forward<F>(f), std::forward<Params>(params)...);
+        loop.execute_on_loop_thread(foo);
+    }
+}
+
+template<typename F, typename... Params>
+void defer_execution_if_required(EventLoop& loop, F&& f, EventLoop& loop_as_param, Params&&... params) {
+    if (loop.is_running()) {
+        f(loop_as_param, std::forward<Params>(params)...);
+    } else {
+        loop.execute_on_loop_thread(std::bind(std::forward<F>(f), std::placeholders::_1, std::forward<Params>(params)...));
     }
 }
 

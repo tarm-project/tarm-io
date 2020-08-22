@@ -242,7 +242,8 @@ void File::Impl::open(const Path& path, const OpenCallback& callback) {
 void File::Impl::read(const ReadCallback& read_callback, const EndReadCallback& end_read_callback) {
     if (!is_open()) {
         if (read_callback) {
-            read_callback(*m_parent, DataChunk(), Error(StatusCode::FILE_NOT_OPEN));
+            ::tarm::io::detail::defer_execution_if_required(*m_loop,
+                [&, read_callback](){ read_callback(*m_parent, DataChunk(), Error(StatusCode::FILE_NOT_OPEN)); });
         }
 
         return;
@@ -392,8 +393,16 @@ void File::Impl::schedule_read(FileReadRequest& req) {
     });
 
     uv_buf_t buf = uv_buf_init(req.buf.get(), READ_BUF_SIZE);
-    // TODO: error handling for uv_fs_read return value
-    uv_fs_read(m_uv_loop, &req, m_file_handle, &buf, 1, -1, on_read);
+    Error read_error = uv_fs_read(m_uv_loop, &req, m_file_handle, &buf, 1, -1, on_read);
+    if (read_error)  {
+        ::tarm::io::detail::defer_execution_if_required(*m_loop,
+            [read_error, this](){
+                this->m_read_in_progress = false;
+                DataChunk chunk;
+                m_read_callback(*this->m_parent, chunk, read_error);
+            }
+        );
+    }
 }
 
 bool File::Impl::has_read_buffers_in_use() const {
