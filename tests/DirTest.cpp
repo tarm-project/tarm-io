@@ -325,7 +325,7 @@ TEST_F(DirTest, no_list_callback) {
     dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_FALSE(error) << error;
         dir.list(
-            nullptr,
+            std::function<void(io::fs::Dir&, const std::string&, io::fs::DirectoryEntryType)>(), // nullptr
             [&](io::fs::Dir& dir, const io::Error& error) {
                 EXPECT_FALSE(error) << error;
                 ++end_list_call_count;
@@ -472,11 +472,7 @@ TEST_F(DirTest, list_fifo) {
 #endif
 }
 
-TEST_F(DirTest, close_in_list_callback) {
-    // TODO:
-}
-
-TEST_F(DirTest, double_list_sequential) {
+TEST_F(DirTest, list_multiple_sequential) {
     {
         std::ofstream ofile((m_tmp_test_dir/ "file_1").string());
         ASSERT_FALSE(ofile.fail());
@@ -517,7 +513,7 @@ TEST_F(DirTest, double_list_sequential) {
     EXPECT_EQ(1, end_list_call_count);
 }
 
-TEST_F(DirTest, double_list_parallel) {
+TEST_F(DirTest, list_multiple_parallel) {
     {
         std::ofstream ofile((m_tmp_test_dir/ "file_1").string());
         ASSERT_FALSE(ofile.fail());
@@ -560,6 +556,54 @@ TEST_F(DirTest, double_list_parallel) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
+TEST_F(DirTest, list_with_continuation_continue) {
+    // TODO:
+}
+
+TEST_F(DirTest, list_with_continuation_cancel) {
+    {
+        std::ofstream ofile((m_tmp_test_dir/ "some_file_1").string());
+        ASSERT_FALSE(ofile.fail());
+    }
+
+    {
+        std::ofstream ofile((m_tmp_test_dir/ "some_file_2").string());
+        ASSERT_FALSE(ofile.fail());
+    }
+
+    std::size_t list_call_count = 0;
+    std::size_t end_list_call_count = 0;
+
+    io::EventLoop loop;
+    auto dir = new io::fs::Dir(loop);
+
+    dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        dir.list(
+            [&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type, io::Continuation& continuation) {
+                ++list_call_count;
+                continuation.stop();
+            },
+            [&](io::fs::Dir& dir, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+                ++end_list_call_count;
+                dir.schedule_removal();
+            }
+        );
+    });
+
+    EXPECT_EQ(0, list_call_count);
+    EXPECT_EQ(0, end_list_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, list_call_count);
+    EXPECT_EQ(1, end_list_call_count);
+}
+
+TEST_F(DirTest, close_in_list_callback) {
+    // TODO:
+}
 
 TEST_F(DirTest, make_temp_dir) {
     io::EventLoop loop;

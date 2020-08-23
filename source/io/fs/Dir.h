@@ -20,21 +20,22 @@
 
 namespace tarm {
 namespace io {
-/*
+
+// TODO: move
 class TARM_IO_DLL_PUBLIC Continuation {
 public:
-    void proceed() { // default
-        m_continue = true;
+    void stop() {
+        m_proceed = false;
     }
 
-    void stop() {
-        m_continue = false;
+    bool proceed() const {
+        return m_proceed;
     }
 
 private:
-    bool m_continue = true;
+    bool m_proceed = true;
 };
-*/
+
 namespace fs {
 
 class Dir : public Removable,
@@ -42,6 +43,7 @@ class Dir : public Removable,
 public:
     using OpenCallback = std::function<void(Dir&, const Error&)>;
     using ListEntryCallback = std::function<void(Dir&, const std::string&, DirectoryEntryType)>;
+    using ListEntryWithContinuationCallback = std::function<void(Dir&, const std::string&, DirectoryEntryType, Continuation&)>;
     using EndListCallback = std::function<void(Dir&, const Error&)>;
     using CloseCallback = std::function<void(Dir&, const Error&)>;
 
@@ -54,8 +56,8 @@ public:
     TARM_IO_DLL_PUBLIC bool is_open() const;
     TARM_IO_DLL_PUBLIC void close(const CloseCallback& callback = nullptr);
 
-    // TODO: option to cancel list???
     TARM_IO_DLL_PUBLIC void list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback = nullptr);
+    TARM_IO_DLL_PUBLIC void list(const ListEntryWithContinuationCallback& list_callback, const EndListCallback& end_list_callback = nullptr);
 
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 

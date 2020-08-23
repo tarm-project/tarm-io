@@ -21,8 +21,15 @@ struct CloseDirRequest : public uv_fs_t {
     Dir::CloseCallback close_callback;
 };
 
+template<typename ListCallback>
 struct ReadDirRequest : public uv_fs_t {
-    Dir::ListEntryCallback list_callback;
+    ReadDirRequest(const ListCallback& list,
+                   const Dir::EndListCallback& end) :
+        list_callback(list),
+        end_list_callback(end) {
+    }
+
+    ListCallback list_callback;
     Dir::EndListCallback end_list_callback;
 };
 
@@ -43,16 +50,21 @@ public:
     bool is_open() const;
     void close(const CloseCallback& callback);
 
-    void list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback);
+    template<void(*UvCallback)(uv_fs_t*), typename ListCallback>
+    void list(const ListCallback& list_callback, const EndListCallback& end_list_callback);
 
     const Path& path() const;
 
     bool schedule_removal();
 
+    // statics
+    // Unfortunately can not make some solution with class member specialization here because of GCC 4.8.4
+    static void on_read_dir_with_continuation(uv_fs_t* req);
+    static void on_read_dir_no_continuation(uv_fs_t* req);
+
 protected:
     // statics
     static void on_open_dir(uv_fs_t* req);
-    static void on_read_dir(uv_fs_t* req);
     static void on_close_dir(uv_fs_t* req);
 
 private:
@@ -67,7 +79,7 @@ private:
     Path m_path;
 
     uv_fs_t m_open_dir_req;
-    ReadDirRequest* m_read_request = nullptr;
+    uv_fs_t* m_read_request = nullptr;
     uv_dir_t* m_uv_dir = nullptr;
 
     uv_dirent_t m_dirents[DIRENTS_NUMBER];
@@ -148,7 +160,8 @@ void Dir::Impl::open(const Path& path, const OpenCallback& callback) {
     uv_fs_opendir(m_uv_loop, &m_open_dir_req, path.string().c_str(), on_open_dir);
 }
 
-void Dir::Impl::list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback) {
+template<void(*UvCallback)(uv_fs_t*), typename ListCallback>
+void Dir::Impl::list(const ListCallback& list_callback, const EndListCallback& end_list_callback) {
     if (!is_open()) {
         if (end_list_callback) {
             m_loop->schedule_callback([=](EventLoop&) { end_list_callback(*this->m_parent, StatusCode::DIR_NOT_OPEN); });
@@ -163,11 +176,9 @@ void Dir::Impl::list(const ListEntryCallback& list_callback, const EndListCallba
         return;
     }
 
-    m_read_request = new ReadDirRequest;
-    m_read_request->list_callback = list_callback;
-    m_read_request->end_list_callback = end_list_callback;
+    m_read_request = new ReadDirRequest<ListCallback>(list_callback, end_list_callback);
     m_read_request->data = this;
-    const Error read_dir_error = uv_fs_readdir(m_uv_loop, m_read_request, m_uv_dir, on_read_dir);
+    const Error read_dir_error = uv_fs_readdir(m_uv_loop, m_read_request, m_uv_dir, UvCallback);
     if (read_dir_error) {
         if (end_list_callback) {
             m_loop->schedule_callback([=](EventLoop&) { end_list_callback(*this->m_parent, read_dir_error); });
@@ -246,9 +257,9 @@ void Dir::Impl::on_open_dir(uv_fs_t* req) {
     }
 }
 
-void Dir::Impl::on_read_dir(uv_fs_t* req) {
+void Dir::Impl::on_read_dir_no_continuation(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<Dir::Impl*>(req->data);
-    auto& request = *reinterpret_cast<ReadDirRequest*>(req);
+    auto& request = *reinterpret_cast<ReadDirRequest<Dir::ListEntryCallback>*>(req);
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
 
@@ -266,7 +277,45 @@ void Dir::Impl::on_read_dir(uv_fs_t* req) {
 
         uv_fs_req_cleanup(&request); // cleaning up previous request
         // Not handling return value because all data is inited and not NULL at this point
-        uv_fs_readdir(req->loop, &request, dir, on_read_dir);
+        uv_fs_readdir(req->loop, &request, dir, on_read_dir_no_continuation);
+    }
+}
+
+void Dir::Impl::on_read_dir_with_continuation(uv_fs_t* req) {
+    auto& this_ = *reinterpret_cast<Dir::Impl*>(req->data);
+    auto& request = *reinterpret_cast<ReadDirRequest<Dir::ListEntryWithContinuationCallback>*>(req);
+
+    uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(req->ptr);
+
+    if (req->result <= 0) {
+        this_.m_read_request = nullptr;
+        if (request.end_list_callback) {
+            request.end_list_callback(*this_.m_parent, Error(req->result));
+        }
+
+        delete &request;
+    } else {
+        Continuation continuation;
+        if (request.list_callback) {
+            request.list_callback(*this_.m_parent,
+                                  this_.m_dirents[0].name,
+                                  convert_direntry_type(this_.m_dirents[0].type),
+                                  continuation);
+        }
+
+        if (!continuation.proceed()) {
+            this_.m_read_request = nullptr;
+            if (request.end_list_callback) {
+                request.end_list_callback(*this_.m_parent, Error(req->result));
+            }
+
+            uv_fs_req_cleanup(&request);
+            delete &request;
+        } else {
+            uv_fs_req_cleanup(&request); // cleaning up previous request
+            // Not handling return value because all data is inited and not NULL at this point
+            uv_fs_readdir(req->loop, &request, dir, on_read_dir_with_continuation);
+        }
     }
 }
 
@@ -311,7 +360,14 @@ void Dir::close(const CloseCallback& callback) {
 }
 
 void Dir::list(const ListEntryCallback& list_callback, const EndListCallback& end_list_callback) {
-    return m_impl->list(list_callback, end_list_callback);
+    // A bit ugly approach with UV callback as template parameter, but GCC 4.8.4 has troubles with class
+    // members partial specialization. And we can not use external dispatcher class because
+    // Impl class is private member of Dir, so full qualified name will be under private section.
+    return m_impl->list<Dir::Impl::on_read_dir_no_continuation>(list_callback, end_list_callback);
+}
+
+void Dir::list(const ListEntryWithContinuationCallback& list_callback, const EndListCallback& end_list_callback) {
+    return m_impl->list<Dir::Impl::on_read_dir_with_continuation>(list_callback, end_list_callback);
 }
 
 const Path& Dir::path() const {
