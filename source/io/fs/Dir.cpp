@@ -305,11 +305,12 @@ void Dir::Impl::on_read_dir_with_continuation(uv_fs_t* req) {
 
         if (!continuation.proceed()) {
             this_.m_read_request = nullptr;
+            uv_fs_req_cleanup(&request);
+
             if (request.end_list_callback) {
                 request.end_list_callback(*this_.m_parent, Error(req->result));
             }
 
-            uv_fs_req_cleanup(&request);
             delete &request;
         } else {
             uv_fs_req_cleanup(&request); // cleaning up previous request
