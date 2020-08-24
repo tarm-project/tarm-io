@@ -557,7 +557,43 @@ TEST_F(DirTest, list_multiple_parallel) {
 }
 
 TEST_F(DirTest, list_with_continuation_continue) {
-    // TODO:
+    {
+        std::ofstream ofile((m_tmp_test_dir/ "some_file_1").string());
+        ASSERT_FALSE(ofile.fail());
+    }
+
+    {
+        std::ofstream ofile((m_tmp_test_dir/ "some_file_2").string());
+        ASSERT_FALSE(ofile.fail());
+    }
+
+    std::size_t list_call_count = 0;
+    std::size_t end_list_call_count = 0;
+
+    io::EventLoop loop;
+    auto dir = new io::fs::Dir(loop);
+
+    dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        dir.list(
+            [&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type, io::Continuation& continuation) {
+                ++list_call_count;
+            },
+            [&](io::fs::Dir& dir, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+                ++end_list_call_count;
+                dir.schedule_removal();
+            }
+        );
+    });
+
+    EXPECT_EQ(0, list_call_count);
+    EXPECT_EQ(0, end_list_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(2, list_call_count);
+    EXPECT_EQ(1, end_list_call_count);
 }
 
 TEST_F(DirTest, list_with_continuation_cancel) {
