@@ -37,6 +37,9 @@ Some information you can find at https://tarm.io
 [<img src="https://img.shields.io/coverity/scan/21283.svg">](https://scan.coverity.com/projects/tarm-project-tarm-io) 
 -->
 
+## Branching
+The [master](https://github.com/tarm-project/tarm-io/tree/master) branch contains the latest stable release and all development is made in the [dev](https://github.com/tarm-project/tarm-io/tree/dev).
+
 ## License
 [MIT](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftarm-project%2Ftarm-io.svg?type=large)
 
