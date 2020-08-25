@@ -6,6 +6,7 @@
 #pragma once
 
 #include "CommonMacros.h"
+#include "Continuation.h"
 #include "DirectoryEntryType.h"
 #include "EventLoop.h"
 #include "Export.h"
@@ -20,22 +21,6 @@
 
 namespace tarm {
 namespace io {
-
-// TODO: move
-class TARM_IO_DLL_PUBLIC Continuation {
-public:
-    void stop() {
-        m_proceed = false;
-    }
-
-    bool proceed() const {
-        return m_proceed;
-    }
-
-private:
-    bool m_proceed = true;
-};
-
 namespace fs {
 
 class Dir : public Removable,

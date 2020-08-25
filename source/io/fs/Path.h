@@ -719,8 +719,6 @@ private:
   inline bool operator!=(const Path& lhs, const Path::value_type* rhs)  {return lhs.compare(rhs) != 0;}
   inline bool operator!=(const Path::value_type* lhs, const Path& rhs)  {return rhs.compare(lhs) != 0;}
 
-  // TODO: why do == and != have additional overloads, but the others don't?
-
   inline bool operator<(const Path& lhs, const Path& rhs)  {return lhs.compare(rhs) < 0;}
   inline bool operator<=(const Path& lhs, const Path& rhs) {return !(rhs < lhs);}
   inline bool operator> (const Path& lhs, const Path& rhs) {return rhs < lhs;}
