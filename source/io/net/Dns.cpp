@@ -5,6 +5,8 @@
 
 #include "Dns.h"
 
+#include "../detail/EventLoopHelpers.h"
+
 #include <uv.h>
 
 namespace tarm {
@@ -33,8 +35,7 @@ void on_getaddrinfo(uv_getaddrinfo_t* req, int status, addrinfo* res) {
     delete &request;
 }
 
-void resolve_host(EventLoop& loop, const std::string& host_name, const ResolveCallback& callback, Endpoint::Type protocol) {
-    // TODO: defer if loop is not running
+void resolve_host_impl(EventLoop& loop, const std::string& host_name, const ResolveCallback& callback, Endpoint::Type protocol) {
     auto request = new GetaddrInfoRequest;
     request->callback = callback;
     addrinfo hints;
@@ -52,12 +53,14 @@ void resolve_host(EventLoop& loop, const std::string& host_name, const ResolveCa
                                  &hints);
     if (error) {
         if (callback) {
-            loop.schedule_callback([=](EventLoop&) {
-                callback(std::vector<Endpoint>(), error);
-            });
+            callback(std::vector<Endpoint>(), error);
         }
         delete request;
     }
+}
+
+void resolve_host(EventLoop& loop, const std::string& host_name, const ResolveCallback& callback, Endpoint::Type protocol) {
+    ::tarm::io::detail::defer_execution_if_required(loop, resolve_host_impl, loop, host_name, callback, protocol);
 }
 
 } // namespace net
