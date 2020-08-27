@@ -207,6 +207,7 @@ void TcpClientImplBase<ParentType, ImplType>::on_read_error(const Error& error) 
             m_close_callback(*m_parent, Error(0)); // OK
         } else {
             // Could be CONNECTION_RESET_BY_PEER (ECONNRESET), for example
+            // TODO: is it possible to get non-fatal read error? So close callback should not be called here.
             m_close_callback(*m_parent, error);
         }
     }

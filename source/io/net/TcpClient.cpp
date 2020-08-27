@@ -208,7 +208,7 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
     this_.m_is_open = !error;
 
     if (error == StatusCode::CONNECTION_RESET_BY_PEER) {
-        // Unification of behavior between platforms
+        // Workaround. Unification of behavior between platforms
         if (this_.m_connect_callback) {
             this_.m_connect_callback(*this_.m_parent, StatusCode::OK);
         }
@@ -228,7 +228,12 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
         return;
     }
 
-    uv_read_start(req->handle, alloc_read_buffer, on_read);
+    if (this_.is_open()) { // could be closed in on_new_connection callback
+        const Error read_error = uv_read_start(req->handle, alloc_read_buffer, on_read);
+        if (read_error) {
+            this_.on_read_error(read_error);
+        }
+    }
 }
 
 void TcpClient::Impl::on_close(uv_handle_t* handle) {

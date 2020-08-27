@@ -44,7 +44,7 @@ public:
                  const CloseCallback& close_callback = nullptr);
     TARM_IO_DLL_PUBLIC void close();
 
-    // TODO: describe motivation
+    // Used to terminate connection immediately and notify other side about
     TARM_IO_DLL_PUBLIC void close_with_reset();
 
     TARM_IO_DLL_PUBLIC bool is_open() const;

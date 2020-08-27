@@ -108,19 +108,17 @@ void TcpConnectedClient::Impl::close_with_reset() {
 }
 
 void TcpConnectedClient::Impl::start_read(const DataReceiveCallback& data_receive_callback) {
-    m_receive_callback = data_receive_callback;
+    m_receive_callback = nullptr;
 
     const Error read_error = uv_read_start(reinterpret_cast<uv_stream_t*>(m_tcp_stream),
                                            alloc_read_buffer,
                                            on_read);
     if (read_error) {
-        // TODO: call close callback instead of read? Because when we have error during read, we call close callback.
-        //       and close connection.
         m_loop->schedule_callback([this, read_error](io::EventLoop&) {
-            if (m_receive_callback) {
-                m_receive_callback(*m_parent, {nullptr, 0}, read_error);
-            }
+            this->on_read_error(read_error);
         });
+    } else {
+        m_receive_callback = data_receive_callback;
     }
 }
 
