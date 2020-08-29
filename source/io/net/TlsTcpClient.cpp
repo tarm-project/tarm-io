@@ -106,8 +106,13 @@ void TlsTcpClient::Impl::connect(const Endpoint endpoint,
 
     std::function<void(TcpClient&, const DataChunk& data, const Error& error)> on_data_receive =
         [this](TcpClient& client, const DataChunk& data, const Error& error) {
-            // TODO: error handling
-            this->on_data_receive(data.buf.get(), data.size);
+            if (error) {
+                if (m_receive_callback) {
+                    m_receive_callback(*m_parent, {nullptr, 0}, error);
+                }
+            } else {
+                this->on_data_receive(data.buf.get(), data.size);
+            }
         };
 
     std::function<void(TcpClient&, const Error&)> on_close =

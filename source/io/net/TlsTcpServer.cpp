@@ -149,9 +149,8 @@ void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const
 }
 
 void TlsTcpServer::Impl::on_data_receive(TcpConnectedClient& tcp_client, const DataChunk& chunk, const Error& error) {
-    // TODO: handle error
     auto& tls_client = *reinterpret_cast<TlsTcpConnectedClient*>(tcp_client.user_data());
-    tls_client.on_data_receive(chunk.buf.get(), chunk.size);
+    tls_client.on_data_receive(chunk.buf.get(), chunk.size, error);
 }
 
 void TlsTcpServer::Impl::on_close(TcpConnectedClient& tcp_client, const Error& error) {
