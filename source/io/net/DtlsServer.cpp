@@ -135,7 +135,7 @@ void DtlsServer::Impl::on_new_peer(UdpPeer& udp_client, const Error& error) {
 
 void DtlsServer::Impl::on_data_receive(UdpPeer& udp_client, const DataChunk& data, const Error& error) {
     auto& dtls_client = *reinterpret_cast<DtlsConnectedClient*>(udp_client.user_data());
-    dtls_client.on_data_receive(data.buf.get(), data.size);
+    dtls_client.on_data_receive(data.buf.get(), data.size, error);
 }
 
 void DtlsServer::Impl::on_timeout(UdpPeer& udp_peer, const Error& error) {

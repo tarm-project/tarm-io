@@ -41,6 +41,7 @@ public:
     void close();
 
     void set_data_receive_callback(const DataReceiveCallback& callback);
+    void on_data_receive(const char* buf, std::size_t size, const Error& error);
 
     DtlsServer& server();
     const DtlsServer& server() const;
@@ -100,6 +101,16 @@ Error DtlsConnectedClient::Impl::init_ssl() {
 
 void DtlsConnectedClient::Impl::set_data_receive_callback(const DataReceiveCallback& callback) {
     m_data_receive_callback = callback;
+}
+
+void DtlsConnectedClient::Impl::on_data_receive(const char* buf, std::size_t size, const Error& error) {
+    if (error) {
+        if (m_data_receive_callback) {
+            m_data_receive_callback(*m_parent, {nullptr, 0}, error);
+        }
+    } else {
+        detail::OpenSslClientImplBase<DtlsConnectedClient, DtlsConnectedClient::Impl>::on_data_receive(buf, size);
+    }
 }
 
 void DtlsConnectedClient::Impl::close() {
@@ -191,8 +202,8 @@ void DtlsConnectedClient::set_data_receive_callback(const DataReceiveCallback& c
     return m_impl->set_data_receive_callback(callback);
 }
 
-void DtlsConnectedClient::on_data_receive(const char* buf, std::size_t size) {
-    return m_impl->on_data_receive(buf, size);
+void DtlsConnectedClient::on_data_receive(const char* buf, std::size_t size, const Error& error) {
+    return m_impl->on_data_receive(buf, size, error);
 }
 
 Error DtlsConnectedClient::init_ssl() {

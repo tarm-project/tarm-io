@@ -66,7 +66,7 @@ private:
                         UdpPeer& udp_peer,
                         void* context);
     void set_data_receive_callback(const DataReceiveCallback& callback);
-    void on_data_receive(const char* buf, std::size_t size);
+    void on_data_receive(const char* buf, std::size_t size, const Error& error);
     Error init_ssl();
 
     class Impl;
