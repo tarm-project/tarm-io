@@ -21,19 +21,19 @@ namespace tarm {
 namespace io {
 namespace net {
 
-class TlsTcpClient : public Removable {
+class TlsClient : public Removable {
 public:
     using UnderlyingClientType = TcpClient;
 
-    using ConnectCallback = std::function<void(TlsTcpClient&, const Error&)>;
-    using CloseCallback = std::function<void(TlsTcpClient&, const Error&)>;
-    using EndSendCallback = std::function<void(TlsTcpClient&, const Error&)>;
-    using DataReceiveCallback = std::function<void(TlsTcpClient&, const DataChunk&, const Error&)>;
+    using ConnectCallback = std::function<void(TlsClient&, const Error&)>;
+    using CloseCallback = std::function<void(TlsClient&, const Error&)>;
+    using EndSendCallback = std::function<void(TlsClient&, const Error&)>;
+    using DataReceiveCallback = std::function<void(TlsClient&, const DataChunk&, const Error&)>;
 
-    TARM_IO_FORBID_COPY(TlsTcpClient);
-    TARM_IO_FORBID_MOVE(TlsTcpClient);
+    TARM_IO_FORBID_COPY(TlsClient);
+    TARM_IO_FORBID_MOVE(TlsClient);
 
-    TARM_IO_DLL_PUBLIC TlsTcpClient(EventLoop& loop, TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
+    TARM_IO_DLL_PUBLIC TlsClient(EventLoop& loop, TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
@@ -56,7 +56,7 @@ public:
     TARM_IO_DLL_PUBLIC TlsVersion negotiated_tls_version() const;
 
 protected:
-    TARM_IO_DLL_PUBLIC ~TlsTcpClient();
+    TARM_IO_DLL_PUBLIC ~TlsClient();
 
 private:
     class Impl;

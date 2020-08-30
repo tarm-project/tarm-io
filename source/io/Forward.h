@@ -14,9 +14,9 @@ class TcpServer;
 class TcpConnectedClient;
 class TcpClient;
 
-class TlsTcpServer;
-class TlsTcpConnectedClient;
-class TlsTcpClient;
+class TlsServer;
+class TlsConnectedClient;
+class TlsClient;
 
 class DtlsServer;
 class DtlsConnectedClient;

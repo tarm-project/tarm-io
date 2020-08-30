@@ -24,9 +24,9 @@ namespace tarm {
 namespace io {
 namespace net {
 
-class TlsTcpServer::Impl {
+class TlsServer::Impl {
 public:
-    Impl(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range, TlsTcpServer& parent);
+    Impl(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range, TlsServer& parent);
     ~Impl();
 
     Error listen(const Endpoint endpoint,
@@ -58,7 +58,7 @@ private:
     using X509Ptr = std::unique_ptr<::X509, decltype(&::X509_free)>;
     using EvpPkeyPtr = std::unique_ptr<::EVP_PKEY, decltype(&::EVP_PKEY_free)>;
 
-    TlsTcpServer* m_parent;
+    TlsServer* m_parent;
     EventLoop* m_loop;
     TcpServer* m_tcp_server;
 
@@ -69,18 +69,18 @@ private:
     EvpPkeyPtr m_private_key;
     TlsVersionRange m_version_range;
 
-    detail::OpenSslContext<TlsTcpServer, TlsTcpServer::Impl> m_openssl_context;
+    detail::OpenSslContext<TlsServer, TlsServer::Impl> m_openssl_context;
 
     NewConnectionCallback m_new_connection_callback = nullptr;
     DataReceivedCallback m_data_receive_callback = nullptr;
     CloseConnectionCallback m_close_connection_callback = nullptr;
 };
 
-TlsTcpServer::Impl::Impl(EventLoop& loop,
+TlsServer::Impl::Impl(EventLoop& loop,
                          const fs::Path& certificate_path,
                          const fs::Path& private_key_path,
                          TlsVersionRange version_range,
-                         TlsTcpServer& parent) :
+                         TlsServer& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_tcp_server(new TcpServer(loop)),
@@ -92,10 +92,10 @@ TlsTcpServer::Impl::Impl(EventLoop& loop,
     m_openssl_context(loop, parent) {
 }
 
-TlsTcpServer::Impl::~Impl() {
+TlsServer::Impl::~Impl() {
 }
 
-bool TlsTcpServer::Impl::schedule_removal() {
+bool TlsServer::Impl::schedule_removal() {
     IO_LOG(m_loop, TRACE, m_parent, "");
 
     if (m_parent->is_removal_scheduled()) {
@@ -116,15 +116,15 @@ bool TlsTcpServer::Impl::schedule_removal() {
     return false;
 }
 
-const SSL_METHOD* TlsTcpServer::Impl::ssl_method() {
+const SSL_METHOD* TlsServer::Impl::ssl_method() {
     return SSLv23_server_method(); // This call includes also TLS versions
 }
 
-TlsVersionRange TlsTcpServer::Impl::version_range() const {
+TlsVersionRange TlsServer::Impl::version_range() const {
     return m_version_range;
 }
 
-void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const Error& error) {
+void TlsServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const Error& error) {
     if (error) {
         //m_new_connection_callback(.......);
         // TODO: error handling here
@@ -138,8 +138,8 @@ void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const
         m_version_range
     };
 
-    TlsTcpConnectedClient* tls_client =
-        new TlsTcpConnectedClient(*m_loop, *m_parent, m_new_connection_callback, tcp_client, &context);
+    auto tls_client =
+        new TlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, tcp_client, &context);
 
     // TODO: error
     Error tls_init_error = tls_client->init_ssl();
@@ -148,15 +148,15 @@ void TlsTcpServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const
     }
 }
 
-void TlsTcpServer::Impl::on_data_receive(TcpConnectedClient& tcp_client, const DataChunk& chunk, const Error& error) {
-    auto& tls_client = *reinterpret_cast<TlsTcpConnectedClient*>(tcp_client.user_data());
+void TlsServer::Impl::on_data_receive(TcpConnectedClient& tcp_client, const DataChunk& chunk, const Error& error) {
+    auto& tls_client = *reinterpret_cast<TlsConnectedClient*>(tcp_client.user_data());
     tls_client.on_data_receive(chunk.buf.get(), chunk.size, error);
 }
 
-void TlsTcpServer::Impl::on_close(TcpConnectedClient& tcp_client, const Error& error) {
+void TlsServer::Impl::on_close(TcpConnectedClient& tcp_client, const Error& error) {
     IO_LOG(this->m_loop, TRACE, "Removing TLS client");
 
-    auto& tls_client = *reinterpret_cast<TlsTcpConnectedClient*>(tcp_client.user_data());
+    auto& tls_client = *reinterpret_cast<TlsConnectedClient*>(tcp_client.user_data());
     if (m_close_connection_callback) {
         m_close_connection_callback(tls_client, error);
     }
@@ -164,7 +164,7 @@ void TlsTcpServer::Impl::on_close(TcpConnectedClient& tcp_client, const Error& e
     delete &tls_client;
 }
 
-Error TlsTcpServer::Impl::listen(const Endpoint endpoint,
+Error TlsServer::Impl::listen(const Endpoint endpoint,
                                  const NewConnectionCallback& new_connection_callback,
                                  const DataReceivedCallback& data_receive_callback,
                                  const CloseConnectionCallback& close_connection_callback,
@@ -216,12 +216,12 @@ Error TlsTcpServer::Impl::listen(const Endpoint endpoint,
 
     using namespace std::placeholders;
     return m_tcp_server->listen(endpoint,
-                                std::bind(&TlsTcpServer::Impl::on_new_connection, this, _1, _2),
-                                std::bind(&TlsTcpServer::Impl::on_data_receive, this, _1, _2, _3),
-                                std::bind(&TlsTcpServer::Impl::on_close, this, _1, _2));
+                                std::bind(&TlsServer::Impl::on_new_connection, this, _1, _2),
+                                std::bind(&TlsServer::Impl::on_data_receive, this, _1, _2, _3),
+                                std::bind(&TlsServer::Impl::on_close, this, _1, _2));
 }
 
-void TlsTcpServer::Impl::shutdown(const ShutdownServerCallback& shutdown_callback) {
+void TlsServer::Impl::shutdown(const ShutdownServerCallback& shutdown_callback) {
     if (shutdown_callback) {
         m_tcp_server->shutdown([this, shutdown_callback](TcpServer&, const Error& error) {
             shutdown_callback(*m_parent, error);
@@ -231,7 +231,7 @@ void TlsTcpServer::Impl::shutdown(const ShutdownServerCallback& shutdown_callbac
     }
 }
 
-void TlsTcpServer::Impl::close(const CloseServerCallback& close_callback) {
+void TlsServer::Impl::close(const CloseServerCallback& close_callback) {
     if (close_callback) {
         m_tcp_server->shutdown([this, close_callback](TcpServer&, const Error& error) {
             close_callback(*m_parent, error);
@@ -241,7 +241,7 @@ void TlsTcpServer::Impl::close(const CloseServerCallback& close_callback) {
     }
 }
 
-std::size_t TlsTcpServer::Impl::connected_clients_count() const {
+std::size_t TlsServer::Impl::connected_clients_count() const {
     return m_tcp_server->connected_clients_count();
 }
 
@@ -254,7 +254,7 @@ namespace {
 
 } // namespace
 
-bool TlsTcpServer::Impl::certificate_and_key_match() {
+bool TlsServer::Impl::certificate_and_key_match() {
     assert(m_certificate);
     assert(m_private_key);
 
@@ -265,15 +265,15 @@ bool TlsTcpServer::Impl::certificate_and_key_match() {
 
 
 
-TlsTcpServer::TlsTcpServer(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range) :
+TlsServer::TlsServer(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range) :
     Removable(loop),
     m_impl(new Impl(loop, certificate_path, private_key_path, version_range, *this)) {
 }
 
-TlsTcpServer::~TlsTcpServer() {
+TlsServer::~TlsServer() {
 }
 
-Error TlsTcpServer::listen(const Endpoint endpoint,
+Error TlsServer::listen(const Endpoint endpoint,
                            const NewConnectionCallback& new_connection_callback,
                            const DataReceivedCallback& data_receive_callback,
                            const CloseConnectionCallback& close_connection_callback,
@@ -281,36 +281,36 @@ Error TlsTcpServer::listen(const Endpoint endpoint,
     return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, close_connection_callback, backlog_size);
 }
 
-Error TlsTcpServer::listen(const Endpoint endpoint,
+Error TlsServer::listen(const Endpoint endpoint,
                            const DataReceivedCallback& data_receive_callback,
                            int backlog_size) {
     return m_impl->listen(endpoint, nullptr, data_receive_callback, nullptr, backlog_size);
 }
 
-Error TlsTcpServer::listen(const Endpoint endpoint,
+Error TlsServer::listen(const Endpoint endpoint,
                            const NewConnectionCallback& new_connection_callback,
                            const DataReceivedCallback& data_receive_callback,
                            int backlog_size) {
     return m_impl->listen(endpoint, new_connection_callback, data_receive_callback, nullptr, backlog_size);
 }
 
-void TlsTcpServer::shutdown(const CloseServerCallback& shutdown_callback) {
+void TlsServer::shutdown(const CloseServerCallback& shutdown_callback) {
     return m_impl->shutdown(shutdown_callback);
 }
 
-void TlsTcpServer::close(const CloseServerCallback& close_callback) {
+void TlsServer::close(const CloseServerCallback& close_callback) {
     return m_impl->close(close_callback);
 }
 
-std::size_t TlsTcpServer::connected_clients_count() const {
+std::size_t TlsServer::connected_clients_count() const {
     return m_impl->connected_clients_count();
 }
 
-TlsVersionRange TlsTcpServer::version_range() const {
+TlsVersionRange TlsServer::version_range() const {
     return m_impl->version_range();
 }
 
-void TlsTcpServer::schedule_removal() {
+void TlsServer::schedule_removal() {
     const bool ready_to_remove = m_impl->schedule_removal();
     if (ready_to_remove) {
         Removable::schedule_removal();

@@ -20,9 +20,9 @@ namespace tarm {
 namespace io {
 namespace net {
 
-class TlsTcpClient::Impl : public detail::OpenSslClientImplBase<TlsTcpClient, TlsTcpClient::Impl> {
+class TlsClient::Impl : public detail::OpenSslClientImplBase<TlsClient, TlsClient::Impl> {
 public:
-    Impl(EventLoop& loop, TlsVersionRange version_range, TlsTcpClient& parent);
+    Impl(EventLoop& loop, TlsVersionRange version_range, TlsClient& parent);
     ~Impl();
 
     const Endpoint& endpoint() const;
@@ -48,23 +48,23 @@ private:
     CloseCallback m_close_callback;
     TlsVersionRange m_version_range;
 
-    detail::OpenSslContext<TlsTcpClient, TlsTcpClient::Impl> m_openssl_context;
+    detail::OpenSslContext<TlsClient, TlsClient::Impl> m_openssl_context;
 };
 
-TlsTcpClient::Impl::~Impl() {
+TlsClient::Impl::~Impl() {
 }
 
-TlsTcpClient::Impl::Impl(EventLoop& loop, TlsVersionRange version_range, TlsTcpClient& parent) :
+TlsClient::Impl::Impl(EventLoop& loop, TlsVersionRange version_range, TlsClient& parent) :
     OpenSslClientImplBase(loop, parent),
     m_version_range(version_range),
     m_openssl_context(loop, parent) {
 }
 
-const Endpoint& TlsTcpClient::Impl::endpoint() const {
+const Endpoint& TlsClient::Impl::endpoint() const {
     return m_client->endpoint();
 }
 
-void TlsTcpClient::Impl::connect(const Endpoint endpoint,
+void TlsClient::Impl::connect(const Endpoint endpoint,
                                  const ConnectCallback& connect_callback,
                                  const DataReceiveCallback& receive_callback,
                                  const CloseCallback& close_callback) {
@@ -143,7 +143,7 @@ void TlsTcpClient::Impl::connect(const Endpoint endpoint,
     m_client->connect(endpoint, on_connect, on_data_receive, on_close);
 }
 
-void TlsTcpClient::Impl::close() {
+void TlsClient::Impl::close() {
     const auto error = this->ssl_shutdown([this](TcpClient& client, const Error& error) {
         if (m_close_callback) {
             m_close_callback(*m_parent, Error(0));
@@ -158,91 +158,89 @@ void TlsTcpClient::Impl::close() {
     }
 }
 
-const SSL_METHOD* TlsTcpClient::Impl::ssl_method() {
+const SSL_METHOD* TlsClient::Impl::ssl_method() {
     return SSLv23_client_method(); // This call includes also TLS versions
 }
 
-void TlsTcpClient::Impl::ssl_set_state() {
+void TlsClient::Impl::ssl_set_state() {
     SSL_set_connect_state(this->ssl());
 }
 
-void TlsTcpClient::Impl::on_ssl_read(const DataChunk& data, const Error& error) {
+void TlsClient::Impl::on_ssl_read(const DataChunk& data, const Error& error) {
     if (m_receive_callback) {
         m_receive_callback(*this->m_parent, data, error);
     }
 }
 
-void TlsTcpClient::Impl::on_handshake_complete() {
+void TlsClient::Impl::on_handshake_complete() {
     if (m_connect_callback) {
         m_connect_callback(*this->m_parent, Error(0));
     }
 }
 
-void TlsTcpClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const Error& error) {
+void TlsClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const Error& error) {
     if (m_connect_callback) {
         m_connect_callback(*this->m_parent, error);
     }
 }
 
-void TlsTcpClient::Impl::on_alert(int /*code*/) {
+void TlsClient::Impl::on_alert(int /*code*/) {
     // Do nothing
 }
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-
-
-TlsTcpClient::TlsTcpClient(EventLoop& loop, TlsVersionRange version_range) :
+TlsClient::TlsClient(EventLoop& loop, TlsVersionRange version_range) :
     Removable(loop),
     m_impl(new Impl(loop, version_range, *this)) {
 }
 
-TlsTcpClient::~TlsTcpClient() {
+TlsClient::~TlsClient() {
 }
 
-void TlsTcpClient::schedule_removal() {
+void TlsClient::schedule_removal() {
     const bool ready_to_remove = m_impl->schedule_removal();
     if (ready_to_remove) {
         Removable::schedule_removal();
     }
 }
 
-const Endpoint& TlsTcpClient::endpoint() const {
+const Endpoint& TlsClient::endpoint() const {
     return m_impl->endpoint();
 }
 
-void TlsTcpClient::connect(const Endpoint endpoint,
+void TlsClient::connect(const Endpoint endpoint,
                            const ConnectCallback& connect_callback,
                            const DataReceiveCallback& receive_callback,
                            const CloseCallback& close_callback) {
     return m_impl->connect(endpoint, connect_callback, receive_callback, close_callback);
 }
 
-void TlsTcpClient::close() {
+void TlsClient::close() {
     return m_impl->close();
 }
 
-bool TlsTcpClient::is_open() const {
+bool TlsClient::is_open() const {
     return m_impl->is_open();
 }
 
-void TlsTcpClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
+void TlsClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(buffer, size, callback);
 }
 
-void TlsTcpClient::send_data(const std::string& message, const EndSendCallback& callback) {
+void TlsClient::send_data(const std::string& message, const EndSendCallback& callback) {
     return m_impl->send_data(message, callback);
 }
 
-void TlsTcpClient::send_data(std::string&& message, const EndSendCallback& callback) {
+void TlsClient::send_data(std::string&& message, const EndSendCallback& callback) {
     return m_impl->send_data(std::move(message), callback);
 }
 
-void TlsTcpClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
+void TlsClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(c_str, size, callback);
 }
 
-TlsVersion TlsTcpClient::negotiated_tls_version() const {
+TlsVersion TlsClient::negotiated_tls_version() const {
     return m_impl->negotiated_tls_version();
 }
 

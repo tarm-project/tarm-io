@@ -23,23 +23,23 @@ namespace tarm {
 namespace io {
 namespace net {
 
-class TlsTcpServer : public Removable,
+class TlsServer : public Removable,
                      public UserDataHolder {
 public:
-    using NewConnectionCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
-    using DataReceivedCallback = std::function<void(TlsTcpConnectedClient&, const DataChunk&, const Error&)>;
-    using CloseConnectionCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
+    using NewConnectionCallback = std::function<void(TlsConnectedClient&, const Error&)>;
+    using DataReceivedCallback = std::function<void(TlsConnectedClient&, const DataChunk&, const Error&)>;
+    using CloseConnectionCallback = std::function<void(TlsConnectedClient&, const Error&)>;
 
-    using CloseServerCallback = std::function<void(TlsTcpServer&, const Error&)>;
-    using ShutdownServerCallback = std::function<void(TlsTcpServer&, const Error&)>;
+    using CloseServerCallback = std::function<void(TlsServer&, const Error&)>;
+    using ShutdownServerCallback = std::function<void(TlsServer&, const Error&)>;
 
-    TARM_IO_FORBID_COPY(TlsTcpServer);
-    TARM_IO_FORBID_MOVE(TlsTcpServer);
+    TARM_IO_FORBID_COPY(TlsServer);
+    TARM_IO_FORBID_MOVE(TlsServer);
 
-    TARM_IO_DLL_PUBLIC TlsTcpServer(EventLoop& loop,
-                               const fs::Path& certificate_path,
-                               const fs::Path& private_key_path,
-                               TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
+    TARM_IO_DLL_PUBLIC TlsServer(EventLoop& loop,
+                                 const fs::Path& certificate_path,
+                                 const fs::Path& private_key_path,
+                                 TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
@@ -69,7 +69,7 @@ public:
     TARM_IO_DLL_PUBLIC TlsVersionRange version_range() const;
 
 protected:
-    TARM_IO_DLL_PUBLIC ~TlsTcpServer();
+    TARM_IO_DLL_PUBLIC ~TlsServer();
 
 private:
     class Impl;

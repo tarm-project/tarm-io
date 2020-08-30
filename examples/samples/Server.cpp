@@ -24,11 +24,11 @@ int main(int argc, char* argv[]) {
     const std::string cert_name = "certificate.pem";
     const std::string key_name = "key.pem";
 
-    auto server = new io::net::TlsTcpServer(loop, cert_name, key_name);
+    auto server = new io::net::TlsServer(loop, cert_name, key_name);
     auto listen_result = server->listen({"0.0.0.0", 12345},
-    [&](io::net::TlsTcpConnectedClient& client, const io::Error& error) {
+    [&](io::net::TlsConnectedClient& client, const io::Error& error) {
     },
-    [&](io::net::TlsTcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+    [&](io::net::TlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
         if (error) {
             std::cerr << error.string() << std::endl;
             return;
@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
 
         if (message.find("close") != std::string::npos ) {
             std::cout << "Forcing server shut down..." << std::endl;
-            server->shutdown([](io::net::TlsTcpServer& server, const io::Error& error) {server.schedule_removal();});
+            server->shutdown([](io::net::TlsServer& server, const io::Error& error) {server.schedule_removal();});
             //timer.stop();
         }
 

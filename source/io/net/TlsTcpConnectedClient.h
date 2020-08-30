@@ -20,21 +20,21 @@ namespace tarm {
 namespace io {
 namespace net {
 
-class TlsTcpConnectedClient : protected Removable,
-                              public UserDataHolder {
+class TlsConnectedClient : protected Removable,
+                           public UserDataHolder {
 public:
-    friend class TlsTcpServer;
+    friend class TlsServer;
 
     using UnderlyingClientType = TcpConnectedClient;
 
-    using DataReceiveCallback = std::function<void(TlsTcpConnectedClient&, const DataChunk&, const Error&)>;
-    using CloseCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
-    using EndSendCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
+    using DataReceiveCallback = std::function<void(TlsConnectedClient&, const DataChunk&, const Error&)>;
+    using CloseCallback = std::function<void(TlsConnectedClient&, const Error&)>;
+    using EndSendCallback = std::function<void(TlsConnectedClient&, const Error&)>;
 
-    using NewConnectionCallback = std::function<void(TlsTcpConnectedClient&, const Error&)>;
+    using NewConnectionCallback = std::function<void(TlsConnectedClient&, const Error&)>;
 
-    TARM_IO_FORBID_COPY(TlsTcpConnectedClient);
-    TARM_IO_FORBID_MOVE(TlsTcpConnectedClient);
+    TARM_IO_FORBID_COPY(TlsConnectedClient);
+    TARM_IO_FORBID_MOVE(TlsConnectedClient);
 
     TARM_IO_DLL_PUBLIC void close();
     TARM_IO_DLL_PUBLIC void shutdown();
@@ -45,20 +45,20 @@ public:
     TARM_IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
     TARM_IO_DLL_PUBLIC void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
-    TARM_IO_DLL_PUBLIC TlsTcpServer& server();
-    TARM_IO_DLL_PUBLIC const TlsTcpServer& server() const;
+    TARM_IO_DLL_PUBLIC TlsServer& server();
+    TARM_IO_DLL_PUBLIC const TlsServer& server() const;
 
     TARM_IO_DLL_PUBLIC TlsVersion negotiated_tls_version() const;
 
 protected:
-    ~TlsTcpConnectedClient();
+    ~TlsConnectedClient();
 
 private:
-    TlsTcpConnectedClient(EventLoop& loop,
-                          TlsTcpServer& tls_server,
-                          const NewConnectionCallback& new_connection_callback,
-                          TcpConnectedClient& tcp_client,
-                          void* context);
+    TlsConnectedClient(EventLoop& loop,
+                       TlsServer& tls_server,
+                       const NewConnectionCallback& new_connection_callback,
+                       TcpConnectedClient& tcp_client,
+                       void* context);
 
     void set_data_receive_callback(const DataReceiveCallback& callback);
     void on_data_receive(const char* buf, std::size_t size, const Error& error);
