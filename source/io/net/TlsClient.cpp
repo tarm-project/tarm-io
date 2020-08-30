@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *----------------------------------------------------------------------------------------------*/
 
-#include "net/TlsTcpClient.h"
+#include "net/TlsClient.h"
 
 #include "Convert.h"
 #include "net/TcpClient.h"

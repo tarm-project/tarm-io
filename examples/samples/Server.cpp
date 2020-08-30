@@ -4,8 +4,8 @@
  *----------------------------------------------------------------------------------------------*/
 
 #include "io/EventLoop.h"
-#include "io/TlsTcpServer.h"
-#include "io/TlsTcpClient.h"
+#include "io/TlsServer.h"
+#include "io/TlsClient.h"
 #include "io/global/Configuration.h"
 
 #include <iostream>

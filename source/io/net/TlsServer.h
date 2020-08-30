@@ -12,7 +12,7 @@
 #include "EventLoop.h"
 #include "Export.h"
 #include "Removable.h"
-#include "net/TlsTcpConnectedClient.h"
+#include "net/TlsConnectedClient.h"
 #include "fs/Path.h"
 
 #include <memory>

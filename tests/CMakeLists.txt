@@ -49,7 +49,7 @@ list(APPEND TESTS_LIST
     DirTest.cpp
     UdpClientServerTest.cpp
     TcpClientServerTest.cpp
-    TlsTcpClientServerTest.cpp
+    TlsClientServerTest.cpp
     DtlsClientServerTest.cpp
     DnsTest.cpp
 )

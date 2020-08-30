@@ -123,9 +123,9 @@ list(APPEND IO_SOURCE_LIST
         io/net/TcpClient.cpp
         io/net/TcpConnectedClient.cpp
         io/net/TcpServer.cpp
-        io/net/TlsTcpClient.cpp
-        io/net/TlsTcpConnectedClient.cpp
-        io/net/TlsTcpServer.cpp
+        io/net/TlsClient.cpp
+        io/net/TlsConnectedClient.cpp
+        io/net/TlsServer.cpp
         io/net/UdpClient.cpp
         io/net/UdpPeer.cpp
         io/net/UdpServer.cpp

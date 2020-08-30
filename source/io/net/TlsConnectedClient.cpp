@@ -3,11 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *----------------------------------------------------------------------------------------------*/
 
-#include "net/TlsTcpConnectedClient.h"
+#include "net/TlsConnectedClient.h"
 
 #include "Convert.h"
 #include "net/TcpConnectedClient.h"
-#include "net/TlsTcpServer.h"
+#include "net/TlsServer.h"
 #include "detail/ConstexprString.h"
 #include "detail/OpenSslClientImplBase.h"
 #include "detail/TlsContext.h"
