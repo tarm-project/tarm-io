@@ -132,7 +132,7 @@ void TlsConnectedClient::Impl::on_handshake_failed(long openssl_error_code, cons
         buf_ptr.get()[5] = 0x02;
         buf_ptr.get()[6] = 0x46;
 
-        //char buf[] = {0x15, 0x03, 0x01, 0x00, 0x02, 0x02, 0x46};
+        // Patching TLS version if known
         if (std::get<1>(m_tls_server->version_range()) != TlsVersion::UNKNOWN) {
             buf_ptr.get()[2] = static_cast<unsigned char>(std::get<1>(m_tls_server->version_range()));
         }

@@ -52,7 +52,7 @@ protected:
     // callbacks
     void on_new_connection(TcpConnectedClient& tcp_client, const Error& error);
     void on_data_receive(TcpConnectedClient& tcp_client, const DataChunk&, const Error&);
-    void on_close(TcpConnectedClient& tcp_client, const Error& error);
+    void on_connection_close(TcpConnectedClient& tcp_client, const Error& error);
 
 private:
     using X509Ptr = std::unique_ptr<::X509, decltype(&::X509_free)>;
@@ -138,12 +138,15 @@ void TlsServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const Er
         m_version_range
     };
 
-    auto tls_client =
-        new TlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, tcp_client, &context);
+    auto tls_client = new TlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, tcp_client, &context);
 
-    // TODO: error
     Error tls_init_error = tls_client->init_ssl();
-    if (!tls_init_error) {
+    if (tls_init_error) {
+        m_new_connection_callback(*tls_client, tls_init_error);
+        tcp_client.set_user_data(nullptr); // to not process deletion in on_connection_close
+        tcp_client.close();
+        delete tls_client;
+    } else {
         tls_client->set_data_receive_callback(m_data_receive_callback);
     }
 }
@@ -153,15 +156,17 @@ void TlsServer::Impl::on_data_receive(TcpConnectedClient& tcp_client, const Data
     tls_client.on_data_receive(chunk.buf.get(), chunk.size, error);
 }
 
-void TlsServer::Impl::on_close(TcpConnectedClient& tcp_client, const Error& error) {
+void TlsServer::Impl::on_connection_close(TcpConnectedClient& tcp_client, const Error& error) {
     IO_LOG(this->m_loop, TRACE, "Removing TLS client");
 
-    auto& tls_client = *reinterpret_cast<TlsConnectedClient*>(tcp_client.user_data());
-    if (m_close_connection_callback) {
-        m_close_connection_callback(tls_client, error);
-    }
+    if (tcp_client.user_data()) {
+        auto& tls_client = *reinterpret_cast<TlsConnectedClient*>(tcp_client.user_data());
+        if (m_close_connection_callback) {
+            m_close_connection_callback(tls_client, error);
+        }
 
-    delete &tls_client;
+        delete &tls_client;
+    }
 }
 
 Error TlsServer::Impl::listen(const Endpoint endpoint,
@@ -218,7 +223,7 @@ Error TlsServer::Impl::listen(const Endpoint endpoint,
     return m_tcp_server->listen(endpoint,
                                 std::bind(&TlsServer::Impl::on_new_connection, this, _1, _2),
                                 std::bind(&TlsServer::Impl::on_data_receive, this, _1, _2, _3),
-                                std::bind(&TlsServer::Impl::on_close, this, _1, _2));
+                                std::bind(&TlsServer::Impl::on_connection_close, this, _1, _2));
 }
 
 void TlsServer::Impl::shutdown(const ShutdownServerCallback& shutdown_callback) {
