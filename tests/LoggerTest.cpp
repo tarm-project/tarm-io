@@ -6,6 +6,7 @@
 #include "UTCommon.h"
 
 #include "detail/ConstexprString.h"
+#include "detail/LogMacros.h"
 
 #include "Logger.h"
 

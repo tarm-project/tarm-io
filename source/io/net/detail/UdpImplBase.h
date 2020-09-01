@@ -6,6 +6,7 @@
 #pragma once
 
 #include "detail/LibuvCompatibility.h"
+#include "detail/LogMacros.h"
 
 #include "net/BufferSizeResult.h"
 #include "net/Endpoint.h"

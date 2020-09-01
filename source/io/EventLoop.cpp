@@ -6,6 +6,7 @@
 #include "EventLoop.h"
 
 #include "detail/Common.h"
+#include "detail/LogMacros.h"
 #include "CommonMacros.h"
 #include "Logger.h"
 #include "ScopeExitGuard.h"

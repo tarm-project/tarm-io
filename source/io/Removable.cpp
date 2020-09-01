@@ -6,6 +6,7 @@
 #include "Removable.h"
 
 #include "detail/Common.h"
+#include "detail/LogMacros.h"
 #include "Error.h"
 
 namespace tarm {

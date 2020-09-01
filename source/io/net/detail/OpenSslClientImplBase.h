@@ -5,12 +5,13 @@
 
 #pragma once
 
+#include "detail/LogMacros.h"
 #include "detail/RawBufferGetter.h"
-#include "DataChunk.h"
-#include "net/DtlsVersion.h"
-#include "EventLoop.h"
-#include "net/TlsVersion.h"
 #include "global/Configuration.h"
+#include "net/DtlsVersion.h"
+#include "net/TlsVersion.h"
+#include "DataChunk.h"
+#include "EventLoop.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

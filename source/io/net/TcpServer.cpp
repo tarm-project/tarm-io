@@ -3,10 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *----------------------------------------------------------------------------------------------*/
 
+
+#include "detail/Common.h"
+#include "detail/LogMacros.h"
 #include "net/TcpServer.h"
 
 #include "ByteSwap.h"
-#include "detail/Common.h"
 
 #include <unordered_set>
 

@@ -6,6 +6,7 @@
 #include "File.h"
 
 #include "detail/Common.h"
+#include "detail/LogMacros.h"
 #include "detail/EventLoopHelpers.h"
 #include "ScopeExitGuard.h"
 

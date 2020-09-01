@@ -6,6 +6,7 @@
 #pragma once
 
 #include "EventLoop.h"
+#include "detail/LogMacros.h"
 #include "detail/RawBufferGetter.h"
 
 #include <memory>

@@ -7,6 +7,7 @@
 
 #include "detail/Common.h"
 #include "detail/EventLoopHelpers.h"
+#include "detail/LogMacros.h"
 #include "ScopeExitGuard.h"
 
 #include <cstring>

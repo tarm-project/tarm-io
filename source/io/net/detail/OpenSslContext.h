@@ -5,9 +5,10 @@
 
 #pragma once
 
+#include "detail/LogMacros.h"
+#include "global/Configuration.h"
 #include "net/TlsVersion.h"
 #include "net/DtlsVersion.h"
-#include "global/Configuration.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
