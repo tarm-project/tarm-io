@@ -14,10 +14,6 @@
 #include <sstream>
 #include <type_traits>
 
-#ifdef _MSC_VER
-//#define __func__ __FUNCTION__
-#endif
-
 #define IO_LOG(LOGGER_PTR, SEVERITY, ...) { \
     constexpr const char* file_name = ::tarm::io::detail::extract_file_name_from_path(__FILE__); \
     (LOGGER_PTR)->log_with_compile_context(::tarm::io::Logger::Severity::SEVERITY, file_name, __LINE__, __func__, __VA_ARGS__);}
@@ -46,17 +42,17 @@ public:
     TARM_IO_DLL_PUBLIC void enable_log(const Callback& callback);
 
     template<typename... T>
-    void log(Severity severity, T... t);
+    void log(Severity severity, T&&... t);
 
     template<typename... T>
-    void log_with_compile_context(Severity severity, const char* const file, std::size_t line, const char* const func, T... t);
+    void log_with_compile_context(Severity severity, const char* const file, std::size_t line, const char* const func, T&&... t);
 
 private:
     template<typename M, typename... T>
     typename std::enable_if<!std::is_pointer<M>::value>::type
-    log_impl(std::ostream& os, const M& message_chunk, T... t) {
+    log_impl(std::ostream& os, const M& message_chunk, T&&... t) {
         log_impl(os, message_chunk);
-        log_impl(os, t...);
+        log_impl(os, std::forward<T>(t)...);
     }
 
     template<typename M>
@@ -66,9 +62,9 @@ private:
     }
 
     template<typename M, typename... T>
-    void log_impl(std::ostream& os, const M* message_chunk, T... t) {
+    void log_impl(std::ostream& os, const M* message_chunk, T&&... t) {
         log_impl(os, message_chunk);
-        log_impl(os, t...);
+        log_impl(os, std::forward<T>(t)...);
     }
 
     template<typename M>
@@ -81,9 +77,9 @@ private:
     }
 
     template<typename... T>
-    void log_impl(std::ostream& os, const char* message_chunk, T... t) {
+    void log_impl(std::ostream& os, const char* message_chunk, T&&... t) {
         log_impl(os, message_chunk);
-        log_impl(os, t...);
+        log_impl(os, std::forward<T>(t)...);
     }
 
     void log_impl(std::ostream& os, const char* message_chunk) {
@@ -116,20 +112,24 @@ std::ostream& operator<< (std::ostream& os, Logger::Severity severity) {
 
 ///////////////////// IMPLEMENTATION /////////////////////
 template<typename... T>
-void Logger::log(Severity severity, T... t) {
+void Logger::log(Severity severity, T&&... t) {
     if (m_callback == nullptr) {
         return;
     }
 
     std::stringstream ss;
     out_common_prefix(ss, severity);
-    log_impl(ss, t...);
+    log_impl(ss, std::forward<T>(t)...);
 
     m_callback(ss.str());
 }
 
 template<typename... T>
-void Logger::log_with_compile_context(Severity severity, const char* const file, std::size_t line, const char* const func, T... t) {
+void Logger::log_with_compile_context(Severity severity,
+                                      const char* const file,
+                                      std::size_t line,
+                                      const char* const func,
+                                      T&&... t) {
     if (m_callback == nullptr) {
         return;
     }
@@ -141,7 +141,7 @@ void Logger::log_with_compile_context(Severity severity, const char* const file,
         ss << " (" << func << ")";
     }
 
-    log_impl(ss, t...);
+    log_impl(ss, std::forward<T>(t)...);
 
     m_callback(ss.str());
 }
