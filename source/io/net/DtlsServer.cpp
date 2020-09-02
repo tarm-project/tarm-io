@@ -141,7 +141,7 @@ void DtlsServer::Impl::on_data_receive(UdpPeer& udp_client, const DataChunk& dat
 void DtlsServer::Impl::on_timeout(UdpPeer& udp_peer, const Error& error) {
     auto& dtls_client = *reinterpret_cast<DtlsConnectedClient*>(udp_peer.user_data());
 
-    IO_LOG(this->m_loop, TRACE, &dtls_client, "Removing DTLS client due to timeout");
+    LOG_TRACE(this->m_loop, &dtls_client, "Removing DTLS client due to timeout");
 
     //udp_peer.set_on_schedule_removal(nullptr);
     dtls_client.close();

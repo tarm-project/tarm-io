@@ -170,12 +170,12 @@ EventLoop::Impl::Impl(EventLoop& parent) :
 
     const auto async_init_error = init_async();
     if (async_init_error) {
-        IO_LOG(m_parent, ERROR, "uv's async init failed: ", async_init_error.string());
+        LOG_ERROR(m_parent, "uv's async init failed: ", async_init_error.string());
     }
 }
 
 void EventLoop::Impl::finish() {
-    IO_LOG(m_parent, TRACE, "dummy_idle_ref_counter:", m_dummy_idle_ref_counter);
+    LOG_TRACE(m_parent, "dummy_idle_ref_counter:", m_dummy_idle_ref_counter);
 
     close_signal_handlers();
 
@@ -198,7 +198,7 @@ void EventLoop::Impl::finish() {
         status = uv_run(this, UV_RUN_ONCE);
 
         uv_loop_close(this);
-        IO_LOG(m_parent, DEBUG, "Done");
+        LOG_DEBUG(m_parent, "Done");
     }
 }
 
@@ -292,9 +292,9 @@ EventLoop::WorkHandle EventLoop::Impl::add_work(const WorkCallbackType& work_cal
     work->work_done_callback = work_done_callback;
 
     this->schedule_callback([work, this](EventLoop& loop) {
-        IO_LOG(&loop, TRACE, "Queue work", work);
+        LOG_TRACE(&loop, "Queue work", work);
         if (work->cancelled) {
-            IO_LOG(&loop, TRACE, "Cancel work", work);
+            LOG_TRACE(&loop, "Cancel work", work);
             work->call_work_done_callback(StatusCode::OPERATION_CANCELED);
             delete work;
             return;
@@ -313,7 +313,7 @@ EventLoop::WorkHandle EventLoop::Impl::add_work(const WorkCallbackType& work_cal
         }
     });
 
-    IO_LOG(m_parent, TRACE, "Created work", work);
+    LOG_TRACE(m_parent, "Created work", work);
 
     return reinterpret_cast<std::size_t>(work);
 }
@@ -385,13 +385,13 @@ void EventLoop::Impl::stop_call_on_each_loop_cycle(std::size_t handle) {
 }
 
 void EventLoop::Impl::start_block_loop_from_exit() {
-    IO_LOG(m_parent, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
+    LOG_TRACE(m_parent, "ref_counter:", m_dummy_idle_ref_counter);
 
     if (m_dummy_idle_ref_counter++) {
         return; // idle is already running
     }
 
-    IO_LOG(m_parent, TRACE, "starting timer");
+    LOG_TRACE(m_parent, "starting timer");
 
     m_dummy_idle = new uv_timer_t;
     std::memset(m_dummy_idle, 0, sizeof(uv_timer_t));
@@ -402,13 +402,13 @@ void EventLoop::Impl::start_block_loop_from_exit() {
 }
 
 void EventLoop::Impl::stop_block_loop_from_exit() {
-    IO_LOG(m_parent, TRACE, "ref_counter:", m_dummy_idle_ref_counter);
+    LOG_TRACE(m_parent, "ref_counter:", m_dummy_idle_ref_counter);
 
     if (--m_dummy_idle_ref_counter) {
         return;
     }
 
-    IO_LOG(m_parent, TRACE, "closing timer");
+    LOG_TRACE(m_parent, "closing timer");
 
     m_dummy_idle->data = nullptr;
     uv_timer_stop(m_dummy_idle);
@@ -472,11 +472,11 @@ void EventLoop::Impl::remove_signal_handler(Signal signal) {
 }
 
 void EventLoop::Impl::close_signal_handlers() {
-    IO_LOG(m_parent, TRACE, "");
+    LOG_TRACE(m_parent, "");
     for (auto& k_v : m_signal_handlers) {
         const Error stop_error = uv_signal_stop(k_v.second);
         if (stop_error) {
-            IO_LOG(m_parent, ERROR, stop_error);
+            LOG_ERROR(m_parent, stop_error);
             continue;
         }
         uv_close(reinterpret_cast<uv_handle_t*>(k_v.second), EventLoop::Impl::on_signal_close);
@@ -516,7 +516,7 @@ void EventLoop::Impl::on_work(uv_work_t* req) {
 
     auto& work = *reinterpret_cast<Work<WorkCallbackType, WorkDoneCallbackType>*>(req);
     if (work.cancelled) {
-        IO_LOG(this_.m_parent, TRACE, "Cancel work", &work);
+        LOG_TRACE(this_.m_parent, "Cancel work", &work);
         this_.execute_on_loop_thread([&](EventLoop&) {
             work.call_work_done_callback(StatusCode::OPERATION_CANCELED);
         });
@@ -551,7 +551,7 @@ void EventLoop::Impl::on_each_loop_cycle_handler_close(uv_handle_t* handle) {
     auto& idle = *reinterpret_cast<Idle*>(handle);
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
 
-    IO_LOG(this_.m_parent, TRACE, this_.m_parent, "");
+    LOG_TRACE(this_.m_parent, this_.m_parent, "");
 
     delete &idle;
 }
@@ -563,12 +563,12 @@ void EventLoop::Impl::on_async(uv_async_t* handle) {
 
 void EventLoop::Impl::on_dummy_idle_tick(uv_timer_t* handle) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
-    IO_LOG(this_.m_parent, TRACE, "");
+    LOG_TRACE(this_.m_parent, "");
 }
 
 void EventLoop::Impl::on_dummy_idle_close(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->loop);
-    IO_LOG(this_.m_parent, TRACE, "");
+    LOG_TRACE(this_.m_parent, "");
 
     delete reinterpret_cast<uv_timer_t*>(handle);
 }
@@ -576,7 +576,7 @@ void EventLoop::Impl::on_dummy_idle_close(uv_handle_t* handle) {
 void EventLoop::Impl::on_signal(uv_signal_t* handle, int /*signum*/) {
     auto& handler = *reinterpret_cast<SignalHandler*>(handle);
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
-    IO_LOG(this_.m_parent, TRACE, "");
+    LOG_TRACE(this_.m_parent, "");
 
     Error stop_error(StatusCode::OK);
     if (handler.continuity == SignalHandler::ONCE) {
@@ -591,7 +591,7 @@ void EventLoop::Impl::on_signal(uv_signal_t* handle, int /*signum*/) {
 void EventLoop::Impl::on_signal_close(uv_handle_t* handle) {
     auto& handler = *reinterpret_cast<SignalHandler*>(handle);
     auto& this_ = *reinterpret_cast<EventLoop::Impl*>(handle->data);
-    IO_LOG(this_.m_parent, TRACE, "");
+    LOG_TRACE(this_.m_parent, "");
     delete &handler;
 }
 

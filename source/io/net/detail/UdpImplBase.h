@@ -99,7 +99,7 @@ Error UdpImplBase<ParentType, ImplType>::ensure_handle_inited() {
 
     const Error init_error = uv_udp_init(m_uv_loop, m_udp_handle.get());
     if (init_error) {
-        IO_LOG(m_loop, ERROR, this->m_parent, init_error);
+        LOG_ERROR(m_loop, this->m_parent, init_error);
         return init_error;
     }
 

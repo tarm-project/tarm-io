@@ -143,7 +143,7 @@ void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint
 
     const Error write_error = uv_write(req, reinterpret_cast<uv_stream_t*>(m_tcp_stream), &req->uv_buf, 1, after_write<T>);
     if (write_error) {
-        IO_LOG(m_loop, ERROR, m_parent, "Error:", write_error.string());
+        LOG_ERROR(m_loop, m_parent, "Error:", write_error.string());
         if (callback) {
             callback(*m_parent, write_error);
         }
@@ -201,7 +201,7 @@ bool TcpClientImplBase<ParentType, ImplType>::is_delay_send() const {
 
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::on_read_error(const Error& error) {
-    IO_LOG(m_loop, DEBUG, m_parent, "Connection end", endpoint(), "reason:", error);
+    LOG_DEBUG(m_loop, m_parent, "Connection end", endpoint(), "reason:", error);
 
     if (m_close_callback) {
         if (error.code() == StatusCode::END_OF_FILE) {
@@ -239,7 +239,7 @@ void TcpClientImplBase<ParentType, ImplType>::after_write(uv_write_t* req, int u
 
     Error error(uv_status);
     if (error) {
-        IO_LOG(this_.m_loop, ERROR, this_.m_parent, "Error:", uv_strerror(uv_status));
+        LOG_ERROR(this_.m_loop, this_.m_parent, "Error:", uv_strerror(uv_status));
     }
 
     if (request->end_send_callback) {

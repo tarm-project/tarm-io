@@ -88,11 +88,11 @@ DtlsConnectedClient::Impl::Impl(EventLoop& loop,
     m_client = &udp_client;
     m_client->set_user_data(&parent);
 
-    IO_LOG(m_loop, TRACE, m_parent, "New DtlsConnectedClient");
+    LOG_TRACE(m_loop, m_parent, "New DtlsConnectedClient");
 }
 
 DtlsConnectedClient::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, m_parent, "Delete DtlsConnectedClient");
+    LOG_TRACE(m_loop, m_parent, "Delete DtlsConnectedClient");
 }
 
 Error DtlsConnectedClient::Impl::init_ssl() {
@@ -165,7 +165,7 @@ void DtlsConnectedClient::Impl::on_handshake_failed(long /*openssl_error_code*/,
 }
 
 void DtlsConnectedClient::Impl::on_alert(int code) {
-    IO_LOG(m_loop, DEBUG, m_parent, "");
+    LOG_DEBUG(m_loop, m_parent, "");
 
     if (code == SSL3_AD_CLOSE_NOTIFY) {
         m_dtls_server->remove_client(*m_parent);

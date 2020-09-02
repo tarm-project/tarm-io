@@ -82,7 +82,7 @@ TcpServer::Impl::Impl(EventLoop& loop, TcpServer& parent) :
 }
 
 TcpServer::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, m_parent);
+    LOG_TRACE(m_loop, m_parent);
 }
 
 Error TcpServer::Impl::listen(const Endpoint& endpoint,
@@ -107,13 +107,13 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
     m_server_handle->data = this;
 
     if (init_error) {
-        IO_LOG(m_loop, ERROR, m_parent, init_error.string());
+        LOG_ERROR(m_loop, m_parent, init_error.string());
         return init_error;
     }
 
     const int bind_status = uv_tcp_bind(m_server_handle, reinterpret_cast<const struct sockaddr*>(m_endpoint.raw_endpoint()), 0);
     if (bind_status < 0) {
-        IO_LOG(m_loop, ERROR, m_parent, "Bind failed:", uv_strerror(bind_status));
+        LOG_ERROR(m_loop, m_parent, "Bind failed:", uv_strerror(bind_status));
         return bind_status;
     }
 
@@ -122,7 +122,7 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
     m_close_connection_callback = close_connection_callback;
     const int listen_status = uv_listen(reinterpret_cast<uv_stream_t*>(m_server_handle), backlog_size, on_new_connection);
     if (listen_status < 0) {
-        IO_LOG(m_loop, ERROR, m_parent, "Listen failed:", uv_strerror(listen_status));
+        LOG_ERROR(m_loop, m_parent, "Listen failed:", uv_strerror(listen_status));
     }
 
     m_is_open = true;
@@ -135,7 +135,7 @@ const Endpoint& TcpServer::Impl::endpoint() const {
 }
 
 void TcpServer::Impl::shutdown(const ShutdownServerCallback& shutdown_callback) {
-    IO_LOG(m_loop, TRACE, m_parent);
+    LOG_TRACE(m_loop, m_parent);
 
     m_end_server_callback = shutdown_callback;
 
@@ -147,7 +147,7 @@ void TcpServer::Impl::shutdown(const ShutdownServerCallback& shutdown_callback) 
 }
 
 void TcpServer::Impl::close(const CloseServerCallback& close_callback) {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     m_end_server_callback = close_callback;
 
@@ -159,7 +159,7 @@ void TcpServer::Impl::close(const CloseServerCallback& close_callback) {
 }
 
 void TcpServer::Impl::close_impl() {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     if (m_server_handle && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_server_handle))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_server_handle), on_close);
@@ -187,7 +187,7 @@ std::size_t TcpServer::Impl::connected_clients_count() const {
 }
 
 bool TcpServer::Impl::schedule_removal() {
-    IO_LOG(m_loop, TRACE, m_parent);
+    LOG_TRACE(m_loop, m_parent);
 
     const auto removal_scheduled = m_parent->is_removal_scheduled();
 
@@ -207,7 +207,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
     auto& this_ = *reinterpret_cast<TcpServer::Impl*>(server->data);
 
-    IO_LOG(this_.m_loop, TRACE, this_.m_parent);
+    LOG_TRACE(this_.m_loop, this_.m_parent);
 
     auto on_client_close_callback = [&this_](TcpConnectedClient& client, const Error& error) {
         if (this_.m_close_connection_callback) {
@@ -223,7 +223,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
     );
     const auto init_error = tcp_client->init_stream();
     if (init_error) {
-        IO_LOG(this_.m_loop, ERROR, this_.m_parent, "init_error");
+        LOG_ERROR(this_.m_loop, this_.m_parent, "init_error");
         if (this_.m_new_connection_callback) {
             this_.m_new_connection_callback(*tcp_client, init_error);
         }
@@ -232,7 +232,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
     const Error error(status);
     if (error) {
-        IO_LOG(this_.m_loop, ERROR, this_.m_parent, error);
+        LOG_ERROR(this_.m_loop, this_.m_parent, error);
         if (this_.m_new_connection_callback) {
             this_.m_new_connection_callback(*tcp_client, error);
         }
@@ -262,7 +262,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
             tcp_client.release();
         } else {
-            IO_LOG(this_.m_loop, ERROR, "uv_tcp_getpeername failed. Reason:", getpeername_error.string());
+            LOG_ERROR(this_.m_loop, "uv_tcp_getpeername failed. Reason:", getpeername_error.string());
             if (this_.m_new_connection_callback) {
                 if (getpeername_error.code() == StatusCode::INVALID_ARGUMENT) {
                     // Apple has incompatibility here
@@ -286,7 +286,7 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
 
 void TcpServer::Impl::on_close(uv_handle_t* handle) {
     auto& this_ = *reinterpret_cast<TcpServer::Impl*>(handle->data);
-    IO_LOG(this_.m_loop, TRACE, this_.m_parent);
+    LOG_TRACE(this_.m_loop, this_.m_parent);
 
     if (this_.connected_clients_count() != 0) {
         // Waiting for all clients to be closed

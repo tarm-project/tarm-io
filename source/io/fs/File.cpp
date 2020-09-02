@@ -122,7 +122,7 @@ File::Impl::Impl(EventLoop& loop, File& parent) :
 }
 
 File::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, "");
+    LOG_TRACE(m_loop, "");
 
     for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
         uv_fs_req_cleanup(&m_read_reqs[i]);
@@ -130,13 +130,13 @@ File::Impl::~Impl() {
 }
 
 bool File::Impl::schedule_removal() {
-    IO_LOG(m_loop, TRACE, "path:", m_path);
+    LOG_TRACE(m_loop, "path:", m_path);
 
     if (is_open()) {
         close([this](File&, const Error&) {
             if (has_read_buffers_in_use()) {
                 m_need_reschedule_remove = true;
-                IO_LOG(m_loop, TRACE, "File has read buffers in use, postponing removal");
+                LOG_TRACE(m_loop, "File has read buffers in use, postponing removal");
             } else {
                 this->m_parent->schedule_removal();
             }
@@ -144,7 +144,7 @@ bool File::Impl::schedule_removal() {
         return false;
     } else if (has_read_buffers_in_use()) {
         m_need_reschedule_remove = true;
-        IO_LOG(m_loop, TRACE, "File has read buffers in use, postponing removal");
+        LOG_TRACE(m_loop, "File has read buffers in use, postponing removal");
         return false;
     }
 
@@ -175,14 +175,14 @@ void File::Impl::close(const CloseCallback& close_callback) {
 
     m_state = State::CLOSING;
 
-    IO_LOG(m_loop, DEBUG, "path: ", m_path);
+    LOG_DEBUG(m_loop, "path: ", m_path);
 
     auto close_req = new FileCloseRequest;
     close_req->data = this;
     close_req->close_callback = close_callback;
     Error close_error = uv_fs_close(m_uv_loop, close_req, m_file_handle, on_close);
     if (close_error) {
-        IO_LOG(m_loop, ERROR, "Error:", close_error);
+        LOG_ERROR(m_loop, "Error:", close_error);
         m_file_handle = -1;
         if (close_callback) {
             m_loop->schedule_callback([=](EventLoop&) {
@@ -227,7 +227,7 @@ void File::Impl::open(const Path& path, const OpenCallback& callback) {
         return;
     }
 
-    IO_LOG(m_loop, DEBUG, "path:", path);
+    LOG_DEBUG(m_loop, "path:", path);
 
     m_state = State::OPENING;
 
@@ -349,11 +349,11 @@ void File::Impl::schedule_read() {
     }
 
     if (!found_free_buffer) {
-        IO_LOG(m_loop, TRACE, "File", m_path, "no free buffer found");
+        LOG_TRACE(m_loop, "File", m_path, "no free buffer found");
         return;
     }
 
-    IO_LOG(m_loop, TRACE, "File", m_path, "using buffer with index: ", i);
+    LOG_TRACE(m_loop, "File", m_path, "using buffer with index: ", i);
 
     FileReadRequest& read_req = m_read_reqs[i];
     read_req.is_free = false;
@@ -372,7 +372,7 @@ void File::Impl::schedule_read(FileReadRequest& req) {
 
     // TODO: comments on this shared pointer
     req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* /*p*/) {
-        IO_LOG(this->m_loop, TRACE, this->m_path, "buffer freed");
+        LOG_TRACE(this->m_loop, this->m_path, "buffer freed");
 
         req.is_free = true;
         m_loop->stop_block_loop_from_exit();
@@ -389,7 +389,7 @@ void File::Impl::schedule_read(FileReadRequest& req) {
             return;
         }
 
-        IO_LOG(this->m_loop, TRACE, this->m_path, "schedule_read again");
+        LOG_TRACE(this->m_loop, this->m_path, "schedule_read again");
         schedule_read();
     });
 
@@ -503,7 +503,7 @@ void File::Impl::on_read_block(uv_fs_t* uv_req) {
     Error error(req.result);
     if (this_.m_read_callback) {
         if (req.result < 0) {
-            IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, error);
+            LOG_ERROR(this_.m_loop, "File:", this_.m_path, error);
             DataChunk data_chunk;
             this_.m_read_callback(*this_.m_parent, data_chunk, error);
         } else if (req.result > 0) {
@@ -533,7 +533,7 @@ void File::Impl::on_read(uv_fs_t* uv_req) {
         this_.m_done_read = true;
         req.buf.reset();
 
-        IO_LOG(this_.m_loop, ERROR, "File:", this_.m_path, "read error:", uv_strerror(static_cast<int>(req.result)));
+        LOG_ERROR(this_.m_loop, "File:", this_.m_path, "read error:", uv_strerror(static_cast<int>(req.result)));
 
         if (this_.m_read_callback) {
             Error error(req.result);

@@ -54,14 +54,14 @@ private:
 };
 
 DtlsClient::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, m_parent, "Deleted DtlsClient");
+    LOG_TRACE(m_loop, m_parent, "Deleted DtlsClient");
 }
 
 DtlsClient::Impl::Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClient& parent) :
     OpenSslClientImplBase(loop, parent),
     m_version_range(version_range),
     m_openssl_context(loop, parent) {
-    IO_LOG(m_loop, TRACE, m_parent, "New DtlsClient");
+    LOG_TRACE(m_loop, m_parent, "New DtlsClient");
 }
 
 void DtlsClient::Impl::connect(const Endpoint& endpoint,
@@ -184,7 +184,7 @@ void DtlsClient::Impl::on_handshake_failed(long /*openssl_error_code*/, const Er
 }
 
 void DtlsClient::Impl::on_alert(int code) {
-    IO_LOG(m_loop, DEBUG, m_parent, "code:", code);
+    LOG_DEBUG(m_loop, m_parent, "code:", code);
 
     if (code == SSL3_AD_CLOSE_NOTIFY) {
         if (m_close_callback) {

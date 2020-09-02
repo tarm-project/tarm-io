@@ -151,7 +151,7 @@ void Dir::Impl::open(const Path& path, const OpenCallback& callback) {
         return;
     }
 
-    IO_LOG(m_loop, DEBUG, "path:", path);
+    LOG_DEBUG(m_loop, "path:", path);
     m_path = path;
     m_open_callback = callback;
     m_open_dir_req.data = this;
@@ -219,7 +219,7 @@ void Dir::Impl::close(const CloseCallback& callback) {
 }
 
 bool Dir::Impl::schedule_removal() {
-    IO_LOG(m_loop, TRACE, "path:", m_path);
+    LOG_TRACE(m_loop, "path:", m_path);
 
     if (is_open()) {
         close([this](Dir&, const Error&) {
@@ -240,7 +240,7 @@ void Dir::Impl::on_open_dir(uv_fs_t* req) {
     if (error) {
         uv_fs_req_cleanup(&this_.m_open_dir_req);
 
-        IO_LOG(this_.m_loop, ERROR, "Failed to open dir:", req->path ? req->path : "");
+        LOG_ERROR(this_.m_loop, "Failed to open dir:", req->path ? req->path : "");
     } else {
         this_.m_uv_dir = reinterpret_cast<uv_dir_t*>(req->ptr);
         this_.m_uv_dir->dirents = this_.m_dirents;
@@ -325,7 +325,7 @@ void Dir::Impl::on_close_dir(uv_fs_t* req) {
     auto& this_ = *reinterpret_cast<Dir::Impl*>(req->data);
     auto& request = *reinterpret_cast<CloseDirRequest*>(req);
 
-    IO_LOG(this_.m_loop, TRACE, this_.m_parent);
+    LOG_TRACE(this_.m_loop, this_.m_parent);
     this_.m_uv_dir = nullptr;
     this_.m_path.clear();
 

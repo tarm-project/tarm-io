@@ -63,7 +63,7 @@ TcpClient::Impl::Impl(EventLoop& loop, TcpClient& parent) :
 }
 
 TcpClient::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, this, "");
+    LOG_TRACE(m_loop, this, "");
 }
 
 EventLoop* TcpClient::Impl::loop() {
@@ -114,7 +114,7 @@ void TcpClient::Impl::connect_impl(const Endpoint& endpoint,
     m_connect_req->data = this;
 
     auto addr = reinterpret_cast<const ::sockaddr_in*>(raw_endpoint);
-    IO_LOG(m_loop, DEBUG, m_parent, "endpoint:", endpoint);
+    LOG_DEBUG(m_loop, m_parent, "endpoint:", endpoint);
 
     m_connect_callback = connect_callback;
     m_receive_callback = receive_callback;
@@ -142,7 +142,7 @@ void TcpClient::Impl::shutdown() {
 }
 
 bool TcpClient::Impl::schedule_removal() {
-    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", m_destination_endpoint);
+    LOG_TRACE(m_loop, m_parent, "endpoint:", m_destination_endpoint);
 
     m_want_delete_object = true;
 
@@ -154,7 +154,7 @@ bool TcpClient::Impl::close() {
         return true; // allow to remove object
     }
 
-    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", m_destination_endpoint);
+    LOG_TRACE(m_loop, m_parent, "endpoint:", m_destination_endpoint);
 
     m_is_open = false;
 
@@ -171,7 +171,7 @@ void TcpClient::Impl::close_with_reset() {
         return;
     }
 
-    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", m_destination_endpoint);
+    LOG_TRACE(m_loop, m_parent, "endpoint:", m_destination_endpoint);
 
     m_is_open = false;
 
@@ -185,7 +185,7 @@ void TcpClient::Impl::close_with_reset() {
 void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(req->data);
 
-    IO_LOG(this_.m_loop, TRACE, this_.m_parent, "endpoint:", this_.m_destination_endpoint);
+    LOG_TRACE(this_.m_loop, this_.m_parent, "endpoint:", this_.m_destination_endpoint);
 
     Error error(uv_status);
     if (this_.m_close_callback && error) {
@@ -238,7 +238,7 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
 
 void TcpClient::Impl::on_close(uv_handle_t* handle) {
     auto loop_ptr = reinterpret_cast<EventLoop*>(handle->loop->data);
-    IO_LOG(loop_ptr, TRACE, "");
+    LOG_TRACE(loop_ptr, "");
 
     if (handle->data) {
         auto& this_ = *reinterpret_cast<TcpClient::Impl*>(handle->data);
@@ -286,7 +286,7 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
             }
         }
 #endif
-        IO_LOG(&loop, TRACE, "Closed from other side. Reason:", error.string());
+        LOG_TRACE(&loop, "Closed from other side. Reason:", error.string());
 
         if (this_.m_close_callback) {
             this_.m_is_open = false;
@@ -314,7 +314,7 @@ TcpClient::~TcpClient() {
 }
 
 void TcpClient::schedule_removal() {
-    IO_LOG(m_impl->loop(), TRACE, this, "");
+    LOG_TRACE(m_impl->loop(), this, "");
 
     const bool ready_to_remove = m_impl->schedule_removal();
     if (ready_to_remove) {

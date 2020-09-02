@@ -83,7 +83,7 @@ Error UdpServer::Impl::bind(const Endpoint& endpoint) {
 }
 
 Error UdpServer::Impl::start_receive(const Endpoint& endpoint, const DataReceivedCallback& data_receive_callback) {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     Error bind_error = bind(endpoint);
     if (bind_error) {
@@ -140,7 +140,7 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
 }
 
 void UdpServer::Impl::close(const CloseServerCallback& close_callback) {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     if (is_open()) {
         m_server_close_callback = close_callback;
@@ -171,7 +171,7 @@ bool UdpServer::Impl::peer_bookkeeping_enabled() const {
 }
 
 void UdpServer::Impl::close_peer(UdpPeer& peer, std::size_t inactivity_timeout_ms) {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     const auto peer_id = peer.id();
 
@@ -230,7 +230,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                     auto inative_peer_it = this_.m_inactive_peers.find(peer_id);
                     if (inative_peer_it != this_.m_inactive_peers.end()) {
                         const Endpoint e{reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)};
-                        IO_LOG(this_.m_loop, TRACE, &parent, "Peer", e, "is inactive, ignoring packet");
+                        LOG_TRACE(this_.m_loop, &parent, "Peer", e, "is inactive, ignoring packet");
                         return;
                     }
 
@@ -242,7 +242,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                                    {reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)},
                                                    peer_id),
                                        free_udp_peer); // Ref count is == 1 here
-                        IO_LOG(this_.m_loop, TRACE, &parent, "New tracked peer:", peer_ptr->endpoint());
+                        LOG_TRACE(this_.m_loop, &parent, "New tracked peer:", peer_ptr->endpoint());
 
                         peer_ptr->set_last_packet_time(::uv_hrtime());
                         this_.m_peers_backlog->add_item(peer_ptr);
@@ -264,7 +264,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                                             this_.m_udp_handle.get(),
                                             {reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)},
                                             peer_id); // Ref count is == 1 here
-                    IO_LOG(this_.m_loop, TRACE, &parent, "New untracked peer:", peer->endpoint());
+                    LOG_TRACE(this_.m_loop, &parent, "New untracked peer:", peer->endpoint());
                     this_.m_data_receive_callback(*peer, data_chunk, error);
                     peer->unref();
                 }
@@ -274,7 +274,7 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
             // TODO: could address be available here???
             UdpPeer peer(*this_.m_loop, *this_.m_parent, this_.m_udp_handle.get(), Endpoint{0u, 0u}, 0);
 
-            IO_LOG(this_.m_loop, ERROR, &parent, "failed to receive UDP packet", error.string());
+            LOG_ERROR(this_.m_loop, &parent, "failed to receive UDP packet", error.string());
             this_.m_data_receive_callback(peer, data, error);
         }
     }
@@ -287,7 +287,7 @@ void UdpServer::Impl::on_close(uv_handle_t* handle) {
 
     this_.m_connection_in_progress = false;
 
-    IO_LOG(this_.m_loop, TRACE, &parent, "");
+    LOG_TRACE(this_.m_loop, &parent, "");
     if (this_.m_server_close_callback) {
         this_.reset_udp_handle_state();
         this_.m_server_close_callback(parent, Error(0));

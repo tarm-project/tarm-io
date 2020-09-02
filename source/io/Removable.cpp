@@ -67,7 +67,7 @@ void Removable::Impl::set_removal_scheduled() {
 void Removable::Impl::schedule_removal() {
     m_removal_scheduled = true;
 
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     auto idle_ptr = new uv_idle_t;
     idle_ptr->data = this;

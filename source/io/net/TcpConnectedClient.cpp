@@ -54,7 +54,7 @@ TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedC
 }
 
 TcpConnectedClient::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     assert(m_tcp_stream != nullptr);
     delete m_tcp_stream;
@@ -70,7 +70,7 @@ void TcpConnectedClient::Impl::shutdown() {
         return;
     }
 
-    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", this->endpoint());
+    LOG_TRACE(m_loop, m_parent, "endpoint:", this->endpoint());
 
     m_is_open = false;
 
@@ -88,7 +88,7 @@ void TcpConnectedClient::Impl::close() {
         return;
     }
 
-    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", this->endpoint());
+    LOG_TRACE(m_loop, m_parent, "endpoint:", this->endpoint());
 
     m_is_open = false;
 
@@ -100,7 +100,7 @@ void TcpConnectedClient::Impl::close_with_reset() {
         return;
     }
 
-    IO_LOG(m_loop, TRACE, m_parent, "endpoint:", this->endpoint());
+    LOG_TRACE(m_loop, m_parent, "endpoint:", this->endpoint());
 
     m_is_open = false;
 
@@ -135,7 +135,7 @@ const TcpServer& TcpConnectedClient::Impl::server() const {
 void TcpConnectedClient::Impl::on_shutdown(uv_shutdown_t* req, int status) {
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(req->data);
 
-    IO_LOG(this_.m_loop, TRACE, this_.m_parent, "endpoint:", this_.endpoint());
+    LOG_TRACE(this_.m_loop, this_.m_parent, "endpoint:", this_.endpoint());
 
     uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
     delete req;
@@ -145,7 +145,7 @@ void TcpConnectedClient::Impl::on_close(uv_handle_t* handle) {
     auto loop_ptr = reinterpret_cast<EventLoop*>(handle->loop->data);
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
 
-    IO_LOG(loop_ptr, TRACE, this_.m_parent);
+    LOG_TRACE(loop_ptr, this_.m_parent);
 
     this_.m_server->remove_client_connection(this_.m_parent);
 
@@ -162,9 +162,9 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
     auto& this_ = *reinterpret_cast<TcpConnectedClient::Impl*>(handle->data);
 
     if (nread >= 0) {
-        IO_LOG(this_.m_loop, TRACE, this_.m_parent, "Received data, size:", nread);
+        LOG_TRACE(this_.m_loop, this_.m_parent, "Received data, size:", nread);
     } else {
-        IO_LOG(this_.m_loop, TRACE, this_.m_parent, "Receive error:", Error(nread));
+        LOG_TRACE(this_.m_loop, this_.m_parent, "Receive error:", Error(nread));
     }
 
     Error error(nread);

@@ -191,7 +191,7 @@ template<typename ParentType, typename ImplType>
 Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init(::SSL_CTX* ssl_ctx) {
     m_ssl.reset(SSL_new(ssl_ctx));
     if (m_ssl == nullptr) {
-        IO_LOG(m_loop, ERROR, m_parent, "Failed to create SSL");
+        LOG_ERROR(m_loop, m_parent, "Failed to create SSL");
         return Error(StatusCode::OPENSSL_ERROR, "Failed to create SSL");
     }
 
@@ -200,13 +200,13 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init(::SSL_CTX* ssl_ctx) 
 
     m_ssl_read_bio = BIO_new(BIO_s_mem());
     if (m_ssl_read_bio == nullptr) {
-        IO_LOG(m_loop, ERROR, m_parent, "Failed to create read BIO");
+        LOG_ERROR(m_loop, m_parent, "Failed to create read BIO");
         return Error(StatusCode::OPENSSL_ERROR, "Failed to create read BIO");
     }
 
     m_ssl_write_bio = BIO_new(BIO_s_mem());
     if (m_ssl_write_bio == nullptr) {
-        IO_LOG(m_loop, ERROR, m_parent, "Failed to create write BIO");
+        LOG_ERROR(m_loop, m_parent, "Failed to create write BIO");
         return Error(StatusCode::OPENSSL_ERROR, "Failed to create write BIO");
     }
 
@@ -214,7 +214,7 @@ Error OpenSslClientImplBase<ParentType, ImplType>::ssl_init(::SSL_CTX* ssl_ctx) 
 
     ssl_set_state();
 
-    IO_LOG(m_loop, DEBUG, m_parent, "SSL inited");
+    LOG_DEBUG(m_loop, m_parent, "SSL inited");
     m_ssl_inited = true;
 
     return StatusCode::OK;
@@ -230,7 +230,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
     int decrypted_size = SSL_read(m_ssl.get(), m_decrypt_buf.get(), DECRYPT_BUF_SIZE);
     std::size_t counter = 0;
     while (decrypted_size > 0) {
-        IO_LOG(m_loop, TRACE, m_parent, "Decrypted message of size:", decrypted_size);
+        LOG_TRACE(m_loop, m_parent, "Decrypted message of size:", decrypted_size);
         const auto prev_use_count = m_decrypt_buf.use_count();
         on_ssl_read({m_decrypt_buf, static_cast<std::size_t>(decrypted_size), m_data_offset}, StatusCode::OK);
         m_data_offset += static_cast<std::size_t>(decrypted_size);
@@ -255,7 +255,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
         if (code != SSL_ERROR_WANT_READ) {
             const auto openssl_error_code = ERR_get_error();
             const char* str = ERR_reason_error_string(openssl_error_code);
-            IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size. Error code:", openssl_error_code, "message:", str ? str : "");
+            LOG_ERROR(m_loop, m_parent, "Failed to write buf of size. Error code:", openssl_error_code, "message:", str ? str : "");
             on_ssl_read({nullptr, 0}, Error(StatusCode::OPENSSL_ERROR, str ? str : ""));
             return;
         }
@@ -267,23 +267,23 @@ void OpenSslClientImplBase<ParentType, ImplType>::internal_read_from_sll_and_sen
 
     const auto write_pending = BIO_pending(m_ssl_write_bio);
     if (write_pending == 0) {
-        IO_LOG(m_loop, WARNING, m_parent, "No data to read from OpenSSL BIO");
+        LOG_WARNING(m_loop, m_parent, "No data to read from OpenSSL BIO");
         return;
     }
 
     std::shared_ptr<char> buf(new char[write_pending], [](const char* p) { delete[] p; });
     const auto size = BIO_read(m_ssl_write_bio, buf.get(), write_pending);
 
-    IO_LOG(m_loop, TRACE, m_parent, "Getting data from SSL and sending to server, size:", size);
+    LOG_TRACE(m_loop, m_parent, "Getting data from SSL and sending to server, size:", size);
     m_client->send_data(buf, size, on_send);
 }
 
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
-    IO_LOG(m_loop, DEBUG, m_parent, "Doing handshake");
+    LOG_DEBUG(m_loop, m_parent, "Doing handshake");
 
     if (m_ssl_handshake_state == HandshakeState::FINISHING) {
-        IO_LOG(m_loop, TRACE, m_parent, "Handshake is in FINISHING state, return");
+        LOG_TRACE(m_loop, m_parent, "Handshake is in FINISHING state, return");
         return;
     }
 
@@ -291,16 +291,16 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
 
     int write_pending = BIO_pending(m_ssl_write_bio);
     int read_pending = BIO_pending(m_ssl_read_bio);
-    IO_LOG(m_loop, TRACE, m_parent, "write_pending:", write_pending);
-    IO_LOG(m_loop, TRACE, m_parent, "read_pending:", read_pending);
+    LOG_TRACE(m_loop, m_parent, "write_pending:", write_pending);
+    LOG_TRACE(m_loop, m_parent, "read_pending:", read_pending);
 
     if (handshake_result < 0) {
         auto ssl_error = SSL_get_error(m_ssl.get(), handshake_result);
 
         if (ssl_error == SSL_ERROR_WANT_READ) {
-            IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_READ");
+            LOG_TRACE(m_loop, m_parent, "SSL_ERROR_WANT_READ");
             if (write_pending == 0) {
-                IO_LOG(m_loop, TRACE, m_parent, "Handshake failed because there is no valid data to read from OpenSSL BIO");
+                LOG_TRACE(m_loop, m_parent, "Handshake failed because there is no valid data to read from OpenSSL BIO");
                 on_handshake_failed(-1, Error(StatusCode::OPENSSL_ERROR, "Handshake failed, invalid data"));
                 return;
             }
@@ -313,10 +313,10 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
                 }
             );
         } else if (ssl_error == SSL_ERROR_WANT_WRITE) {
-            IO_LOG(m_loop, TRACE, m_parent, "SSL_ERROR_WANT_WRITE");
+            LOG_TRACE(m_loop, m_parent, "SSL_ERROR_WANT_WRITE");
         } else {
             const auto openssl_error_code = ERR_get_error();
-            IO_LOG(m_loop, ERROR, m_parent, "Handshake error:", openssl_error_code);
+            LOG_ERROR(m_loop, m_parent, "Handshake error:", openssl_error_code);
             if (write_pending) {
                 // Just notification for other side without care about result
                 internal_read_from_sll_and_send(nullptr);
@@ -352,14 +352,14 @@ void OpenSslClientImplBase<ParentType, ImplType>::do_handshake() {
     } else {
         const auto openssl_error_code = ERR_get_error();
         const char* str = ERR_reason_error_string(openssl_error_code);
-        IO_LOG(m_loop, ERROR, m_parent, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol. Error code:", openssl_error_code, "message:", str ? str : "");
+        LOG_ERROR(m_loop, m_parent, "The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol. Error code:", openssl_error_code, "message:", str ? str : "");
         on_handshake_failed(openssl_error_code, Error(StatusCode::OPENSSL_ERROR, str ? str : ""));
     }
 }
 
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::finish_handshake() {
-    IO_LOG(m_loop, DEBUG, m_parent, "Connected!");
+    LOG_DEBUG(m_loop, m_parent, "Connected!");
     m_ssl_handshake_state = HandshakeState::FINISHED;
     on_handshake_complete();
 }
@@ -400,7 +400,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::
     const auto buf_data = io::detail::raw_buffer_get(buffer);
     const auto write_result = SSL_write(m_ssl.get(), buf_data, size);
     if (write_result <= 0) {
-        IO_LOG(m_loop, ERROR, m_parent, "Failed to write buf of size", size);
+        LOG_ERROR(m_loop, m_parent, "Failed to write buf of size", size);
 
         const auto openssl_error_code = ERR_get_error();
         if (callback) {
@@ -416,14 +416,14 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::
 
     const auto actual_size = BIO_read(m_ssl_write_bio, ptr.get(), SIZE);
     if (actual_size <= 0) {
-        IO_LOG(m_loop, ERROR, m_parent, "BIO_read failed code:", actual_size);
+        LOG_ERROR(m_loop, m_parent, "BIO_read failed code:", actual_size);
         if (callback) {
             callback(*m_parent, Error(StatusCode::OPENSSL_ERROR, "Nothing to read from SSL"));
         }
         return;
     }
 
-    IO_LOG(m_loop, TRACE, m_parent, "Sending message to client. Original size:", size, "encrypted_size:", actual_size);
+    LOG_TRACE(m_loop, m_parent, "Sending message to client. Original size:", size, "encrypted_size:", actual_size);
     m_client->send_data(ptr, actual_size, [callback, this](typename ParentType::UnderlyingClientType& tcp_client, const Error& error) {
         if (callback) {
             callback(*m_parent, error);
@@ -433,12 +433,12 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::
 
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* buf, std::size_t size) {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     if (m_ssl_handshake_state == HandshakeState::FINISHED) {
         const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
         if (write_size < 0) {
-            IO_LOG(m_loop, ERROR, m_parent, "BIO_write failed with code:", write_size);
+            LOG_ERROR(m_loop, m_parent, "BIO_write failed with code:", write_size);
             return;
         }
 
@@ -446,7 +446,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* bu
     } else {
         const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
         if (write_size <= 0) {
-            IO_LOG(m_loop, ERROR, m_parent, "BIO_write failed with code:", write_size);
+            LOG_ERROR(m_loop, m_parent, "BIO_write failed with code:", write_size);
             on_handshake_failed(-1, Error(StatusCode::OPENSSL_ERROR, "Handshake failed, invalid data"));
             return;
         }
@@ -457,7 +457,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* bu
 
 template<typename ParentType, typename ImplType>
 bool OpenSslClientImplBase<ParentType, ImplType>::schedule_removal() {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     if (m_client) {
         if (!m_ready_schedule_removal) {
@@ -475,7 +475,7 @@ bool OpenSslClientImplBase<ParentType, ImplType>::schedule_removal() {
 
 template<typename ParentType, typename ImplType>
 Error OpenSslClientImplBase<ParentType, ImplType>::ssl_shutdown(const typename ParentType::UnderlyingClientType::EndSendCallback& on_send) {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     auto return_code = SSL_shutdown(m_ssl.get());
     if (return_code < 0) {

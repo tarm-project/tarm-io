@@ -122,7 +122,7 @@ void UdpClient::Impl::set_destination(const Endpoint& endpoint,
 }
 
 UdpClient::Impl::~Impl() {
-    IO_LOG(m_loop, TRACE, m_parent, "Deleted UdpClient");
+    LOG_TRACE(m_loop, m_parent, "Deleted UdpClient");
 }
 
 // TODO: use uv_udp_connect if libuv version is >= 1.27.0

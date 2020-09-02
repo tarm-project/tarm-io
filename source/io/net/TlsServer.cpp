@@ -96,16 +96,16 @@ TlsServer::Impl::~Impl() {
 }
 
 bool TlsServer::Impl::schedule_removal() {
-    IO_LOG(m_loop, TRACE, m_parent, "");
+    LOG_TRACE(m_loop, m_parent, "");
 
     if (m_parent->is_removal_scheduled()) {
-        IO_LOG(m_loop, TRACE, m_parent, "is_removal_scheduled: true");
+        LOG_TRACE(m_loop, m_parent, "is_removal_scheduled: true");
         return true;
     }
 
     m_tcp_server->close([this](TcpServer& server, const Error& error) {
         if (error.code() != StatusCode::NOT_CONNECTED) {
-            IO_LOG(this->m_loop, ERROR, error);
+            LOG_ERROR(this->m_loop, error);
         }
 
         this->m_parent->schedule_removal();
@@ -157,7 +157,7 @@ void TlsServer::Impl::on_data_receive(TcpConnectedClient& tcp_client, const Data
 }
 
 void TlsServer::Impl::on_connection_close(TcpConnectedClient& tcp_client, const Error& error) {
-    IO_LOG(this->m_loop, TRACE, "Removing TLS client");
+    LOG_TRACE(this->m_loop, "Removing TLS client");
 
     if (tcp_client.user_data()) {
         auto& tls_client = *reinterpret_cast<TlsConnectedClient*>(tcp_client.user_data());

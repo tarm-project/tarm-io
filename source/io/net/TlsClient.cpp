@@ -117,7 +117,7 @@ void TlsClient::Impl::connect(const Endpoint endpoint,
 
     std::function<void(TcpClient&, const Error&)> on_close =
         [this](TcpClient& client, const Error& error) {
-            IO_LOG(m_loop, TRACE, this->m_parent, "Close", error.code());
+            LOG_TRACE(m_loop, this->m_parent, "Close", error.code());
 
             if (this->m_ssl_handshake_state != HandshakeState::FINISHED) {
                 return;
@@ -126,7 +126,7 @@ void TlsClient::Impl::connect(const Endpoint endpoint,
             /*
             // TODO: need to revise this. Is it possible to indicate version mismatch error by sending TLS fragment or so.
             if (!this->m_ssl_handshake_complete) {
-                IO_LOG(m_loop, ERROR, this->m_parent, "Handshake failed");
+                LOG_ERROR(m_loop, this->m_parent, "Handshake failed");
                 if (this->m_connect_callback) {
                     this->m_connect_callback(*this->m_parent, Error(StatusCode::OPENSSL_ERROR, "Handshake error"));
                 }
