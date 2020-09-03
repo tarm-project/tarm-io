@@ -791,9 +791,7 @@ TEST_F(DirTest, make_dir_empty_path_error) {
         [&](const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
-            // TODO:
-            // On Linux io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY is returned here
-            //EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+            EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
         }
     );
 
