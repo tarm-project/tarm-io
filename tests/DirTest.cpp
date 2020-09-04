@@ -825,19 +825,22 @@ TEST_F(DirTest, make_dir_name_to_long_error) {
 }
 
 TEST_F(DirTest, make_dir_root_dir_error) {
-    TARM_IO_TEST_SKIP_ON_WINDOWS();
-
     io::EventLoop loop;
 
     std::size_t on_make_dir_call_count = 0;
 
-    io::fs::make_dir(loop, "/", 0,
+#ifdef TARM_IO_PLATFORM_WINDOWS
+    io::fs::Path path("c:");
+#else
+    io::fs::Path path("/");
+#endif
+    EXPECT_EQ(path.root_name(), path);
+
+    io::fs::make_dir(loop, path, 0,
         [&](const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
-            // TODO:
-            // On Linux another error: io::StatusCode::FILE_OR_DIR_ALREADY_EXISTS
-            //EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, error.code());
+            EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, error.code());
         }
     );
 
@@ -848,6 +851,7 @@ TEST_F(DirTest, make_dir_root_dir_error) {
     EXPECT_EQ(1, on_make_dir_call_count);
 }
 
+// TODO: test create drive path with make_dir
 
 TEST_F(DirTest, remove_dir) {
     // If directory creation fail, exception will be thrown
