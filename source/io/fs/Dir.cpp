@@ -448,7 +448,7 @@ void make_dir_impl(EventLoop& loop, const Path& path, int mode, const MakeDirCal
         return;
     }
 
-    if (path.root_name() == path) {
+    if (path.root_name() == path || path.root_directory() == path) {
         if (callback) {
             callback(StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY);
         }

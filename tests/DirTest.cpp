@@ -831,10 +831,11 @@ TEST_F(DirTest, make_dir_root_dir_error) {
 
 #ifdef TARM_IO_PLATFORM_WINDOWS
     io::fs::Path path("c:");
+    EXPECT_EQ(path.root_name(), path);
 #else
     io::fs::Path path("/");
+    EXPECT_EQ(path.root_directory(), path);
 #endif
-    EXPECT_EQ(path.root_name(), path);
 
     io::fs::make_dir(loop, path, 0,
         [&](const io::Error& error) {
@@ -850,8 +851,6 @@ TEST_F(DirTest, make_dir_root_dir_error) {
 
     EXPECT_EQ(1, on_make_dir_call_count);
 }
-
-// TODO: test create drive path with make_dir
 
 TEST_F(DirTest, remove_dir) {
     // If directory creation fail, exception will be thrown
