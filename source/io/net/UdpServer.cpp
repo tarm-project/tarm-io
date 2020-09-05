@@ -192,7 +192,7 @@ void UdpServer::Impl::close_peer(UdpPeer& peer, std::size_t inactivity_timeout_m
 
     auto active_it = m_peers.find(peer_id);
     if (active_it == m_peers.end()) {
-        // TODO: log error
+        LOG_WARNING(m_loop, m_parent, "Peer was not found during close with id:", peer_id);
         return;
     }
 

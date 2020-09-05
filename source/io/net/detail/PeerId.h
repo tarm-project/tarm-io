@@ -7,6 +7,8 @@
 
 #include <cstdint>
 #include <functional>
+#include <iomanip>
+#include <ostream>
 
 namespace tarm {
 namespace io {
@@ -25,6 +27,10 @@ inline bool operator==(const PeerId& lhs, const PeerId& rhs) {
     return lhs.address_high == rhs.address_high &&
            lhs.address_low == rhs.address_low &&
            lhs.port == rhs.port;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const PeerId& peer_id) {
+    return os << std::hex << peer_id.address_high << "|" << peer_id.address_low << "|" << std::dec << peer_id.port;
 }
 
 } // namespace detail
