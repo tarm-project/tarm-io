@@ -1443,7 +1443,13 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
-            client.send_data(message, SIZE - client_send_message_counter, client_send);
+
+            // Adding timer here because with Valgrind sometimes server has a lag at start
+            // and may not receive few packets even despite we are running in one event loop in one  thread
+            (new io::Timer(loop))->start(100, [&](io::Timer& timer) {
+                client.send_data(message, SIZE - client_send_message_counter, client_send);
+                timer.schedule_removal();
+            });
         },
         [&](io::net::UdpClient&, const io::DataChunk& chunk, const io::Error& error) {
             EXPECT_FALSE(error);
