@@ -127,13 +127,13 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
     m_peer_timeout_callback = timeout_callback;
 
     auto on_expired = [this](BacklogWithTimeout<std::shared_ptr<UdpPeer>>&, const std::shared_ptr<UdpPeer>& item) {
-        m_peer_timeout_callback(*item, Error(0));
-
         auto it = m_peers.find(item->id());
         if (it != m_peers.end()) {
+            m_peer_timeout_callback(*item, Error(0));
             m_peers.erase(it);
         } else {
-            // TODO: error handling
+            LOG_WARNING(m_loop, m_parent, "Peer was not found during timeout with id:", item->id());
+            m_peer_timeout_callback(*item, StatusCode::PEER_NOT_FOUND);
         }
     };
 

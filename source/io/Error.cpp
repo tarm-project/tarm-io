@@ -58,6 +58,8 @@ std::string Error::string() const {
             return "Not connected";
         case StatusCode::OPERATION_ALREADY_IN_PROGRESS:
             return "Operation already in progress";
+        case StatusCode::PEER_NOT_FOUND:
+            return "Peer notfound";
         case StatusCode::OPENSSL_ERROR:
             return "Openssl error: " + m_custom_error_message;
 
