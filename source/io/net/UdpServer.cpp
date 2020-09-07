@@ -102,6 +102,14 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint, const DataReceive
     return Error(0);
 }
 
+namespace {
+
+std::uint64_t time_getter_impl(const std::shared_ptr<UdpPeer>& item) {
+    return item->last_packet_time();
+};
+
+} // namespace
+
 Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
                                      const NewPeerCallback& new_peer_callback,
                                      const DataReceivedCallback& receive_callback,
@@ -118,7 +126,6 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
     m_new_peer_callback = new_peer_callback;
     m_peer_timeout_callback = timeout_callback;
 
-    // TODO: bind instead of lambdas
     auto on_expired = [this](BacklogWithTimeout<std::shared_ptr<UdpPeer>>&, const std::shared_ptr<UdpPeer>& item) {
         m_peer_timeout_callback(*item, Error(0));
 
@@ -130,11 +137,9 @@ Error UdpServer::Impl::start_receive(const Endpoint& endpoint,
         }
     };
 
-    auto time_getter = [](const std::shared_ptr<UdpPeer>& item) -> std::uint64_t {
-        return item->last_packet_time();
-    };
-
-    m_peers_backlog.reset(new BacklogWithTimeout<std::shared_ptr<UdpPeer>>(*m_loop, timeout_ms, on_expired, time_getter, &uv_hrtime));
+    m_peers_backlog.reset(new BacklogWithTimeout<std::shared_ptr<UdpPeer>>(
+        *m_loop, timeout_ms, on_expired, time_getter_impl, &uv_hrtime
+    ));
 
     return start_receive(endpoint, receive_callback);
 }
