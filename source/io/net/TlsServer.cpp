@@ -50,9 +50,9 @@ protected:
     const SSL_METHOD* ssl_method();
 
     // callbacks
-    void on_new_connection(TcpConnectedClient& tcp_client, const Error& error);
-    void on_data_receive(TcpConnectedClient& tcp_client, const DataChunk&, const Error&);
-    void on_connection_close(TcpConnectedClient& tcp_client, const Error& error);
+    void on_new_connection(TcpConnectedClient& tcp_client, const Error& tcp_error);
+    void on_data_receive(TcpConnectedClient& tcp_client, const DataChunk&, const Error& tcp_error);
+    void on_connection_close(TcpConnectedClient& tcp_client, const Error& tcp_error);
 
 private:
     using X509Ptr = std::unique_ptr<::X509, decltype(&::X509_free)>;
@@ -124,13 +124,7 @@ TlsVersionRange TlsServer::Impl::version_range() const {
     return m_version_range;
 }
 
-void TlsServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const Error& error) {
-    if (error) {
-        //m_new_connection_callback(.......);
-        // TODO: error handling here
-        return;
-    }
-
+void TlsServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const Error& tcp_error) {
     detail::TlsContext context {
         m_certificate.get(),
         m_private_key.get(),
@@ -138,11 +132,23 @@ void TlsServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const Er
         m_version_range
     };
 
+    // Can not use unique_ptr here because TlsConnectedClient has proteted destructor and
+    // TlsServer is a friend of TlsConnectedClient, but we can not transfer that friendhsip to unique_ptr.
     auto tls_client = new TlsConnectedClient(*m_loop, *m_parent, m_new_connection_callback, tcp_client, &context);
+
+    if (tcp_error) {
+        if (m_new_connection_callback) {
+            m_new_connection_callback(*tls_client, tcp_error);
+        }
+        delete tls_client;
+        return;
+    }
 
     Error tls_init_error = tls_client->init_ssl();
     if (tls_init_error) {
-        m_new_connection_callback(*tls_client, tls_init_error);
+        if (m_new_connection_callback) {
+            m_new_connection_callback(*tls_client, tls_init_error);
+        }
         tcp_client.set_user_data(nullptr); // to not process deletion in on_connection_close
         tcp_client.close();
         delete tls_client;
@@ -151,18 +157,18 @@ void TlsServer::Impl::on_new_connection(TcpConnectedClient& tcp_client, const Er
     }
 }
 
-void TlsServer::Impl::on_data_receive(TcpConnectedClient& tcp_client, const DataChunk& chunk, const Error& error) {
+void TlsServer::Impl::on_data_receive(TcpConnectedClient& tcp_client, const DataChunk& chunk, const Error& tcp_error) {
     auto& tls_client = *reinterpret_cast<TlsConnectedClient*>(tcp_client.user_data());
-    tls_client.on_data_receive(chunk.buf.get(), chunk.size, error);
+    tls_client.on_data_receive(chunk.buf.get(), chunk.size, tcp_error);
 }
 
-void TlsServer::Impl::on_connection_close(TcpConnectedClient& tcp_client, const Error& error) {
+void TlsServer::Impl::on_connection_close(TcpConnectedClient& tcp_client, const Error& tcp_error) {
     LOG_TRACE(this->m_loop, "Removing TLS client");
 
     if (tcp_client.user_data()) {
         auto& tls_client = *reinterpret_cast<TlsConnectedClient*>(tcp_client.user_data());
         if (m_close_connection_callback) {
-            m_close_connection_callback(tls_client, error);
+            m_close_connection_callback(tls_client, tcp_error);
         }
 
         delete &tls_client;
