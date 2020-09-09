@@ -53,8 +53,6 @@ TEST_F(DnsTest, look_up_ipv4) {
 }
 
 TEST_F(DnsTest, look_up_ipv6) {
-    TARM_IO_TEST_SKIP_ON_WINDOWS();
-
     std::size_t on_resolve_callback_count = 0;
 
     io::EventLoop loop;

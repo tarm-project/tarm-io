@@ -41,7 +41,16 @@ void resolve_host_impl(EventLoop& loop, const std::string& host_name, const Reso
     addrinfo hints;
     hints.ai_family = raw_type(protocol);
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = 0;//AI_V4MAPPED | AI_ADDRCONFIG; // TODO: test this
+    /*
+    From https://man7.org/linux/man-pages/man3/getaddrinfo.3.html
+    If hints.ai_flags includes the AI_ADDRCONFIG flag, then IPv4 addresses are returned in the list
+    pointed to by res only if the local system has at least one IPv4 address configured, and IPv6
+    addresses are returned only if the local system has at least one IPv6 address configured.
+    The loopback address is not considered for this case as valid as a configured address.
+    This flag is useful on, for example, IPv4-only systems, to ensure that getaddrinfo() does not
+    return IPv6 socket addresses that would always fail in connect(2) or bind(2).
+    */
+    hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG; // Making behavior consistent among platforms with default flags
     hints.ai_protocol = 0;
     hints.ai_canonname = nullptr;
     hints.ai_addr = nullptr;
