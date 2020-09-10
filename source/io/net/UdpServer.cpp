@@ -69,7 +69,7 @@ UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
 
 Error UdpServer::Impl::bind(const Endpoint& endpoint) {
     if (endpoint.type() == Endpoint::UNDEFINED) {
-        return Error(StatusCode::INVALID_ARGUMENT);
+        return StatusCode::INVALID_ARGUMENT;
     }
 
     const auto handle_init_error = ensure_handle_inited();
@@ -77,9 +77,9 @@ Error UdpServer::Impl::bind(const Endpoint& endpoint) {
         return handle_init_error;
     }
 
-    // TODO: UV_UDP_REUSEADDR ????
-    auto uv_status = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const struct sockaddr*>(endpoint.raw_endpoint()), 0);
-    return Error(uv_status);
+    const Error bind_error =
+        uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const struct sockaddr*>(endpoint.raw_endpoint()), 0);
+    return bind_error;
 }
 
 Error UdpServer::Impl::start_receive(const Endpoint& endpoint, const DataReceivedCallback& data_receive_callback) {
