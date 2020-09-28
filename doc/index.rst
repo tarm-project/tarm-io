@@ -9,7 +9,7 @@
 Welcome to tarm-io's documentation!
 ===================================
 .. warning::
-   The library is under heavy development, ETA is Q1 or Q2 2021.
+   The library is under development, ETA is somewhere in 2021.
 
 Overview
 --------

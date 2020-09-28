@@ -1,7 +1,7 @@
 # Tarm-io
 Tarm-io is general purpose event-driven C++11 input-output library.  
 
-The library is under heavy development.  
+The library is under development.  
 Some information you can find at https://tarm.io
 
 ## Features
