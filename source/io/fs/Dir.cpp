@@ -8,6 +8,7 @@
 #include "detail/Common.h"
 #include "detail/EventLoopHelpers.h"
 #include "detail/LogMacros.h"
+#include "fs/detail/FsCommon.h"
 #include "ScopeExitGuard.h"
 
 #include <cstring>
@@ -36,6 +37,8 @@ struct ReadDirRequest : public uv_fs_t {
 
 class Dir::Impl {
 public:
+    using ParentType = Dir;
+
     enum class State {
         INITIAL = 0,
         OPENING,
@@ -63,6 +66,7 @@ public:
     static void on_read_dir_with_continuation(uv_fs_t* req);
     static void on_read_dir_no_continuation(uv_fs_t* req);
 
+    State state() const;
 protected:
     // statics
     static void on_open_dir(uv_fs_t* req);
@@ -114,10 +118,6 @@ DirectoryEntryType convert_direntry_type(uv_dirent_type_t type) {
 
 } // namespace
 
-const Path& Dir::Impl::path() const {
-    return m_path;
-}
-
 Dir::Impl::Impl(EventLoop& loop, Dir& parent) :
     m_parent(&parent),
     m_loop(&loop),
@@ -129,28 +129,20 @@ Dir::Impl::~Impl() {
     assert(m_read_request == nullptr && "Leaked m_read_request");
 }
 
+const Path& Dir::Impl::path() const {
+    return m_path;
+}
+
+Dir::Impl::State Dir::Impl::state() const {
+    return m_state;
+}
+
 void Dir::Impl::open(const Path& path, const OpenCallback& callback) {
-    // TODO: almost exact copypaste form File::open. Generalize???
-    if (m_state == State::OPENED) {
-        close([=](Dir& dir, const Error& error) {
-            if (error) {
-                if(callback) {
-                    callback(dir, error);
-                }
-            } else {
-                this->m_loop->schedule_callback([=](EventLoop&) {
-                    this->open(path, callback);
-                });
-            }
-        });
-        return;
-    } else if (!(m_state == State::INITIAL || m_state == State::CLOSED)) {
-        this->m_loop->schedule_callback([=](EventLoop&) {
-            this->open(path, callback);
-        });
+    const bool continue_open = detail::open(*m_loop, *this, path, callback);
+    if  (!continue_open) {
         return;
     }
-
+    
     LOG_DEBUG(m_loop, "path:", path);
     m_path = path;
     m_open_callback = callback;

@@ -8,6 +8,7 @@
 #include "detail/Common.h"
 #include "detail/LogMacros.h"
 #include "detail/EventLoopHelpers.h"
+#include "fs/detail/FsCommon.h"
 #include "ScopeExitGuard.h"
 
 namespace tarm {
@@ -49,6 +50,8 @@ struct FileStatRequest : public uv_fs_t {
 
 class File::Impl {
 public:
+    using ParentType = File;
+
     enum class State {
         INITIAL = 0,
         OPENING,
@@ -74,6 +77,8 @@ public:
     void stat(const StatCallback& callback);
 
     bool schedule_removal();
+
+    State state() const;
 
 protected:
     // statics
@@ -127,6 +132,10 @@ File::Impl::~Impl() {
     for (size_t i = 0; i < READ_BUFS_NUM; ++i) {
         uv_fs_req_cleanup(&m_read_reqs[i]);
     }
+}
+
+File::Impl::State File::Impl::state() const {
+    return m_state;
 }
 
 bool File::Impl::schedule_removal() {
@@ -207,23 +216,8 @@ void File::Impl::finish_close() {
 }
 
 void File::Impl::open(const Path& path, const OpenCallback& callback) {
-    if (m_state == State::OPENED) {
-        close([=](File& file, const Error& error) {
-            if (error) {
-                if(callback) {
-                    callback(file, error);
-                }
-            } else {
-                this->m_loop->schedule_callback([=](EventLoop&) {
-                    this->open(path, callback);
-                });
-            }
-        });
-        return;
-    } else if (!(m_state == State::INITIAL || m_state == State::CLOSED)) {
-        this->m_loop->schedule_callback([=](EventLoop&) {
-            this->open(path, callback);
-        });
+    const bool continue_open = detail::open(*m_loop, *this, path, callback);
+    if  (!continue_open) {
         return;
     }
 

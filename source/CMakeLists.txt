@@ -92,6 +92,7 @@ FILE(GLOB IO_HEADERS_LIST
         io/*.h
         io/detail/*.h
         io/fs/*.h
+        io/fs/detail/*.h
         io/global/*.h
         io/net/*.h
         io/net/detail/*.h
