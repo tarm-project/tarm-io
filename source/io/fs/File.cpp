@@ -106,7 +106,6 @@ private:
     FileReadRequest m_read_reqs[READ_BUFS_NUM];
     std::size_t m_current_offset = 0;
 
-    // TODO: make some states instead bunch of flags
     bool m_read_in_progress = false;
     bool m_done_read = false;
     bool m_need_reschedule_remove = false;
@@ -364,7 +363,8 @@ void File::Impl::schedule_read(FileReadRequest& req) {
         req.raw_buf = new char[READ_BUF_SIZE];
     }
 
-    // TODO: comments on this shared pointer
+    // Custom deleter here is used to inform that nobody externally is using pointer and we can
+    // safely continue reading or remove the object.
     req.buf = std::shared_ptr<char>(req.raw_buf, [this, &req](const char* /*p*/) {
         LOG_TRACE(this->m_loop, this->m_path, "buffer freed");
 
