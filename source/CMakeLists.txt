@@ -287,6 +287,13 @@ if (TARM_IO_PLATFORM_LINUX OR
     endif()
 elseif (TARM_IO_PLATFORM_WINDOWS)
     string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+
+	# Disabling warning caused by disabled exceptions
+	# C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\include\xlocale(319):
+	# warning C4530: C++ exception handler used, but unwind semantics are not enabled.
+	# Specify /EHsc [D:\tarm-io\build\source\tarm-io.vcxproj]
+    target_compile_options(tarm-io PRIVATE "/wd4530")
+else()
 endif()
 
 if(WIN32 AND BUILD_SHARED_LIBS)
