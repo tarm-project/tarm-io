@@ -18,6 +18,9 @@
 
 #include <cstring>
 #include <iostream>
+#include <limits>
+
+#include <assert.h>
 
 namespace tarm {
 namespace io {
@@ -101,7 +104,8 @@ private:
     SSLPtr m_ssl;
 
     // https://www.openssl.org/docs/man1.0.2/man3/SSL_read.html
-    const std::size_t DECRYPT_BUF_SIZE = 16 * 1024;
+    static const std::size_t DECRYPT_BUF_SIZE = 16 * 1024;
+    static_assert(DECRYPT_BUF_SIZE <= std::numeric_limits<int>::max(), "");
     std::shared_ptr<char> m_decrypt_buf;
 
     std::size_t m_data_offset = 0;
@@ -227,7 +231,7 @@ bool OpenSslClientImplBase<ParentType, ImplType>::is_ssl_inited() const {
 
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::read_from_ssl() {
-    int decrypted_size = SSL_read(m_ssl.get(), m_decrypt_buf.get(), DECRYPT_BUF_SIZE);
+    int decrypted_size = SSL_read(m_ssl.get(), m_decrypt_buf.get(), static_cast<int>(DECRYPT_BUF_SIZE));
     std::size_t counter = 0;
     while (decrypted_size > 0) {
         LOG_TRACE(m_loop, m_parent, "Decrypted message of size:", decrypted_size);
@@ -411,10 +415,11 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::
         return;
     }
 
-    const std::size_t SIZE = BIO_pending(m_ssl_write_bio);
-    std::shared_ptr<char> ptr(new char[SIZE], [](const char* p) { delete[] p;});
+    const auto pending_size = BIO_pending(m_ssl_write_bio);
+    assert(pending_size >= 0);
+    std::shared_ptr<char> ptr(new char[pending_size], [](const char* p) { delete[] p;});
 
-    const auto actual_size = BIO_read(m_ssl_write_bio, ptr.get(), SIZE);
+    const auto actual_size = BIO_read(m_ssl_write_bio, ptr.get(), pending_size);
     if (actual_size <= 0) {
         LOG_ERROR(m_loop, m_parent, "BIO_read failed code:", actual_size);
         if (callback) {
@@ -434,9 +439,10 @@ void OpenSslClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* buf, std::size_t size) {
     LOG_TRACE(m_loop, m_parent, "");
+    assert(size <= std::numeric_limits<int>::max());
 
     if (m_ssl_handshake_state == HandshakeState::FINISHED) {
-        const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
+        const auto write_size = BIO_write(m_ssl_read_bio, buf, static_cast<int>(size));
         if (write_size < 0) {
             LOG_ERROR(m_loop, m_parent, "BIO_write failed with code:", write_size);
             return;
@@ -444,7 +450,7 @@ void OpenSslClientImplBase<ParentType, ImplType>::on_data_receive(const char* bu
 
         read_from_ssl();
     } else {
-        const auto write_size = BIO_write(m_ssl_read_bio, buf, size);
+        const auto write_size = BIO_write(m_ssl_read_bio, buf, static_cast<int>(size));
         if (write_size <= 0) {
             LOG_ERROR(m_loop, m_parent, "BIO_write failed with code:", write_size);
             on_handshake_failed(-1, Error(StatusCode::OPENSSL_ERROR, "Handshake failed, invalid data"));
