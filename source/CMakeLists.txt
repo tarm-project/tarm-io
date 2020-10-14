@@ -293,8 +293,15 @@ elseif (TARM_IO_PLATFORM_WINDOWS)
 	# warning C4530: C++ exception handler used, but unwind semantics are not enabled.
 	# Specify /EHsc [D:\tarm-io\build\source\tarm-io.vcxproj]
     target_compile_options(tarm-io PRIVATE "/wd4530")
-else()
 endif()
+
+if (MSVC)
+	# No warnings like
+	# warning C4996: 'getenv': This function or variable may be unsafe.
+	# Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+	target_compile_definitions(tarm-io PRIVATE "_CRT_SECURE_NO_WARNINGS")
+endif()
+
 
 if(WIN32 AND BUILD_SHARED_LIBS)
     add_custom_command(TARGET tarm-io POST_BUILD
