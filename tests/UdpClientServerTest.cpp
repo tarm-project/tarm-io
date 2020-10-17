@@ -350,14 +350,14 @@ TEST_F(UdpClientServerTest, server_set_buffer_size) {
 TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
     io::EventLoop loop;
 
-    const auto min_send_buffer_size = io::global::min_send_buffer_size();
-    const auto min_receive_buffer_size = io::global::min_receive_buffer_size()
+    const std::uint32_t min_send_buffer_size = static_cast<std::uint32_t>(io::global::min_send_buffer_size());
+    const std::uint32_t min_receive_buffer_size = static_cast<std::uint32_t>(io::global::min_receive_buffer_size()
 #ifdef TARM_IO_PLATFORM_MACOSX
     // At least on MAC OS X receive buffer should be larger (N + 16) than send buffer
     // to be able to receive packets of size N
     + 16
 #endif
-    ;
+    );
 
     std::size_t server_on_send_counter = 0;
     std::size_t server_on_receive_counter = 0;
@@ -1306,7 +1306,7 @@ TEST_F(UdpClientServerTest, client_receive_data_only_from_its_target) {
 TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
     io::EventLoop loop;
 
-    std::size_t SIZE = 5000;
+    const std::uint32_t SIZE = 5000;
 
     bool data_sent = false;
     bool data_received = false;
@@ -1318,7 +1318,7 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
         EXPECT_EQ(SIZE, data.size);
         data_received = true;
 
-        for (size_t i = 0; i < SIZE / 2; ++i) {
+        for (std::uint32_t i = 0; i < SIZE / 2; ++i) {
             ASSERT_EQ(i, *(reinterpret_cast<const std::uint16_t*>(data.buf.get()) + i))  << "i =" << i;
         }
 
@@ -1328,8 +1328,8 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
     EXPECT_FALSE(listen_error);
 
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
-    for (size_t i = 0; i < SIZE / 2; ++i) {
-        *(reinterpret_cast<std::uint16_t*>(message.get()) + i) = i;
+    for (std::uint32_t i = 0; i < SIZE / 2; ++i) {
+        *(reinterpret_cast<std::uint16_t*>(message.get()) + i) = static_cast<std::uint16_t>(i);
     }
 
     auto client = new io::net::UdpClient(loop);
@@ -1356,7 +1356,7 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
 
     std::size_t client_on_send_call_count = 0;
 
-    std::size_t SIZE = 100 * 1024;
+    const std::uint32_t SIZE = 100 * 1024;
 
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
     std::memset(message.get(), 0, SIZE);
@@ -1388,7 +1388,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
     // will be received sequentially
     io::EventLoop loop;
 
-    std::size_t SIZE = 2000;
+    const std::size_t SIZE = 2000;
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
     ::srand(0);
     for(std::size_t i = 0; i < SIZE; ++i) {
@@ -1406,7 +1406,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
             EXPECT_FALSE(error);
             ++server_send_message_counter;
             if (server_send_message_counter < SIZE) {
-                client.send_data(message, SIZE - server_send_message_counter, server_send);
+                client.send_data(message, static_cast<std::uint32_t>(SIZE - server_send_message_counter), server_send);
             }
         };
 
@@ -1420,7 +1420,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
             }
 
             if (!server_send_started) {
-                client.send_data(message, SIZE - server_receive_message_counter, server_send);
+                client.send_data(message, static_cast<std::uint32_t>(SIZE - server_receive_message_counter), server_send);
                 server_send_started = true;
             }
 
@@ -1435,7 +1435,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
             EXPECT_FALSE(error);
             ++client_send_message_counter;
             if (client_send_message_counter < SIZE) {
-                client.send_data(message, SIZE - client_send_message_counter, client_send);
+                client.send_data(message, static_cast<std::uint32_t>(SIZE - client_send_message_counter), client_send);
             }
         };
 
@@ -1447,7 +1447,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
             // Adding timer here because with Valgrind sometimes server has a lag at start
             // and may not receive few packets even despite we are running in one event loop in one  thread
             (new io::Timer(loop))->start(100, [&](io::Timer& timer) {
-                client.send_data(message, SIZE - client_send_message_counter, client_send);
+                client.send_data(message, static_cast<std::uint32_t>(SIZE - client_send_message_counter), client_send);
                 timer.schedule_removal();
             });
         },
@@ -1519,7 +1519,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
                 ++server_send_message_counter;
                 if (server_send_message_counter < SIZE) {
-                    client.send_data(message, SIZE - server_send_message_counter, on_server_send);
+                    client.send_data(message, static_cast<std::uint32_t>(SIZE - server_send_message_counter), on_server_send);
                 }
             };
 
@@ -1535,7 +1535,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
                 }
 
                 if (!server_send_started) {
-                    client.send_data(message, SIZE - chunk.size + 1, on_server_send);
+                    client.send_data(message, static_cast<std::uint32_t>(SIZE - chunk.size + 1), on_server_send);
                     server_send_started = true;
                 }
 
@@ -1574,7 +1574,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
                 ++client_send_message_counter;
                 if (client_send_message_counter < SIZE) {
-                    client.send_data(message, SIZE - client_send_message_counter, client_send);
+                    client.send_data(message, static_cast<std::uint32_t>(SIZE - client_send_message_counter), client_send);
                 }
             };
 
@@ -1584,7 +1584,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
         client->set_destination({m_default_addr, m_default_port},
             [&](io::net::UdpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error;
-                client.send_data(message, SIZE, client_send);
+                client.send_data(message, static_cast<std::uint32_t>(SIZE), client_send);
             },
             [&](io::net::UdpClient& client, const io::DataChunk& chunk, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -1756,7 +1756,7 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
     io::EventLoop loop;
 
     const std::deque<std::uint64_t> send_timeouts = { 100, 100, 100, 100, 100, 100 };
-    const auto min_sum_send_timeout = std::accumulate(send_timeouts.begin(), send_timeouts.end(), 0);
+    const auto min_sum_send_timeout = std::accumulate(send_timeouts.begin(), send_timeouts.end(), std::uint64_t(0));
 
     const std::size_t CLIENT_TIMEOUT = 200;
     const std::size_t EXPECTED_ELAPSED_TIME = CLIENT_TIMEOUT + min_sum_send_timeout;

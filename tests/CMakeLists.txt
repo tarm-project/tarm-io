@@ -82,8 +82,9 @@ if (OPENSSL_ROOT_DIR)
     target_include_directories(${TESTS_EXE_NAME} PUBLIC ${OPENSSL_ROOT_DIR}/include)
 endif()
 
-if (MSVC)
+if (MSVC) # Disabling some very annoyng warnings which do not help to make code better.
     target_compile_definitions(${TESTS_EXE_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+	target_compile_definitions(${TESTS_EXE_NAME} PRIVATE _CRT_NONSTDC_NO_DEPRECATE)
 endif()
 
 if (${CMAKE_GENERATOR} MATCHES "Unix Makefiles")

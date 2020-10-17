@@ -17,9 +17,9 @@ TEST_F(ConvertTest, ip4_addr_to_string_single_conversion) {
 
 TEST_F(ConvertTest, ip4_addr_to_string_batch_conversion) {
     // Test description: just more complicated test to cover more values and cases
-    const std::size_t SIZE = 200000;
+    const std::uint32_t SIZE = 200000;
 
-    for (std::size_t i = 0; i < SIZE; ++i) {
+    for (std::uint32_t i = 0; i < SIZE; ++i) {
         const std::uint32_t addr = i * 2000000 + i;
 
         const std::uint8_t addr_1 = (addr & 0xFF000000u) >> 24;

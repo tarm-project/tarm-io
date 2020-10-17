@@ -359,8 +359,8 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
     // Note: 1 mb cunks are larger than DTLS could handle
     io::EventLoop loop;
 
-    const std::size_t LARGE_DATA_SIZE = 1024 * 1024;
-    const std::size_t NORMAL_DATA_SIZE = 2 * 1024;
+    const std::uint32_t LARGE_DATA_SIZE = 1024 * 1024;
+    const std::uint32_t NORMAL_DATA_SIZE = 2 * 1024;
 
     std::shared_ptr<char> client_buf(new char[LARGE_DATA_SIZE], std::default_delete<char[]>());
     std::memset(client_buf.get(), 0, LARGE_DATA_SIZE);
