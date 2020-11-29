@@ -56,6 +56,26 @@ VariableLengthSize::VariableLengthSize(std::uint64_t value) {
     }
 }
 
+VariableLengthSize::VariableLengthSize(std::int8_t value) :
+   VariableLengthSize(std::int64_t(value)) {
+}
+
+VariableLengthSize::VariableLengthSize(std::int16_t value) :
+    VariableLengthSize(std::int64_t(value)) {
+}
+
+VariableLengthSize::VariableLengthSize(std::int32_t value) :
+    VariableLengthSize(std::int64_t(value)) {
+}
+
+VariableLengthSize::VariableLengthSize(std::int64_t value)  {
+    if (value >= 0 && value <= MAX_VALUE) {
+        m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
+        encode_impl(value);
+    }
+}
+
+
 bool VariableLengthSize::is_complete() const {
     return m_decoded_value & IS_COMPLETE_MASK;
 }

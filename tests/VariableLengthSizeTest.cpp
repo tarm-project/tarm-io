@@ -260,3 +260,45 @@ TEST_F(VariableLengthSizeTest, value_bigger_than_supported) {
     EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, v.value());
     EXPECT_EQ(0, v.bytes_count());
 }
+
+TEST_F(VariableLengthSizeTest, encode_signed_integers) {
+    {
+        io::detail::VariableLengthSize ok_v(std::int8_t(1));
+        EXPECT_TRUE(ok_v.is_complete());
+        EXPECT_EQ(1, ok_v.value());
+
+        io::detail::VariableLengthSize error_v(std::int8_t(-1));
+        EXPECT_FALSE(error_v.is_complete());
+        EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, error_v.value());
+    }
+
+    {
+        io::detail::VariableLengthSize ok_v(std::int16_t(1));
+        EXPECT_TRUE(ok_v.is_complete());
+        EXPECT_EQ(1, ok_v.value());
+
+        io::detail::VariableLengthSize error_v(std::int16_t(-1));
+        EXPECT_FALSE(error_v.is_complete());
+        EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, error_v.value());
+    }
+
+    {
+        io::detail::VariableLengthSize ok_v(std::int32_t(1));
+        EXPECT_TRUE(ok_v.is_complete());
+        EXPECT_EQ(1, ok_v.value());
+
+        io::detail::VariableLengthSize error_v(std::int32_t(-1));
+        EXPECT_FALSE(error_v.is_complete());
+        EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, error_v.value());
+    }
+
+    {
+        io::detail::VariableLengthSize ok_v(std::int64_t(1));
+        EXPECT_TRUE(ok_v.is_complete());
+        EXPECT_EQ(1, ok_v.value());
+
+        io::detail::VariableLengthSize error_v(std::int64_t(-1));
+        EXPECT_FALSE(error_v.is_complete());
+        EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, error_v.value());
+    }
+}

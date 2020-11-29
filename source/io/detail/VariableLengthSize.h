@@ -36,6 +36,12 @@ public:
     TARM_IO_DLL_PUBLIC VariableLengthSize(std::uint32_t value);
     TARM_IO_DLL_PUBLIC VariableLengthSize(std::uint64_t value);
 
+    // Constructors for encoding, negative values are not supported
+    TARM_IO_DLL_PUBLIC VariableLengthSize(std::int8_t value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(std::int16_t value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(std::int32_t value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(std::int64_t value);
+
     TARM_IO_DLL_PUBLIC std::uint64_t value() const;
 
     TARM_IO_DLL_PUBLIC bool is_complete() const;
