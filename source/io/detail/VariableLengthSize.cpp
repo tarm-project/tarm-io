@@ -15,7 +15,6 @@ constexpr std::uint64_t VariableLengthSize::INVALID_VALUE;
 constexpr std::uint64_t VariableLengthSize::MAX_VALUE;
 
 void VariableLengthSize::encode_impl(std::uint64_t v) {
-    //while (bits_left) {
     if (v & (~std::uint64_t(0x7F))) {
         std::uint64_t chunk = 0;
         std::uint64_t current_v = v;
@@ -30,28 +29,9 @@ void VariableLengthSize::encode_impl(std::uint64_t v) {
 
             current_v >>= 7;
         } while(current_v);
-
-        /*
-        std::uint64_t chunk_1 = v & 0x7F;
-        std::uint64_t chunk_2 = (v >> 7) & 0x7F;
-        std::uint64_t chunk_3 = (v >> 14) & 0x7F;
-
-        m_encoded_value |= chunk_1;
-        m_encoded_value <<= 8;
-        m_encoded_value |= chunk_2 | 0x80;
-        if (chunk_3) {
-            m_encoded_value <<= 8;
-            m_encoded_value |= chunk_3 | 0x80;
-        }
-        */
-
-        //m_encoded_value <<= 8;
-        //m_encoded_value >> 8;
-        //m_encoded_value |= ((v & std::uint64_t(0x7F)) | std::uint64_t(0x80)) << std::uint64_t(56);
     } else {
         m_encoded_value = v;
     }
-    //}
 }
 
 VariableLengthSize::VariableLengthSize(std::uint8_t value) {
@@ -70,8 +50,10 @@ VariableLengthSize::VariableLengthSize(std::uint32_t value) {
 }
 
 VariableLengthSize::VariableLengthSize(std::uint64_t value) {
-    m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
-    encode_impl(value);
+    if (value <= MAX_VALUE) {
+        m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
+        encode_impl(value);
+    }
 }
 
 bool VariableLengthSize::is_complete() const {

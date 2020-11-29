@@ -253,3 +253,10 @@ TEST_F(VariableLengthSizeTest, encode_xA5A5A5A5A5A5A) {
     EXPECT_EQ(180, v.bytes()[6]);
     EXPECT_EQ(90, v.bytes()[7]);
 }
+
+TEST_F(VariableLengthSizeTest, value_bigger_than_supported) {
+    io::detail::VariableLengthSize v(std::uint64_t(0xFFFFFFFFFFFFFFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, v.value());
+    EXPECT_EQ(0, v.bytes_count());
+}
