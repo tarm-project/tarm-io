@@ -30,6 +30,7 @@ list(APPEND TESTS_LIST
     LogRedirector.cpp
     ConstexprStringTest.cpp
     ByteSwapTest.cpp
+    VariableLengthSizeTest.cpp
     ErrorTest.cpp
     ConvertTest.cpp
     UserDataHolderTest.cpp
