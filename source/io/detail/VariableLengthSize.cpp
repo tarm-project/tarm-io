@@ -81,7 +81,7 @@ bool VariableLengthSize::is_complete() const {
 }
 
 std::uint64_t VariableLengthSize::value() const {
-    return is_complete() ? (m_decoded_value & (~IS_COMPLETE_MASK)) : INVALID_VALUE;
+    return is_complete() ? (m_decoded_value & std::uint64_t(0xFFFFFFFFFFFFFF)) : INVALID_VALUE;
 }
 
 std::size_t VariableLengthSize::bytes_count() const {
@@ -115,6 +115,39 @@ void VariableLengthSize::reset() {
 
 const unsigned char* VariableLengthSize::bytes() const {
     return reinterpret_cast<const unsigned char*>(&m_encoded_value);
+}
+
+bool VariableLengthSize::add_byte(std::uint8_t b) {
+    if (is_complete()) {
+        return false;
+    }
+
+    // As m_decoded_value has leading 8 bits free because of MAX_VALUE limitation,
+    // utilizing 4 bit for storing bytes count during parsing process
+    std::uint64_t bytes_count = (m_decoded_value & std::uint64_t(0xF00000000000000)) >> std::uint64_t(56);
+    const bool should_stop = !(b & 0x80);
+    if (bytes_count == 7 && !should_stop) {
+        return false;
+    }
+
+    m_encoded_value >>= 8;
+    m_encoded_value |= std::uint64_t(b) << 56;
+
+    const std::uint64_t chunk = b & 0x7F;
+    m_decoded_value <<= 7;
+    m_decoded_value &= (~IS_COMPLETE_MASK);
+    m_decoded_value |= (bytes_count + 1) << 56;
+    m_decoded_value |= chunk;
+    if (should_stop) {
+        set_is_complete();
+        m_encoded_value >>= 8 * (8 - bytes_count - 1);
+    }
+
+    return true;
+}
+
+void VariableLengthSize::set_is_complete()  {
+    m_decoded_value |= IS_COMPLETE_MASK;
 }
 
 } // namespace detail

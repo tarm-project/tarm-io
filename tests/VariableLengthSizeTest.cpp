@@ -302,3 +302,144 @@ TEST_F(VariableLengthSizeTest, encode_signed_integers) {
         EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, error_v.value());
     }
 }
+
+TEST_F(VariableLengthSizeTest, decode_zero) {
+    io::detail::VariableLengthSize v;
+    EXPECT_TRUE(v.add_byte(0));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(0, v.value());
+    EXPECT_EQ(1, v.bytes_count());
+    EXPECT_EQ(0, v.bytes()[0]);
+
+    EXPECT_FALSE(v.add_byte(0));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(0, v.value());
+    EXPECT_EQ(1, v.bytes_count());
+    EXPECT_EQ(0, v.bytes()[0]);
+}
+
+TEST_F(VariableLengthSizeTest, decode_1) {
+    io::detail::VariableLengthSize v;
+    EXPECT_TRUE(v.add_byte(1));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(1, v.value());
+    EXPECT_EQ(1, v.bytes_count());
+    EXPECT_EQ(1, v.bytes()[0]);
+
+    EXPECT_FALSE(v.add_byte(1));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(1, v.value());
+    EXPECT_EQ(1, v.bytes_count());
+    EXPECT_EQ(1, v.bytes()[0]);
+}
+
+TEST_F(VariableLengthSizeTest, decode_127) {
+    // Maximum 1-byte value
+    io::detail::VariableLengthSize v;
+    EXPECT_TRUE(v.add_byte(127));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(127, v.value());
+    EXPECT_EQ(1, v.bytes_count());
+    EXPECT_EQ(127, v.bytes()[0]);
+
+    EXPECT_FALSE(v.add_byte(100)); // different value just for fun
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(127, v.value());
+    EXPECT_EQ(1, v.bytes_count());
+    EXPECT_EQ(127, v.bytes()[0]);
+}
+
+TEST_F(VariableLengthSizeTest, decode_128) {
+    io::detail::VariableLengthSize v;
+    EXPECT_TRUE(v.add_byte(129));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(128, v.value());
+    EXPECT_EQ(2, v.bytes_count());
+    EXPECT_EQ(129, v.bytes()[0]);
+    EXPECT_EQ(0, v.bytes()[1]);
+}
+
+TEST_F(VariableLengthSizeTest, decode_255) {
+    io::detail::VariableLengthSize v;
+    EXPECT_TRUE(v.add_byte(129));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(127));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(255, v.value());
+    EXPECT_EQ(2, v.bytes_count());
+    EXPECT_EQ(129, v.bytes()[0]);
+    EXPECT_EQ(127, v.bytes()[1]);
+}
+
+TEST_F(VariableLengthSizeTest, decode_with_leading_zeroes) {
+    // Leading zeroes do not have practical meaning but allowed by protocol
+    io::detail::VariableLengthSize v;
+    EXPECT_TRUE(v.add_byte(0x80));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0x80));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0x80));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0x01));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(1, v.value());
+    EXPECT_EQ(4, v.bytes_count());
+    EXPECT_EQ(0x80, v.bytes()[0]);
+    EXPECT_EQ(0x80, v.bytes()[1]);
+    EXPECT_EQ(0x80, v.bytes()[2]);
+    EXPECT_EQ(0x01, v.bytes()[3]);
+}
+
+TEST_F(VariableLengthSizeTest, decode_max_value) {
+    io::detail::VariableLengthSize v;
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0x7F));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(std::uint64_t(0xFFFFFFFFFFFFFF), v.value());
+    EXPECT_EQ(8, v.bytes_count());
+    EXPECT_EQ(0xFF, v.bytes()[0]);
+    EXPECT_EQ(0xFF, v.bytes()[1]);
+    EXPECT_EQ(0xFF, v.bytes()[2]);
+    EXPECT_EQ(0xFF, v.bytes()[3]);
+    EXPECT_EQ(0xFF, v.bytes()[4]);
+    EXPECT_EQ(0xFF, v.bytes()[5]);
+    EXPECT_EQ(0xFF, v.bytes()[6]);
+    EXPECT_EQ(0x7F, v.bytes()[7]);
+}
+
+TEST_F(VariableLengthSizeTest, to_many_bytes) {
+    io::detail::VariableLengthSize v;
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    // according to message format this should be the last byte, but we try to continue
+    EXPECT_FALSE(v.add_byte(0xFF));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, v.value());
+}

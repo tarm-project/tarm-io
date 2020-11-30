@@ -54,6 +54,7 @@ public:
 
 private:
     void encode_impl(std::uint64_t v);
+    void set_is_complete();
 
     static constexpr std::uint64_t IS_COMPLETE_MASK = std::uint64_t(1) << std::uint64_t(63);
 
