@@ -443,3 +443,24 @@ TEST_F(VariableLengthSizeTest, to_many_bytes) {
     EXPECT_FALSE(v.is_complete());
     EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, v.value());
 }
+
+TEST_F(VariableLengthSizeTest, reset_1)  {
+    io::detail::VariableLengthSize v;
+    v.reset();
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, v.value());
+    EXPECT_EQ(0, v.bytes_count());
+    EXPECT_TRUE(v.add_byte(0));
+    v.reset();
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, v.value());
+    EXPECT_EQ(0, v.bytes_count());
+}
+
+TEST_F(VariableLengthSizeTest, reset_2)  {
+    io::detail::VariableLengthSize v(100500);
+    v.reset();
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, v.value());
+    EXPECT_EQ(0, v.bytes_count());
+}
