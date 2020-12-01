@@ -464,3 +464,18 @@ TEST_F(VariableLengthSizeTest, reset_2)  {
     EXPECT_EQ(io::detail::VariableLengthSize::INVALID_VALUE, v.value());
     EXPECT_EQ(0, v.bytes_count());
 }
+
+TEST_F(VariableLengthSizeTest, copy_constructor) {
+    io::detail::VariableLengthSize v_1(100500);
+    io::detail::VariableLengthSize v_2 = v_1;
+    EXPECT_TRUE(v_2.is_complete());
+    EXPECT_EQ(100500, v_2.value());
+}
+
+TEST_F(VariableLengthSizeTest, copy_assignment) {
+    io::detail::VariableLengthSize v_1(100500);
+    io::detail::VariableLengthSize v_2;
+    v_2 = v_1;
+    EXPECT_TRUE(v_2.is_complete());
+    EXPECT_EQ(100500, v_2.value());
+}
