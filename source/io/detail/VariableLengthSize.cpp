@@ -146,6 +146,22 @@ bool VariableLengthSize::add_byte(std::uint8_t b) {
     return true;
 }
 
+std::size_t VariableLengthSize::add_bytes(std::uint8_t* b, std::size_t count) {
+    if (b == nullptr) {
+        return 0;
+    }
+
+    if (count == 0) {
+        return 0;
+    }
+
+    std::size_t counter = 0;
+    while(add_byte(b[counter])) {
+        ++counter;
+    }
+    return counter;
+}
+
 void VariableLengthSize::set_is_complete()  {
     m_decoded_value |= IS_COMPLETE_MASK;
 }

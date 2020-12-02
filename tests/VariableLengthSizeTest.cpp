@@ -479,3 +479,30 @@ TEST_F(VariableLengthSizeTest, copy_assignment) {
     EXPECT_TRUE(v_2.is_complete());
     EXPECT_EQ(100500, v_2.value());
 }
+
+TEST_F(VariableLengthSizeTest, add_bytes_invalid_values) {
+    io::detail::VariableLengthSize v;
+    EXPECT_EQ(0, v.add_bytes(nullptr, 10));
+    unsigned char byte = 0;
+    EXPECT_EQ(0, v.add_bytes(&byte, 0));
+}
+
+TEST_F(VariableLengthSizeTest, add_bytes) {
+    io::detail::VariableLengthSize v;
+    unsigned char buf[] = {
+        0x80, 0, 0x80, 1, 0x80, 2 // 0, 1, 2 (2  bytes each)
+    };
+
+    ASSERT_EQ(2, v.add_bytes(buf, 6));
+    EXPECT_EQ(0, v.value());
+
+    v.reset();
+
+    ASSERT_EQ(2, v.add_bytes(buf + 2, 4));
+    EXPECT_EQ(1, v.value());
+
+    v.reset();
+
+    ASSERT_EQ(2, v.add_bytes(buf + 4, 2));
+    EXPECT_EQ(2, v.value());
+}

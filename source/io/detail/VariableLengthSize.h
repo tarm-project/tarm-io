@@ -49,6 +49,8 @@ public:
     TARM_IO_DLL_PUBLIC const unsigned char* bytes() const;
 
     TARM_IO_DLL_PUBLIC bool add_byte(std::uint8_t b);
+    // Returns bytes processed
+    TARM_IO_DLL_PUBLIC std::size_t add_bytes(std::uint8_t* b, std::size_t count);
 
     TARM_IO_DLL_PUBLIC void reset();
 
