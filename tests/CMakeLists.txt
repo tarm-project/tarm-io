@@ -53,6 +53,7 @@ list(APPEND TESTS_LIST
     TlsClientServerTest.cpp
     DtlsClientServerTest.cpp
     DnsTest.cpp
+    GenericMessageOrientedClientServerTest.cpp
 )
 
 if (NOT DEFINED TARM_IO_OPENSSL_FOUND)

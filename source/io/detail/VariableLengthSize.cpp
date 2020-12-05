@@ -146,7 +146,7 @@ bool VariableLengthSize::add_byte(std::uint8_t b) {
     return true;
 }
 
-std::size_t VariableLengthSize::add_bytes(std::uint8_t* b, std::size_t count) {
+std::size_t VariableLengthSize::add_bytes(const std::uint8_t* b, std::size_t count) {
     if (b == nullptr) {
         return 0;
     }
