@@ -35,7 +35,7 @@ public:
     GenericMessageOrientedClient(ClientPtr client, std::size_t max_message_size = DEFAULT_MAX_SIZE) :
         m_max_message_size(max_message_size),
         m_client(std::move(client)) {
-        m_buffer.reset(new char[max_message_size]);
+        m_buffer.reset(new char[max_message_size], std::default_delete<char[]>());
     }
 
     void connect(const Endpoint& endpoint,
@@ -49,10 +49,54 @@ public:
                     connect_callback(*this, error);
                 }
             },
-            [=](ClientType&, const DataChunk&, const Error&) {
+            [=](ClientType&, const DataChunk& data, const Error& error) {
+                if (error) {
+                    // TODO: pass error to receive_callback
+                    return;
+                }
 
+                std::size_t bytes_left = data.size;
+                std::size_t bytes_processed = data.size - bytes_left;
+                while (bytes_left) {
+                    if (!m_current_message_size.is_complete()) {
+                        bytes_processed = data.size - bytes_left;
+                        const auto size_bytes = m_current_message_size.add_bytes(
+                            reinterpret_cast<const std::uint8_t*>(data.buf.get() + bytes_processed), bytes_left);
+                        if (size_bytes > bytes_left) {
+                            // TODO: error handling here
+                            // This could happen in case of corrupted stream
+                            return;
+                        }
+                        bytes_left -= size_bytes;
+                        if (bytes_left == 0) {
+                            return;
+                        }
+                    }
+
+                    bytes_processed = data.size - bytes_left;
+
+                    const std::size_t size_to_copy = (m_current_message_size.value() - m_current_message_offset) < bytes_left ?
+                                                     (m_current_message_size.value() - m_current_message_offset) :
+                                                     bytes_left;
+
+                    std::memcpy(m_buffer.get() + m_current_message_offset, data.buf.get() + bytes_processed, size_to_copy);
+                    m_current_message_offset += size_to_copy;
+                    bytes_left -= size_to_copy;
+
+                    if (m_current_message_offset == m_current_message_size.value()) {
+                        if (receive_callback)  {
+                            receive_callback(*this, {m_buffer, m_current_message_size.value()}, error);
+                            // TODO: chaeck use count of that shared ptr and allocate new buffer if required
+                        }
+                        m_current_message_size.reset();
+                        m_current_message_offset = 0;
+                    }
+                }
             },
-            [=](ClientType&, const Error&) {
+            [=](ClientType&, const Error& error) {
+                if (close_callback) {
+                    close_callback(*this, error);
+                }
 
             }
         );
@@ -82,9 +126,11 @@ public:
 
 private:
     std::size_t m_max_message_size;
+    std::size_t m_current_message_offset = 0;
+    ::tarm::io::detail::VariableLengthSize m_current_message_size;
 
     ClientPtr m_client;
-    std::unique_ptr<char, std::default_delete<char[]>> m_buffer;
+    std::shared_ptr<char> m_buffer;
 };
 
 } // namespace net
