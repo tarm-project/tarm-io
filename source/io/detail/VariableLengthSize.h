@@ -35,6 +35,8 @@ public:
     TARM_IO_DLL_PUBLIC VariableLengthSize(std::uint16_t value);
     TARM_IO_DLL_PUBLIC VariableLengthSize(std::uint32_t value);
     TARM_IO_DLL_PUBLIC VariableLengthSize(std::uint64_t value);
+    // TODO: fixme may be an  alias to std::uint32_t or std::uint64_t on some platforms
+    //TARM_IO_DLL_PUBLIC VariableLengthSize(unsigned long value);
 
     // Constructors for encoding, negative values are not supported
     TARM_IO_DLL_PUBLIC VariableLengthSize(std::int8_t value);

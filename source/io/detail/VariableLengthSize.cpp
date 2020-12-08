@@ -55,6 +55,14 @@ VariableLengthSize::VariableLengthSize(std::uint64_t value) {
         encode_impl(value);
     }
 }
+/*
+VariableLengthSize::VariableLengthSize(unsigned long value) {
+    if (value <= MAX_VALUE) {
+        m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
+        encode_impl(value);
+    }
+}
+*/
 
 VariableLengthSize::VariableLengthSize(std::int8_t value) :
    VariableLengthSize(std::int64_t(value)) {
