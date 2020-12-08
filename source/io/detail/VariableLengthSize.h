@@ -31,18 +31,19 @@ public:
     TARM_IO_DLL_PUBLIC VariableLengthSize() = default;
 
     // Constructors for encoding
-    TARM_IO_DLL_PUBLIC VariableLengthSize(std::uint8_t value);
-    TARM_IO_DLL_PUBLIC VariableLengthSize(std::uint16_t value);
-    TARM_IO_DLL_PUBLIC VariableLengthSize(std::uint32_t value);
-    TARM_IO_DLL_PUBLIC VariableLengthSize(std::uint64_t value);
-    // TODO: fixme may be an  alias to std::uint32_t or std::uint64_t on some platforms
-    //TARM_IO_DLL_PUBLIC VariableLengthSize(unsigned long value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(unsigned char value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(unsigned short value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(unsigned int value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(unsigned long value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(unsigned long long value);
 
     // Constructors for encoding, negative values are not supported
-    TARM_IO_DLL_PUBLIC VariableLengthSize(std::int8_t value);
-    TARM_IO_DLL_PUBLIC VariableLengthSize(std::int16_t value);
-    TARM_IO_DLL_PUBLIC VariableLengthSize(std::int32_t value);
-    TARM_IO_DLL_PUBLIC VariableLengthSize(std::int64_t value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(char value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(signed char value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(short value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(int value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(long value);
+    TARM_IO_DLL_PUBLIC VariableLengthSize(long long value);
 
     TARM_IO_DLL_PUBLIC std::uint64_t value() const;
 

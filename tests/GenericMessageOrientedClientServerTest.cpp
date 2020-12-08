@@ -325,13 +325,13 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_large_messages) {
             EXPECT_FALSE(error) << error;
             ++server_on_connect_count;
             {
-                ::tarm::io::detail::VariableLengthSize size(std::uint64_t(buf1.size()));
+                ::tarm::io::detail::VariableLengthSize size(buf1.size());
                 ASSERT_TRUE(size.is_complete());
                 client.send_data(reinterpret_cast<const char*>(size.bytes()), size.bytes_count());
                 client.send_data(&buf1.front(), buf1.size());
             }
             {
-                ::tarm::io::detail::VariableLengthSize size(uint64_t(buf2.size()));
+                ::tarm::io::detail::VariableLengthSize size(buf2.size());
                 ASSERT_TRUE(size.is_complete());
                 client.send_data(reinterpret_cast<const char*>(size.bytes()), size.bytes_count());
                 client.send_data(&buf2.front(), buf2.size());

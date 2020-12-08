@@ -34,54 +34,62 @@ void VariableLengthSize::encode_impl(std::uint64_t v) {
     }
 }
 
-VariableLengthSize::VariableLengthSize(std::uint8_t value) {
-    m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
-    encode_impl(value);
+VariableLengthSize::VariableLengthSize(unsigned char value) :
+    VariableLengthSize(std::uint64_t(value)) {
 }
 
-VariableLengthSize::VariableLengthSize(std::uint16_t value) {
-    m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
-    encode_impl(value);
+VariableLengthSize::VariableLengthSize(unsigned short value) :
+    VariableLengthSize(std::uint64_t(value)) {
 }
 
-VariableLengthSize::VariableLengthSize(std::uint32_t value) {
-    m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
-    encode_impl(value);
+VariableLengthSize::VariableLengthSize(unsigned int value) :
+    VariableLengthSize(std::uint64_t(value)) {
 }
 
-VariableLengthSize::VariableLengthSize(std::uint64_t value) {
-    if (value <= MAX_VALUE) {
-        m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
-        encode_impl(value);
-    }
-}
-/*
 VariableLengthSize::VariableLengthSize(unsigned long value) {
     if (value <= MAX_VALUE) {
         m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
         encode_impl(value);
     }
 }
-*/
 
-VariableLengthSize::VariableLengthSize(std::int8_t value) :
+VariableLengthSize::VariableLengthSize(unsigned long long value) {
+    if (value <= MAX_VALUE) {
+        m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
+        encode_impl(value);
+    }
+}
+
+VariableLengthSize::VariableLengthSize(char value) :
    VariableLengthSize(std::int64_t(value)) {
 }
 
-VariableLengthSize::VariableLengthSize(std::int16_t value) :
+VariableLengthSize::VariableLengthSize(signed char value) :
+   VariableLengthSize(std::int64_t(value)) {
+}
+
+VariableLengthSize::VariableLengthSize(short value) :
     VariableLengthSize(std::int64_t(value)) {
 }
 
-VariableLengthSize::VariableLengthSize(std::int32_t value) :
+VariableLengthSize::VariableLengthSize(int value) :
     VariableLengthSize(std::int64_t(value)) {
 }
 
-VariableLengthSize::VariableLengthSize(std::int64_t value)  {
+VariableLengthSize::VariableLengthSize(long value)  {
     if (value >= 0 && value <= MAX_VALUE) {
         m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
         encode_impl(value);
     }
 }
+
+VariableLengthSize::VariableLengthSize(long long value)  {
+    if (value >= 0 && value <= MAX_VALUE) {
+        m_decoded_value = std::uint64_t(value) | IS_COMPLETE_MASK;
+        encode_impl(value);
+    }
+}
+
 
 
 bool VariableLengthSize::is_complete() const {
