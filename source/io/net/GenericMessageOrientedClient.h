@@ -23,14 +23,15 @@ namespace net {
 template<typename ClientType>
 class GenericMessageOrientedClient {
 public:
+    // Messages larger than this size are skipped with reporting of an appropriate error
+    static constexpr std::size_t DEFAULT_MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
     using ClientPtr = std::unique_ptr<ClientType, typename Removable::DefaultDelete>;
 
     using ConnectCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
     using DataReceiveCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const DataChunk&, const Error&)>;
     using CloseCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
     using EndSendCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
-
-    static constexpr std::size_t DEFAULT_MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
     GenericMessageOrientedClient(ClientPtr client, std::size_t max_message_size = DEFAULT_MAX_SIZE) :
         m_max_message_size(max_message_size),
@@ -67,6 +68,13 @@ public:
                             // This could happen in case of corrupted stream
                             return;
                         }
+
+                        if (current_message_too_large()) {
+                            if (receive_callback) {
+                                receive_callback(*this, {nullptr, m_current_message_size.value()}, StatusCode::MESSAGE_TOO_LONG);
+                            }
+                        }
+
                         bytes_left -= size_bytes;
                         if (bytes_left == 0) {
                             return;
@@ -79,12 +87,14 @@ public:
                                                      (m_current_message_size.value() - m_current_message_offset) :
                                                      bytes_left;
 
-                    std::memcpy(m_buffer.get() + m_current_message_offset, data.buf.get() + bytes_processed, size_to_copy);
+                    if (!current_message_too_large()) {
+                        std::memcpy(m_buffer.get() + m_current_message_offset, data.buf.get() + bytes_processed, size_to_copy);
+                    }
                     m_current_message_offset += size_to_copy;
                     bytes_left -= size_to_copy;
 
                     if (m_current_message_offset == m_current_message_size.value()) {
-                        if (receive_callback)  {
+                        if (receive_callback && !current_message_too_large())  {
                             receive_callback(*this, {m_buffer, m_current_message_size.value()}, error);
                             // TODO: chaeck use count of that shared ptr and allocate new buffer if required
                         }
@@ -125,6 +135,10 @@ public:
     }
 
 private:
+    bool current_message_too_large() const {
+        return m_current_message_size.is_complete() && m_current_message_size.value() > m_max_message_size;
+    }
+
     std::size_t m_max_message_size;
     std::size_t m_current_message_offset = 0;
     ::tarm::io::detail::VariableLengthSize m_current_message_size;

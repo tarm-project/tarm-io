@@ -302,6 +302,12 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_large_messages) {
     std::vector<char> buf1(65535, 'a');
     std::vector<char> buf2(128000, 'b');
 
+    ::tarm::io::detail::VariableLengthSize size1(buf1.size());
+    ASSERT_TRUE(size1.is_complete());
+
+    ::tarm::io::detail::VariableLengthSize size2(buf2.size());
+    ASSERT_TRUE(size2.is_complete());
+
     for (std::size_t i = 0; i < buf1.size(); ++i) {
         buf1[i] = ::rand() % 255;
     }
@@ -324,18 +330,11 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_large_messages) {
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++server_on_connect_count;
-            {
-                ::tarm::io::detail::VariableLengthSize size(buf1.size());
-                ASSERT_TRUE(size.is_complete());
-                client.send_data(reinterpret_cast<const char*>(size.bytes()), size.bytes_count());
-                client.send_data(&buf1.front(), buf1.size());
-            }
-            {
-                ::tarm::io::detail::VariableLengthSize size(buf2.size());
-                ASSERT_TRUE(size.is_complete());
-                client.send_data(reinterpret_cast<const char*>(size.bytes()), size.bytes_count());
-                client.send_data(&buf2.front(), buf2.size());
-            }
+
+            client.send_data(reinterpret_cast<const char*>(size1.bytes()), size1.bytes_count());
+            client.send_data(&buf1.front(), buf1.size());
+            client.send_data(reinterpret_cast<const char*>(size2.bytes()), size2.bytes_count());
+            client.send_data(&buf2.front(), buf2.size());
         },
         [&](io::net::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -363,6 +362,90 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_large_messages) {
                 EXPECT_EQ(0, std::memcmp(&buf1.front(), data.buf.get(), data.size));
             } else {
                 EXPECT_EQ(0, std::memcmp(&buf2.front(), data.buf.get(), data.size));
+                client.client().close();
+            }
+        },
+        [&](TcpMessageOrientedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_close_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_connect_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(2, client_on_receive_count);
+    EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(1, server_on_connect_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(1, server_on_close_count);
+}
+
+TEST_F(GenericMessageOrientedClientServerTest, client_receive_too_large_messages) {
+
+    const std::vector<char> large_buf(TcpMessageOrientedClient::DEFAULT_MAX_SIZE + 1, 'a');
+    const std::string small_message("I'm small!!!!");
+
+    ::tarm::io::detail::VariableLengthSize size1(large_buf.size());
+    ASSERT_TRUE(size1.is_complete());
+    ::tarm::io::detail::VariableLengthSize size2(small_message.size());
+    ASSERT_TRUE(size2.is_complete());
+
+    std::size_t server_on_connect_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    io::EventLoop loop;
+
+    auto server = new io::net::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+        [&](io::net::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_connect_count;
+
+            client.send_data(reinterpret_cast<const char*>(size1.bytes()), size1.bytes_count());
+            client.send_data(&large_buf.front(), large_buf.size());
+            // next message with lower size is OK
+            client.send_data(reinterpret_cast<const char*>(size2.bytes()), size2.bytes_count());
+            client.send_data(&small_message.front(), small_message.size());
+        },
+        [&](io::net::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_receive_count;
+        },
+        [&](io::net::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_close_count;
+            server->schedule_removal();
+        }
+    );
+    EXPECT_FALSE(listen_error) << listen_error;
+
+    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpMessageOrientedClient message_client(std::move(tcp_client));
+    message_client.connect({m_default_addr, m_default_port},
+        [&](TcpMessageOrientedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_connect_count;
+        },
+        [&](TcpMessageOrientedClient& client, const io::DataChunk& data, const io::Error& error) {
+            ++client_on_receive_count;
+            if (client_on_receive_count == 1) {
+                EXPECT_TRUE(error);
+                EXPECT_EQ(io::StatusCode::MESSAGE_TOO_LONG, error.code());
+            } else {
+                EXPECT_FALSE(error) << error;
+                EXPECT_EQ(0, std::memcmp(small_message.c_str(), data.buf.get(), small_message.size()));
                 client.client().close();
             }
         },
