@@ -71,7 +71,7 @@ public:
 
                         if (current_message_too_large()) {
                             if (receive_callback) {
-                                receive_callback(*this, {nullptr, m_current_message_size.value()}, StatusCode::MESSAGE_TOO_LONG);
+                                receive_callback(*this, {nullptr, static_cast<std::size_t>(m_current_message_size.value())}, StatusCode::MESSAGE_TOO_LONG);
                             }
                         }
 
@@ -95,7 +95,7 @@ public:
 
                     if (m_current_message_offset == m_current_message_size.value()) {
                         if (receive_callback && !current_message_too_large())  {
-                            receive_callback(*this, {m_buffer, m_current_message_size.value()}, error);
+                            receive_callback(*this, {m_buffer, static_cast<std::size_t>(m_current_message_size.value())}, error);
                             // TODO: chaeck use count of that shared ptr and allocate new buffer if required
                         }
                         m_current_message_size.reset();
