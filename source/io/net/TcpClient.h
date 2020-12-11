@@ -58,6 +58,8 @@ public:
     //      Notice that different operation systems behave in their own way. Windows will copy to kernel space
     //      all available data, even if it is gigabytes in size. Linux and Mac will call EndSendCallback when last
     //      chunk of data (which is proportional of send buffer size) is transfered to the kernel.
+    // Warning: when using overload with char*, supplied buffer should be valid and its content not overwritten
+    //          until EndSendCallback is called, otherwise other side may receive mysterious garbage
     TARM_IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
     TARM_IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
     TARM_IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
