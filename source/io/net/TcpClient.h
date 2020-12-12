@@ -60,6 +60,7 @@ public:
     //      chunk of data (which is proportional of send buffer size) is transfered to the kernel.
     // Warning: when using overload with char*, supplied buffer should be valid and its content not overwritten
     //          until EndSendCallback is called, otherwise other side may receive mysterious garbage
+    TARM_IO_DLL_PUBLIC void copy_and_send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
     TARM_IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
     TARM_IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
     TARM_IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);

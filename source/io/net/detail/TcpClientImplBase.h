@@ -25,6 +25,7 @@ public:
 
     const Endpoint& endpoint() const;
 
+    void copy_and_send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(const std::string& message, const typename ParentType::EndSendCallback& callback);
@@ -152,6 +153,14 @@ void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint
     }
 
     ++m_pending_write_requests;
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::copy_and_send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback)  {
+    // TODO: unique_ptr here
+    std::shared_ptr<char> buf(new  char[size], std::default_delete<char[]>());
+    std::memcpy(buf.get(), c_str, size);
+    send_data(buf, size, callback);
 }
 
 template<typename ParentType, typename ImplType>

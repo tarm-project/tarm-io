@@ -148,10 +148,8 @@ private:
     void do_send_size(SizeType size) {
         // TODO: handle zero size
         ::tarm::io::detail::VariableLengthSize vs(size);
-        std::shared_ptr<char> buf(new  char[vs.bytes_count()], std::default_delete<char[]>());
-        std::memcpy(buf.get(), vs.bytes(), vs.bytes_count());
-        // TODO: handle send error  ???
-        m_client->send_data(buf, vs.bytes_count());
+        // TODO: handle send error
+        m_client->copy_and_send_data(reinterpret_cast<const char*>(vs.bytes()), vs.bytes_count());
     }
 
     std::size_t m_max_message_size;
