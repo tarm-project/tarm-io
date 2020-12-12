@@ -202,6 +202,62 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
     EXPECT_TRUE(data_received);
 }
 
+TEST_F(TcpClientServerTest, client_send_data_via_unique_ptr) {
+    const std::size_t MESSAGES_COUNT = 10;
+    const std::string str("HELLO!");
+
+    io::EventLoop loop;
+
+    std::size_t total_bytes_received = 0;
+    std::size_t client_on_send_count = 0;
+
+    auto server = new io::net::TcpServer(loop);
+    auto listen_error = server->listen({"0.0.0.0", m_default_port},
+        [&](io::net::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+        },
+        [&](io::net::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+
+            total_bytes_received += data.size;
+        },
+        [&](io::net::TcpConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            server->schedule_removal();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error;
+
+    auto client = new io::net::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+    [&](io::net::TcpClient& client, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+
+        for (std::size_t i = 0; i < MESSAGES_COUNT; ++i) {
+            std::unique_ptr<char[]> ptr(new char[str.size()]);
+            std::memcpy(ptr.get(), str.c_str(), str.size());
+            client.send_data(std::move(ptr), str.size(),
+                [&](io::net::TcpClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    ++client_on_send_count;
+                    if (client_on_send_count == MESSAGES_COUNT) {
+                        client.schedule_removal();
+                    }
+                }
+            );
+        }
+    },
+    nullptr);
+
+    EXPECT_EQ(0, client_on_send_count);
+    EXPECT_EQ(0, total_bytes_received);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(MESSAGES_COUNT, client_on_send_count);
+    EXPECT_EQ(MESSAGES_COUNT * str.size(), total_bytes_received);
+}
+
 TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     io::EventLoop loop;
 

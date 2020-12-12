@@ -24,6 +24,10 @@ inline const char* raw_buffer_get(const std::shared_ptr<const char>& p) {
     return p.get();
 }
 
+inline const char* raw_buffer_get(const std::unique_ptr<const char[]>& p) {
+    return p.get();
+}
+
 } // namespace detail
 } // namespace io
 } // namespace tarm

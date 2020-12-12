@@ -28,6 +28,7 @@ public:
     void copy_and_send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
+    void send_data(std::unique_ptr<const char[]> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(const std::string& message, const typename ParentType::EndSendCallback& callback);
     void send_data(std::string&& message, const typename ParentType::EndSendCallback& callback);
 
@@ -157,10 +158,9 @@ void TcpClientImplBase<ParentType, ImplType>::send_data_impl(T buffer, std::uint
 
 template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::copy_and_send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback)  {
-    // TODO: unique_ptr here
-    std::shared_ptr<char> buf(new  char[size], std::default_delete<char[]>());
+    std::unique_ptr<char[]> buf(new char [size]);
     std::memcpy(buf.get(), c_str, size);
-    send_data(buf, size, callback);
+    send_data(std::move(buf), size, callback);
 }
 
 template<typename ParentType, typename ImplType>
@@ -172,6 +172,12 @@ template<typename ParentType, typename ImplType>
 void TcpClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback) {
 
     send_data_impl(buffer, size, callback);
+}
+
+template<typename ParentType, typename ImplType>
+void TcpClientImplBase<ParentType, ImplType>::send_data(std::unique_ptr<const char[]> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback) {
+
+    send_data_impl(std::move(buffer), size, callback);
 }
 
 template<typename ParentType, typename ImplType>
