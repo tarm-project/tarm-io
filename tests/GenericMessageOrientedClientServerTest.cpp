@@ -6,6 +6,7 @@
 #include "UTCommon.h"
 
 #include "net/GenericMessageOrientedClient.h"
+#include "net/GenericMessageOrientedServer.h"
 #include "net/TcpClient.h"
 #include "net/TcpServer.h"
 
@@ -19,6 +20,7 @@ protected:
     std::string m_default_addr = "127.0.0.1";
 };
 
+// TODO: move this to some header file
 using TcpMessageOrientedClient = io::net::GenericMessageOrientedClient<io::net::TcpClient>;
 using TcpClientPtr = std::unique_ptr<io::net::TcpClient, io::Removable::DefaultDelete>;
 
