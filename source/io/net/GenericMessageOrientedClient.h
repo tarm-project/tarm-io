@@ -20,46 +20,17 @@ namespace tarm {
 namespace io {
 namespace net {
 
-template<typename ClientType>
-class GenericMessageOrientedClient {
+// Messages larger than this size are skipped with reporting of an appropriate error
+// TODO: rename
+static constexpr std::size_t BLA_BLA_DEFAULT_MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+template<typename ClientType, typename ParentType>
+class GenericMessageOrientedClientBase {
 public:
-    // Messages larger than this size are skipped with reporting of an appropriate error
-    static constexpr std::size_t DEFAULT_MAX_SIZE = 2 * 1024 * 1024; // 2MB
-
-    using ClientPtr = std::unique_ptr<ClientType, typename Removable::DefaultDelete>;
-
-    using ConnectCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
-    using DataReceiveCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const DataChunk&, const Error&)>;
-    using CloseCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
-    using EndSendCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
-
-    GenericMessageOrientedClient(ClientPtr client, std::size_t max_message_size = DEFAULT_MAX_SIZE) :
+    GenericMessageOrientedClientBase(ClientType* client, std::size_t max_message_size) :
         m_max_message_size(max_message_size),
-        m_client(std::move(client)) {
+        m_client(client) {
         m_buffer.reset(new char[max_message_size], std::default_delete<char[]>());
-    }
-
-    void connect(const Endpoint& endpoint,
-                 const ConnectCallback& connect_callback,
-                 const DataReceiveCallback& receive_callback = nullptr,
-                 const CloseCallback& close_callback = nullptr) {
-        m_client->connect(
-            endpoint,
-            [=](ClientType&, const Error& error) {
-                if (connect_callback) {
-                    connect_callback(*this, error);
-                }
-            },
-            [=](ClientType&, const DataChunk& data, const Error& error) {
-                on_data_receive(receive_callback, data, error);
-            },
-            [=](ClientType&, const Error& error) {
-                if (close_callback) {
-                    close_callback(*this, error);
-                }
-
-            }
-        );
     }
 
     template<typename ReceiveCallback>
@@ -84,7 +55,7 @@ public:
 
                 if (current_message_too_large()) {
                     if (receive_callback) {
-                        receive_callback(*this, {nullptr, static_cast<std::size_t>(m_current_message_size.value())}, StatusCode::MESSAGE_TOO_LONG);
+                        receive_callback(static_cast<ParentType&>(*this), {nullptr, static_cast<std::size_t>(m_current_message_size.value())}, StatusCode::MESSAGE_TOO_LONG);
                     }
                 }
 
@@ -108,7 +79,7 @@ public:
 
             if (m_current_message_offset == m_current_message_size.value()) {
                 if (receive_callback && !current_message_too_large())  {
-                    receive_callback(*this, {m_buffer, static_cast<std::size_t>(m_current_message_size.value())}, error);
+                    receive_callback(static_cast<ParentType&>(*this), {m_buffer, static_cast<std::size_t>(m_current_message_size.value())}, error);
                     // TODO: chaeck use count of that shared ptr and allocate new buffer if required
                 }
                 m_current_message_size.reset();
@@ -116,20 +87,6 @@ public:
             }
         }
     }
-
-    void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr) {
-        do_send_size(size);
-        //if (vs.is_complete() && vs.bytes_count()) {
-            //m_client->send_data(reinterpret_cast<const char*>(vs.bytes()), vs.bytes_count());
-            m_client->send_data(c_str, size);
-        //} else {
-            // TODO: error
-        //}
-    }
-
-    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
-    void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
-    void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
 
     ClientType& client() {
         return *m_client;
@@ -139,7 +96,7 @@ public:
         return *m_client;
     }
 
-private:
+protected:
     bool current_message_too_large() const {
         return m_current_message_size.is_complete() && m_current_message_size.value() > m_max_message_size;
     }
@@ -156,8 +113,127 @@ private:
     std::size_t m_current_message_offset = 0;
     ::tarm::io::detail::VariableLengthSize m_current_message_size;
 
-    ClientPtr m_client;
     std::shared_ptr<char> m_buffer;
+    ClientType* m_client;
+};
+
+template<typename ClientType>
+class GenericMessageOrientedClient : public GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>> {
+public:
+    static constexpr std::size_t DEFAULT_MAX_SIZE = BLA_BLA_DEFAULT_MAX_SIZE;
+
+    using ConnectCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
+    using DataReceiveCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const DataChunk&, const Error&)>;
+    using CloseCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
+    using EndSendCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
+
+    using ClientPtr = std::unique_ptr<ClientType, typename Removable::DefaultDelete>;
+
+    GenericMessageOrientedClient(ClientPtr client, std::size_t max_message_size = DEFAULT_MAX_SIZE) :
+        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>(client.get(),  max_message_size),
+        m_client_ptr(std::move(client)) {
+    }
+
+    //using GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::GenericMessageOrientedClientBase;
+
+    void connect(const Endpoint& endpoint,
+                 const ConnectCallback& connect_callback,
+                 const DataReceiveCallback& receive_callback = nullptr,
+                 const CloseCallback& close_callback = nullptr) {
+        this->m_client->connect(
+            endpoint,
+            [=](ClientType&, const Error& error) {
+                if (connect_callback) {
+                    connect_callback(*this, error);
+                }
+            },
+            [=](ClientType&, const DataChunk& data, const Error& error) {
+                this->on_data_receive(receive_callback, data, error);
+            },
+            [=](ClientType&, const Error& error) {
+                if (close_callback) {
+                    close_callback(*this, error);
+                }
+
+            }
+        );
+    }
+
+    void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr) {
+        this->do_send_size(size);
+        this->m_client->send_data(c_str, size);
+    }
+
+    void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
+    void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
+    void send_data(std::string&& message, const EndSendCallback& callback = nullptr);
+
+private:
+    ClientPtr m_client_ptr;
+};
+
+template<typename ClientType>
+class GenericMessageOrientedConnectedClient : public GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedConnectedClient<ClientType>> {
+public:
+    static constexpr std::size_t DEFAULT_MAX_SIZE = BLA_BLA_DEFAULT_MAX_SIZE;
+
+    GenericMessageOrientedConnectedClient(ClientType* client) :
+        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedConnectedClient<ClientType>>(client, DEFAULT_MAX_SIZE) { // TODO: inherit max message size from server????
+    }
+};
+
+template<typename ServerType>
+class GenericMessageOrientedServer {
+public:
+    using ServerPtr = std::unique_ptr<ServerType, typename Removable::DefaultDelete>;
+
+    using NewConnectionCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>&, const Error&)>;
+    using DataReceivedCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>&, const DataChunk&, const Error&)>;
+    using CloseConnectionCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>&, const Error&)>;
+
+    GenericMessageOrientedServer(ServerPtr server) :
+        m_server(std::move(server)) {
+
+    }
+
+    ServerType& server() {
+        return *m_server;
+    }
+
+    const ServerType& server() const {
+        return *m_server;
+    }
+
+    Error listen(const Endpoint& endpoint,
+                 const NewConnectionCallback& new_connection_callback,
+                 const DataReceivedCallback& data_receive_callback,
+                 const CloseConnectionCallback& close_connection_callback) {
+        return m_server->listen(
+            endpoint,
+            [=](typename ServerType::ConnectedClientType& client, const io::Error& error) {
+                auto connected_client_wrapper = new GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>(&client);
+                if (new_connection_callback) {
+                    new_connection_callback(*connected_client_wrapper, error);
+                }
+                client.set_user_data(connected_client_wrapper);
+            },
+            [=](typename ServerType::ConnectedClientType& client, const io::DataChunk& data, const io::Error& error) {
+                auto connected_client_wrapper = client.template user_data_as_ptr<GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>>();
+                connected_client_wrapper->on_data_receive(data_receive_callback, data, error);
+            },
+            [=](typename ServerType::ConnectedClientType& client, const io::Error& error) {
+                auto connected_client_wrapper = client.template user_data_as_ptr<GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>>();
+                if (close_connection_callback) {
+                    close_connection_callback(*connected_client_wrapper, error);
+                }
+                client.set_user_data(nullptr);
+                delete connected_client_wrapper;
+            }
+        );
+    }
+
+private:
+    ServerPtr m_server;
 };
 
 } // namespace net
