@@ -5,8 +5,7 @@
 
 #include "UTCommon.h"
 
-#include "net/TcpClient.h"
-#include "net/TcpServer.h"
+#include "net/Tcp.h"
 #include "ScopeExitGuard.h"
 #include "Timer.h"
 
