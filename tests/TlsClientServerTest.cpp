@@ -5,9 +5,7 @@
 
 #include "UTCommon.h"
 
-#include "net/ProtocolVersion.h"
-#include "net/TlsClient.h"
-#include "net/TlsServer.h"
+#include "net/Tls.h"
 #include "fs/Path.h"
 
 #include <thread>
