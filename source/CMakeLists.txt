@@ -144,7 +144,7 @@ list(APPEND IO_SOURCE_LIST
         io/Version.cpp
 )
 
-set(IO_SOURCE_EXCLUDE_PATTERN "=") # '=' is just a placeholder value which will definately will not be used for paths.
+set(IO_SOURCE_EXCLUDE_PATTERN "=") # '=' is just a placeholder value which will definitely will not be used for paths.
 if (NOT TARM_IO_OPENSSL_FOUND)
     set(IO_SOURCE_EXCLUDE_PATTERN Tls.*|Dtls.*|OpenSsl.*|Version\..*)
     list(FILTER IO_SOURCE_LIST EXCLUDE REGEX ${IO_SOURCE_EXCLUDE_PATTERN})

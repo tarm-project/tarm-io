@@ -5,8 +5,7 @@
 
 #include "UTCommon.h"
 
-#include "net/UdpClient.h"
-#include "net/UdpServer.h"
+#include "net/Udp.h"
 #include "ScopeExitGuard.h"
 #include "Timer.h"
 
