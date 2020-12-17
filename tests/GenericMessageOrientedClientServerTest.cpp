@@ -556,3 +556,85 @@ TEST_F(GenericMessageOrientedClientServerTest, server_receive_1_message) {
     EXPECT_EQ(1, server_on_receive_count);
     EXPECT_EQ(1, server_on_close_count);
 }
+
+TEST_F(GenericMessageOrientedClientServerTest, server_receive_multiple_messages) {
+    // Note: using raw TCP client to generate the data
+
+    std::size_t server_on_connect_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    io::EventLoop loop;
+
+    auto tcp_client = new io::net::TcpClient(loop);
+    tcp_client->connect({m_default_addr, m_default_port},
+        [&](io::net::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.send_data("\x01", 1);
+            client.send_data("!", 1);
+            client.send_data("\x05", 1);
+            client.send_data("abcde", 5);
+            client.send_data("\x81\x01", 2);
+            client.send_data(std::string(129, 'c'));
+            ++client_on_connect_count;
+        },
+        [&](io::net::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_receive_count;
+        },
+        [&](io::net::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client_on_close_count++;
+            client.schedule_removal();
+        }
+    );
+
+    TcpServerPtr tcp_server(new io::net::TcpServer(loop), io::Removable::default_delete());
+    TcpMessageOrientedServer message_server(std::move(tcp_server));
+    auto listen_error = message_server.listen({"0.0.0.0", m_default_port},
+        [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_connect_count;
+        },
+        [&](TcpMessageOrientedConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_receive_count;
+            switch(server_on_receive_count) {
+                case 1:
+                    EXPECT_EQ("!", std::string(data.buf.get(), data.size));
+                    break;
+                case 2:
+                    EXPECT_EQ("abcde", std::string(data.buf.get(), data.size));
+                    break;
+                case 3:
+                    EXPECT_EQ(std::string(129, 'c'), std::string(data.buf.get(), data.size));
+                    message_server.server().close();
+                    break;
+            }
+        },
+        [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_close_count;
+        }
+    );
+    EXPECT_FALSE(listen_error) << listen_error;
+
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_connect_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(1, server_on_connect_count);
+    EXPECT_EQ(3, server_on_receive_count);
+    EXPECT_EQ(1, server_on_close_count);
+}
