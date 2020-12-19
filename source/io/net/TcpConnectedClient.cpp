@@ -223,6 +223,10 @@ bool TcpConnectedClient::is_open() const {
     return m_impl->is_open();
 }
 
+void TcpConnectedClient::copy_and_send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback)  {
+    return m_impl->copy_and_send_data(c_str, size, callback);
+}
+
 void TcpConnectedClient::send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback)  {
     return m_impl->send_data(c_str, size, callback);
 }

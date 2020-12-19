@@ -620,7 +620,7 @@ TEST_F(GenericMessageOrientedClientServerTest, server_receive_multiple_messages)
             ++server_on_close_count;
         }
     );
-    EXPECT_FALSE(listen_error) << listen_error;
+    ASSERT_FALSE(listen_error) << listen_error;
 
     EXPECT_EQ(0, client_on_connect_count);
     EXPECT_EQ(0, client_on_receive_count);
@@ -638,3 +638,110 @@ TEST_F(GenericMessageOrientedClientServerTest, server_receive_multiple_messages)
     EXPECT_EQ(3, server_on_receive_count);
     EXPECT_EQ(1, server_on_close_count);
 }
+
+TEST_F(GenericMessageOrientedClientServerTest, messages_exchange) {
+    const std::size_t MESSAGES_COUNT = 1;
+
+    std::size_t server_on_connect_count = 0;
+    std::size_t server_on_send_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_send_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    auto data_from_index = [](std::size_t index) -> std::string {
+        return std::string(index * 100 + 1, static_cast<char>(index % 95 + 32));
+    };
+
+    // Checking close condition only from one side because send and receive is symmetrical
+    auto close_if_required = [&](TcpMessageOrientedConnectedClient& client) {
+        if (server_on_send_count == MESSAGES_COUNT && server_on_receive_count == MESSAGES_COUNT) {
+            client.client().close();
+        }
+    };
+
+    std::function<void(TcpMessageOrientedConnectedClient& client, const io::Error& error)> server_on_send = nullptr;
+    server_on_send = [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
+        ++server_on_send_count;
+        if (server_on_send_count != MESSAGES_COUNT) {
+            client.send_data(data_from_index(server_on_send_count), server_on_send);
+        }
+        close_if_required(client);
+    };
+
+    std::function<void(TcpMessageOrientedClient& client, const io::Error& error)> client_on_send = nullptr;
+    client_on_send = [&](TcpMessageOrientedClient& client, const io::Error& error) {
+        ++client_on_send_count;
+        if (client_on_send_count != MESSAGES_COUNT) {
+            client.send_data(data_from_index(client_on_send_count), client_on_send);
+        }
+    };
+
+    io::EventLoop loop;
+
+    TcpServerPtr tcp_server(new io::net::TcpServer(loop), io::Removable::default_delete());
+    TcpMessageOrientedServer message_server(std::move(tcp_server));
+    auto listen_error = message_server.listen({"0.0.0.0", m_default_port},
+        [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.send_data(data_from_index(server_on_send_count), server_on_send);
+            ++server_on_connect_count;
+        },
+        [&](TcpMessageOrientedConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            EXPECT_EQ(data_from_index(server_on_receive_count), std::string(data.buf.get(), data.size)) << server_on_receive_count;
+            ++server_on_receive_count;
+            close_if_required(client);
+        },
+        [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_close_count;
+            message_server.server().close();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error;
+
+    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpMessageOrientedClient message_client(std::move(tcp_client));
+    message_client.connect({m_default_addr, m_default_port},
+        [&](TcpMessageOrientedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_connect_count;
+            client.send_data(data_from_index(client_on_send_count), client_on_send);
+        },
+        [&](TcpMessageOrientedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            EXPECT_EQ(data_from_index(client_on_receive_count), std::string(data.buf.get(), data.size)) << client_on_receive_count;
+            ++client_on_receive_count;
+        },
+        [&](TcpMessageOrientedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_close_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_send_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_connect_count);
+    EXPECT_EQ(0, server_on_send_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1,              client_on_connect_count);
+    EXPECT_EQ(MESSAGES_COUNT, client_on_send_count);
+    EXPECT_EQ(MESSAGES_COUNT, client_on_receive_count);
+    EXPECT_EQ(1,              client_on_close_count);
+    EXPECT_EQ(1,              server_on_connect_count);
+    EXPECT_EQ(MESSAGES_COUNT, server_on_send_count);
+    EXPECT_EQ(MESSAGES_COUNT, server_on_receive_count);
+    EXPECT_EQ(1,              server_on_close_count);
+}
+
+// TODO: separate test for 0 length messages
+// TODO: multiple clients

@@ -97,6 +97,62 @@ public:
     }
 
 protected:
+    template<typename EndSendCallback>
+    void send_data_impl(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
+        this->do_send_size(size); // TODO: size send error handling?
+        if (callback) {
+            this->m_client->send_data(c_str, size,
+                [=](ClientType&, const Error& error) {
+                    callback(static_cast<ParentType&>(*this), error);
+                }
+            );
+        } else {
+            this->m_client->send_data(c_str, size);
+        }
+    }
+
+    template<typename EndSendCallback>
+    void send_data_impl(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
+        this->do_send_size(size); // TODO: size send error handling?
+        if (callback) {
+            this->m_client->send_data(buffer, size,
+                [=](ClientType&, const Error& error) {
+                    callback(static_cast<ParentType&>(*this), error);
+                }
+            );
+        } else {
+            this->m_client->send_data(buffer, size);
+        }
+    }
+
+    template<typename EndSendCallback>
+    void send_data_impl(const std::string& message, const EndSendCallback& callback) {
+        this->do_send_size(message.size()); // TODO: size send error handling?
+        if (callback) {
+            this->m_client->send_data(message,
+                [=](ClientType&, const Error& error) {
+                    callback(static_cast<ParentType&>(*this), error);
+                }
+            );
+        } else {
+            this->m_client->send_data(message);
+        }
+    }
+
+    template<typename EndSendCallback>
+    void send_data_impl(std::string&& message, const EndSendCallback& callback) {
+        this->do_send_size(message.size()); // TODO: size send error handling?
+        if (callback) {
+            this->m_client->send_data(std::move(message),
+                [=](ClientType&, const Error& error) {
+                    callback(static_cast<ParentType&>(*this), error);
+                }
+            );
+        } else {
+            this->m_client->send_data(std::move(message));
+        }
+    }
+
     bool current_message_too_large() const {
         return m_current_message_size.is_complete() && m_current_message_size.value() > m_max_message_size;
     }
