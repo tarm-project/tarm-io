@@ -28,6 +28,10 @@ inline const char* raw_buffer_get(const std::unique_ptr<const char[]>& p) {
     return p.get();
 }
 
+inline char* raw_buffer_get(const std::unique_ptr<char[]>& p) {
+    return p.get();
+}
+
 } // namespace detail
 } // namespace io
 } // namespace tarm
