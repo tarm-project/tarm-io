@@ -90,6 +90,7 @@ endif()
 # Files
 FILE(GLOB IO_HEADERS_LIST
         io/*.h
+        io/core/*.h
         io/detail/*.h
         io/fs/*.h
         io/fs/detail/*.h
@@ -100,9 +101,9 @@ FILE(GLOB IO_HEADERS_LIST
 
 list(APPEND IO_SOURCE_LIST
         ${IO_HEADERS_LIST}
+        io/core/VariableLengthSize.cpp
         io/detail/Common.cpp
         io/detail/LibuvCompatibility.cpp
-        io/detail/VariableLengthSize.cpp
         io/global/Configuration.cpp
         io/fs/Dir.cpp
         io/fs/File.cpp

@@ -318,10 +318,10 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_large_messages) {
     std::vector<char> buf1(65535, 'a');
     std::vector<char> buf2(128000, 'b');
 
-    ::tarm::io::detail::VariableLengthSize size1(buf1.size());
+    io::core::VariableLengthSize size1(buf1.size());
     ASSERT_TRUE(size1.is_complete());
 
-    ::tarm::io::detail::VariableLengthSize size2(buf2.size());
+    io::core::VariableLengthSize size2(buf2.size());
     ASSERT_TRUE(size2.is_complete());
 
     for (std::size_t i = 0; i < buf1.size(); ++i) {
@@ -409,9 +409,9 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_too_large_messages
     const std::vector<char> large_buf(TcpMessageOrientedClient::DEFAULT_MAX_SIZE + 1, 'a');
     const std::string small_message("I'm small!!!!");
 
-    ::tarm::io::detail::VariableLengthSize size1(large_buf.size());
+    io::core::VariableLengthSize size1(large_buf.size());
     ASSERT_TRUE(size1.is_complete());
-    ::tarm::io::detail::VariableLengthSize size2(small_message.size());
+    io::core::VariableLengthSize size2(small_message.size());
     ASSERT_TRUE(size2.is_complete());
 
     std::size_t server_on_connect_count = 0;

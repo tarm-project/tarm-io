@@ -8,7 +8,7 @@
 
 namespace tarm {
 namespace io {
-namespace detail {
+namespace core {
 
 // Definitions to make linker happy
 constexpr std::uint64_t VariableLengthSize::INVALID_VALUE;
@@ -182,6 +182,6 @@ void VariableLengthSize::set_is_complete()  {
     m_decoded_value |= IS_COMPLETE_MASK;
 }
 
-} // namespace detail
+} // namespace core
 } // namespace io
 } // namespace tarm

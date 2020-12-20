@@ -12,7 +12,7 @@
 
 namespace tarm {
 namespace io {
-namespace detail {
+namespace core {
 
 /*
  * This class represents encoding and decoding of sizes in stream-oriented protocols like TCP.
@@ -92,6 +92,6 @@ private:
     std::uint64_t m_decoded_value = 0;
 };
 
-} // namespace detail
+} // namespace core
 } // namespace io
 } // namespace tarm

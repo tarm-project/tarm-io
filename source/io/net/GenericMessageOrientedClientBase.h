@@ -9,8 +9,7 @@
 #include "DataChunk.h"
 #include "Removable.h"
 #include "net/Endpoint.h"
-// TODO: as this template class has to be public, it should not  depend on private detail class
-#include "../detail/VariableLengthSize.h"
+#include "core/VariableLengthSize.h"
 
 #include <cstddef>
 #include <functional>
@@ -160,14 +159,14 @@ protected:
     template<typename SizeType>
     void do_send_size(SizeType size) {
         // TODO: handle zero size
-        ::tarm::io::detail::VariableLengthSize vs(size);
+        core::VariableLengthSize vs(size);
         // TODO: handle send error
         m_client->copy_and_send_data(reinterpret_cast<const char*>(vs.bytes()), vs.bytes_count());
     }
 
     std::size_t m_max_message_size;
     std::size_t m_current_message_offset = 0;
-    ::tarm::io::detail::VariableLengthSize m_current_message_size;
+    core::VariableLengthSize m_current_message_size;
 
     std::shared_ptr<char> m_buffer;
     ClientType* m_client;
