@@ -17,10 +17,35 @@ namespace detail {
 /*
  * This class represents encoding and decoding of sizes in stream-oriented protocols like TCP.
  * It allows processing incomplete chunks of size bytes and have methods to query if value was completely decoded.
- * Maximum value of size is 2^56 - 1.
+ * Maximum value of such size is 2^56 - 1.
  */
 
-// TODO: memory layout description
+/*
+In general memory layout looks in the following way:
+
+ 0                   1          ...        5                   6
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4  ...  7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ ... +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|M|  value bits |M|  value bits ...                   |M|  value bits |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ ... +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+So, up to 64 bits are used.
+The fields have the following meaning:
+
+marker (M): 1 bit
+    If set to 1, then next byte is present. If set to 0, it is the last byte in a sequence.
+
+value bits: 7 bits
+    Chunk of resulting value, higher bits come first.
+
+Examples.
+ Value 1:                Value 128:
+  0                       0                   1
+  0 1 2 3 4 5 6 7         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+ +-+-+-+-+-+-+-+-+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |0|0 0 0 0 0 0 1|       |1|0 0 0 0 0 0 1|0|0 0 0 0 0 0 0|
+ +-+-+-+-+-+-+-+-+       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
 
 class VariableLengthSize {
 public:
