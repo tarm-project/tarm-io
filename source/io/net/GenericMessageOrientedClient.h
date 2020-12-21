@@ -53,19 +53,19 @@ public:
 
     // TODO: unique_ptr
     void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr) {
-        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::send_data_impl(c_str, size, callback);
+        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::send_data_impl(callback, c_str, size);
     }
 
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr) {
-        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::send_data_impl(buffer, size, callback);
+        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::send_data_impl(callback, buffer, size);
     }
 
     void send_data(const std::string& message, const EndSendCallback& callback = nullptr) {
-        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::send_data_impl(message, callback);
+        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::send_data_impl(callback, message);
     }
 
     void send_data(std::string&& message, const EndSendCallback& callback = nullptr) {
-        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::send_data_impl(std::move(message), callback);
+        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::send_data_impl(callback, std::move(message));
     }
 
 private:

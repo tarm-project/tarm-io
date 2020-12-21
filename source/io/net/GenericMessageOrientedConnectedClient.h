@@ -24,19 +24,19 @@ public:
 
     // TODO: unique_ptr
     void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr) {
-        this->send_data_impl(c_str, size, callback);
+        this->send_data_impl(callback, c_str, size);
     }
 
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr) {
-        this->send_data_impl(buffer, size, callback);
+        this->send_data_impl(size, callback, buffer);
     }
 
     void send_data(const std::string& message, const EndSendCallback& callback = nullptr) {
-        this->send_data_impl(message, callback);
+        this->send_data_impl(callback, message);
     }
 
     void send_data(std::string&& message, const EndSendCallback& callback = nullptr) {
-        this->send_data_impl(std::move(message), callback);
+        this->send_data_impl(callback, std::move(message));
     }
 };
 

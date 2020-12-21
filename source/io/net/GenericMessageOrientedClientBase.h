@@ -96,59 +96,31 @@ public:
     }
 
 protected:
-    template<typename EndSendCallback>
-    void send_data_impl(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
-        this->do_send_size(size); // TODO: size send error handling?
-        if (callback) {
-            this->m_client->send_data(c_str, size,
-                [=](ClientType&, const Error& error) {
-                    callback(static_cast<ParentType&>(*this), error);
-                }
-            );
-        } else {
-            this->m_client->send_data(c_str, size);
-        }
+    // TODO: unique_ptr here
+    // TODO: size send error handling?
+    void send_size_impl(const char* /*c_str*/, std::uint32_t size) {
+        do_send_size(size);
     }
 
-    template<typename EndSendCallback>
-    void send_data_impl(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
-        this->do_send_size(size); // TODO: size send error handling?
-        if (callback) {
-            this->m_client->send_data(buffer, size,
-                [=](ClientType&, const Error& error) {
-                    callback(static_cast<ParentType&>(*this), error);
-                }
-            );
-        } else {
-            this->m_client->send_data(buffer, size);
-        }
+    void send_size_impl(const std::shared_ptr<const char>& /*buffer*/, std::uint32_t size) {
+        do_send_size(size);
     }
 
-    template<typename EndSendCallback>
-    void send_data_impl(const std::string& message, const EndSendCallback& callback) {
-        this->do_send_size(message.size()); // TODO: size send error handling?
-        if (callback) {
-            this->m_client->send_data(message,
-                [=](ClientType&, const Error& error) {
-                    callback(static_cast<ParentType&>(*this), error);
-                }
-            );
-        } else {
-            this->m_client->send_data(message);
-        }
+    void send_size_impl(const std::string& message) {
+        do_send_size(message.size());
     }
 
-    template<typename EndSendCallback>
-    void send_data_impl(std::string&& message, const EndSendCallback& callback) {
-        this->do_send_size(message.size()); // TODO: size send error handling?
+    template<typename EndSendCallback, typename... Params>
+    void send_data_impl(const EndSendCallback& callback, Params&&... params) {
+        this->send_size_impl(std::forward<Params>(params)...);
         if (callback) {
-            this->m_client->send_data(std::move(message),
+            this->m_client->send_data(std::forward<Params>(params)...,
                 [=](ClientType&, const Error& error) {
                     callback(static_cast<ParentType&>(*this), error);
                 }
             );
         } else {
-            this->m_client->send_data(std::move(message));
+            this->m_client->send_data(std::forward<Params>(params)...);
         }
     }
 
