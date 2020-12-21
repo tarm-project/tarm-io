@@ -19,13 +19,11 @@ namespace tarm {
 namespace io {
 namespace net {
 
-// Messages larger than this size are skipped with reporting of an appropriate error
-// TODO: rename
-static constexpr std::size_t BLA_BLA_DEFAULT_MAX_SIZE = 2 * 1024 * 1024; // 2MB
-
 template<typename ClientType, typename ParentType>
 class GenericMessageOrientedClientBase {
 public:
+    static constexpr std::size_t DEFAULT_MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
     GenericMessageOrientedClientBase(ClientType* client, std::size_t max_message_size) :
         m_max_message_size(max_message_size),
         m_client(client) {

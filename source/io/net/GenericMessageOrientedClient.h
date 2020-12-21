@@ -14,7 +14,7 @@ namespace net {
 template<typename ClientType>
 class GenericMessageOrientedClient : public GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>> {
 public:
-    static constexpr std::size_t DEFAULT_MAX_SIZE = BLA_BLA_DEFAULT_MAX_SIZE;
+    static constexpr std::size_t DEFAULT_MAX_MESSAGE_SIZE = GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::DEFAULT_MAX_SIZE;
 
     using ConnectCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;
     using DataReceiveCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const DataChunk&, const Error&)>;
@@ -23,7 +23,7 @@ public:
 
     using ClientPtr = std::unique_ptr<ClientType, typename Removable::DefaultDelete>;
 
-    GenericMessageOrientedClient(ClientPtr client, std::size_t max_message_size = DEFAULT_MAX_SIZE) :
+    GenericMessageOrientedClient(ClientPtr client, std::size_t max_message_size = DEFAULT_MAX_MESSAGE_SIZE) :
         GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>(client.get(),  max_message_size),
         m_client_ptr(std::move(client)) {
     }

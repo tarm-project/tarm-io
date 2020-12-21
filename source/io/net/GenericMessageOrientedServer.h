@@ -14,6 +14,8 @@ namespace net {
 template<typename ServerType>
 class GenericMessageOrientedServer {
 public:
+    static constexpr std::size_t DEFAULT_MAX_MESSAGE_SIZE = GenericMessageOrientedClientBase<typename ServerType::ConnectedClientType, GenericMessageOrientedClient<typename ServerType::ConnectedClientType>>::DEFAULT_MAX_SIZE;
+
     using ServerPtr = std::unique_ptr<ServerType, typename Removable::DefaultDelete>;
 
     using NewConnectionCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>&, const Error&)>;
@@ -22,7 +24,6 @@ public:
 
     GenericMessageOrientedServer(ServerPtr server) :
         m_server(std::move(server)) {
-
     }
 
     ServerType& server() {
@@ -40,7 +41,7 @@ public:
         return m_server->listen(
             endpoint,
             [=](typename ServerType::ConnectedClientType& client, const io::Error& error) {
-                auto connected_client_wrapper = new GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>(&client);
+                auto connected_client_wrapper = new GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>(&client, DEFAULT_MAX_MESSAGE_SIZE); // TODO: variable instead of constant
                 if (new_connection_callback) {
                     new_connection_callback(*connected_client_wrapper, error);
                 }

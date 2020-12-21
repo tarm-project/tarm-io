@@ -14,12 +14,10 @@ namespace net {
 template<typename ClientType>
 class GenericMessageOrientedConnectedClient : public GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedConnectedClient<ClientType>> {
 public:
-    static constexpr std::size_t DEFAULT_MAX_SIZE = BLA_BLA_DEFAULT_MAX_SIZE;
-
     using EndSendCallback = std::function<void(GenericMessageOrientedConnectedClient<ClientType>&, const Error&)>;
 
-    GenericMessageOrientedConnectedClient(ClientType* client) :
-        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedConnectedClient<ClientType>>(client, DEFAULT_MAX_SIZE) { // TODO: inherit max message size from server????
+    GenericMessageOrientedConnectedClient(ClientType* client, std::size_t max_message_size) :
+        GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedConnectedClient<ClientType>>(client, max_message_size) {
     }
 
     // TODO: unique_ptr
