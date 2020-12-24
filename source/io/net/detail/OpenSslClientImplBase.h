@@ -50,8 +50,10 @@ public:
 
     virtual void on_alert(int code) = 0;
 
+    void copy_and_send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
+    void send_data(std::unique_ptr<char[]> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(const std::string& message, const typename ParentType::EndSendCallback& callback);
     void send_data(std::string&& message, const typename ParentType::EndSendCallback& callback);
 
@@ -368,6 +370,12 @@ void OpenSslClientImplBase<ParentType, ImplType>::finish_handshake() {
     on_handshake_complete();
 }
 
+template<typename ParentType, typename ImplType>
+void OpenSslClientImplBase<ParentType, ImplType>::copy_and_send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback) {
+    std::unique_ptr<char[]> buf(new char [size]);
+    std::memcpy(buf.get(), c_str, size);
+    send_data(std::move(buf), size, callback);
+}
 
 template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback)  {
@@ -378,6 +386,12 @@ template<typename ParentType, typename ImplType>
 void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback) {
 
     send_data_impl(buffer, size, callback);
+}
+
+template<typename ParentType, typename ImplType>
+void OpenSslClientImplBase<ParentType, ImplType>::send_data(std::unique_ptr<char[]> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback)  {
+
+    send_data_impl(std::move(buffer), size, callback);
 }
 
 template<typename ParentType, typename ImplType>

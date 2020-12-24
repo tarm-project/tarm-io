@@ -9,6 +9,8 @@
 #include "net/GenericMessageOrientedServer.h"
 #include "net/TcpClient.h"
 #include "net/TcpServer.h"
+#include "net/TlsClient.h"
+#include "net/TlsServer.h"
 
 struct GenericMessageOrientedClientServerTest : public testing::Test,
                                                 public LogRedirector {
@@ -18,6 +20,10 @@ struct GenericMessageOrientedClientServerTest : public testing::Test,
 protected:
     std::uint16_t m_default_port = 31540;
     std::string m_default_addr = "127.0.0.1";
+
+    const io::fs::Path m_test_path = exe_path().string();
+    const io::fs::Path m_cert_path = m_test_path / "certificate.pem";
+    const io::fs::Path m_key_path = m_test_path / "key.pem";
 };
 
 // TODO: move this to some header file
@@ -26,8 +32,14 @@ using TcpClientPtr = std::unique_ptr<io::net::TcpClient, io::Removable::DefaultD
 
 using TcpMessageOrientedServer = io::net::GenericMessageOrientedServer<io::net::TcpServer>;
 using TcpServerPtr = std::unique_ptr<io::net::TcpServer, io::Removable::DefaultDelete>;
-
 using TcpMessageOrientedConnectedClient = io::net::GenericMessageOrientedConnectedClient<io::net::TcpConnectedClient>;
+
+using TlsMessageOrientedClient = io::net::GenericMessageOrientedClient<io::net::TlsClient>;
+using TlsClientPtr = std::unique_ptr<io::net::TlsClient, io::Removable::DefaultDelete>;
+
+using TlsMessageOrientedServer = io::net::GenericMessageOrientedServer<io::net::TlsServer>;
+using TlsServerPtr = std::unique_ptr<io::net::TlsServer, io::Removable::DefaultDelete>;
+using TlsMessageOrientedConnectedClient = io::net::GenericMessageOrientedConnectedClient<io::net::TlsConnectedClient>;
 
 TEST_F(GenericMessageOrientedClientServerTest, client_default_state) {
     io::EventLoop loop;
@@ -717,6 +729,111 @@ TEST_F(GenericMessageOrientedClientServerTest, messages_exchange) {
             ++client_on_receive_count;
         },
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_close_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_send_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_connect_count);
+    EXPECT_EQ(0, server_on_send_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1,              client_on_connect_count);
+    EXPECT_EQ(MESSAGES_COUNT, client_on_send_count);
+    EXPECT_EQ(MESSAGES_COUNT, client_on_receive_count);
+    EXPECT_EQ(1,              client_on_close_count);
+    EXPECT_EQ(1,              server_on_connect_count);
+    EXPECT_EQ(MESSAGES_COUNT, server_on_send_count);
+    EXPECT_EQ(MESSAGES_COUNT, server_on_receive_count);
+    EXPECT_EQ(1,              server_on_close_count);
+}
+
+TEST_F(GenericMessageOrientedClientServerTest, tls_test) {
+    const std::size_t MESSAGES_COUNT = 1;
+
+    std::size_t server_on_connect_count = 0;
+    std::size_t server_on_send_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_send_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    auto data_from_index = [](std::size_t index) -> std::string {
+        return std::string(index * 100 + 1, static_cast<char>(index % 95 + 32));
+    };
+
+    // Checking close condition only from one side because send and receive is symmetrical
+    auto close_if_required = [&](TlsMessageOrientedConnectedClient& client) {
+        if (server_on_send_count == MESSAGES_COUNT && server_on_receive_count == MESSAGES_COUNT) {
+            client.client().close();
+        }
+    };
+
+    std::function<void(TlsMessageOrientedConnectedClient& client, const io::Error& error)> server_on_send = nullptr;
+    server_on_send = [&](TlsMessageOrientedConnectedClient& client, const io::Error& error) {
+        ++server_on_send_count;
+        if (server_on_send_count != MESSAGES_COUNT) {
+            client.send_data(data_from_index(server_on_send_count), server_on_send);
+        }
+        close_if_required(client);
+    };
+
+    std::function<void(TlsMessageOrientedClient& client, const io::Error& error)> client_on_send = nullptr;
+    client_on_send = [&](TlsMessageOrientedClient& client, const io::Error& error) {
+        ++client_on_send_count;
+        if (client_on_send_count != MESSAGES_COUNT) {
+            client.send_data(data_from_index(client_on_send_count), client_on_send);
+        }
+    };
+
+    io::EventLoop loop;
+
+    TlsServerPtr tls_server(new io::net::TlsServer(loop, m_cert_path, m_key_path),
+                            io::Removable::default_delete());
+    TlsMessageOrientedServer message_server(std::move(tls_server));
+    auto listen_error = message_server.listen({"0.0.0.0", m_default_port},
+        [&](TlsMessageOrientedConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.send_data(data_from_index(server_on_send_count), server_on_send);
+            ++server_on_connect_count;
+        },
+        [&](TlsMessageOrientedConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            EXPECT_EQ(data_from_index(server_on_receive_count), std::string(data.buf.get(), data.size)) << server_on_receive_count;
+            ++server_on_receive_count;
+            close_if_required(client);
+        },
+        [&](TlsMessageOrientedConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_close_count;
+            message_server.server().close();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error;
+
+    TlsClientPtr tls_client(new io::net::TlsClient(loop), io::Removable::default_delete());
+    TlsMessageOrientedClient message_client(std::move(tls_client));
+    message_client.connect({m_default_addr, m_default_port},
+        [&](TlsMessageOrientedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_connect_count;
+            client.send_data(data_from_index(client_on_send_count), client_on_send);
+        },
+        [&](TlsMessageOrientedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            EXPECT_EQ(data_from_index(client_on_receive_count), std::string(data.buf.get(), data.size)) << client_on_receive_count;
+            ++client_on_receive_count;
+        },
+        [&](TlsMessageOrientedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
             ++client_on_close_count;
         }

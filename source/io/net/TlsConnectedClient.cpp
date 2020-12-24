@@ -185,6 +185,10 @@ Error TlsConnectedClient::init_ssl() {
     return m_impl->init_ssl();
 }
 
+void TlsConnectedClient::copy_and_send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback) {
+    return m_impl->copy_and_send_data(c_str, size, callback);
+}
+
 void TlsConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback) {
     return m_impl->send_data(buffer, size, callback);
 }

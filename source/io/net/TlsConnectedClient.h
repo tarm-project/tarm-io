@@ -40,6 +40,7 @@ public:
     TARM_IO_DLL_PUBLIC void shutdown();
     TARM_IO_DLL_PUBLIC bool is_open() const;
 
+    TARM_IO_DLL_PUBLIC void copy_and_send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
     TARM_IO_DLL_PUBLIC void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr);
     TARM_IO_DLL_PUBLIC void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr);
     TARM_IO_DLL_PUBLIC void send_data(const std::string& message, const EndSendCallback& callback = nullptr);
