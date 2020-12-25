@@ -9,8 +9,11 @@
 #include "net/GenericMessageOrientedServer.h"
 #include "net/TcpClient.h"
 #include "net/TcpServer.h"
-#include "net/TlsClient.h"
-#include "net/TlsServer.h"
+
+#ifdef TARM_IO_HAS_OPENSSL
+    #include "net/TlsClient.h"
+    #include "net/TlsServer.h"
+#endif
 
 struct GenericMessageOrientedClientServerTest : public testing::Test,
                                                 public LogRedirector {
@@ -21,9 +24,11 @@ protected:
     std::uint16_t m_default_port = 31540;
     std::string m_default_addr = "127.0.0.1";
 
+#ifdef TARM_IO_HAS_OPENSSL
     const io::fs::Path m_test_path = exe_path().string();
     const io::fs::Path m_cert_path = m_test_path / "certificate.pem";
     const io::fs::Path m_key_path = m_test_path / "key.pem";
+#endif
 };
 
 // TODO: move this to some header file
@@ -34,12 +39,14 @@ using TcpMessageOrientedServer = io::net::GenericMessageOrientedServer<io::net::
 using TcpServerPtr = std::unique_ptr<io::net::TcpServer, io::Removable::DefaultDelete>;
 using TcpMessageOrientedConnectedClient = io::net::GenericMessageOrientedConnectedClient<io::net::TcpConnectedClient>;
 
+#ifdef TARM_IO_HAS_OPENSSL
 using TlsMessageOrientedClient = io::net::GenericMessageOrientedClient<io::net::TlsClient>;
 using TlsClientPtr = std::unique_ptr<io::net::TlsClient, io::Removable::DefaultDelete>;
 
 using TlsMessageOrientedServer = io::net::GenericMessageOrientedServer<io::net::TlsServer>;
 using TlsServerPtr = std::unique_ptr<io::net::TlsServer, io::Removable::DefaultDelete>;
 using TlsMessageOrientedConnectedClient = io::net::GenericMessageOrientedConnectedClient<io::net::TlsConnectedClient>;
+#endif
 
 TEST_F(GenericMessageOrientedClientServerTest, client_default_state) {
     io::EventLoop loop;
@@ -757,6 +764,7 @@ TEST_F(GenericMessageOrientedClientServerTest, messages_exchange) {
 
 // TOOD: disabled because of memory leaks
 TEST_F(GenericMessageOrientedClientServerTest, DISABLED_tls_test) {
+#ifdef TARM_IO_HAS_OPENSSL
     const std::size_t MESSAGES_COUNT = 1;
 
     std::size_t server_on_connect_count = 0;
@@ -859,6 +867,9 @@ TEST_F(GenericMessageOrientedClientServerTest, DISABLED_tls_test) {
     EXPECT_EQ(MESSAGES_COUNT, server_on_send_count);
     EXPECT_EQ(MESSAGES_COUNT, server_on_receive_count);
     EXPECT_EQ(1,              server_on_close_count);
+#else
+    TARM_IO_TEST_SKIP(); // Marking explicitly test as skipped in final report
+#endif
 }
 
 // TODO: separate test for 0 length messages

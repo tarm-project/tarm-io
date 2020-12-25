@@ -80,6 +80,10 @@ target_link_libraries(${TESTS_EXE_NAME}
 )
 add_dependencies(${TESTS_EXE_NAME} tarm-io)
 
+if (TARM_IO_OPENSSL_FOUND)
+    target_compile_definitions(${TESTS_EXE_NAME} PRIVATE TARM_IO_HAS_OPENSSL)
+endif()
+
 if (OPENSSL_ROOT_DIR)
     target_include_directories(${TESTS_EXE_NAME} PUBLIC ${OPENSSL_ROOT_DIR}/include)
 endif()
