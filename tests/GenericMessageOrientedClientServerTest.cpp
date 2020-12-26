@@ -7,12 +7,10 @@
 
 #include "net/GenericMessageOrientedClient.h"
 #include "net/GenericMessageOrientedServer.h"
-#include "net/TcpClient.h"
-#include "net/TcpServer.h"
+#include "net/Tcp.h"
 
 #ifdef TARM_IO_HAS_OPENSSL
-    #include "net/TlsClient.h"
-    #include "net/TlsServer.h"
+    #include "net/Tls.h"
 #endif
 
 struct GenericMessageOrientedClientServerTest : public testing::Test,
@@ -659,7 +657,7 @@ TEST_F(GenericMessageOrientedClientServerTest, server_receive_multiple_messages)
 }
 
 TEST_F(GenericMessageOrientedClientServerTest, messages_exchange) {
-    const std::size_t MESSAGES_COUNT = 1;
+    const std::size_t MESSAGES_COUNT = 100;
 
     std::size_t server_on_connect_count = 0;
     std::size_t server_on_send_count = 0;
@@ -764,7 +762,7 @@ TEST_F(GenericMessageOrientedClientServerTest, messages_exchange) {
 
 TEST_F(GenericMessageOrientedClientServerTest, with_tls) {
 #ifdef TARM_IO_HAS_OPENSSL
-    const std::size_t MESSAGES_COUNT = 1;
+    const std::size_t MESSAGES_COUNT = 100;
 
     std::size_t server_on_connect_count = 0;
     std::size_t server_on_send_count = 0;
