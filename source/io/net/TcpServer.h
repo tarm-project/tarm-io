@@ -33,7 +33,7 @@ public:
 
     static const size_t READ_BUFFER_SIZE = 65536;
 
-    using ConnectedClientType = TcpConnectedClient;
+    using AssociatedClientType = TcpConnectedClient;
 
     using NewConnectionCallback = std::function<void(TcpConnectedClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(TcpConnectedClient&, const DataChunk&, const Error&)>;

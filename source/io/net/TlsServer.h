@@ -26,7 +26,7 @@ namespace net {
 class TlsServer : public Removable,
                   public UserDataHolder {
 public:
-    using ConnectedClientType = TlsConnectedClient;
+    using AssociatedClientType = TlsConnectedClient;
 
     using NewConnectionCallback = std::function<void(TlsConnectedClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(TlsConnectedClient&, const DataChunk&, const Error&)>;

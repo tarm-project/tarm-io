@@ -14,13 +14,13 @@ namespace net {
 template<typename ServerType>
 class GenericMessageOrientedServer {
 public:
-    static constexpr std::size_t DEFAULT_MAX_MESSAGE_SIZE = GenericMessageOrientedClientBase<typename ServerType::ConnectedClientType, GenericMessageOrientedClient<typename ServerType::ConnectedClientType>>::DEFAULT_MAX_SIZE;
+    static constexpr std::size_t DEFAULT_MAX_MESSAGE_SIZE = GenericMessageOrientedClientBase<typename ServerType::AssociatedClientType, GenericMessageOrientedClient<typename ServerType::AssociatedClientType>>::DEFAULT_MAX_SIZE;
 
     using ServerPtr = std::unique_ptr<ServerType, typename Removable::DefaultDelete>;
 
-    using NewConnectionCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>&, const Error&)>;
-    using DataReceivedCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>&, const DataChunk&, const Error&)>;
-    using CloseConnectionCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>&, const Error&)>;
+    using NewConnectionCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::AssociatedClientType>&, const Error&)>;
+    using DataReceivedCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::AssociatedClientType>&, const DataChunk&, const Error&)>;
+    using CloseConnectionCallback = std::function<void(GenericMessageOrientedConnectedClient<typename ServerType::AssociatedClientType>&, const Error&)>;
 
     GenericMessageOrientedServer(ServerPtr server) :
         m_server(std::move(server)) {
@@ -40,19 +40,19 @@ public:
                  const CloseConnectionCallback& close_connection_callback) {
         return m_server->listen(
             endpoint,
-            [=](typename ServerType::ConnectedClientType& client, const io::Error& error) {
-                auto connected_client_wrapper = new GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>(&client, DEFAULT_MAX_MESSAGE_SIZE); // TODO: variable instead of constant
+            [=](typename ServerType::AssociatedClientType& client, const io::Error& error) {
+                auto connected_client_wrapper = new GenericMessageOrientedConnectedClient<typename ServerType::AssociatedClientType>(&client, DEFAULT_MAX_MESSAGE_SIZE); // TODO: variable instead of constant
                 if (new_connection_callback) {
                     new_connection_callback(*connected_client_wrapper, error);
                 }
                 client.set_user_data(connected_client_wrapper);
             },
-            [=](typename ServerType::ConnectedClientType& client, const io::DataChunk& data, const io::Error& error) {
-                auto connected_client_wrapper = client.template user_data_as_ptr<GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>>();
+            [=](typename ServerType::AssociatedClientType& client, const io::DataChunk& data, const io::Error& error) {
+                auto connected_client_wrapper = client.template user_data_as_ptr<GenericMessageOrientedConnectedClient<typename ServerType::AssociatedClientType>>();
                 connected_client_wrapper->on_data_receive(data_receive_callback, data, error);
             },
-            [=](typename ServerType::ConnectedClientType& client, const io::Error& error) {
-                auto connected_client_wrapper = client.template user_data_as_ptr<GenericMessageOrientedConnectedClient<typename ServerType::ConnectedClientType>>();
+            [=](typename ServerType::AssociatedClientType& client, const io::Error& error) {
+                auto connected_client_wrapper = client.template user_data_as_ptr<GenericMessageOrientedConnectedClient<typename ServerType::AssociatedClientType>>();
                 if (close_connection_callback) {
                     close_connection_callback(*connected_client_wrapper, error);
                 }

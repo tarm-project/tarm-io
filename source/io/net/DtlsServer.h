@@ -26,6 +26,8 @@ namespace net {
 class DtlsServer : public Removable,
                    public UserDataHolder {
 public:
+    using AssociatedClientType = DtlsConnectedClient;
+
     friend class DtlsConnectedClient;
 
     using NewConnectionCallback = std::function<void(DtlsConnectedClient&, const Error&)>;

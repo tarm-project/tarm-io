@@ -28,6 +28,8 @@ namespace net {
 class UdpServer : public Removable,
                   public UserDataHolder {
 public:
+    using AssociatedClientType = UdpPeer;
+
     using NewPeerCallback = std::function<void(UdpPeer&, const Error&)>;
     using DataReceivedCallback = std::function<void(UdpPeer&, const DataChunk&, const Error&)>;
     using PeerTimeoutCallback = std::function<void(UdpPeer&, const Error&)>;
