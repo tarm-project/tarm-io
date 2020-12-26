@@ -197,6 +197,9 @@ void EventLoop::Impl::finish() {
         // Making the last attemt to close everything and shut down gracefully
         status = uv_run(this, UV_RUN_ONCE);
 
+        // TODO: a bit hackish approach to allow finish deinit of objects with 2-phase deinitialization like TlsClient
+        status = uv_run(this, UV_RUN_ONCE);
+
         uv_loop_close(this);
         LOG_DEBUG(m_parent, "Done");
     }

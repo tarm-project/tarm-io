@@ -762,8 +762,7 @@ TEST_F(GenericMessageOrientedClientServerTest, messages_exchange) {
     EXPECT_EQ(1,              server_on_close_count);
 }
 
-// TOOD: disabled because of memory leaks
-TEST_F(GenericMessageOrientedClientServerTest, DISABLED_tls_test) {
+TEST_F(GenericMessageOrientedClientServerTest, with_tls) {
 #ifdef TARM_IO_HAS_OPENSSL
     const std::size_t MESSAGES_COUNT = 1;
 

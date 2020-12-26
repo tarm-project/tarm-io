@@ -42,10 +42,10 @@ public:
 
     bool schedule_removal();
 
+    bool is_open() const;
+
 protected:
     void close_impl();
-
-    bool is_open() const;
 
     // statics
     static void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
@@ -361,6 +361,10 @@ void TcpServer::schedule_removal() {
     if (ready_to_remove) {
         Removable::schedule_removal();
     }
+}
+
+bool TcpServer::is_open() const {
+    return m_impl->is_open();
 }
 
 } // namespace net

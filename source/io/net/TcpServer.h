@@ -54,6 +54,8 @@ public:
                  const CloseConnectionCallback& close_connection_callback,
                  int backlog_size = 128);
 
+    TARM_IO_DLL_PUBLIC bool is_open() const;
+
     TARM_IO_DLL_PUBLIC void close(const CloseServerCallback& close_callback = nullptr);
     TARM_IO_DLL_PUBLIC void shutdown(const ShutdownServerCallback& shutdown_callback = nullptr);
 

@@ -103,17 +103,22 @@ bool TlsServer::Impl::schedule_removal() {
         return true;
     }
 
-    m_tcp_server->close([this](TcpServer& server, const Error& error) {
-        if (error.code() != StatusCode::NOT_CONNECTED) {
-            LOG_ERROR(this->m_loop, error);
-        }
+    if (m_tcp_server->is_open()) {
+        m_tcp_server->close([this](TcpServer& server, const Error& error) {
+            if (error.code() != StatusCode::NOT_CONNECTED) {
+                LOG_ERROR(this->m_loop, error);
+            }
 
-        this->m_parent->schedule_removal();
-        server.schedule_removal();
-    });
+            this->m_parent->schedule_removal();
+            server.schedule_removal();
+        });
 
-    m_parent->set_removal_scheduled();
-    return false;
+        m_parent->set_removal_scheduled();
+        return false;
+    } else {
+        m_tcp_server->schedule_removal();
+        return true;
+    }
 }
 
 const SSL_METHOD* TlsServer::Impl::ssl_method() {
