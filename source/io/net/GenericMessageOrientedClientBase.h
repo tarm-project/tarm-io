@@ -104,6 +104,10 @@ protected:
         do_send_size(size);
     }
 
+    void send_size_impl(const std::unique_ptr<char[]>& /*buffer*/, std::uint32_t size) {
+        do_send_size(size);
+    }
+
     void send_size_impl(const std::string& message) {
         do_send_size(message.size());
     }

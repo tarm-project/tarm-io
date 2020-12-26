@@ -20,13 +20,16 @@ public:
         GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedConnectedClient<ClientType>>(client, max_message_size) {
     }
 
-    // TODO: unique_ptr
     void send_data(const char* c_str, std::uint32_t size, const EndSendCallback& callback = nullptr) {
         this->send_data_impl(callback, c_str, size);
     }
 
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr) {
         this->send_data_impl(size, callback, buffer);
+    }
+
+    void send_data(std::unique_ptr<char[]> buffer, std::uint32_t size, const EndSendCallback& callback = nullptr) {
+        this->send_data_impl(callback, std::move(buffer), size);
     }
 
     void send_data(const std::string& message, const EndSendCallback& callback = nullptr) {

@@ -235,6 +235,10 @@ void TcpConnectedClient::send_data(std::shared_ptr<const char> buffer, std::uint
     return m_impl->send_data(buffer, size, callback);
 }
 
+void TcpConnectedClient::send_data(std::unique_ptr<char[]> buffer, std::uint32_t size, const EndSendCallback& callback) {
+    return m_impl->send_data(std::move(buffer), size, callback);
+}
+
 void TcpConnectedClient::send_data(const std::string& message, const EndSendCallback& callback) {
     return m_impl->send_data(message, callback);
 }
