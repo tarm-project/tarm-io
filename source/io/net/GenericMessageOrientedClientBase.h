@@ -33,7 +33,9 @@ public:
     template<typename ReceiveCallback>
     void on_data_receive(ReceiveCallback& receive_callback, const DataChunk& data, const Error& error) {
         if (error) {
-            // TODO: pass error to receive_callback
+            if (receive_callback) {
+                receive_callback(static_cast<ParentType&>(*this), {nullptr, 0}, error);
+            }
             return;
         }
 
