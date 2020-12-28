@@ -422,7 +422,7 @@ TEST_F(VariableLengthSizeTest, decode_max_value) {
     EXPECT_EQ(0x7F, v.bytes()[7]);
 }
 
-TEST_F(VariableLengthSizeTest, to_many_bytes) {
+TEST_F(VariableLengthSizeTest, to_many_bytes_1) {
     io::core::VariableLengthSize v;
     EXPECT_TRUE(v.add_byte(0xFF));
     EXPECT_FALSE(v.is_complete());
@@ -442,6 +442,44 @@ TEST_F(VariableLengthSizeTest, to_many_bytes) {
     EXPECT_FALSE(v.add_byte(0xFF));
     EXPECT_FALSE(v.is_complete());
     EXPECT_EQ(io::core::VariableLengthSize::INVALID_VALUE, v.value());
+
+    EXPECT_FALSE(v.add_byte(0x7F));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_EQ(io::core::VariableLengthSize::INVALID_VALUE, v.value());
+}
+
+TEST_F(VariableLengthSizeTest, to_many_bytes_2) {
+    io::core::VariableLengthSize v;
+    unsigned char buf[] = {
+        0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80
+    };
+
+    ASSERT_EQ(1, v.add_bytes(buf, 1));
+    EXPECT_FALSE(v.is_complete());
+    ASSERT_EQ(1, v.add_bytes(buf + 1, 1));
+    EXPECT_FALSE(v.is_complete());
+    ASSERT_EQ(1, v.add_bytes(buf + 2, 1));
+    EXPECT_FALSE(v.is_complete());
+    ASSERT_EQ(1, v.add_bytes(buf + 3, 1));
+    EXPECT_FALSE(v.is_complete());
+    ASSERT_EQ(1, v.add_bytes(buf + 4, 1));
+    EXPECT_FALSE(v.is_complete());
+    ASSERT_EQ(1, v.add_bytes(buf + 5, 1));
+    EXPECT_FALSE(v.is_complete());
+    ASSERT_EQ(1, v.add_bytes(buf + 6, 1));
+    EXPECT_FALSE(v.is_complete());
+    ASSERT_EQ(0, v.add_bytes(buf + 7, 2));
+    EXPECT_FALSE(v.is_complete());
+    ASSERT_EQ(0, v.add_bytes(buf + 9, 1));
+    EXPECT_FALSE(v.is_complete());
+
+    v.reset();
+
+    ASSERT_EQ(1, v.add_bytes(buf, 1));
+    EXPECT_FALSE(v.is_complete());
+    EXPECT_TRUE(v.add_byte(0x7F));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(0x7F, v.value());
 }
 
 TEST_F(VariableLengthSizeTest, reset_1)  {

@@ -138,11 +138,16 @@ bool VariableLengthSize::add_byte(std::uint8_t b) {
         return false;
     }
 
+    if (fail()) {
+        return false;
+    }
+
     // As m_decoded_value has leading 8 bits free because of MAX_VALUE limitation,
     // utilizing 4 bit for storing bytes count during parsing process
-    std::uint64_t bytes_count = (m_decoded_value & std::uint64_t(0xF00000000000000)) >> std::uint64_t(56);
+    std::uint64_t bytes_count = (m_decoded_value & std::uint64_t(0x0F00000000000000)) >> std::uint64_t(56);
     const bool should_stop = !(b & 0x80);
     if (bytes_count == 7 && !should_stop) {
+        set_is_fail();
         return false;
     }
 
@@ -180,6 +185,14 @@ std::size_t VariableLengthSize::add_bytes(const std::uint8_t* b, std::size_t cou
 
 void VariableLengthSize::set_is_complete()  {
     m_decoded_value |= IS_COMPLETE_MASK;
+}
+
+void VariableLengthSize::set_is_fail() {
+    m_decoded_value |= IS_FAIL_MASK;
+}
+
+bool VariableLengthSize::fail() const {
+    return m_decoded_value & IS_FAIL_MASK;
 }
 
 } // namespace core
