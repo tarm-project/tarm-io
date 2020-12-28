@@ -11,6 +11,7 @@
 #include "net/Endpoint.h"
 #include "core/VariableLengthSize.h"
 
+#include <assert.h>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -46,11 +47,7 @@ public:
                 bytes_processed = data.size - bytes_left;
                 const auto size_bytes = m_current_message_size.add_bytes(
                     reinterpret_cast<const std::uint8_t*>(data.buf.get() + bytes_processed), bytes_left);
-                if (size_bytes > bytes_left) {
-                    // TODO: error handling here
-                    // This could happen in case of corrupted stream
-                    return;
-                }
+                assert(size_bytes <= bytes_left);
 
                 if (current_message_too_large()) {
                     if (receive_callback) {

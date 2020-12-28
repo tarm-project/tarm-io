@@ -172,7 +172,7 @@ std::size_t VariableLengthSize::add_bytes(const std::uint8_t* b, std::size_t cou
     }
 
     std::size_t counter = 0;
-    while(add_byte(b[counter])) {
+    while(counter < count && add_byte(b[counter])) {
         ++counter;
     }
     return counter;

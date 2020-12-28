@@ -506,3 +506,20 @@ TEST_F(VariableLengthSizeTest, add_bytes) {
     ASSERT_EQ(2, v.add_bytes(buf + 4, 2));
     EXPECT_EQ(2, v.value());
 }
+
+TEST_F(VariableLengthSizeTest, add_bytes_in_chunks) {
+    io::core::VariableLengthSize v;
+    unsigned char buf[] = {
+        0x80, 0x80, 0x80, 0x0
+    };
+
+    ASSERT_EQ(1, v.add_bytes(buf, 1));
+    EXPECT_FALSE(v.is_complete());
+
+    ASSERT_EQ(2, v.add_bytes(buf + 1, 2));
+    EXPECT_FALSE(v.is_complete());
+
+    ASSERT_EQ(1, v.add_bytes(buf + 3, 1));
+    EXPECT_TRUE(v.is_complete());
+    EXPECT_EQ(0, v.value());
+}
