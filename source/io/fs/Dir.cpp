@@ -43,6 +43,7 @@ public:
         INITIAL = 0,
         OPENING,
         OPENED,
+        WANTCLOSE,
         CLOSING,
         CLOSED
     };
@@ -164,7 +165,7 @@ void Dir::Impl::list(const ListCallback& list_callback, const EndListCallback& e
 
     if (m_read_request) {
         if (end_list_callback) {
-            m_loop->schedule_callback([=](EventLoop&) { end_list_callback(*this->m_parent, StatusCode::OPERATION_ALREADY_IN_PROGRESS); });
+            end_list_callback(*this->m_parent, StatusCode::OPERATION_ALREADY_IN_PROGRESS);
         }
         return;
     }
@@ -189,14 +190,22 @@ void Dir::Impl::close(const CloseCallback& callback) {
         return;
     }
 
+    if (m_read_request) { // TODO: if read_in_progress()
+        m_state = State::WANTCLOSE;
+        m_loop->schedule_callback([this, callback](EventLoop&) {
+            close(callback);
+        });
+        return;
+    }
+
     if (m_state == State::CLOSING) {
        if (callback) {
            callback(*m_parent, StatusCode::OPERATION_ALREADY_IN_PROGRESS);
        }
        return;
-   }
+    }
 
-   m_state = State::CLOSING;
+    m_state = State::CLOSING;
 
     uv_dir_t* dir = reinterpret_cast<uv_dir_t*>(m_open_dir_req.ptr);
 
@@ -269,8 +278,18 @@ void Dir::Impl::on_read_dir_no_continuation(uv_fs_t* req) {
         }
 
         uv_fs_req_cleanup(&request); // cleaning up previous request
-        // Not handling return value because all data is inited and not NULL at this point
-        uv_fs_readdir(req->loop, &request, dir, on_read_dir_no_continuation);
+
+        if (this_.m_state != State::WANTCLOSE) {
+            // Not handling return value because all data is inited and not NULL at this point
+            uv_fs_readdir(req->loop, &request, dir, on_read_dir_no_continuation);
+        } else {
+            this_.m_read_request = nullptr;
+            if (request.end_list_callback) {
+                request.end_list_callback(*this_.m_parent, Error(req->result));
+            }
+
+            delete &request;
+        }
     }
 }
 

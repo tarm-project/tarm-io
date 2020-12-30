@@ -472,9 +472,81 @@ TEST_F(DirTest, list_fifo) {
 #endif
 }
 
+TEST_F(DirTest, close_in_list_callback) {
+    for (std::size_t i = 0; i < 10; ++i) {
+        std::ofstream ofile((m_tmp_test_dir / ("file_" + std::to_string(i))).string());
+        ASSERT_FALSE(ofile.fail());
+    }
+
+    io::EventLoop loop;
+    auto dir = new io::fs::Dir(loop);
+
+    std::size_t list_call_count = 0;
+    std::size_t end_list_call_count = 0;
+
+    dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        dir.list(
+            [&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
+                ++list_call_count;
+                dir.close();
+            },
+            [&](io::fs::Dir& dir, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+                ++end_list_call_count;
+                dir.schedule_removal();
+            }
+        );
+    });
+
+    EXPECT_EQ(0, list_call_count);
+    EXPECT_EQ(0, end_list_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, list_call_count);
+    EXPECT_EQ(1, end_list_call_count);
+}
+
+// TODO: the same test with continuation???
+TEST_F(DirTest, schedule_removal_in_list_callback) {
+    for (std::size_t i = 0; i < 10; ++i) {
+        std::ofstream ofile((m_tmp_test_dir / ("file_" + std::to_string(i))).string());
+        ASSERT_FALSE(ofile.fail());
+    }
+
+    io::EventLoop loop;
+    auto dir = new io::fs::Dir(loop);
+
+    std::size_t list_call_count = 0;
+    std::size_t end_list_call_count = 0;
+
+    dir->open(m_tmp_test_dir.string(), [&](io::fs::Dir& dir, const io::Error& error) {
+        EXPECT_FALSE(error) << error;
+        dir.list(
+            [&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
+                ++list_call_count;
+                dir.schedule_removal();
+            },
+            [&](io::fs::Dir& dir, const io::Error& error) {
+                EXPECT_FALSE(error) << error;
+                ++end_list_call_count;
+            }
+        );
+    });
+
+    EXPECT_EQ(0, list_call_count);
+    EXPECT_EQ(0, end_list_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, list_call_count);
+    EXPECT_EQ(1, end_list_call_count);
+}
+
 TEST_F(DirTest, list_multiple_sequential) {
-    {
-        std::ofstream ofile((m_tmp_test_dir/ "file_1").string());
+    for (std::size_t i = 0; i < 5; ++i) {
+        std::ofstream ofile((m_tmp_test_dir / ("file_" + std::to_string(i))).string());
         ASSERT_FALSE(ofile.fail());
     }
 
@@ -492,6 +564,7 @@ TEST_F(DirTest, list_multiple_sequential) {
                 dir.list(
                     [&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
                         ++list_call_count; // not called
+                        FAIL() << "Should not be called!";
                     },
                     [&](io::fs::Dir& dir, const io::Error& error) {
                         EXPECT_TRUE(error);
@@ -635,10 +708,6 @@ TEST_F(DirTest, list_with_continuation_cancel) {
 
     EXPECT_EQ(1, list_call_count);
     EXPECT_EQ(1, end_list_call_count);
-}
-
-TEST_F(DirTest, close_in_list_callback) {
-    // TODO:
 }
 
 TEST_F(DirTest, make_temp_dir) {
