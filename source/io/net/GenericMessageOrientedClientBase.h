@@ -55,6 +55,12 @@ public:
                     }
                 }
 
+                if (m_current_message_size.fail()) {
+                    if (receive_callback) {
+                        receive_callback(static_cast<ParentType&>(*this), {nullptr, 0}, StatusCode::PROTOCOL_ERROR);
+                    }
+                }
+
                 bytes_left -= size_bytes;
                 if (bytes_left == 0) {
                     return;
