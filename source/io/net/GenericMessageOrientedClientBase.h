@@ -100,26 +100,34 @@ public:
 
 protected:
     // TODO: unique_ptr here
-    // TODO: size send error handling?
-    void send_size_impl(const char* /*c_str*/, std::uint32_t size) {
-        do_send_size(size);
+
+    template<typename EndSendCallback>
+    bool send_size_impl(const EndSendCallback& callback, const char* /*c_str*/, std::uint32_t size) {
+        return do_send_size(callback, size);
     }
 
-    void send_size_impl(const std::shared_ptr<const char>& /*buffer*/, std::uint32_t size) {
-        do_send_size(size);
+    template<typename EndSendCallback>
+    bool send_size_impl(const EndSendCallback& callback, const std::shared_ptr<const char>& /*buffer*/, std::uint32_t size) {
+        return do_send_size(callback, size);
     }
 
-    void send_size_impl(const std::unique_ptr<char[]>& /*buffer*/, std::uint32_t size) {
-        do_send_size(size);
+    template<typename EndSendCallback>
+    bool send_size_impl(const EndSendCallback& callback, const std::unique_ptr<char[]>& /*buffer*/, std::uint32_t size) {
+        return do_send_size(callback, size);
     }
 
-    void send_size_impl(const std::string& message) {
-        do_send_size(message.size());
+    template<typename EndSendCallback>
+    bool send_size_impl(const EndSendCallback& callback, const std::string& message) {
+        return do_send_size(callback, message.size());
     }
 
     template<typename EndSendCallback, typename... Params>
     void send_data_impl(const EndSendCallback& callback, Params&&... params) {
-        this->send_size_impl(std::forward<Params>(params)...);
+        const bool resume = this->send_size_impl(callback, std::forward<Params>(params)...);
+        if (!resume) {
+            return;
+        }
+
         if (callback) {
             this->m_client->send_data(std::forward<Params>(params)...,
                 [=](ClientType&, const Error& error) {
@@ -135,12 +143,18 @@ protected:
         return m_current_message_size.is_complete() && m_current_message_size.value() > m_max_message_size;
     }
 
-    template<typename SizeType>
-    void do_send_size(SizeType size) {
-        // TODO: handle zero size
+    template<typename SizeType, typename EndSendCallback>
+    bool do_send_size(const EndSendCallback& callback, SizeType size) {
+        if (size == 0) {
+            if (callback) {
+                callback(static_cast<ParentType&>(*this), StatusCode::INVALID_ARGUMENT);
+            }
+            return false;
+        }
         core::VariableLengthSize vs(size);
         // TODO: handle send error
         m_client->copy_and_send_data(reinterpret_cast<const char*>(vs.bytes()), vs.bytes_count());
+        return true;
     }
 
     std::size_t m_max_message_size;
