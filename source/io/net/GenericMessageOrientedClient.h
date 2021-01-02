@@ -14,6 +14,7 @@ namespace net {
 template<typename ClientType>
 class GenericMessageOrientedClient : public GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>> {
 public:
+    // Max message size for send and receive
     static constexpr std::size_t DEFAULT_MAX_MESSAGE_SIZE = GenericMessageOrientedClientBase<ClientType, GenericMessageOrientedClient<ClientType>>::DEFAULT_MAX_SIZE;
 
     using ConnectCallback = std::function<void(GenericMessageOrientedClient<ClientType>&, const Error&)>;

@@ -23,6 +23,7 @@ namespace net {
 template<typename ClientType, typename ParentType>
 class GenericMessageOrientedClientBase {
 public:
+    // Max message size for send and receive
     static constexpr std::size_t DEFAULT_MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
     GenericMessageOrientedClientBase(ClientType* client, std::size_t max_message_size) :
@@ -151,6 +152,14 @@ protected:
             }
             return false;
         }
+
+        if (size > m_max_message_size) {
+            if (callback) {
+                callback(static_cast<ParentType&>(*this), StatusCode::MESSAGE_TOO_LONG);
+            }
+            return false;
+        }
+
         core::VariableLengthSize vs(size);
         // TODO: handle send error
         m_client->copy_and_send_data(reinterpret_cast<const char*>(vs.bytes()), vs.bytes_count());

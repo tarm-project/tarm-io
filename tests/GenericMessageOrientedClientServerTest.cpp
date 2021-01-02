@@ -1107,4 +1107,110 @@ TEST_F(GenericMessageOrientedClientServerTest, send_receive_0_size) {
     EXPECT_EQ(1, server_on_close_count);
 }
 
+TEST_F(GenericMessageOrientedClientServerTest, client_max_message_size) {
+    const std::size_t CLIENT_MAX_MESSAGE_SIZE = 4; // bytes
+
+    std::size_t server_on_connect_count = 0;
+    std::size_t server_on_send_count = 0;
+    std::size_t server_on_receive_count = 0;
+    std::size_t server_on_close_count = 0;
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_send_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    io::EventLoop loop;
+
+    TcpServerPtr tcp_server(new io::net::TcpServer(loop),
+                            io::Removable::default_delete());
+    TcpMessageOrientedServer message_server(std::move(tcp_server));
+    auto listen_error = message_server.listen({"0.0.0.0", m_default_port},
+        [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.send_data("hey!",
+                [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    ++server_on_send_count;
+                }
+            );
+            client.send_data("hello",
+                [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    ++server_on_send_count;
+                }
+            );
+            ++server_on_connect_count;
+        },
+        [&](TcpMessageOrientedConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            EXPECT_EQ("hey!", std::string(data.buf.get(), data.size));
+            ++server_on_receive_count;
+        },
+        [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++server_on_close_count;
+            message_server.server().close();
+        }
+    );
+    ASSERT_FALSE(listen_error) << listen_error;
+
+    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpMessageOrientedClient message_client(std::move(tcp_client), CLIENT_MAX_MESSAGE_SIZE);
+    message_client.connect({m_default_addr, m_default_port},
+        [&](TcpMessageOrientedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            client.send_data("hey!",
+                [&](TcpMessageOrientedClient& client, const io::Error& error) {
+                    EXPECT_FALSE(error) << error;
+                    ++client_on_send_count;
+                }
+            );
+            client.send_data("hello",
+                [&](TcpMessageOrientedClient& client, const io::Error& error) {
+                    EXPECT_TRUE(error);
+                    EXPECT_EQ(io::StatusCode::MESSAGE_TOO_LONG, error.code());
+                    ++client_on_send_count;
+                }
+            );
+            ++client_on_connect_count;
+        },
+        [&](TcpMessageOrientedClient& client, const io::DataChunk& data, const io::Error& error) {
+            ++client_on_receive_count;
+            if (error) {
+                EXPECT_EQ(io::StatusCode::MESSAGE_TOO_LONG, error.code());
+                EXPECT_EQ(5, data.size);
+                client.client().close();
+            } else {
+                EXPECT_EQ(1, client_on_receive_count);
+                EXPECT_EQ("hey!", std::string(data.buf.get(), data.size));
+            }
+        },
+        [&](TcpMessageOrientedClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_close_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_send_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+    EXPECT_EQ(0, server_on_connect_count);
+    EXPECT_EQ(0, server_on_send_count);
+    EXPECT_EQ(0, server_on_receive_count);
+    EXPECT_EQ(0, server_on_close_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(2, client_on_send_count);
+    EXPECT_EQ(2, client_on_receive_count);
+    EXPECT_EQ(1, client_on_close_count);
+    EXPECT_EQ(1, server_on_connect_count);
+    EXPECT_EQ(2, server_on_send_count);
+    EXPECT_EQ(1, server_on_receive_count);
+    EXPECT_EQ(1, server_on_close_count);
+}
+
 // TODO: multiple clients
+// TODO: server max message size
