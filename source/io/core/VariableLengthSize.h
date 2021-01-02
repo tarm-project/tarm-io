@@ -18,6 +18,9 @@ namespace core {
  * This class represents encoding and decoding of sizes in stream-oriented protocols like TCP.
  * It allows processing incomplete chunks of size bytes and have methods to query if value was completely decoded.
  * Maximum value of such size is 2^56 - 1.
+ * Note: this is a bit similar to varint encoding from 'protobuf'
+ *       https://developers.google.com/protocol-buffers/docs/encoding#varints
+ * Note: the type is designed to have a balance between CPU time and memory consumption
  */
 
 /*
