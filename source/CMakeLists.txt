@@ -248,6 +248,7 @@ target_link_libraries(tarm-io PRIVATE LibUV::LibUV)
 
 target_include_directories(tarm-io PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/io>)
 target_include_directories(tarm-io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
+target_include_directories(tarm-io SYSTEM INTERFACE "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>/tarm/io")
 target_compile_definitions(tarm-io PRIVATE TARM_IO_BUILDING_DLL)
 
 if (TARM_IO_PLATFORM_LINUX)
