@@ -14,7 +14,7 @@ namespace net {
 template<typename ServerType>
 class GenericMessageOrientedServer {
 public:
-    static constexpr std::size_t DEFAULT_MAX_MESSAGE_SIZE = GenericMessageOrientedClientBase<typename ServerType::AssociatedClientType, GenericMessageOrientedClient<typename ServerType::AssociatedClientType>>::DEFAULT_MAX_SIZE;
+    static constexpr std::size_t DEFAULT_MAX_MESSAGE_SIZE = GenericMessageOrientedClientBase<typename ServerType::AssociatedClientType, GenericMessageOrientedConnectedClient<typename ServerType::AssociatedClientType>>::DEFAULT_MAX_SIZE;
 
     using ServerPtr = std::unique_ptr<ServerType, typename Removable::DefaultDelete>;
 
