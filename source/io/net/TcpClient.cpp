@@ -150,32 +150,36 @@ bool TcpClient::Impl::schedule_removal() {
 }
 
 bool TcpClient::Impl::close() {
-    if (!is_open()) {
+    /*if (!is_open()) {
         return true; // allow to remove object
     }
+    */
 
-    LOG_TRACE(m_loop, m_parent, "endpoint:", m_destination_endpoint);
+    LOG_TRACE(m_loop, m_parent, "endpoint:", m_destination_endpoint, "m_tcp_stream:",m_tcp_stream);
 
     m_is_open = false;
 
-    if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
+    if (m_tcp_stream && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
         uv_close(reinterpret_cast<uv_handle_t*>(m_tcp_stream), on_close);
         m_tcp_stream = nullptr;
+        return false;
     }
 
-    return false;
+    return true; // allow to remove object
 }
 
 void TcpClient::Impl::close_with_reset() {
+    /*
     if (!is_open()) {
         return;
     }
+    */
 
     LOG_TRACE(m_loop, m_parent, "endpoint:", m_destination_endpoint);
 
     m_is_open = false;
 
-    if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
+    if (m_tcp_stream && !uv_is_closing(reinterpret_cast<uv_handle_t*>(m_tcp_stream))) {
         uv_tcp_close_reset(m_tcp_stream, on_close);
         m_tcp_stream = nullptr;
     }
@@ -196,6 +200,7 @@ void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int uv_status) {
 
     if (!uv_is_closing(reinterpret_cast<uv_handle_t*>(this_.m_tcp_stream))) {
         uv_close(reinterpret_cast<uv_handle_t*>(req->handle), on_close);
+        this_.m_tcp_stream = nullptr;
     }
 
     delete req;
@@ -203,6 +208,8 @@ void TcpClient::Impl::on_shutdown(uv_shutdown_t* req, int uv_status) {
 
 void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
     auto& this_ = *reinterpret_cast<TcpClient::Impl*>(req->data);
+
+    LOG_TRACE(this_.m_loop, "");
 
     Error error(uv_status);
     this_.m_is_open = !error;
@@ -215,6 +222,7 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
 
         if (this_.m_close_callback) {
             this_.m_close_callback(*this_.m_parent, error);
+            this_.m_close_callback = nullptr;
         }
     } else {
         if (this_.m_connect_callback) {
@@ -222,11 +230,13 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
         }
     }
 
+    /*
     if (error && this_.m_tcp_stream) {
         this_.m_tcp_stream->data = nullptr;
         uv_close(reinterpret_cast<uv_handle_t*>(this_.m_tcp_stream), on_close);
         return;
     }
+    */
 
     if (this_.is_open()) { // could be closed in on_new_connection callback
         const Error read_error = uv_read_start(req->handle, alloc_read_buffer, on_read);
@@ -246,12 +256,14 @@ void TcpClient::Impl::on_close(uv_handle_t* handle) {
         const bool should_delete = this_.m_want_delete_object;
 
         if (this_.m_close_callback) {
+            LOG_TRACE(loop_ptr, "");
             this_.m_close_callback(*this_.m_parent, Error(0));
         }
 
         this_.m_destination_endpoint.clear();
 
         if (should_delete) {
+            LOG_TRACE(loop_ptr, "");
             this_.m_parent->schedule_removal();
         }
     };

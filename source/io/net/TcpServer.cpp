@@ -125,6 +125,7 @@ Error TcpServer::Impl::listen(const Endpoint& endpoint,
         LOG_ERROR(m_loop, m_parent, "Listen failed:", uv_strerror(listen_status));
     }
 
+    // TODO: should server be open in case of listen error????
     m_is_open = true;
 
     return listen_status;

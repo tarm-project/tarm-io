@@ -757,6 +757,78 @@ TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server) {
     EXPECT_TRUE(callback_called);
 }
 
+TEST_F(TcpClientServerTest, client_reconnect_after_failure_1) {
+    // Crash test, immediate failure
+    std::size_t client_on_connect_count = 0;
+
+    io::EventLoop loop;
+    auto client = new io::net::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::net::TcpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_FALSE(client.is_open());
+            EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, error.code());
+            ++client_on_connect_count;
+
+            client.connect({m_default_addr, m_default_port},
+            [&](io::net::TcpClient& client, const io::Error& error) {
+                EXPECT_TRUE(error);
+                EXPECT_FALSE(client.is_open());
+                EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, error.code());
+                ++client_on_connect_count;
+
+                client.schedule_removal();
+            },
+            nullptr);
+        },
+        nullptr);
+
+    EXPECT_EQ(0, client_on_connect_count);
+
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(2, client_on_connect_count);
+}
+
+TEST_F(TcpClientServerTest, client_reconnect_after_failure_2) {
+    // Crash test, failing after while
+    std::size_t client_on_connect_count = 0;
+
+    io::EventLoop loop;
+    auto client = new io::net::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::net::TcpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_FALSE(client.is_open());
+            EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, error.code());
+            ++client_on_connect_count;
+
+            (new io::Timer(loop))->start(100,
+                [&](io::Timer& timer) {
+                    client.connect({m_default_addr, m_default_port},
+                    [&](io::net::TcpClient& client, const io::Error& error) {
+                        EXPECT_TRUE(error);
+                        EXPECT_FALSE(client.is_open());
+                        EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, error.code());
+                        ++client_on_connect_count;
+
+                        client.schedule_removal();
+                    },
+                    nullptr);
+
+                    timer.schedule_removal();
+                }
+            );
+        },
+        nullptr);
+
+    EXPECT_EQ(0, client_on_connect_count);
+
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(2, client_on_connect_count);
+}
+
 TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callback) {
     io::EventLoop loop;
     auto server = new io::net::TcpServer(loop);
@@ -3614,6 +3686,8 @@ TEST_F(TcpClientServerTest, server_close_reset_from_connect_callback) {
     auto client = new io::net::TcpClient(loop);
     client->connect({m_default_addr,m_default_port},
         [&](io::net::TcpClient& client, const io::Error& error) {
+            // TODO: the same test, but send here in connect callback
+            //       there is workaround for Linux when we call on_connect and on_close in a row
             EXPECT_FALSE(error) << error;
             ++client_on_connect_count;
         },
@@ -3622,6 +3696,7 @@ TEST_F(TcpClientServerTest, server_close_reset_from_connect_callback) {
             ++client_on_receive_count;
         },
         [&](io::net::TcpClient& client, const io::Error& error) {
+            std::cout << "!" << std::endl;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::CONNECTION_RESET_BY_PEER, error.code());
             ++client_on_close_count;
