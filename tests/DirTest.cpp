@@ -994,7 +994,7 @@ TEST_F(DirTest, make_all_dirs_invalid_path_1) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::NOT_A_DIRECTORY, error.code());
-            EXPECT_EQ((m_tmp_test_dir / "1").string(), error.additional_info());
+            EXPECT_EQ((m_tmp_test_dir / "1").lexically_normal().string(), error.additional_info());
         }
     );
 
