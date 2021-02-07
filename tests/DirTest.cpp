@@ -945,7 +945,51 @@ TEST_F(DirTest, make_dir_root_dir_error) {
     EXPECT_EQ(1, on_make_dir_call_count);
 }
 
-TEST_F(DirTest, make_all_dirs) {
+TEST_F(DirTest, make_all_dirs_1) {
+    // Testing that call on preliminary existing path does not cause error
+    io::EventLoop loop;
+
+    std::size_t on_make_dir_call_count = 0;
+
+    const auto path = m_tmp_test_dir_tarm;
+    io::fs::make_all_dirs(loop, path, io::fs::DIR_MODE_DEFAULT,
+        [&](const io::fs::Path& p, const io::Error& error) {
+            ++on_make_dir_call_count;
+            EXPECT_FALSE(error);
+            EXPECT_EQ(path, p);
+        }
+    );
+
+    EXPECT_EQ(0, on_make_dir_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_make_dir_call_count);
+}
+
+TEST_F(DirTest, make_all_dirs_2) {
+    io::EventLoop loop;
+
+    std::size_t on_make_dir_call_count = 0;
+
+    const auto path = m_tmp_test_dir_tarm / "1";
+    io::fs::make_all_dirs(loop, path, io::fs::DIR_MODE_DEFAULT,
+        [&](const io::fs::Path& p, const io::Error& error) {
+            ++on_make_dir_call_count;
+            EXPECT_FALSE(error);
+            EXPECT_TRUE(boost::filesystem::exists(path.string()));
+            EXPECT_EQ(path, p);
+        }
+    );
+
+    EXPECT_EQ(0, on_make_dir_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_make_dir_call_count);
+}
+
+TEST_F(DirTest, make_all_dirs_3) {
     io::EventLoop loop;
 
     std::size_t on_make_dir_call_count = 0;

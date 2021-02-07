@@ -537,7 +537,7 @@ void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeD
                 return;
             }
 
-            if (next_path.size() != normalized_path.size()) {
+            if (p.size() != normalized_path.size()) {
                 stat(loop, next_path, *on_stat);
             } else {
                 on_end(p, StatusCode::OK);
