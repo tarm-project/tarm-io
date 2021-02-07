@@ -1005,6 +1005,44 @@ TEST_F(DirTest, make_all_dirs_invalid_path_1) {
     EXPECT_EQ(1, on_make_dir_call_count);
 }
 
+TEST_F(DirTest, make_all_dirs_invalid_path_2) {
+    // Permission denied case
+    io::EventLoop loop;
+
+    {
+        const io::fs::Path path = (m_tmp_test_dir / "1").string();
+
+        io::fs::make_dir(loop, path, 0,
+            [&](const io::fs::Path& p, const io::Error& error) {
+                EXPECT_FALSE(error);
+            }
+        );
+
+        ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+        ASSERT_TRUE(boost::filesystem::exists(path.string()));
+    }
+
+    std::size_t on_make_dir_call_count = 0;
+
+    const auto path = (m_tmp_test_dir / "1" / "2" / "3").string();
+
+    io::fs::make_all_dirs(loop, path, io::fs::DIR_MODE_DEFAULT,
+        [&](const io::fs::Path& p, const io::Error& error) {
+            ++on_make_dir_call_count;
+            EXPECT_TRUE(error);
+            EXPECT_EQ(io::StatusCode::PERMISSION_DENIED, error.code());
+            EXPECT_EQ((m_tmp_test_dir / "1" / "2").string(), error.additional_info());
+        }
+    );
+
+    EXPECT_EQ(0, on_make_dir_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_make_dir_call_count);
+}
+
 TEST_F(DirTest, remove_dir) {
     // If directory creation fail, exception will be thrown
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c" / "d");
