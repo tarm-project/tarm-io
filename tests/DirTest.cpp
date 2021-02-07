@@ -921,6 +921,30 @@ TEST_F(DirTest, make_dir_root_dir_error) {
     EXPECT_EQ(1, on_make_dir_call_count);
 }
 
+// TODO: test /a/b/c/d/../../o/l/o/l/o
+// TODO: test /1/2/3 where 1 is a file
+TEST_F(DirTest, make_all_dirs) {
+    io::EventLoop loop;
+
+    std::size_t on_make_dir_call_count = 0;
+
+    const std::string path = (m_tmp_test_dir / "1" / "2" / "3" / "4").string();
+
+    io::fs::make_all_dirs(loop, path, io::fs::DIR_MODE_DEFAULT,
+        [&](const io::Error& error) {
+            ++on_make_dir_call_count;
+            EXPECT_FALSE(error);
+            EXPECT_TRUE(boost::filesystem::exists(path));
+        }
+    );
+
+    EXPECT_EQ(0, on_make_dir_call_count);
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    EXPECT_EQ(1, on_make_dir_call_count);
+}
+
 TEST_F(DirTest, remove_dir) {
     // If directory creation fail, exception will be thrown
     boost::filesystem::create_directories(m_tmp_test_dir / "a" / "b" / "c" / "d");

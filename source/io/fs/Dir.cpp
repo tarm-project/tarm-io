@@ -10,6 +10,7 @@
 #include "detail/LogMacros.h"
 #include "fs/detail/FsCommon.h"
 #include "ScopeExitGuard.h"
+#include "fs/Functions.h"
 
 #include <cstring>
 #include <vector>
@@ -436,6 +437,7 @@ void on_make_dir(uv_fs_t* uv_request) {
         Error error = request.result;
 
 #ifdef _MSC_VER
+        // Workaround.
         // CreateDirectory function on Windows returns only 2 values on error
         // ERROR_ALREADY_EXISTS and ERROR_PATH_NOT_FOUND
         // to make bahavior consistent between platforms we handle case of long name errors manually
@@ -480,6 +482,61 @@ void make_dir_impl(EventLoop& loop, const Path& path, int mode, const MakeDirCal
 
 void make_dir(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
     ::tarm::io::detail::defer_execution_if_required(loop, make_dir_impl, loop, path, mode, callback);
+}
+
+void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
+    if (path.empty()) {
+        if (callback) {
+            callback(StatusCode::INVALID_ARGUMENT);
+        }
+        return;
+    }
+
+    const auto normalized_path = path.lexically_normal();
+
+    auto on_stat = std::make_shared<std::function<void(const Path&, const StatData&, const Error&)>>();
+    *on_stat = [&loop, on_stat, normalized_path, mode, callback](const Path& p, const StatData&, const Error& error) {
+        auto it1 = normalized_path.begin();
+        auto it2 = p.begin();
+        while (it2 != p.end()) {
+            ++it1;
+            ++it2;
+        }
+
+        const auto next_path = (p / (*it1));
+
+        if (error == StatusCode::NO_SUCH_FILE_OR_DIRECTORY) {
+            // TODO: remove p  in capture list
+            make_dir(loop, p, mode,
+                [&loop, on_stat, normalized_path, next_path, callback, p](const Error& error) {
+                    if (error) {
+                        callback(Error(error.code(), p.c_str()));
+                        return;
+                    }
+
+                    if (p.size() != normalized_path.size()) {
+                        stat(loop, next_path, *on_stat);
+                    } else {
+                        callback(StatusCode::OK);
+                    }
+                }
+            );
+        } else if (error) {
+            callback(Error(error.code(), p.c_str()));
+        } else {
+            if (next_path.size() != normalized_path.size()) {
+                stat(loop, next_path, *on_stat);
+            } else {
+                callback(StatusCode::OK);
+            }
+        }
+    };
+
+    stat(loop, *path.begin(), *on_stat);
+}
+
+void make_all_dirs(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
+    ::tarm::io::detail::defer_execution_if_required(loop, make_all_dirs_impl, loop, path, mode, callback);
 }
 
 namespace {
