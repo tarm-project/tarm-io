@@ -718,12 +718,12 @@ TEST_F(DirTest, make_temp_dir) {
     const std::string template_path = (m_tmp_test_dir / "temp-XXXXXX").string();
 
     io::fs::make_temp_dir(loop, template_path,
-        [&](const std::string& dir, const io::Error& error) {
+        [&](const io::fs::Path& dir, const io::Error& error) {
             ++on_temp_dir_call_count;
             EXPECT_FALSE(error);
             EXPECT_EQ(template_path.size(), dir.size());
-            EXPECT_EQ(0, dir.find((m_tmp_test_dir / "temp-").string()));
-            EXPECT_TRUE(boost::filesystem::exists(dir));
+            EXPECT_EQ(0, dir.string().find((m_tmp_test_dir / "temp-").string()));
+            EXPECT_TRUE(boost::filesystem::exists(dir.string()));
         }
     );
 
@@ -744,7 +744,7 @@ TEST_F(DirTest, DISABLED_make_temp_dir_invalid_template) {
     const std::string template_path = (m_tmp_test_dir / "temp-XXXXX").string();
 
     io::fs::make_temp_dir(loop, template_path,
-        [&](const std::string& dir, const io::Error& error) {
+        [&](const io::fs::Path&, const io::Error& error) {
             ++on_temp_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());

@@ -56,7 +56,7 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
-using MakeTempDirCallback = std::function<void(const std::string&, const Error&)>;
+using MakeTempDirCallback = std::function<void(const Path&, const Error&)>;
 TARM_IO_DLL_PUBLIC
 void make_temp_dir(EventLoop& loop, const Path& name_template, const MakeTempDirCallback& callback);
 
