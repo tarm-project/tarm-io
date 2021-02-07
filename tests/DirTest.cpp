@@ -1006,6 +1006,8 @@ TEST_F(DirTest, make_all_dirs_invalid_path_1) {
 }
 
 TEST_F(DirTest, make_all_dirs_invalid_path_2) {
+    TARM_IO_TEST_SKIP_ON_WINDOWS();
+
     // Permission denied case
     io::EventLoop loop;
 
