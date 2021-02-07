@@ -504,7 +504,7 @@ void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeD
         });
     };
 
-    *on_stat = [&loop, on_stat, normalized_path, mode, on_end](const Path& p, const StatData&, const Error& error) {
+    *on_stat = [&loop, on_stat, normalized_path, mode, on_end](const Path& p, const StatData& stat_data, const Error& error) {
         auto it1 = normalized_path.begin();
         auto it2 = p.begin();
         while (it2 != p.end()) {
@@ -513,6 +513,11 @@ void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeD
         }
 
         const auto next_path = (p / (*it1));
+
+        if (is_regular_file(stat_data)) {
+            on_end(p, Error(StatusCode::NOT_A_DIRECTORY, p.string()));
+            return;
+        }
 
         if (error == StatusCode::NO_SUCH_FILE_OR_DIRECTORY) {
             make_dir(loop, p, mode,

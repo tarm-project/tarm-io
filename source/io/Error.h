@@ -22,17 +22,18 @@ public:
 
     TARM_IO_DLL_PUBLIC Error(std::int64_t libuv_code);
     TARM_IO_DLL_PUBLIC Error(StatusCode status_code);
-    TARM_IO_DLL_PUBLIC Error(StatusCode status_code, const std::string& custom_error_message);
+    TARM_IO_DLL_PUBLIC Error(StatusCode status_code, const std::string& additional_info);
 
     TARM_IO_DLL_PUBLIC StatusCode code() const;
     TARM_IO_DLL_PUBLIC std::string string() const;
+    TARM_IO_DLL_PUBLIC const std::string& additional_info() const;
 
     TARM_IO_DLL_PUBLIC operator bool() const;
 
 private:
     std::int64_t m_libuv_code = 0;
     StatusCode m_status_code = StatusCode::OK;
-    std::string m_custom_error_message;
+    std::string m_additional_info;
 };
 
 TARM_IO_DLL_PUBLIC

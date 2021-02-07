@@ -23,9 +23,9 @@ Error::Error(StatusCode status_code) :
    m_status_code(status_code) {
 }
 
-Error::Error(StatusCode status_code, const std::string& custom_error_message) :
+Error::Error(StatusCode status_code, const std::string& additional_info) :
     m_status_code(status_code),
-    m_custom_error_message(custom_error_message) {
+    m_additional_info(additional_info) {
 }
 
 StatusCode Error::code() const {
@@ -61,7 +61,7 @@ std::string Error::string() const {
         case StatusCode::PEER_NOT_FOUND:
             return "Peer notfound";
         case StatusCode::OPENSSL_ERROR:
-            return "Openssl error: " + m_custom_error_message;
+            return "Openssl error: " + m_additional_info;
 
         // UV codes
         case StatusCode::ARGUMENT_LIST_TOO_LONG:
@@ -225,6 +225,10 @@ std::string Error::string() const {
             assert(false && "Error code without string value");
             return "";
     }
+}
+
+const std::string& Error::additional_info() const {
+    return m_additional_info;
 }
 
 Error::operator bool() const {
