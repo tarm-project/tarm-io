@@ -510,7 +510,7 @@ void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeD
             make_dir(loop, p, mode,
                 [&loop, on_stat, normalized_path, next_path, callback, p](const Error& error) {
                     if (error) {
-                        callback(Error(error.code(), p.c_str()));
+                        callback(Error(error.code(), p.string()));
                         return;
                     }
 
@@ -522,7 +522,7 @@ void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeD
                 }
             );
         } else if (error) {
-            callback(Error(error.code(), p.c_str()));
+            callback(Error(error.code(), p.string()));
         } else {
             if (next_path.size() != normalized_path.size()) {
                 stat(loop, next_path, *on_stat);
