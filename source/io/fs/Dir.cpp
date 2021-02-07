@@ -494,8 +494,17 @@ void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeD
 
     const auto normalized_path = path.lexically_normal();
 
-    auto on_stat = std::make_shared<std::function<void(const Path&, const StatData&, const Error&)>>();
-    *on_stat = [&loop, on_stat, normalized_path, mode, callback](const Path& p, const StatData&, const Error& error) {
+    // TODO: describe this approach in docs, find something better?
+    // Post reply here https://stackoverflow.com/questions/2067988/recursive-lambda-functions-in-c11
+    auto on_stat = new std::function<void(const Path&, const StatData&, const Error&)>();
+    auto on_end = [&loop, on_stat, callback](const Path& path, const Error& error) {
+        callback(path, error);
+        loop.schedule_callback([on_stat](EventLoop&) {
+            delete on_stat;
+        });
+    };
+
+    *on_stat = [&loop, on_stat, normalized_path, mode, on_end](const Path& p, const StatData&, const Error& error) {
         auto it1 = normalized_path.begin();
         auto it2 = p.begin();
         while (it2 != p.end()) {
@@ -507,26 +516,26 @@ void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeD
 
         if (error == StatusCode::NO_SUCH_FILE_OR_DIRECTORY) {
             make_dir(loop, p, mode,
-                [&loop, on_stat, normalized_path, next_path, callback](const Path& p, const Error& error) {
+                [&loop, on_stat, normalized_path, next_path, on_end](const Path& p, const Error& error) {
                     if (error) {
-                        callback(p, Error(error.code(), p.string()));
+                        on_end(p, Error(error.code(), p.string()));
                         return;
                     }
 
                     if (p.size() != normalized_path.size()) {
                         stat(loop, next_path, *on_stat);
                     } else {
-                        callback(p, StatusCode::OK);
+                        on_end(p, StatusCode::OK);
                     }
                 }
             );
         } else if (error) {
-            callback(p, Error(error.code(), p.string()));
+            on_end(p, Error(error.code(), p.string()));
         } else {
             if (next_path.size() != normalized_path.size()) {
                 stat(loop, next_path, *on_stat);
             } else {
-                callback(p, StatusCode::OK);
+                on_end(p, StatusCode::OK);
             }
         }
     };
