@@ -766,10 +766,11 @@ TEST_F(DirTest, make_dir_default_mode) {
     const std::string path = (m_tmp_test_dir / "new_dir").string();
 
     io::fs::make_dir(loop, path, 0,
-        [&](const io::Error& error) {
+        [&](const io::fs::Path& p, const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_FALSE(error);
             EXPECT_TRUE(boost::filesystem::exists(path));
+            EXPECT_EQ(path, p);
         }
     );
 
@@ -791,10 +792,11 @@ TEST_F(DirTest, make_dir_with_mode) {
     const std::string path = (m_tmp_test_dir / "new_dir").string();
 
     io::fs::make_dir(loop, path, S_IRWXU,
-        [&](const io::Error& error) {
+        [&](const io::fs::Path& p, const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_FALSE(error);
             EXPECT_TRUE(boost::filesystem::exists(path));
+            EXPECT_EQ(path, p);
             // TODO: stat dir and check that mode
         }
     );
@@ -815,10 +817,11 @@ TEST_F(DirTest, make_dir_no_such_dir_error) {
     const std::string path = (m_tmp_test_dir / "no_exists" / "new_dir").string();
 
     io::fs::make_dir(loop, path, 0,
-        [&](const io::Error& error) {
+        [&](const io::fs::Path& p, const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::NO_SUCH_FILE_OR_DIRECTORY, error.code());
+            EXPECT_EQ(path, p);
         }
     );
 
@@ -837,10 +840,11 @@ TEST_F(DirTest, make_dir_exists_error) {
     const std::string path = (m_tmp_test_dir).string();
 
     io::fs::make_dir(loop, path, 0,
-        [&](const io::Error& error) {
+        [&](const io::fs::Path& p, const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::FILE_OR_DIR_ALREADY_EXISTS, error.code());
+            EXPECT_EQ(path, p);
         }
     );
 
@@ -857,10 +861,11 @@ TEST_F(DirTest, make_dir_empty_path_error) {
     std::size_t on_make_dir_call_count = 0;
 
     io::fs::make_dir(loop, "", 0,
-        [&](const io::Error& error) {
+        [&](const io::fs::Path& p, const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, error.code());
+            EXPECT_EQ("", p);
         }
     );
 
@@ -879,10 +884,11 @@ TEST_F(DirTest, make_dir_name_to_long_error) {
     const std::string path = (m_tmp_test_dir / "1234567890qwertyuiopasdfgghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm1234567890qwertyuiopasdfghjklzxcvbnm").string();
 
     io::fs::make_dir(loop, path, 0,
-        [&](const io::Error& error) {
+        [&](const io::fs::Path& p, const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::NAME_TOO_LONG, error.code());
+            EXPECT_EQ(path, p);
         }
     );
 
@@ -907,10 +913,11 @@ TEST_F(DirTest, make_dir_root_dir_error) {
 #endif
 
     io::fs::make_dir(loop, path, 0,
-        [&](const io::Error& error) {
+        [&](const io::fs::Path& p, const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_TRUE(error);
             EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, error.code());
+            EXPECT_EQ(path, p);
         }
     );
 
@@ -931,10 +938,11 @@ TEST_F(DirTest, make_all_dirs) {
     const std::string path = (m_tmp_test_dir / "1" / "2" / "3" / "4").string();
 
     io::fs::make_all_dirs(loop, path, io::fs::DIR_MODE_DEFAULT,
-        [&](const io::Error& error) {
+        [&](const io::fs::Path& p, const io::Error& error) {
             ++on_make_dir_call_count;
             EXPECT_FALSE(error);
             EXPECT_TRUE(boost::filesystem::exists(path));
+            EXPECT_EQ(path, p);
         }
     );
 

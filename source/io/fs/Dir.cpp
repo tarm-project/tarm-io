@@ -446,7 +446,7 @@ void on_make_dir(uv_fs_t* uv_request) {
         }
 #endif // _MSC_VER
 
-        request.callback(error);
+        request.callback(request.path, error);
     }
 
     uv_fs_req_cleanup(uv_request);
@@ -456,14 +456,14 @@ void on_make_dir(uv_fs_t* uv_request) {
 void make_dir_impl(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
     if (path.empty()) {
         if (callback) {
-            callback(StatusCode::INVALID_ARGUMENT);
+            callback(path, StatusCode::INVALID_ARGUMENT);
         }
         return;
     }
 
     if (path.root_name() == path || path.root_directory() == path) {
         if (callback) {
-            callback(StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY);
+            callback(path, StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY);
         }
         return;
     }
@@ -473,7 +473,7 @@ void make_dir_impl(EventLoop& loop, const Path& path, int mode, const MakeDirCal
         uv_fs_mkdir(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), request, path.string().c_str(), mode, on_make_dir);
     if (error) {
         if (callback) {
-            callback(error);
+            callback(path, error);
         }
 
         delete request;
@@ -487,7 +487,7 @@ void make_dir(EventLoop& loop, const Path& path, int mode, const MakeDirCallback
 void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback) {
     if (path.empty()) {
         if (callback) {
-            callback(StatusCode::INVALID_ARGUMENT);
+            callback(path, StatusCode::INVALID_ARGUMENT);
         }
         return;
     }
@@ -506,28 +506,27 @@ void make_all_dirs_impl(EventLoop& loop, const Path& path, int mode, const MakeD
         const auto next_path = (p / (*it1));
 
         if (error == StatusCode::NO_SUCH_FILE_OR_DIRECTORY) {
-            // TODO: remove p  in capture list
             make_dir(loop, p, mode,
-                [&loop, on_stat, normalized_path, next_path, callback, p](const Error& error) {
+                [&loop, on_stat, normalized_path, next_path, callback](const Path& p, const Error& error) {
                     if (error) {
-                        callback(Error(error.code(), p.string()));
+                        callback(p, Error(error.code(), p.string()));
                         return;
                     }
 
                     if (p.size() != normalized_path.size()) {
                         stat(loop, next_path, *on_stat);
                     } else {
-                        callback(StatusCode::OK);
+                        callback(p, StatusCode::OK);
                     }
                 }
             );
         } else if (error) {
-            callback(Error(error.code(), p.string()));
+            callback(p, Error(error.code(), p.string()));
         } else {
             if (next_path.size() != normalized_path.size()) {
                 stat(loop, next_path, *on_stat);
             } else {
-                callback(StatusCode::OK);
+                callback(p, StatusCode::OK);
             }
         }
     };

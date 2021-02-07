@@ -63,7 +63,7 @@ void make_temp_dir(EventLoop& loop, const Path& name_template, const MakeTempDir
 const int DIR_MODE_DEFAULT = 0777;
 
 // Note: mode does nothing on Windows, should be 0
-using MakeDirCallback = std::function<void(const Error&)>;
+using MakeDirCallback = std::function<void(const Path&, const Error&)>;
 TARM_IO_DLL_PUBLIC
 void make_dir(EventLoop& loop, const Path& path, int mode, const MakeDirCallback& callback);
 
