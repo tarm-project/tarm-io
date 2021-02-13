@@ -225,6 +225,12 @@ void TcpClient::Impl::on_connect(uv_connect_t* req, int uv_status) {
             this_.m_close_callback = nullptr;
         }
     } else {
+        if (error) {
+            // This will guarantee that in case of connect error other callbacks are not called
+            this_.m_receive_callback = nullptr;
+            this_.m_close_callback = nullptr;
+        }
+
         if (this_.m_connect_callback) {
             this_.m_connect_callback(*this_.m_parent, error);
         }

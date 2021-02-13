@@ -737,7 +737,7 @@ TEST_F(TcpClientServerTest, server_close_callback_3) {
     EXPECT_EQ(1, on_server_close_call_count);
 }
 
-TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server) {
+TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server_1) {
     bool callback_called = false;
 
     io::EventLoop loop;
@@ -755,6 +755,50 @@ TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server) {
 
     EXPECT_EQ(io::StatusCode::OK, loop.run());
     EXPECT_TRUE(callback_called);
+}
+
+TEST_F(TcpClientServerTest, client_connect_to_nonexistent_server_2) {
+    // Checking here that close callback is not called in case of error in on_connect callback
+    std::size_t client_on_connect_count = 0;
+    std::size_t client_on_receive_count = 0;
+    std::size_t client_on_close_count = 0;
+
+    io::ScopeExitGuard final_check([&]() {
+        EXPECT_EQ(1, client_on_connect_count);
+        EXPECT_EQ(0, client_on_receive_count);
+        EXPECT_EQ(0, client_on_close_count);
+    });
+
+    io::EventLoop loop;
+    auto client = new io::net::TcpClient(loop);
+    client->connect({m_default_addr, m_default_port},
+        [&](io::net::TcpClient& client, const io::Error& error) {
+            EXPECT_TRUE(error);
+            EXPECT_FALSE(client.is_open());
+            EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, error.code());
+            ++client_on_connect_count;
+        },
+        [&](io::net::TcpClient& client, const io::DataChunk& data, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_receive_count;
+        },
+        [&](io::net::TcpClient& client, const io::Error& error) {
+            EXPECT_FALSE(error) << error;
+            ++client_on_close_count;
+        }
+    );
+
+    EXPECT_EQ(0, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
+
+    EXPECT_EQ(io::StatusCode::OK, loop.run());
+
+    client->schedule_removal();
+
+    EXPECT_EQ(1, client_on_connect_count);
+    EXPECT_EQ(0, client_on_receive_count);
+    EXPECT_EQ(0, client_on_close_count);
 }
 
 TEST_F(TcpClientServerTest, client_reconnect_after_failure_1) {
