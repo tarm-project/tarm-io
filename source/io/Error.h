@@ -20,6 +20,7 @@ public:
     TARM_IO_ALLOW_COPY(Error);
     TARM_IO_ALLOW_MOVE(Error);
 
+    TARM_IO_DLL_PUBLIC Error() = default; // StatusCode::OK
     TARM_IO_DLL_PUBLIC Error(std::int64_t libuv_code);
     TARM_IO_DLL_PUBLIC Error(StatusCode status_code);
     TARM_IO_DLL_PUBLIC Error(StatusCode status_code, const std::string& additional_info);

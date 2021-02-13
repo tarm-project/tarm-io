@@ -14,6 +14,11 @@ struct ErrorTest : public testing::Test,
                    public LogRedirector {
 };
 
+TEST_F(ErrorTest, default_constructor) {
+    io::Error error;
+    EXPECT_EQ(io::StatusCode::OK, error.code());
+}
+
 TEST_F(ErrorTest, create_from_uv_error_code) {
     io::Error error(UV_EOF);
     EXPECT_EQ(io::StatusCode::END_OF_FILE, error.code());
