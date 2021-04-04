@@ -29,7 +29,17 @@ void on_getaddrinfo(uv_getaddrinfo_t* req, int status, addrinfo* res) {
         current = current->ai_next;
     }
 
-    request.callback(endpoints, Error(status));
+    // In this callback TEMPORARY_FAILURE code could be returned. At least it was seen on Linux.
+    // But the code and corresponding message are confusing. So we reassigning error code here to
+    // make error more descriptive and make behavior consistent between platforms.
+    // See also 'EAI_AGAIN' code in MSDN's "getaddrinfo function (ws2tcpip.h)"
+    // https://docs.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getaddrinfo?redirectedfrom=MSDN
+    Error error(status);
+    if (error == StatusCode::TEMPORARY_FAILURE) {
+        error = StatusCode::UNKNOWN_NODE_OR_SERVICE;
+    }
+
+    request.callback(endpoints, error);
 
     uv_freeaddrinfo(res);
     delete &request;
