@@ -53,6 +53,7 @@ jobs:
         make -j ${TARM_IO_CPU_COUNT}
     - name: build with Xcode (external GTest)
       run: |
+        cmake --version
         TARM_IO_CPU_COUNT=$(cat TARM_IO_CPU_COUNT)
         mkdir -p build_xcode
         cd build_xcode

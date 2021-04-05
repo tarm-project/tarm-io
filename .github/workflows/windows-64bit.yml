@@ -27,6 +27,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: minimal build (no dependencies)
       run: |
+        cmake --version
         mkdir minimal_build
         cd minimal_build
         cmake -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 `
