@@ -85,7 +85,7 @@ jobs:
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
           "mkdir -p build && \
            cd build && \
-           cmake -G "Ninja Multi-Config" -DTARM_IO_BUILD_TESTS=ON .."
+           cmake -G 'Ninja Multi-Config' -DTARM_IO_BUILD_TESTS=ON .."
     - name: build release
       run: |
         ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
