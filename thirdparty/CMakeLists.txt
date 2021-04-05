@@ -5,14 +5,7 @@
 
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
-# Solution from here https://gitlab.kitware.com/cmake/cmake/issues/17645
-if (CMAKE_CONFIGURATION_TYPES)
-	set(TARM_IO_PROPAGATE_BUILD_TYPE --config $<CONFIG>)
-else()
-	set(TARM_IO_PROPAGATE_BUILD_TYPE -DCMAKE_BUILD_TYPE=$<CONFIG>)
-endif()
-
-if(WIN32)
+if (WIN32)
   list(APPEND LIBUV_LIB_DEPS
        advapi32
        iphlpapi
@@ -22,30 +15,30 @@ if(WIN32)
        userenv
        ws2_32)
 else()
-    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+    if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
         # Android has pthread as part of its c library, not as a separate
         # libpthread.so.
         list(APPEND LIBUV_LIB_DEPS pthread)
     endif()
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "AIX")
+if (CMAKE_SYSTEM_NAME STREQUAL "AIX")
     list(APPEND LIBUV_LIB_DEPS perfstat)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Android")
+if (CMAKE_SYSTEM_NAME STREQUAL "Android")
     list(APPEND uv_libs dl)
 endif()
 
-if(CMAKE_SYSTEM_NAME MATCHES "DragonFly|FreeBSD|NetBSD|OpenBSD")
+if (CMAKE_SYSTEM_NAME MATCHES "DragonFly|FreeBSD|NetBSD|OpenBSD")
     list(APPEND LIBUV_LIB_DEPS kvm)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND LIBUV_LIB_DEPS dl rt)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "SunOS")
     list(APPEND LIBUV_LIB_DEPS kstat nsl sendfile socket)
 endif()
 
@@ -74,24 +67,52 @@ set(LIBUV_INCLUDE_PATH "${LIBUV_PREFIX}/install/include")
 # https://gitlab.kitware.com/cmake/cmake/-/issues/15052
 file(MAKE_DIRECTORY "${LIBUV_INCLUDE_PATH}")
 
-ExternalProject_Add(libuv-bundled
-    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libuv-${TARM_IO_LIBUV_VERSION}"
-    PREFIX "${LIBUV_PREFIX}"
-    BINARY_DIR "${LIBUV_PREFIX}/build"
-    INSTALL_DIR "${LIBUV_PREFIX}/install"
-    CMAKE_ARGS -Dlibuv_buildtests=OFF
-               -DCMAKE_INSTALL_PREFIX=${LIBUV_PREFIX}/install
-               -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-               -DCMAKE_C_FLAGS=${LIBUV_ADDITIONAL_FLAGS}
-               -DCMAKE_SHARED_LINKER_FLAGS=${LIBUV_ADDITIONAL_FLAGS}
-               -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=${CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE}
-               ${TARM_IO_PROPAGATE_BUILD_TYPE}
-    BUILD_BYPRODUCTS ${LIBUV_STATIC_LIB_PATH}
-    BUILD_BYPRODUCTS ${LIBUV_DYNAMIC_LIB_PATH}
-    BUILD_BYPRODUCTS ${LIBUV_INCLUDE_PATH}
+set(LIBUV_CMAKE_ARGS
+    -Dlibuv_buildtests=OFF
+    -DCMAKE_INSTALL_PREFIX=${LIBUV_PREFIX}/install
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    -DCMAKE_C_FLAGS=${LIBUV_ADDITIONAL_FLAGS}
+    -DCMAKE_SHARED_LINKER_FLAGS=${LIBUV_ADDITIONAL_FLAGS}
 )
 
-# IMPORTED target is required for Ninja generator because it needs all rule to be defined at configuration of CMake
+if (MSVC)
+    list(APPEND LIBUV_CMAKE_ARGS -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=${CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE})
+endif()
+
+set(LIBUV_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libuv-${TARM_IO_LIBUV_VERSION}")
+
+# Starting from CMake-3.20 it is impossible to pass --config option into CMAKE_ARGS in the ExternalProject_Add,
+# so 2 separate versions were added.
+if (CMAKE_CONFIGURATION_TYPES)
+    # This branch is called for build systems which support multiple configurations in the same directory,
+    # like XCode, MSVC and "Ninja Multi-Config".
+    ExternalProject_Add(libuv-bundled
+        SOURCE_DIR "${LIBUV_SOURCE_DIR}"
+        PREFIX "${LIBUV_PREFIX}"
+        BINARY_DIR "${LIBUV_PREFIX}/build"
+        INSTALL_DIR "${LIBUV_PREFIX}/install"
+        CMAKE_ARGS "${LIBUV_CMAKE_ARGS}"
+        BUILD_COMMAND cmake --build . --config $<CONFIG>
+        BUILD_BYPRODUCTS ${LIBUV_STATIC_LIB_PATH}
+        BUILD_BYPRODUCTS ${LIBUV_DYNAMIC_LIB_PATH}
+        BUILD_BYPRODUCTS ${LIBUV_INCLUDE_PATH}
+    )
+else()
+    list(APPEND LIBUV_CMAKE_ARGS -DCMAKE_BUILD_TYPE=$<CONFIG>)
+
+    ExternalProject_Add(libuv-bundled
+        SOURCE_DIR "${LIBUV_SOURCE_DIR}"
+        PREFIX "${LIBUV_PREFIX}"
+        BINARY_DIR "${LIBUV_PREFIX}/build"
+        INSTALL_DIR "${LIBUV_PREFIX}/install"
+        CMAKE_ARGS "${LIBUV_CMAKE_ARGS}"
+        BUILD_BYPRODUCTS ${LIBUV_STATIC_LIB_PATH}
+        BUILD_BYPRODUCTS ${LIBUV_DYNAMIC_LIB_PATH}
+        BUILD_BYPRODUCTS ${LIBUV_INCLUDE_PATH}
+    )
+endif()
+
+# IMPORTED target is required for Ninja generator because it needs all rules to be defined at configuration step of CMake
 if (NOT DEFINED IO_SANITIZER)
     add_library(LibUV::LibUV STATIC IMPORTED GLOBAL)
     set_target_properties(LibUV::LibUV PROPERTIES
