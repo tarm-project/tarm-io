@@ -1,0 +1,21 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) 2020 - present Alexander Voitenko
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
+FROM tarmio/builders:ubuntu20.04-gcc9.3.0-boost1.71
+
+LABEL maintainer="av@tarm.io"
+
+ENV BUILD_DIR=/build
+
+RUN mkdir -p ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    wget https://cmake.org/files/v3.20/cmake-3.20.0.tar.gz && \
+    tar -xf cmake* && \
+    cd cmake* && \
+    ./configure --parallel=$(nproc) -- -DCMAKE_USE_OPENSSL=OFF && \
+    make -j2 && \
+    make install && \
+    ldconfig && \
+    rm -rf ${BUILD_DIR}

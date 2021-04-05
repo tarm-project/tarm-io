@@ -70,3 +70,39 @@ jobs:
            cmake -G \\\"$(cat TARM_IO_CMAKE_GENERATOR)\\\" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. && \
            ${{ matrix.build_tool }} -j$(nproc) && \
            ./hello_event_loop/hello_event_loop"
+  NINJA-Multiconfig:
+    env:
+      IMAGE_PATH: "tarmio/builders:ubuntu20.04-gcc9.3.0-boost1.71-cmake3.20.0-gtest1.10.0-ninja1.10.2"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: docker pull
+      run: |
+        env
+        docker pull ${IMAGE_PATH}
+    - name: configure
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
+          "mkdir -p build && \
+           cd build && \
+           cmake -G "Ninja Multi-Config" -DTARM_IO_BUILD_TESTS=ON .."
+    - name: build release
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
+          "cd build && \
+           cmake --build . --config Release"
+    - name: build debug
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
+          "cd build && \
+           cmake --build . --config Debug"
+    - name: run release tests
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
+          "cd build && \
+          ./tests/Release/tests"
+    - name: run debug tests
+      run: |
+        ./scripts/execute_in_docker.bash ${IMAGE_PATH} \
+          "cd build && \
+          ./tests/Debug/tests"
