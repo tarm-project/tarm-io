@@ -34,9 +34,6 @@ jobs:
               -DCMAKE_GENERATOR_PLATFORM=x64 `
               ..
         cmake --build . --config ${{ matrix.config }}
-    - name: tmp boost search
-      run: |
-        dir -Path C:\* -Filter Boost* -Recurse | %{$_.FullName}
     - name: minimal lib install, build and run examples
       run: |
         cd minimal_build
