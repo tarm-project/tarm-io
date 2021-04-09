@@ -100,8 +100,6 @@ public:
     }
 
 protected:
-    // TODO: unique_ptr here
-
     template<typename EndSendCallback>
     bool send_size_impl(const EndSendCallback& callback, const char* /*c_str*/, std::uint32_t size) {
         return do_send_size(callback, size);
