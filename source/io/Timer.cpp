@@ -178,6 +178,10 @@ Timer::Timer(EventLoop& loop) :
     m_impl(new Impl(loop, *this)) {
 }
 
+Timer::Timer(EventLoop& loop, Error& error) :
+    Timer(loop) {
+}
+
 Timer::~Timer() {
 }
 

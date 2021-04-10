@@ -28,6 +28,18 @@ TEST_F(TimerTest, constructor) {
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 }
 
+TEST_F(TimerTest, allocate) {
+    io::EventLoop loop;
+
+    //auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+
+    timer->schedule_removal();
+    ASSERT_EQ(io::StatusCode::OK, loop.run());
+}
+
 TEST_F(TimerTest, schedule_with_no_repeat) {
     io::EventLoop loop;
 

@@ -26,6 +26,7 @@ public:
     using Callback = std::function<void(Timer&)>;
 
     TARM_IO_DLL_PUBLIC Timer(EventLoop& loop);
+    TARM_IO_DLL_PUBLIC Timer(EventLoop& loop, Error& error);
 
     TARM_IO_FORBID_COPY(Timer);
     TARM_IO_FORBID_MOVE(Timer);

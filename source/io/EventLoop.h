@@ -77,6 +77,11 @@ public:
 
     TARM_IO_DLL_PUBLIC bool is_running() const;
 
+    // thread safe
+    TARM_IO_DLL_PUBLIC Error last_allocation_error() const;
+    template<typename T>
+    TARM_IO_DLL_PUBLIC T* allocate();
+
     // Access to an internal libuv's event loop via void* pointer which allows you
     // to schedule raw libuv operations using tarm-io library event loop.
     TARM_IO_DLL_PUBLIC void* raw_loop();

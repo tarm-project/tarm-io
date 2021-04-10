@@ -12,6 +12,7 @@
 #include "ScopeExitGuard.h"
 #include "Error.h"
 #include "global/Configuration.h"
+#include "Timer.h"
 
 #include <assert.h>
 
@@ -91,6 +92,25 @@ public:
 
     void finish();
 
+    Error last_allocation_error() const;
+
+    template<typename T>
+    T* allocate() {
+        Error error;
+        auto ptr = new(std::nothrow) T(*m_parent, error);
+        m_last_allocation_error = error;
+        if (error) {
+            return nullptr;
+        }
+
+        if (ptr == nullptr) {
+            m_last_allocation_error = StatusCode::OUT_OF_MEMORY;
+            return nullptr;
+        }
+
+        return ptr;
+    }
+
 protected:
     void execute_pending_callbacks();
     void close_signal_handlers();
@@ -127,7 +147,11 @@ private:
     bool m_have_active_sync_callbacks = false;
 
     std::unordered_map<EventLoop::Signal, SignalHandler*, EnumClassHash> m_signal_handlers;
+
+    static thread_local Error m_last_allocation_error;
 };
+
+thread_local Error EventLoop::Impl::m_last_allocation_error{StatusCode::OK};
 
 namespace {
 
@@ -512,6 +536,10 @@ void EventLoop::Impl::execute_pending_callbacks() {
     }
 }
 
+Error EventLoop::Impl::last_allocation_error() const {
+    return m_last_allocation_error;
+}
+
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 template<typename WorkCallbackType, typename WorkDoneCallbackType>
 void EventLoop::Impl::on_work(uv_work_t* req) {
@@ -679,6 +707,17 @@ Error EventLoop::handle_signal_once(Signal signal, const SignalCallback& callbac
 void EventLoop::remove_signal_handler(Signal signal) {
     return m_impl->remove_signal_handler(signal);
 }
+
+Error EventLoop::last_allocation_error() const {
+    return m_impl->last_allocation_error();
+}
+
+template<typename T>
+T* EventLoop::allocate() {
+    return m_impl->allocate<T>();
+}
+
+template TARM_IO_DLL_PUBLIC Timer* EventLoop::allocate<Timer>();
 
 } // namespace io
 } // namespace tarm
