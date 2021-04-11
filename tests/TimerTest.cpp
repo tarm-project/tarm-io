@@ -17,22 +17,12 @@ struct TimerTest : public testing::Test,
 // Note: in some tests there are double loop.run() calls. This is made
 //       to ensure that timer stopping will exit the loop.
 
-TEST_F(TimerTest, constructor) {
-    io::EventLoop loop;
-
-    auto timer = new io::Timer(loop);
-
-    ASSERT_EQ(io::StatusCode::OK, loop.run());
-
-    timer->schedule_removal();
-    ASSERT_EQ(io::StatusCode::OK, loop.run());
-}
-
 TEST_F(TimerTest, allocate) {
     io::EventLoop loop;
 
     //auto timer = new io::Timer(loop);
     auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
 
@@ -46,7 +36,8 @@ TEST_F(TimerTest, schedule_with_no_repeat) {
     const uint64_t TIMEOUT_MS = 300;
     size_t call_counter = 0;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(TIMEOUT_MS, 0, [&](io::Timer& timer) {
         ++call_counter;
         EXPECT_TIMEOUT_MS(TIMEOUT_MS, timer.real_time_passed_since_last_callback());
@@ -76,7 +67,8 @@ TEST_F(TimerTest, zero_timeot) {
         loop.stop_call_on_each_loop_cycle(idle_handle);
     });
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(0, 0, [&](io::Timer& timer) {
         ASSERT_EQ(0, idle_counter);
         ++timer_counter;
@@ -97,7 +89,8 @@ TEST_F(TimerTest, no_callback) {
 
     const std::size_t TIMEOUT_MS = 300;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(TIMEOUT_MS, nullptr);
 
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -118,7 +111,8 @@ TEST_F(TimerTest, stop_after_start) {
 
     bool callback_called = false;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(100, [&](io::Timer& ) {
         callback_called = true;
     });
@@ -136,7 +130,8 @@ TEST_F(TimerTest, stop_in_callback) {
 
     std::size_t calls_counter = 0;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(100, 100, [&](io::Timer& timer) {
         ++calls_counter;
         timer.stop();
@@ -155,7 +150,8 @@ TEST_F(TimerTest, start_stop_start_stop) {
     bool first_callback_called = false;
     bool second_callback_called = false;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(100, 100, [&](io::Timer& timer) {
         first_callback_called = true;
     });
@@ -184,7 +180,8 @@ TEST_F(TimerTest, schedule_with_repeat) {
     std::chrono::milliseconds duration_1;
     std::chrono::milliseconds duration_2;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     EXPECT_EQ(0, timer->timeout_ms());
     EXPECT_EQ(0, timer->repeat_ms());
     timer->start(TIMEOUT_MS, REPEAT_MS, [&](io::Timer& timer) {
@@ -225,7 +222,8 @@ TEST_F(TimerTest, schedule_removal_after_start) {
 
     size_t call_counter = 0;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(TIMEOUT_MS, REPEAT_MS, [&](io::Timer& timer) {
         ++call_counter;
     });
@@ -247,7 +245,8 @@ TEST_F(TimerTest, schedule_removal_from_callback) {
 
     size_t call_counter = 0;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(TIMEOUT_MS, REPEAT_MS,
         [&](io::Timer& timer) {
             ++call_counter;
@@ -269,7 +268,8 @@ TEST_F(TimerTest, multiple_intervals) {
 
     std::deque<std::chrono::milliseconds> durations;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(intervals,
         [&](io::Timer& timer) {
             EXPECT_EQ(intervals[durations.size()], timer.timeout_ms());
@@ -298,7 +298,8 @@ TEST_F(TimerTest, start_in_callback_1) {
 
     std::size_t call_counter = 0;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(10, [&](io::Timer& timer) {
         ++call_counter;
         EXPECT_EQ(10, timer.timeout_ms());
@@ -328,7 +329,8 @@ TEST_F(TimerTest, start_in_callback_2) {
 
     std::size_t call_counter = 0;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(10, 100, [&](io::Timer& timer) {
         ++call_counter;
         EXPECT_EQ(10, timer.timeout_ms());
@@ -358,7 +360,8 @@ TEST_F(TimerTest, start_in_callback_3) {
 
     std::size_t call_counter = 0;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start({1, 2, 3}, [&](io::Timer& timer) {
         ++call_counter;
         EXPECT_EQ(1, timer.timeout_ms());
@@ -401,7 +404,8 @@ TEST_F(TimerTest, callback_call_counter_1) {
         ++callback_counter;
     };
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     EXPECT_EQ(0, timer->callback_call_counter());
     timer->start(10, timer_callback);
     EXPECT_EQ(0, timer->callback_call_counter());
@@ -420,7 +424,8 @@ TEST_F(TimerTest, callback_call_counter_2) {
 
     std::size_t callback_counter = 0;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     EXPECT_EQ(0, timer->callback_call_counter());
     timer->start(10, 20, [&] (io::Timer& timer) {
         EXPECT_EQ(callback_counter, timer.callback_call_counter());
@@ -449,7 +454,8 @@ TEST_F(TimerTest, 100k_timers) {
 
     const std::size_t COUNT = 100000;
     for (std::size_t i = 0; i < COUNT; ++i) {
-        auto timer = new io::Timer(loop);
+        auto timer = loop.allocate<io::Timer>();
+        ASSERT_TRUE(timer) << "i=" << i;
         timer->start(i % 500 + 1, common_callback);
     }
 
@@ -478,7 +484,8 @@ TEST_F(TimerTest, 1k_timers_1k_timeouts) {
     };
 
     for (std::size_t i = 0; i < COUNT; ++i) {
-        auto timer = new io::Timer(loop);
+        auto timer = loop.allocate<io::Timer>();
+        ASSERT_TRUE(timer) << loop.last_allocation_error() << "i=" << i;
         timer->set_user_data(reinterpret_cast<void*>(i));
         timer->start(1, 1, common_callback);
     }
@@ -503,7 +510,8 @@ TEST_F(TimerTest, multiple_starts) {
     const uint64_t TIMEOUT_2_MS = 500;
     size_t call_counter_2 = 0;
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(TIMEOUT_1_MS, 0, [&](io::Timer& timer) {
         // This will not be executed
         ++call_counter_1;

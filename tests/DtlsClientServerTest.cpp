@@ -1161,7 +1161,7 @@ TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
                 // Note: here we capture client by reference in Timer's callback. This should not
                 //       be done in production code because it is impossible to track lifetime of
                 //       server-size objects outside of the server callbacks.
-                (new io::Timer(loop))->start(SEND_TIMEOUT_MS,
+                loop.allocate<io::Timer>()->start(SEND_TIMEOUT_MS,
                     [&](io::Timer& timer) {
                         client.send_data("!");
                         timer.schedule_removal();
@@ -1208,7 +1208,7 @@ TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
             [&](io::net::DtlsClient& client, const io::DataChunk& data, const io::Error& error) {
                 EXPECT_FALSE(error) << error.string();
 
-                (new io::Timer(loop))->start(SEND_TIMEOUT_MS,
+                loop.allocate<io::Timer>()->start(SEND_TIMEOUT_MS,
                     [&](io::Timer& timer) {
                         client.send_data("!");
                         timer.schedule_removal();
@@ -1466,7 +1466,7 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_before_handshake) {
         }
     );
 
-    (new io::Timer(loop))->start(100,
+    loop.allocate<io::Timer>()->start(100,
         [&](io::Timer& timer){
             client->schedule_removal();
             timer.schedule_removal();
@@ -1557,7 +1557,7 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_during_handshake) {
 
             client.send_data("!!!");
 
-            (new io::Timer(loop))->start(100,
+            loop.allocate<io::Timer>()->start(100,
                 [&](io::Timer& timer){
                     client.schedule_removal();
                     timer.schedule_removal();
@@ -1756,17 +1756,17 @@ TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
             ++client_on_connect_count;
-            (new io::Timer(loop))->start(400,
+            loop.allocate<io::Timer>()->start(400,
                 [&](io::Timer& timer) {
                     // TODO: currently this data will not be received because UDP peers at UDP server
                     //       have inactivity timeout which is hardcoded in DTLS server and filters incoming data.
-                    //       Need to revise this/
+                    //       Need to revise this.
                     client.send_data("!!!");
                     timer.schedule_removal();
                 }
             );
 
-            (new io::Timer(loop))->start(600,
+            loop.allocate<io::Timer>()->start(600,
                 [&](io::Timer& timer) {
                     client.schedule_removal();
                     server->schedule_removal();

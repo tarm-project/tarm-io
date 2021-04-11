@@ -23,10 +23,9 @@ namespace io {
 class Timer : public Removable,
               public UserDataHolder {
 public:
-    using Callback = std::function<void(Timer&)>;
+    friend class EventLoop;
 
-    TARM_IO_DLL_PUBLIC Timer(EventLoop& loop);
-    TARM_IO_DLL_PUBLIC Timer(EventLoop& loop, Error& error);
+    using Callback = std::function<void(Timer&)>;
 
     TARM_IO_FORBID_COPY(Timer);
     TARM_IO_FORBID_MOVE(Timer);
@@ -55,6 +54,7 @@ public:
     // This is not expected to be called outside of timer callback
     TARM_IO_DLL_PUBLIC std::chrono::milliseconds real_time_passed_since_last_callback() const;
 protected:
+    TARM_IO_DLL_PUBLIC Timer(EventLoop& loop, Error& error);
     TARM_IO_DLL_PUBLIC ~Timer();
 
 private:

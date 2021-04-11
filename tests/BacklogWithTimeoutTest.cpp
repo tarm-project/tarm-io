@@ -81,6 +81,12 @@ bool operator==(const TestItem& item1, const TestItem& item2) {
 class FakeLoop : public ::tarm::io::UserDataHolder {
 public:
     FakeLoop() = default;
+
+    template<typename T>
+    T* allocate() {
+        io::Error error;
+        return new(std::nothrow) T(*this, error);
+    }
 };
 
 class FakeTimer : public ::tarm::io::UserDataHolder {
@@ -99,7 +105,7 @@ public:
     TARM_IO_FORBID_COPY(FakeTimer);
     TARM_IO_FORBID_MOVE(FakeTimer);
 
-    FakeTimer(FakeLoop& loop) {
+    FakeTimer(FakeLoop& loop, io::Error&) {
         auto& test_suite = *reinterpret_cast<BacklogWithTimeoutTest*>(loop.user_data());
         test_suite.add_fake_timer(this);
     }

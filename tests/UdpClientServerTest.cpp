@@ -671,7 +671,8 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
         }
     );
 
-    auto timer_1 = new io::Timer(loop);
+    auto timer_1 = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer_1);
     timer_1->start(100, [&](io::Timer& timer) {
         EXPECT_EQ(1, client_send_counter);
         client->send_data(client_message_2,
@@ -683,7 +684,8 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
         timer.schedule_removal();
     });
 
-    auto timer_2 = new io::Timer(loop);
+    auto timer_2 = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer_2);
     timer_2->start(600, [&](io::Timer& timer) {
         EXPECT_EQ(2, client_send_counter);
         client->send_data(client_message_3,
@@ -749,7 +751,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
     });
     ASSERT_FALSE(listen_error) << listen_error;
 
-    auto timer_1 = new io::Timer(loop);
+    auto timer_1 = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer_1);
     auto client_1 = new io::net::UdpClient(loop);
     client_1->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
@@ -765,7 +768,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
         }
     );
 
-    auto timer_2 = new io::Timer(loop);
+    auto timer_2 = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer_2);
     auto client_2 = new io::net::UdpClient(loop);
     client_2->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
@@ -781,7 +785,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
         }
     );
 
-    auto timer_3 = new io::Timer(loop);
+    auto timer_3 = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer_3);
     auto client_3 = new io::net::UdpClient(loop);
     client_3->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
@@ -797,7 +802,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
         }
     );
 
-    auto timer_stop_all = new io::Timer(loop);
+    auto timer_stop_all = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer_stop_all);
     timer_stop_all->start(1300, [&](io::Timer& timer) {
         timer_1->stop();
         timer_2->stop();
@@ -805,7 +811,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
         timer.schedule_removal();
     });
 
-    auto timer_remove = new io::Timer(loop);
+    auto timer_remove = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer_remove);
     timer_remove->start(2000, [&](io::Timer& timer) {
         client_1->schedule_removal();
         client_2->schedule_removal();
@@ -846,7 +853,8 @@ TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
-            auto timer = new io::Timer(loop);
+            auto timer = loop.allocate<io::Timer>();
+            ASSERT_TRUE(timer);
             timer->start(
                 send_timeouts,
                 [&](io::Timer& timer) {
@@ -1286,7 +1294,8 @@ TEST_F(UdpClientServerTest, client_receive_data_only_from_its_target) {
 
     EXPECT_EQ(0, client_1->bound_port());
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer);
     timer->start(200,
         [&](io::Timer& timer) {
             client_1->schedule_removal();
@@ -1445,7 +1454,7 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
 
             // Adding timer here because with Valgrind sometimes server has a lag at start
             // and may not receive few packets even despite we are running in one event loop in one  thread
-            (new io::Timer(loop))->start(100, [&](io::Timer& timer) {
+            loop.allocate<io::Timer>()->start(100, [&](io::Timer& timer) {
                 client.send_data(message, static_cast<std::uint32_t>(SIZE - client_send_message_counter), client_send);
                 timer.schedule_removal();
             });
@@ -1461,7 +1470,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
         }
     );
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer);
     timer->start(100, 100,
         [&](io::Timer& timer) {
             if (client_send_message_counter == SIZE && server_send_message_counter == SIZE) {
@@ -1544,7 +1554,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
         EXPECT_FALSE(listen_error);
 		EXPECT_FALSE(server->set_receive_buffer_size(SERVER_RECEIVE_BUFFER_SIZE));
 
-        auto timer = new io::Timer(server_loop);
+        auto timer = server_loop.allocate<io::Timer>();
+        ASSERT_TRUE(timer);
         timer->start(100, 100,
             [&](io::Timer& timer) {
                 //std::cout << "s " << server_receive_message_counter << " " << server_send_message_counter << std::endl;
@@ -1595,7 +1606,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
             }
         );
 
-        auto timer = new io::Timer(client_loop);
+        auto timer = client_loop.allocate<io::Timer>();
+        ASSERT_TRUE(timer);
         timer->start(100, 100,
             [&](io::Timer& timer) {
                 if (client_receive_message_counter == SIZE && client_send_message_counter == SIZE) {
@@ -1725,7 +1737,8 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
                     EXPECT_EQ(io::StatusCode::OPERATION_CANCELED, error.code());
                     ++client_send_counter;
 
-                    auto timer = new io::Timer(loop);
+                    auto timer = loop.allocate<io::Timer>();
+                    ASSERT_TRUE(timer);
                     timer->start(50, [&](io::Timer& timer) {
                         client.schedule_removal();
                         server->schedule_removal();
@@ -1786,7 +1799,8 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
         }
     );
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer);
     timer->start(
         send_timeouts,
         [&](io::Timer& timer) {
@@ -1856,7 +1870,8 @@ TEST_F(UdpClientServerTest, close_peer_from_server) {
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
 
-            auto cleint_send_timer = new io::Timer(loop);
+            auto cleint_send_timer = loop.allocate<io::Timer>();
+            ASSERT_TRUE(cleint_send_timer);
             cleint_send_timer->start(
                 1,
                 1,
@@ -1921,7 +1936,8 @@ TEST_F(UdpClientServerTest, closed_peer_from_server_has_no_timeout) {
             EXPECT_FALSE(error) << error;
             client.send_data("!");
 
-            auto cleint_send_timer = new io::Timer(loop);
+            auto cleint_send_timer = loop.allocate<io::Timer>();
+            ASSERT_TRUE(cleint_send_timer);
             cleint_send_timer->start(
                 INACTIVE_TIMEOUT * 2,
                 [&](io::Timer& timer) {
@@ -1974,7 +1990,8 @@ TEST_F(UdpClientServerTest, double_close_peer_from_server) {
             EXPECT_FALSE(error) << error;
             client.send_data("!");
 
-            auto cleint_send_timer = new io::Timer(loop);
+            auto cleint_send_timer = loop.allocate<io::Timer>();
+            ASSERT_TRUE(cleint_send_timer);
             cleint_send_timer->start(
                 INACTIVE_TIMEOUT_2 * 2,
                 [&] (io::Timer& timer) {
@@ -1985,7 +2002,8 @@ TEST_F(UdpClientServerTest, double_close_peer_from_server) {
         }
     );
 
-    auto cleanup_timer = new io::Timer(loop);
+    auto cleanup_timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(cleanup_timer);
     cleanup_timer->start(
         INACTIVE_TIMEOUT_2 * 3,
         [&] (io::Timer& timer) {
@@ -2038,7 +2056,8 @@ TEST_F(UdpClientServerTest, close_peer_from_server_and_than_try_send) {
         }
     );
 
-    auto cleanup_timer = new io::Timer(loop);
+    auto cleanup_timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(cleanup_timer);
     cleanup_timer->start(
         INACTIVE_TIMEOUT * 2,
         [&] (io::Timer& timer) {
@@ -2204,7 +2223,7 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
                 case 1: {
                     if (peer_1 == nullptr) {
                         peer_1 = &peer;
-                        (new io::Timer(loop))->start(
+                        loop.allocate<io::Timer>()->start(
                             {100, 100, 100, 100, 100},
                             [&](io::Timer& timer) {
                                 if (timer.callback_call_counter() == 4) {
@@ -2280,7 +2299,7 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
     client_2->set_destination({"::1", m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
-            (new io::Timer(loop))->start(
+            loop.allocate<io::Timer>()->start(
                 {100, 100, 100, 100, 100},
                 [&](io::Timer& timer) {
                     client_2->send_data("2");
@@ -2415,7 +2434,7 @@ TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
         client_on_close
     );
 
-    (new io::Timer(loop))->start(
+    loop.allocate<io::Timer>()->start(
         500,
         [&](io::Timer& timer) {
             timer.schedule_removal();

@@ -45,7 +45,8 @@ void hanged_tests_watchdog() {
 }
 
 int main(int argc, char **argv) {
-    // For XCode ann here non-paused breakpoint with the following command: process handle SIGHUP -s false
+    // For XCode add here non-paused breakpoint with the following command: process handle SIGHUP -s false
+    // To not stop inside signal handler of EventLoop tests
     io::global::set_logger_callback([](const std::string& message) {
         std::cout << message << std::endl;
     });

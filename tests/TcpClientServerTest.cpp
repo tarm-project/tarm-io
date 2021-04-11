@@ -847,7 +847,7 @@ TEST_F(TcpClientServerTest, client_reconnect_after_failure_2) {
             EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, error.code());
             ++client_on_connect_count;
 
-            (new io::Timer(loop))->start(100,
+            loop.allocate<io::Timer>()->start(100,
                 [&](io::Timer& timer) {
                     client.connect({m_default_addr, m_default_port},
                     [&](io::net::TcpClient& client, const io::Error& error) {
@@ -904,7 +904,7 @@ TEST_F(TcpClientServerTest, client_reconnect_after_failure_3) {
             );
             EXPECT_FALSE(listen_error) << listen_error;
 
-            (new io::Timer(loop))->start(500,
+            loop.allocate<io::Timer>()->start(500,
                 [&](io::Timer& timer) {
                     client.connect({m_default_addr, m_default_port},
                     [&](io::net::TcpClient& client, const io::Error& error) {
@@ -1210,7 +1210,7 @@ TEST_F(TcpClientServerTest, close_in_server_on_close_callback) {
         nullptr
     );
 
-    (new io::Timer(loop))->start(100,
+    loop.allocate<io::Timer>()->start(100,
         [&](io::Timer& timer) {
             server->schedule_removal();
             timer.schedule_removal();
@@ -1316,7 +1316,8 @@ void TcpClientServerTest::test_impl_server_disconnect_client_from_data_receive_c
             disconnect_called = true;
         });
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(500, [&](io::Timer& timer) {
         // Disconnect should be called before timer callback
         EXPECT_TRUE(disconnect_called);
@@ -1487,7 +1488,8 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
                     nullptr,
                     on_raw_client_close_callback);
 
-    auto timer = new io::Timer(loop);
+    auto timer = loop.allocate<io::Timer>();
+    ASSERT_TRUE(timer) << loop.last_allocation_error();
     timer->start(500, [&](io::Timer& timer) {
         // Disconnect should be called before timer callback
         EXPECT_EQ(1, on_connected_client_close_call_count);
@@ -2856,8 +2858,7 @@ void TcpClientServerTest::test_impl_client_double_close(
         [&](io::net::TcpClient& client, const io::Error& error) {
             close_variant(client);
 
-            auto timer = new io::Timer(loop);
-            timer->start(200,
+            loop.allocate<io::Timer>()->start(200,
                 [&](io::Timer& timer){
                     timer.schedule_removal();
                     client.schedule_removal();

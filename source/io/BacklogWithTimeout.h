@@ -80,7 +80,9 @@ public:
         std::size_t buckets_count = 0;
         std::size_t current_timeout = entity_timeout;
         do {
-            m_timers.emplace_back(new TimerType(loop), [](TimerType* timer) {
+            auto timer = loop.template allocate<TimerType>();
+            // TODO: check return value (timer)
+            m_timers.emplace_back(timer, [](TimerType* timer) {
                 delete timer->template user_data_as_ptr<TimerData>();
                 timer->default_delete()(timer);
             });

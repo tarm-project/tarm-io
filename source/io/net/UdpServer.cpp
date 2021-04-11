@@ -185,7 +185,11 @@ void UdpServer::Impl::close_peer(UdpPeer& peer, std::size_t inactivity_timeout_m
         return;
     }
 
-    auto timer = new Timer(*m_loop);
+    auto timer = m_loop->allocate<Timer>();
+    if (!timer) {
+        LOG_WARNING(m_loop, m_parent, "Failed to create timer:", m_loop->last_allocation_error());
+        return;
+    }
     m_inactive_peers.insert(std::make_pair(peer_id,
                                            std::unique_ptr<Timer,
                                                            typename Timer::DefaultDelete>
