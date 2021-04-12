@@ -12,6 +12,8 @@
 #include <cstdint>
 #include <string>
 
+// TODO: move to net namespace
+
 namespace tarm {
 namespace io {
 

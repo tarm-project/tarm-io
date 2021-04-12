@@ -132,6 +132,7 @@ list(APPEND IO_SOURCE_LIST
         io/net/UdpClient.cpp
         io/net/UdpPeer.cpp
         io/net/UdpServer.cpp
+        io/Allocator.cpp
         io/ByteSwap.cpp
         io/Convert.cpp
         io/Error.cpp

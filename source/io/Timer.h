@@ -23,7 +23,7 @@ namespace io {
 class Timer : public Removable,
               public UserDataHolder {
 public:
-    friend class EventLoop;
+    friend class Allocator;
 
     using Callback = std::function<void(Timer&)>;
 
@@ -53,6 +53,7 @@ public:
     // As timeouts of timers are not precise you could call this to get real time passed
     // This is not expected to be called outside of timer callback
     TARM_IO_DLL_PUBLIC std::chrono::milliseconds real_time_passed_since_last_callback() const;
+
 protected:
     TARM_IO_DLL_PUBLIC Timer(EventLoop& loop, Error& error);
     TARM_IO_DLL_PUBLIC ~Timer();

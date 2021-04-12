@@ -8,6 +8,9 @@
 // Forward declarations of all user-level types
 namespace tarm {
 namespace io {
+
+class EventLoop;
+
 namespace net {
 
 class TcpServer;

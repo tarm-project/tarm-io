@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Allocator.h"
 #include "CommonMacros.h"
 #include "Error.h"
 #include "Export.h"
@@ -20,7 +21,8 @@
 namespace tarm {
 namespace io {
 
-class EventLoop : public Logger,
+class EventLoop : public Allocator,
+                  public Logger,
                   public UserDataHolder {
 public:
     enum class Signal {
@@ -76,11 +78,6 @@ public:
     TARM_IO_DLL_PUBLIC Error run();
 
     TARM_IO_DLL_PUBLIC bool is_running() const;
-
-    // thread safe
-    TARM_IO_DLL_PUBLIC Error last_allocation_error() const;
-    template<typename T>
-    TARM_IO_DLL_PUBLIC T* allocate();
 
     // Access to an internal libuv's event loop via void* pointer which allows you
     // to schedule raw libuv operations using tarm-io library event loop.
