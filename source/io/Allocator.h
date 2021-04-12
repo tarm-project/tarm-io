@@ -4,6 +4,8 @@
 #include "Export.h"
 #include "Forward.h"
 
+#include <memory>
+
 namespace tarm {
 namespace io {
 
