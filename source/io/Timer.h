@@ -23,7 +23,7 @@ namespace io {
 class Timer : public Removable,
               public UserDataHolder {
 public:
-    friend class Allocator;
+    friend class ::tarm::io::Allocator;
 
     using Callback = std::function<void(Timer&)>;
 
@@ -55,6 +55,7 @@ public:
     TARM_IO_DLL_PUBLIC std::chrono::milliseconds real_time_passed_since_last_callback() const;
 
 protected:
+    // To create objects use allocate() method of EventLoop
     TARM_IO_DLL_PUBLIC Timer(EventLoop& loop, Error& error);
     TARM_IO_DLL_PUBLIC ~Timer();
 

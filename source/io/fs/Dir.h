@@ -26,6 +26,8 @@ namespace fs {
 class Dir : public Removable,
             public UserDataHolder {
 public:
+    friend class ::tarm::io::Allocator;
+
     using OpenCallback = std::function<void(Dir&, const Error&)>;
     using ListEntryCallback = std::function<void(Dir&, const std::string&, DirectoryEntryType)>;
     using ListEntryWithContinuationCallback = std::function<void(Dir&, const std::string&, DirectoryEntryType, Continuation&)>;
@@ -34,8 +36,6 @@ public:
 
     TARM_IO_FORBID_COPY(Dir);
     TARM_IO_FORBID_MOVE(Dir);
-
-    TARM_IO_DLL_PUBLIC Dir(EventLoop& loop);
 
     TARM_IO_DLL_PUBLIC void open(const Path& path, const OpenCallback& callback);
     TARM_IO_DLL_PUBLIC bool is_open() const;
@@ -49,6 +49,8 @@ public:
     TARM_IO_DLL_PUBLIC const Path& path() const;
 
 protected:
+    // To create objects use allocate() method of EventLoop
+    TARM_IO_DLL_PUBLIC Dir(EventLoop& loop, Error& error);
     TARM_IO_DLL_PUBLIC ~Dir();
 
 private:

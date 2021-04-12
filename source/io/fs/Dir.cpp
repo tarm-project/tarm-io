@@ -49,7 +49,7 @@ public:
         CLOSED
     };
 
-    Impl(EventLoop& loop, Dir& parent);
+    Impl(EventLoop& loop, Error& error, Dir& parent);
     ~Impl();
 
     void open(const Path& path, const OpenCallback& callback);
@@ -120,7 +120,7 @@ DirectoryEntryType convert_direntry_type(uv_dirent_type_t type) {
 
 } // namespace
 
-Dir::Impl::Impl(EventLoop& loop, Dir& parent) :
+Dir::Impl::Impl(EventLoop& loop, Error& error, Dir& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
@@ -353,9 +353,9 @@ void Dir::Impl::on_close_dir(uv_fs_t* req) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-Dir::Dir(EventLoop& loop) :
+Dir::Dir(EventLoop& loop, Error& error) :
     Removable(loop),
-    m_impl(new Impl(loop, *this)) {
+    m_impl(new Impl(loop, error, *this)) {
 }
 
 Dir::~Dir() {

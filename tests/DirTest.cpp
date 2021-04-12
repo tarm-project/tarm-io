@@ -32,7 +32,8 @@ protected:
 TEST_F(DirTest, default_state) {
     io::EventLoop loop;
 
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
     EXPECT_TRUE(dir->path().empty());
     EXPECT_FALSE(dir->is_open());
 
@@ -49,7 +50,8 @@ TEST_F(DirTest, directory_entry_type_to_ostream) {
 
 TEST_F(DirTest, open_then_close) {
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     dir->open(m_tmp_test_dir_tarm, [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -71,7 +73,8 @@ TEST_F(DirTest, open_then_close) {
 
 TEST_F(DirTest, open_not_existing) {
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     std::size_t on_open_call_count = 0;
 
@@ -100,7 +103,8 @@ TEST_F(DirTest, open_not_existing) {
 
 TEST_F(DirTest, open_close_open) {
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     std::size_t on_open_count = 0;
 
@@ -139,7 +143,8 @@ TEST_F(DirTest, double_close_parallel) {
 
     io::EventLoop loop;
 
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
     dir->open(dir_path, [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_TRUE(dir.is_open());
 
@@ -176,8 +181,9 @@ TEST_F(DirTest, open_in_open_callback) {
     size_t on_open_1_count = 0;
     size_t on_open_2_count = 0;
 
-    auto file = new io::fs::Dir(loop);
-    file->open(dir_path_1, [&](io::fs::Dir& dir, const io::Error& error) {
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
+    dir->open(dir_path_1, [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_FALSE(error) << error;
         ++on_open_1_count;
 
@@ -202,7 +208,8 @@ TEST_F(DirTest, list_not_opened) {
     std::size_t end_list_call_count = 0;
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
     dir->list(
         [&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
             ++list_call_count;
@@ -244,7 +251,8 @@ TEST_F(DirTest, list_elements) {
     bool file_2_listed = false;
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
     dir->open(m_tmp_test_dir_tarm, [&](io::fs::Dir& dir, const io::Error&) {
         dir.list([&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
             if (name == "dir_1") {
@@ -285,7 +293,8 @@ TEST_F(DirTest, list_elements) {
 
 TEST_F(DirTest, list_empty_dir) {
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     std::size_t list_call_count = 0;
     std::size_t end_list_call_count = 0;
@@ -322,7 +331,8 @@ TEST_F(DirTest, no_list_callback) {
     std::size_t end_list_call_count = 0;
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     dir->open(m_tmp_test_dir_tarm,
         [&](io::fs::Dir& dir, const io::Error& error) {
@@ -362,7 +372,8 @@ TEST_F(DirTest, list_symlink) {
     bool link_found = false;
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
     dir->open(m_tmp_test_dir_tarm,
         [&](io::fs::Dir& dir, const io::Error&) {
             dir.list([&](io::fs::Dir& dir, const std::string& name, io::fs::DirectoryEntryType entry_type) {
@@ -394,7 +405,8 @@ TEST_F(DirTest, list_block_and_char_devices) {
     std::size_t char_devices_count = 0;
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
     dir->open("/dev", [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_TRUE(!error);
 
@@ -425,7 +437,8 @@ TEST_F(DirTest, list_domain_sockets) {
     std::size_t domain_sockets_count = 0;
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
     dir->open("/var/run", [&](io::fs::Dir& dir, const io::Error& error) {
         EXPECT_TRUE(!error);
 
@@ -456,7 +469,8 @@ TEST_F(DirTest, list_fifo) {
     ASSERT_EQ(0, fifo_status);
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
     dir->open(m_tmp_test_dir_tarm,
         [&](io::fs::Dir& dir, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -487,7 +501,8 @@ TEST_F(DirTest, close_in_list_callback) {
     }
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     std::size_t list_call_count = 0;
     std::size_t end_list_call_count = 0;
@@ -526,7 +541,8 @@ TEST_F(DirTest, schedule_removal_in_list_callback) {
     }
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     std::size_t list_call_count = 0;
     std::size_t end_list_call_count = 0;
@@ -563,7 +579,8 @@ TEST_F(DirTest, list_multiple_sequential) {
     }
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     std::size_t list_call_count = 0;
     std::size_t end_list_call_count = 0;
@@ -607,7 +624,8 @@ TEST_F(DirTest, list_multiple_parallel) {
     }
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     std::size_t list_call_count = 0;
     std::size_t end_list_call_count = 0;
@@ -660,7 +678,8 @@ TEST_F(DirTest, list_with_continuation_continue) {
     std::size_t end_list_call_count = 0;
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     dir->open(m_tmp_test_dir_tarm,
         [&](io::fs::Dir& dir, const io::Error& error) {
@@ -702,7 +721,8 @@ TEST_F(DirTest, list_with_continuation_cancel) {
     std::size_t end_list_call_count = 0;
 
     io::EventLoop loop;
-    auto dir = new io::fs::Dir(loop);
+    auto dir = loop.allocate<io::fs::Dir>();
+    ASSERT_TRUE(dir) << loop.last_allocation_error();
 
     dir->open(m_tmp_test_dir_tarm,
         [&](io::fs::Dir& dir, const io::Error& error) {
