@@ -2,6 +2,7 @@
 
 #include "Timer.h"
 #include "fs/Dir.h"
+#include "fs/File.h"
 
 namespace tarm {
 namespace io {
@@ -71,6 +72,7 @@ Error Allocator::last_allocation_error() const {
 
 template TARM_IO_DLL_PUBLIC Timer* Allocator::allocate<Timer>();
 template TARM_IO_DLL_PUBLIC fs::Dir* Allocator::allocate<fs::Dir>();
+template TARM_IO_DLL_PUBLIC fs::File* Allocator::allocate<fs::File>();
 
 } // namespace io
 } // namespace tarm

@@ -60,7 +60,7 @@ public:
         CLOSED
     };
 
-    Impl(EventLoop& loop, File& parent);
+    Impl(EventLoop& loop, Error& error, File& parent);
     ~Impl();
 
     void open(const Path& path, const OpenCallback& callback);
@@ -119,7 +119,7 @@ private:
     State m_state = State::INITIAL;
 };
 
-File::Impl::Impl(EventLoop& loop, File& parent) :
+File::Impl::Impl(EventLoop& loop, Error& /*error*/, File& parent) :
     m_parent(&parent),
     m_loop(&loop),
     m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
@@ -594,9 +594,9 @@ void File::Impl::on_stat(uv_fs_t* req) {
 
 
 
-File::File(EventLoop& loop) :
+File::File(EventLoop& loop, Error& error) :
     Removable(loop),
-    m_impl(new Impl(loop, *this)) {
+    m_impl(new Impl(loop, error, *this)) {
 }
 
 File::~File() {

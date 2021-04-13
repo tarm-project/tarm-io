@@ -54,7 +54,8 @@ protected:
 TEST_F(FileTest, default_constructor) {
     io::EventLoop loop;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     ASSERT_FALSE(file->is_open());
     file->schedule_removal();
 
@@ -68,7 +69,8 @@ TEST_F(FileTest, open_existing) {
     io::EventLoop loop;
     io::StatusCode open_status_code = io::StatusCode::UNDEFINED;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     ASSERT_FALSE(file->is_open());
     EXPECT_EQ("", file->path());
 
@@ -99,7 +101,8 @@ TEST_F(FileTest, DISABLED_double_open) {
     bool opened_1 = false;
     bool opened_2 = false;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         opened_1 = true;
     });
@@ -128,7 +131,8 @@ TEST_F(FileTest, open_in_open_callback) {
     bool opened_1 = false;
     bool opened_2 = false;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_FALSE(error) << error;
         opened_1 = true;
@@ -154,7 +158,8 @@ TEST_F(FileTest, open_not_existing) {
     bool opened = false;
     io::StatusCode status_code = io::StatusCode::UNDEFINED;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_FALSE(file.is_open());
         EXPECT_EQ(path, file.path());
@@ -181,7 +186,8 @@ TEST_F(FileTest, open_existing_open_not_existing) {
     const std::string not_existing_path = m_tmp_test_dir + "/not_exist";
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(existing_path, [&not_existing_path](io::fs::File& file, const io::Error& error) {
         EXPECT_FALSE(error);
         EXPECT_TRUE(file.is_open());
@@ -206,7 +212,8 @@ TEST_F(FileTest, close_in_open_callback) {
 
     std::size_t file_on_close_count = 0;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(file.is_open());
 
@@ -230,7 +237,8 @@ TEST_F(FileTest, close_in_open_callback) {
 TEST_F(FileTest, close_not_open_file_no_callback) {
     io::EventLoop loop;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     ASSERT_FALSE(file->is_open());
     file->close();
     ASSERT_FALSE(file->is_open());
@@ -244,7 +252,8 @@ TEST_F(FileTest, close_not_open_file_with_callback) {
 
     std::size_t on_close_count = 0;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     EXPECT_FALSE(file->is_open());
     file->close([&](io::fs::File& file, const io::Error& error) {
         EXPECT_FALSE(file.is_open());
@@ -269,7 +278,8 @@ TEST_F(FileTest, open_close_open) {
     ASSERT_FALSE(path_2.empty());
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
 
     std::size_t on_open_count = 0;
 
@@ -303,7 +313,8 @@ TEST_F(FileTest, double_close_parallel) {
 
     io::EventLoop loop;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(file.is_open());
 
@@ -336,7 +347,8 @@ TEST_F(FileTest, double_close_sequential) {
 
     io::EventLoop loop;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(file.is_open());
 
@@ -374,7 +386,8 @@ TEST_F(FileTest, simple_read) {
     bool end_read_called = false;
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& open_error) {
         open_status_code = open_error.code();
 
@@ -448,7 +461,8 @@ TEST_F(FileTest, reuse_callbacks_and_file_object) {
     };
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path_1, open);
 
     EXPECT_EQ(0, on_end_read_count);
@@ -468,7 +482,8 @@ TEST_F(FileTest, read_10mb_file) {
     size_t read_counter = 0;
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& open_error) {
         ASSERT_FALSE(open_error);
 
@@ -500,7 +515,8 @@ TEST_F(FileTest, read_not_open_file) {
     bool end_read_called = false;
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
 
     file->read([&](io::fs::File& file, const io::DataChunk& chunk, const io::Error& read_error) {
         read_status_code = read_error.code();
@@ -528,7 +544,8 @@ TEST_F(FileTest, sequential_read_data_past_eof) {
     bool second_read_called = false;
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&second_read_called](io::fs::File& file, const io::Error& open_error) {
         ASSERT_TRUE(!open_error);
 
@@ -556,7 +573,8 @@ TEST_F(FileTest, close_in_read) {
     ASSERT_FALSE(path.empty());
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
 
     std::size_t counter = 0;
     bool end_read_called = false;
@@ -598,7 +616,8 @@ TEST_F(FileTest, DISABLED_read_sequential_of_closed_file) {
 
     bool read_called = false;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(!error);
 
@@ -626,7 +645,8 @@ TEST_F(FileTest, read_block) {
     ASSERT_FALSE(path.empty());
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
 
     io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
 
@@ -662,7 +682,8 @@ TEST_F(FileTest, read_block_past_edge) {
     ASSERT_FALSE(path.empty());
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
 
     io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
 
@@ -695,7 +716,8 @@ TEST_F(FileTest, DISABLED_read_block_not_existing_chunk) {
     ASSERT_FALSE(path.empty());
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
 
     io::StatusCode read_status_code = io::StatusCode::UNDEFINED;
 
@@ -722,7 +744,8 @@ TEST_F(FileTest, read_block_not_opened) {
 
     io::StatusCode read_status = io::StatusCode::UNDEFINED;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->read_block(0, 16, [&](io::fs::File& file, const io::DataChunk& chunk, const io::Error& error) {
         EXPECT_EQ(nullptr, chunk.buf);
         EXPECT_EQ(0, chunk.size);
@@ -749,7 +772,8 @@ TEST_F(FileTest, DISABLED_read_block_of_closed_file) {
 
     bool read_called = false;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(!error);
 
@@ -828,7 +852,8 @@ TEST_F(FileTest, slow_read_data_consumer) {
 
     std::size_t bytes_read = 0;
 
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&captured_bufs, &mutex, &exit_reseting_thread, &bytes_read](io::fs::File& file, const io::Error& open_error) {
         ASSERT_TRUE(!open_error);
 
@@ -892,7 +917,8 @@ this->log_to_stdout();
             file_buffers_in_use_event_occured = true;
         }
     });
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
 
     std::size_t file_on_read_count = 0;
 
@@ -953,7 +979,8 @@ TEST_F(FileTest, stat_size) {
     std::size_t stat_call_count = 0;
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&SIZE, &stat_call_count](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(!error);
 
@@ -988,7 +1015,8 @@ TEST_F(FileTest, stat_time) {
     const auto nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(unix_time).count() - seconds * 1000000000ll;
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(path, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(!error);
 
@@ -1017,7 +1045,8 @@ TEST_F(FileTest, try_open_dir) {
     std::size_t on_open_call_count = 0;
 
     io::EventLoop loop;
-    auto file = new io::fs::File(loop);
+    auto file = loop.allocate<io::fs::File>();
+    ASSERT_TRUE(file) << loop.last_allocation_error();
     file->open(m_tmp_test_dir, [&](io::fs::File& file, const io::Error& error) {
         EXPECT_TRUE(error);
         EXPECT_EQ(io::StatusCode::ILLEGAL_OPERATION_ON_A_DIRECTORY, error.code());

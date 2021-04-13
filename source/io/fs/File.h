@@ -28,6 +28,8 @@ namespace fs {
 class File : public Removable,
              public UserDataHolder {
 public:
+    friend class ::tarm::io::Allocator;
+
     static constexpr std::size_t READ_BUF_SIZE = 1024 * 4;
     static constexpr std::size_t READ_BUFS_NUM = 4;
 
@@ -39,8 +41,6 @@ public:
 
     TARM_IO_FORBID_COPY(File);
     TARM_IO_FORBID_MOVE(File);
-
-    TARM_IO_DLL_PUBLIC File(EventLoop& loop);
 
     TARM_IO_DLL_PUBLIC void open(const Path& path, const OpenCallback& callback); // TODO: pass open flags
     TARM_IO_DLL_PUBLIC bool is_open() const;
@@ -57,6 +57,7 @@ public:
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
 protected:
+    TARM_IO_DLL_PUBLIC File(EventLoop& loop, Error& error);
     TARM_IO_DLL_PUBLIC ~File();
 
 private:
