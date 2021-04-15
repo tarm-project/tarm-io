@@ -23,6 +23,8 @@ namespace net {
 
 class TlsClient : public Removable {
 public:
+    friend class ::tarm::io::Allocator;
+
     using UnderlyingClientType = TcpClient;
 
     using ConnectCallback = std::function<void(TlsClient&, const Error&)>;
@@ -32,8 +34,6 @@ public:
 
     TARM_IO_FORBID_COPY(TlsClient);
     TARM_IO_FORBID_MOVE(TlsClient);
-
-    TARM_IO_DLL_PUBLIC TlsClient(EventLoop& loop, TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
@@ -59,6 +59,9 @@ public:
     TARM_IO_DLL_PUBLIC TlsVersion negotiated_tls_version() const;
 
 protected:
+    TARM_IO_DLL_PUBLIC TlsClient(EventLoop& loop, Error& error);
+    TARM_IO_DLL_PUBLIC TlsClient(EventLoop& loop, Error& error, TlsVersionRange version_range);
+
     TARM_IO_DLL_PUBLIC ~TlsClient();
 
 private:

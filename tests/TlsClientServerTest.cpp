@@ -92,7 +92,8 @@ TEST_F(TlsClientServerTest, constructor) {
 
 TEST_F(TlsClientServerTest, schedule_removal_not_connected_client) {
     io::EventLoop loop;
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->schedule_removal();
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -100,7 +101,8 @@ TEST_F(TlsClientServerTest, schedule_removal_not_connected_client) {
 
 TEST_F(TlsClientServerTest, is_open_not_connected_client) {
     io::EventLoop loop;
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     EXPECT_FALSE(client->is_open());
     client->schedule_removal();
 
@@ -110,7 +112,8 @@ TEST_F(TlsClientServerTest, is_open_not_connected_client) {
 TEST_F(TlsClientServerTest, client_send_without_connect_with_callback) {
     io::EventLoop loop;
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->send_data("Hello",
         [](io::net::TlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -127,7 +130,8 @@ TEST_F(TlsClientServerTest, client_connect_to_invalid_address) {
 
     std::size_t client_on_connect_count = 0;
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({"0.0.0", m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -205,7 +209,8 @@ TEST_F(TlsClientServerTest, server_address_in_use) {
 TEST_F(TlsClientServerTest, client_send_without_connect_no_callback) {
     io::EventLoop loop;
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->send_data("Hello", // Just do nothing and hope for miracle
         [](io::net::TlsClient& client, const io::Error& error){
             EXPECT_TRUE(error);
@@ -249,7 +254,8 @@ TEST_F(TlsClientServerTest, client_send_data_to_server_no_close_callbacks) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
@@ -312,7 +318,8 @@ TEST_F(TlsClientServerTest, client_send_data_to_server_with_close_callbacks) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
@@ -396,7 +403,8 @@ TEST_F(TlsClientServerTest, client_send_simultaneous_multiple_chunks_to_server) 
     });
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
@@ -462,7 +470,8 @@ TEST_F(TlsClientServerTest, server_send_data_to_client) {
         });
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
@@ -548,7 +557,8 @@ TEST_F(TlsClientServerTest, server_send_simultaneous_multiple_chunks_to_client) 
     });
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
@@ -646,7 +656,8 @@ TEST_F(TlsClientServerTest, client_and_server_send_each_other_1_mb_data) {
     );
     EXPECT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -720,7 +731,8 @@ TEST_F(TlsClientServerTest, server_close_connection_cause_client_close) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -763,7 +775,9 @@ TEST_F(TlsClientServerTest, server_close_client_conection_after_accepting_some_d
 
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
+
     unsigned counter = 0;
 
     client->connect({m_default_addr, m_default_port},
@@ -998,7 +1012,8 @@ TEST_F(TlsClientServerTest, callbacks_order) {
 
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1051,7 +1066,8 @@ TEST_F(TlsClientServerTest, tls_negotiated_version) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     EXPECT_EQ(io::net::TlsVersion::UNKNOWN, client->negotiated_tls_version());
 
@@ -1100,7 +1116,8 @@ TEST_F(TlsClientServerTest, server_with_restricted_tls_version) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop);
+    auto client = loop.allocate<io::net::TlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
@@ -1156,8 +1173,10 @@ TEST_F(TlsClientServerTest, client_with_restricted_tls_version) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop,
-        io::net::TlsVersionRange{io::net::min_supported_tls_version(), io::net::min_supported_tls_version()});
+    auto client = loop.allocate<io::net::TlsClient>(
+        io::net::TlsVersionRange{io::net::min_supported_tls_version(), io::net::min_supported_tls_version()}
+    );
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
@@ -1215,8 +1234,10 @@ TEST_F(TlsClientServerTest, client_and_server_tls_version_mismatch) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop,
-        io::net::TlsVersionRange{io::net::min_supported_tls_version(), io::net::min_supported_tls_version()});
+    auto client = loop.allocate<io::net::TlsClient>(
+        io::net::TlsVersionRange{io::net::min_supported_tls_version(), io::net::min_supported_tls_version()}
+    );
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1287,8 +1308,10 @@ TEST_F(TlsClientServerTest, client_with_invalid_tls_version_range) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::TlsClient(loop,
-        io::net::TlsVersionRange{io::net::max_supported_tls_version(), io::net::min_supported_tls_version()});
+    auto client = loop.allocate<io::net::TlsClient>(
+        io::net::TlsVersionRange{io::net::max_supported_tls_version(), io::net::min_supported_tls_version()}
+    );
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::TlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1350,7 +1373,9 @@ TEST_F(TlsClientServerTest, server_works_with_multiple_clients) {
 
             io::EventLoop loop;
 
-            auto client = new io::net::TlsClient(loop);
+            auto client = loop.allocate<io::net::TlsClient>();
+            ASSERT_TRUE(client) << loop.last_allocation_error();
+
             client->connect({m_default_addr, m_default_port},
                 [&](io::net::TlsClient& client, const io::Error& error) {
                     EXPECT_FALSE(error) << error;

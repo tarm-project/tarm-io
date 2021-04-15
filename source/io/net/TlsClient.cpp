@@ -22,7 +22,7 @@ namespace net {
 
 class TlsClient::Impl : public detail::OpenSslClientImplBase<TlsClient, TlsClient::Impl> {
 public:
-    Impl(EventLoop& loop, TlsVersionRange version_range, TlsClient& parent);
+    Impl(EventLoop& loop, Error& error, TlsVersionRange version_range, TlsClient& parent);
     ~Impl();
 
     const Endpoint& endpoint() const;
@@ -54,7 +54,8 @@ private:
 TlsClient::Impl::~Impl() {
 }
 
-TlsClient::Impl::Impl(EventLoop& loop, TlsVersionRange version_range, TlsClient& parent) :
+// TODO: init SSL in constructor???
+TlsClient::Impl::Impl(EventLoop& loop, Error& /*error*/, TlsVersionRange version_range, TlsClient& parent) :
     OpenSslClientImplBase(loop, parent),
     m_version_range(version_range),
     m_openssl_context(loop, parent) {
@@ -65,9 +66,9 @@ const Endpoint& TlsClient::Impl::endpoint() const {
 }
 
 void TlsClient::Impl::connect(const Endpoint endpoint,
-                                 const ConnectCallback& connect_callback,
-                                 const DataReceiveCallback& receive_callback,
-                                 const CloseCallback& close_callback) {
+                              const ConnectCallback& connect_callback,
+                              const DataReceiveCallback& receive_callback,
+                              const CloseCallback& close_callback) {
     m_client = new TcpClient(*m_loop);
 
     if (!is_ssl_inited()) {
@@ -190,9 +191,14 @@ void TlsClient::Impl::on_alert(int /*code*/) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TlsClient::TlsClient(EventLoop& loop, TlsVersionRange version_range) :
+TlsClient::TlsClient(EventLoop& loop, Error& error) :
     Removable(loop),
-    m_impl(new Impl(loop, version_range, *this)) {
+    m_impl(new Impl(loop, error, DEFAULT_TLS_VERSION_RANGE, *this)) {
+}
+
+TlsClient::TlsClient(EventLoop& loop, Error& error, TlsVersionRange version_range) :
+    Removable(loop),
+    m_impl(new Impl(loop, error, version_range, *this)) {
 }
 
 TlsClient::~TlsClient() {

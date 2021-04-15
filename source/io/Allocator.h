@@ -5,6 +5,7 @@
 #include "Forward.h"
 
 #include <memory>
+#include <utility>
 
 namespace tarm {
 namespace io {
@@ -14,6 +15,9 @@ public:
     // thread safe
     template<typename T>
     TARM_IO_DLL_PUBLIC T* allocate();
+
+    template<typename T, typename... ARGS>
+    TARM_IO_DLL_PUBLIC T* allocate(ARGS&&... args);
 
     TARM_IO_DLL_PUBLIC Error last_allocation_error() const;
 

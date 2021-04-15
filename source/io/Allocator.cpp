@@ -3,6 +3,7 @@
 #include "Timer.h"
 #include "fs/Dir.h"
 #include "fs/File.h"
+#include "net/TlsClient.h"
 
 namespace tarm {
 namespace io {
@@ -15,10 +16,10 @@ public:
     TARM_IO_FORBID_COPY(Impl)
     TARM_IO_FORBID_MOVE(Impl);
 
-    template<typename T>
-    T* allocate() {
+    template<typename T, typename... ARGS>
+    T* allocate(ARGS&&... args) {
         Error error;
-        auto ptr = new(std::nothrow) T(*m_loop, error);
+        auto ptr = new(std::nothrow) T(*m_loop, error, std::forward<ARGS>(args)...);
         m_last_allocation_error = error;
         if (error) {
             return nullptr;
@@ -66,6 +67,11 @@ T* Allocator::allocate() {
     return m_impl->allocate<T>();
 }
 
+template<typename T, typename... ARGS>
+T* Allocator::allocate(ARGS&&... args) {
+    return m_impl->allocate<T>(std::forward<ARGS>(args)...);
+}
+
 Error Allocator::last_allocation_error() const {
     return m_impl->last_allocation_error();
 }
@@ -73,6 +79,9 @@ Error Allocator::last_allocation_error() const {
 template TARM_IO_DLL_PUBLIC Timer* Allocator::allocate<Timer>();
 template TARM_IO_DLL_PUBLIC fs::Dir* Allocator::allocate<fs::Dir>();
 template TARM_IO_DLL_PUBLIC fs::File* Allocator::allocate<fs::File>();
+
+template TARM_IO_DLL_PUBLIC net::TlsClient* Allocator::allocate<net::TlsClient>();
+template TARM_IO_DLL_PUBLIC net::TlsClient* Allocator::allocate<net::TlsClient, net::TlsVersionRange>(net::TlsVersionRange&&);
 
 } // namespace io
 } // namespace tarm

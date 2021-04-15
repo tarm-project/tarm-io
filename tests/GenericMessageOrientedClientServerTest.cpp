@@ -826,7 +826,7 @@ TEST_F(GenericMessageOrientedClientServerTest, with_tls) {
     );
     ASSERT_FALSE(listen_error) << listen_error;
 
-    TlsClientPtr tls_client(new io::net::TlsClient(loop), io::Removable::default_delete());
+    TlsClientPtr tls_client(loop.allocate<io::net::TlsClient>(), io::Removable::default_delete());
     TlsMessageOrientedClient message_client(std::move(tls_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TlsMessageOrientedClient& client, const io::Error& error) {
