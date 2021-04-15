@@ -12,7 +12,7 @@ namespace tarm {
 namespace io {
 namespace fs {
 
-#define IO_LIST_OF_DIRECTORY_ENTRY_TYPES \
+#define TARM_IO_LIST_OF_DIRECTORY_ENTRY_TYPES \
     X(UNKNOWN) \
     X(FILE) \
     X(DIR) \
@@ -24,14 +24,14 @@ namespace fs {
 
 #define X(PARAM) PARAM,
 enum class DirectoryEntryType {
-    IO_LIST_OF_DIRECTORY_ENTRY_TYPES
+    TARM_IO_LIST_OF_DIRECTORY_ENTRY_TYPES
 };
 #undef X
 
 inline std::ostream& operator<< (std::ostream& out, DirectoryEntryType type) {
     switch(type) {
 #define X(PARAM) case DirectoryEntryType::PARAM: return out << #PARAM; break;
-    IO_LIST_OF_DIRECTORY_ENTRY_TYPES
+    TARM_IO_LIST_OF_DIRECTORY_ENTRY_TYPES
 #undef X
     default:
         assert(false);

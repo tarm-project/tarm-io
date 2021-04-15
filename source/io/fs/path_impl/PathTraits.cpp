@@ -25,13 +25,13 @@ namespace pt = tarm::io::fs::path_traits;
 //                                  configuration                                       //
 //--------------------------------------------------------------------------------------//
 
-#ifndef IO_FILESYSTEM_CODECVT_BUF_SIZE
-# define IO_FILESYSTEM_CODECVT_BUF_SIZE 256
+#ifndef TARM_IO_FILESYSTEM_CODECVT_BUF_SIZE
+# define TARM_IO_FILESYSTEM_CODECVT_BUF_SIZE 256
 #endif
 
 namespace {
 
-const std::size_t default_codecvt_buf_size = IO_FILESYSTEM_CODECVT_BUF_SIZE;
+const std::size_t default_codecvt_buf_size = TARM_IO_FILESYSTEM_CODECVT_BUF_SIZE;
 
 
 //--------------------------------------------------------------------------------------//

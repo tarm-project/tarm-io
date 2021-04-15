@@ -11,12 +11,12 @@
     #include <Winsock2.h>
     #include <stdlib.h>
 
-    #if IO_BIG_ENDIAN
-        #define IO_NTOHLL(x) (x)
-        #define IO_HTONLL(x) (x)
+    #if TARM_IO_BIG_ENDIAN
+        #define TARM_IO_NTOHLL(x) (x)
+        #define TARM_IO_HTONLL(x) (x)
     #else
-        #define IO_NTOHLL(x) _byteswap_uint64(x)
-        #define IO_HTONLL(x) _byteswap_uint64(x)
+        #define TARM_IO_NTOHLL(x) _byteswap_uint64(x)
+        #define TARM_IO_HTONLL(x) _byteswap_uint64(x)
     #endif
 
 #else
@@ -24,18 +24,18 @@
     #ifdef TARM_IO_PLATFORM_MACOSX
         #include <machine/endian.h>
 
-        #define IO_NTOHLL(x) ntohll(x)
-        #define IO_HTONLL(x) htonll(x)
+        #define TARM_IO_NTOHLL(x) ntohll(x)
+        #define TARM_IO_HTONLL(x) htonll(x)
     #else // assuming Linux
         #include <endian.h>
 
         #if __BYTE_ORDER == __BIG_ENDIAN
-            #define IO_NTOHLL(x) (x)
-            #define IO_HTONLL(x) (x)
+            #define TARM_IO_NTOHLL(x) (x)
+            #define TARM_IO_HTONLL(x) (x)
         #else
             #if __BYTE_ORDER == __LITTLE_ENDIAN
-                #define IO_NTOHLL(x) be64toh(x)
-                #define IO_HTONLL(x) htobe64(x)
+                #define TARM_IO_NTOHLL(x) be64toh(x)
+                #define TARM_IO_HTONLL(x) htobe64(x)
             #endif
         #endif
     #endif
@@ -67,7 +67,7 @@ struct NetworkToHostDispatcher<T, 4> {
 template <typename T>
 struct NetworkToHostDispatcher<T, 8> {
     static T convert(T t) {
-        return IO_NTOHLL(t);
+        return TARM_IO_NTOHLL(t);
     }
 };
 
@@ -92,7 +92,7 @@ struct HostToNetworkDispatcher<T, 4> {
 template <typename T>
 struct HostToNetworkDispatcher<T, 8> {
     static T convert(T t) {
-        return IO_HTONLL(t);
+        return TARM_IO_HTONLL(t);
     }
 };
 

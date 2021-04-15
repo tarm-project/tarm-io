@@ -30,9 +30,9 @@ void PrintTo(const tarm::io::fs::Path& path, std::ostream* os) {
 } // namespace tarm
 
 #ifdef TARM_IO_PLATFORM_WINDOWS
-# define IO_TEST_DIR_SEP "\\"
+# define TARM_IO_TEST_DIR_SEP "\\"
 #else
-# define IO_TEST_DIR_SEP "/"
+# define TARM_IO_TEST_DIR_SEP "/"
 #endif
 
 using io::fs::Path;
@@ -209,9 +209,9 @@ TEST_F(PathTest, move_construction_and_assignment) {
 
 TEST_F(PathTest, appends) {
 # ifdef TARM_IO_PLATFORM_WINDOWS
-#   define IO_TEST_FS_FOO L"/foo\\"
+#   define TARM_IO_TEST_FS_FOO L"/foo\\"
 # else   // POSIX paths
-#   define IO_TEST_FS_FOO L"/foo/"
+#   define TARM_IO_TEST_FS_FOO L"/foo/"
 # endif
 
     m_x = "/foo";
@@ -232,39 +232,39 @@ TEST_F(PathTest, appends) {
 
     m_x = "/foo";
     m_x /= Path("yet another path");                      // another path
-    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"yet another path");
+    EXPECT_EQ(m_x, TARM_IO_TEST_FS_FOO L"yet another path");
 
     m_x = "/foo";
     m_x.append(m_l.begin(), m_l.end());                      // iterator range char
-    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"string");
+    EXPECT_EQ(m_x, TARM_IO_TEST_FS_FOO L"string");
 
     m_x = "/foo";
     m_x.append(m_wl.begin(), m_wl.end());                    // iterator range wchar_t
-    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"wstring");
+    EXPECT_EQ(m_x, TARM_IO_TEST_FS_FOO L"wstring");
 
     m_x = "/foo";
     m_x /= std::string("std::string");                         // container char
-    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"std::string");
+    EXPECT_EQ(m_x, TARM_IO_TEST_FS_FOO L"std::string");
 
     m_x = "/foo";
     m_x /= std::wstring(L"std::wstring");                      // container wchar_t
-    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"std::wstring");
+    EXPECT_EQ(m_x, TARM_IO_TEST_FS_FOO L"std::wstring");
 
     m_x = "/foo";
     m_x /= "array char";                                  // array char
-    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"array char");
+    EXPECT_EQ(m_x, TARM_IO_TEST_FS_FOO L"array char");
 
     m_x = "/foo";
     m_x /= L"array wchar";                                // array wchar_t
-    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"array wchar");
+    EXPECT_EQ(m_x, TARM_IO_TEST_FS_FOO L"array wchar");
 
     m_x = "/foo";
     m_x /= m_s.c_str();                                     // const char* null terminated
-    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"string");
+    EXPECT_EQ(m_x, TARM_IO_TEST_FS_FOO L"string");
 
     m_x = "/foo";
     m_x /= m_ws.c_str();                                    // const wchar_t* null terminated
-    EXPECT_EQ(m_x, IO_TEST_FS_FOO L"wstring");
+    EXPECT_EQ(m_x, TARM_IO_TEST_FS_FOO L"wstring");
 }
 
 TEST_F(PathTest, concats) {
@@ -358,7 +358,7 @@ TEST_F(PathTest, observers) {
     EXPECT_TRUE(p.generic_string<std::string>() == "abc/def/ghi");
     EXPECT_TRUE(p.generic_string<std::wstring>() == L"abc/def/ghi");
     EXPECT_TRUE(p.generic_string<Path::string_type>() == L"abc/def/ghi");
-# else  // IO_POSIX_API
+# else  // TARM_IO_POSIX_API
     Path p("abc\\def/ghi");
 
     EXPECT_TRUE(std::string(p.c_str()) == "abc\\def/ghi");
@@ -2181,18 +2181,18 @@ TEST_F(PathTest, self_assign_and_append) {
 
     p = "snafubar";
     p /= p;
-    EXPECT_EQ(p, "snafubar" IO_TEST_DIR_SEP "snafubar");
+    EXPECT_EQ(p, "snafubar" TARM_IO_TEST_DIR_SEP "snafubar");
 
     p = "snafubar";
     p /= p.c_str();
-    EXPECT_EQ(p, "snafubar" IO_TEST_DIR_SEP "snafubar");
+    EXPECT_EQ(p, "snafubar" TARM_IO_TEST_DIR_SEP "snafubar");
 
     p = "snafubar";
     p.append(p.c_str(), Path::codecvt());
-    EXPECT_EQ(p, "snafubar" IO_TEST_DIR_SEP "snafubar");
+    EXPECT_EQ(p, "snafubar" TARM_IO_TEST_DIR_SEP "snafubar");
 
     p = "snafubar";
-    EXPECT_EQ(p.append(p.c_str() + 5, p.c_str() + 7), "snafubar" IO_TEST_DIR_SEP "ba");
+    EXPECT_EQ(p.append(p.c_str() + 5, p.c_str() + 7), "snafubar" TARM_IO_TEST_DIR_SEP "ba");
 }
 
 TEST_F(PathTest, replace_extension) {
@@ -2559,7 +2559,7 @@ TEST_F(PathTest, remove_trailing_separator) {
     EXPECT_EQ("", Path().remove_trailing_separator().string());
 
     const std::string path_without_trailing_separator = "/some/path/with/trailing/slash";
-    const std::string path_with_trailing_separator = path_without_trailing_separator + IO_TEST_DIR_SEP;
+    const std::string path_with_trailing_separator = path_without_trailing_separator + TARM_IO_TEST_DIR_SEP;
 
     Path p(path_with_trailing_separator);
     ASSERT_EQ(path_with_trailing_separator, p.string());

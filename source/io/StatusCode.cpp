@@ -183,7 +183,7 @@ StatusCode convert_from_uv(std::int64_t libuv_code) {
 std::ostream& operator<<(std::ostream& out, StatusCode code) {
     switch(code) {
         #define X(PARAM) case StatusCode::PARAM: out << #PARAM; break;
-        IO_LIST_OF_STATUS_CODES
+        TARM_IO_LIST_OF_STATUS_CODES
         #undef X
         default:
             assert(false);
