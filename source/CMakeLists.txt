@@ -225,7 +225,7 @@ endfunction()
 if (TARM_IO_OPENSSL_FOUND)
     target_link_libraries(tarm-io PRIVATE OpenSSL::SSL) # WAS PUBLIC
     target_link_libraries(tarm-io PRIVATE OpenSSL::Crypto) # WAS PUBLIC
-    target_compile_definitions(tarm-io PRIVATE IO_HAS_OPENSSL)
+    target_compile_definitions(tarm-io PRIVATE TARM_IO_HAS_OPENSSL)
 
     target_include_directories(tarm-io PUBLIC "${OPENSSL_INCLUDE_DIR}")
 
