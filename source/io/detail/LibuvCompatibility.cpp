@@ -11,7 +11,7 @@
         struct linger l = { 1, 0 };
 
         // Disallow setting SO_LINGER to zero due to some platform inconsistencies
-        if (handle->flags & IO_UV_HANDLE_SHUTTING) {
+        if (handle->flags & TARM_IO_UV_HANDLE_SHUTTING) {
             return UV_EINVAL;
         }
 
@@ -32,7 +32,7 @@
         struct linger l = { 1, 0 };
 
         // Disallow setting SO_LINGER to zero due to some platform inconsistencies
-        if (handle->flags & IO_UV_HANDLE_SHUTTING) {
+        if (handle->flags & TARM_IO_UV_HANDLE_SHUTTING) {
             return UV_EINVAL;
         }
 

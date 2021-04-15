@@ -43,8 +43,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 endif()
 
 set(LIBUV_ADDITIONAL_FLAGS "")
-if (DEFINED IO_SANITIZER)
-    set(LIBUV_ADDITIONAL_FLAGS "${LIBUV_ADDITIONAL_FLAGS} -fsanitize=${IO_SANITIZER}")
+if (DEFINED TARM_IO_SANITIZER)
+    set(LIBUV_ADDITIONAL_FLAGS "${LIBUV_ADDITIONAL_FLAGS} -fsanitize=${TARM_IO_SANITIZER}")
 endif()
 
 # Promoting LIBUV_LIB_DEPS to parent scope
@@ -113,7 +113,7 @@ else()
 endif()
 
 # IMPORTED target is required for Ninja generator because it needs all rules to be defined at configuration step of CMake
-if (NOT DEFINED IO_SANITIZER)
+if (NOT DEFINED TARM_IO_SANITIZER)
     add_library(LibUV::LibUV STATIC IMPORTED GLOBAL)
     set_target_properties(LibUV::LibUV PROPERTIES
         IMPORTED_LOCATION "${LIBUV_STATIC_LIB_PATH}"

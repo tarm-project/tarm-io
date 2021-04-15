@@ -136,7 +136,7 @@ Error UdpClient::Impl::setup_udp_handle(const Endpoint& endpoint) {
         return Error(StatusCode::INVALID_ARGUMENT);
     }
 
-    if ((m_udp_handle.get()->flags & IO_UV_HANDLE_BOUND) == 0) {
+    if ((m_udp_handle.get()->flags & TARM_IO_UV_HANDLE_BOUND) == 0) {
         ::sockaddr_storage storage{0};
         storage.ss_family = endpoint.type() == Endpoint::IP_V4 ? AF_INET : AF_INET6;
         const Error bind_error = uv_udp_bind(m_udp_handle.get(), reinterpret_cast<const ::sockaddr*>(&storage), UV_UDP_REUSEADDR);

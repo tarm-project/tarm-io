@@ -17,7 +17,7 @@ namespace io {
 
 // X-Macro idiom, for details see
 // https://en.wikibooks.org/wiki/C_Programming/Preprocessor_directives_and_macros#X-Macros
-#define IO_LIST_OF_STATUS_CODES \
+#define TARM_IO_LIST_OF_STATUS_CODES \
     /*custom codes*/ \
     X(OK) \
     X(UNDEFINED) \
@@ -118,7 +118,7 @@ namespace io {
 
 #define X(PARAM) PARAM,
 enum class StatusCode : uint32_t {
-  IO_LIST_OF_STATUS_CODES
+  TARM_IO_LIST_OF_STATUS_CODES
   FIRST = OK,
   LAST = INAPPROPRIATE_FILE_TYPE_OR_FORMAT
 };

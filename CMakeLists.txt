@@ -47,15 +47,15 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 endif()
 
-# IO_SANITIZER allows to build the library with sanitizer enabled
+# TARM_IO_SANITIZER allows to build the library with sanitizer enabled
 # For details see https://clang.llvm.org/docs/.
 # value if set should be name of GCC/Clang sanitizers like 'thread', 'address', etc...
-if(DEFINED IO_SANITIZER)
-    message(STATUS "Using sanitizer: ${IO_SANITIZER}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${IO_SANITIZER}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${IO_SANITIZER}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${IO_SANITIZER}")
+if(DEFINED TARM_IO_SANITIZER)
+    message(STATUS "Using sanitizer: ${TARM_IO_SANITIZER}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${TARM_IO_SANITIZER}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${TARM_IO_SANITIZER}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${TARM_IO_SANITIZER}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${TARM_IO_SANITIZER}")
 else()
     if (NOT MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")

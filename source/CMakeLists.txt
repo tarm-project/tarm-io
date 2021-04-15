@@ -4,7 +4,7 @@
 #----------------------------------------------------------------------------------------------
 
 include(TestBigEndian)
-TEST_BIG_ENDIAN(IO_IS_BIG_ENDIAN)
+TEST_BIG_ENDIAN(TARM_IO_IS_BIG_ENDIAN)
 
 # Openssl
 if (NOT BUILD_SHARED_LIBS)
@@ -88,7 +88,7 @@ if (OpenSSL_FOUND)
 endif()
 
 # Files
-FILE(GLOB IO_HEADERS_LIST
+FILE(GLOB TARM_IO_HEADERS_LIST
         io/*.h
         io/core/*.h
         io/detail/*.h
@@ -99,8 +99,8 @@ FILE(GLOB IO_HEADERS_LIST
         io/net/detail/*.h
         io/path_impl/*.h)
 
-list(APPEND IO_SOURCE_LIST
-        ${IO_HEADERS_LIST}
+list(APPEND TARM_IO_SOURCE_LIST
+        ${TARM_IO_HEADERS_LIST}
         io/core/VariableLengthSize.cpp
         io/detail/Common.cpp
         io/detail/LibuvCompatibility.cpp
@@ -146,19 +146,19 @@ list(APPEND IO_SOURCE_LIST
         io/Version.cpp
 )
 
-set(IO_SOURCE_EXCLUDE_PATTERN "=") # '=' is just a placeholder value which will definitely will not be used for paths.
+set(TARM_IO_SOURCE_EXCLUDE_PATTERN "=") # '=' is just a placeholder value which will definitely will not be used for paths.
 if (NOT TARM_IO_OPENSSL_FOUND)
-    set(IO_SOURCE_EXCLUDE_PATTERN Tls.*|Dtls.*|OpenSsl.*|Version\..*)
-    list(FILTER IO_SOURCE_LIST EXCLUDE REGEX ${IO_SOURCE_EXCLUDE_PATTERN})
+    set(TARM_IO_SOURCE_EXCLUDE_PATTERN Tls.*|Dtls.*|OpenSsl.*|Version\..*)
+    list(FILTER TARM_IO_SOURCE_LIST EXCLUDE REGEX ${TARM_IO_SOURCE_EXCLUDE_PATTERN})
 endif()
 
 if (${CMAKE_VERSION} VERSION_LESS "3.8.2")
-    source_group(tarm-io FILES ${IO_SOURCE_LIST})
+    source_group(tarm-io FILES ${TARM_IO_SOURCE_LIST})
 else()
-    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${IO_SOURCE_LIST})
+    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${TARM_IO_SOURCE_LIST})
 endif()
 
-add_library(tarm-io ${IO_SOURCE_LIST})
+add_library(tarm-io ${TARM_IO_SOURCE_LIST})
 set_target_properties(tarm-io PROPERTIES DEBUG_POSTFIX _d)
 target_link_libraries(tarm-io PUBLIC ${LIBUV_LIB_DEPS})
 
@@ -262,8 +262,8 @@ if (MSVC)
     target_compile_definitions(tarm-io PRIVATE _SCL_SECURE_NO_WARNINGS)
 endif()
 
-if (IO_IS_BIG_ENDIAN)
-    target_compile_definitions(tarm-io PRIVATE IO_BIG_ENDIAN)
+if (TARM_IO_IS_BIG_ENDIAN)
+    target_compile_definitions(tarm-io PRIVATE TARM_IO_BIG_ENDIAN)
 endif()
 
 if (WIN32)
@@ -286,7 +286,7 @@ if (TARM_IO_PLATFORM_LINUX OR
     TARM_IO_PLATFORM_MACOSX OR
     CMAKE_BUILD_TYPE STREQUAL "Coverage")
 
-    if (NOT DEFINED IO_SANITIZER)
+    if (NOT DEFINED TARM_IO_SANITIZER)
         target_compile_options(tarm-io PRIVATE -fno-exceptions)
     endif()
 elseif (TARM_IO_PLATFORM_WINDOWS)
@@ -322,7 +322,7 @@ endif()
 install(DIRECTORY io DESTINATION include/tarm
    FILES_MATCHING PATTERN *.h
    PATTERN detail EXCLUDE
-   REGEX "${IO_SOURCE_EXCLUDE_PATTERN}" EXCLUDE)
+   REGEX "${TARM_IO_SOURCE_EXCLUDE_PATTERN}" EXCLUDE)
 
 install(TARGETS tarm-io EXPORT tarm-ioTargets
     RUNTIME

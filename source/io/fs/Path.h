@@ -341,7 +341,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     void clear() noexcept { m_pathname.clear(); }
 #   ifdef TARM_IO_PLATFORM_WINDOWS
     TARM_IO_DLL_PUBLIC Path& make_preferred();  // change slashes to backslashes
-#   else // IO_POSIX_API
+#   else // TARM_IO_POSIX_API
     Path& make_preferred() { return *this; }  // POSIX no effect
 #   endif
     TARM_IO_DLL_PUBLIC Path& remove_filename();
@@ -401,7 +401,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     //  string_type is std::wstring, so there is no conversion
     const std::wstring& wstring() const { return m_pathname; }
     const std::wstring& wstring(const codecvt_type&) const { return m_pathname; }
-#   else   // IO_POSIX_API
+#   else   // TARM_IO_POSIX_API
     //  string_type is std::string, so there is no conversion
     const std::string& string() const { return m_pathname; }
     const std::string& string(const codecvt_type&) const { return m_pathname; }
@@ -445,7 +445,7 @@ PathConstants< Char, Separator, PreferredSeparator, Dot >::dot;
     const std::string   generic_string(const codecvt_type& cvt) const { return generic_path().string(cvt); }
     const std::wstring  generic_wstring() const { return generic_path().wstring(); }
     const std::wstring  generic_wstring(const codecvt_type&) const { return generic_wstring(); }
-#   else // IO_POSIX_API
+#   else // TARM_IO_POSIX_API
     //  On POSIX-like systems, the generic format is the same as the native format
     const std::string&  generic_string() const  { return m_pathname; }
     const std::string&  generic_string(const codecvt_type&) const  { return m_pathname; }
@@ -731,7 +731,7 @@ private:
     for(const Path::value_type* it = x.c_str(); *it; ++it)
       hash_combine(seed, *it == L'/' ? L'\\' : *it);
     return seed;
-# else   // IO_POSIX_API
+# else   // TARM_IO_POSIX_API
     return hash_range(x.native().begin(), x.native().end());
 # endif
   }

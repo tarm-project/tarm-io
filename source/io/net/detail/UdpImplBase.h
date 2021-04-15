@@ -184,7 +184,7 @@ Error UdpImplBase<ParentType, ImplType>::check_buffer_size_value(std::size_t siz
         return Error(StatusCode::INVALID_ARGUMENT);
     }
 
-    if ((m_udp_handle.get()->flags & IO_UV_HANDLE_BOUND) == 0) {
+    if ((m_udp_handle.get()->flags & TARM_IO_UV_HANDLE_BOUND) == 0) {
         return Error(StatusCode::ADDRESS_NOT_AVAILABLE);
     }
 
