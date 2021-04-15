@@ -3,7 +3,10 @@
 #include "Timer.h"
 #include "fs/Dir.h"
 #include "fs/File.h"
-#include "net/TlsClient.h"
+
+#ifdef TARM_IO_HAS_OPENSSL
+    #include "net/TlsClient.h"
+#endif
 
 namespace tarm {
 namespace io {
@@ -80,8 +83,10 @@ template TARM_IO_DLL_PUBLIC Timer* Allocator::allocate<Timer>();
 template TARM_IO_DLL_PUBLIC fs::Dir* Allocator::allocate<fs::Dir>();
 template TARM_IO_DLL_PUBLIC fs::File* Allocator::allocate<fs::File>();
 
-template TARM_IO_DLL_PUBLIC net::TlsClient* Allocator::allocate<net::TlsClient>();
-template TARM_IO_DLL_PUBLIC net::TlsClient* Allocator::allocate<net::TlsClient, net::TlsVersionRange>(net::TlsVersionRange&&);
+#ifdef TARM_IO_HAS_OPENSSL
+    template TARM_IO_DLL_PUBLIC net::TlsClient* Allocator::allocate<net::TlsClient>();
+    template TARM_IO_DLL_PUBLIC net::TlsClient* Allocator::allocate<net::TlsClient, net::TlsVersionRange>(net::TlsVersionRange&&);
+#endif
 
 } // namespace io
 } // namespace tarm
