@@ -153,7 +153,8 @@ TEST_F(TlsClientServerTest, client_connect_to_invalid_address) {
 TEST_F(TlsClientServerTest, server_listen_on_invalid_address) {
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({"1.2:333333aa.adf", m_default_port},
         nullptr,
         nullptr,
@@ -174,7 +175,8 @@ TEST_F(TlsClientServerTest, bind_privileged) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, 100},
         nullptr,
         nullptr,
@@ -191,11 +193,13 @@ TEST_F(TlsClientServerTest, bind_privileged) {
 TEST_F(TlsClientServerTest, server_address_in_use) {
     io::EventLoop loop;
 
-    auto server_1 = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server_1 = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server_1) << loop.last_allocation_error();
     auto listen_error_1 = server_1->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
     EXPECT_FALSE(listen_error_1);
 
-    auto server_2 = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server_2 = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server_2) << loop.last_allocation_error();
     auto listen_error_2 = server_2->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
     EXPECT_TRUE(listen_error_2);
     EXPECT_EQ(io::StatusCode::ADDRESS_ALREADY_IN_USE, listen_error_2.code());
@@ -231,7 +235,8 @@ TEST_F(TlsClientServerTest, client_send_data_to_server_no_close_callbacks) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -295,7 +300,8 @@ TEST_F(TlsClientServerTest, client_send_data_to_server_with_close_callbacks) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -379,7 +385,8 @@ TEST_F(TlsClientServerTest, client_send_simultaneous_multiple_chunks_to_server) 
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
@@ -450,7 +457,8 @@ TEST_F(TlsClientServerTest, server_send_data_to_client) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
@@ -530,7 +538,8 @@ TEST_F(TlsClientServerTest, server_send_simultaneous_multiple_chunks_to_client) 
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
@@ -620,7 +629,8 @@ TEST_F(TlsClientServerTest, client_and_server_send_each_other_1_mb_data) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
             [&](io::net::TlsConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -714,7 +724,8 @@ TEST_F(TlsClientServerTest, server_close_connection_cause_client_close) {
     std::size_t server_on_close_count = 0;
     std::size_t clietn_on_close_count = 0;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -758,7 +769,8 @@ TEST_F(TlsClientServerTest, server_close_connection_cause_client_close) {
 TEST_F(TlsClientServerTest, server_close_client_conection_after_accepting_some_data) {
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
@@ -809,7 +821,8 @@ TEST_F(TlsClientServerTest, not_existing_certificate) {
     not_existing_path = "C:\\no\\existing\\path.pem";
 #endif
 
-    auto server = new io::net::TlsServer(loop, not_existing_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(not_existing_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
@@ -849,7 +862,8 @@ TEST_F(TlsClientServerTest, not_existing_key) {
     not_existing_path = "C:\\no\\existing\\path.pem";
 #endif
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, not_existing_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, not_existing_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
@@ -880,7 +894,8 @@ TEST_F(TlsClientServerTest, invalid_certificate) {
     io::EventLoop loop;
 
     io::fs::Path certificate_path = m_test_path / "invalid_certificate.pem";;
-    auto server = new io::net::TlsServer(loop, certificate_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(certificate_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
@@ -910,7 +925,8 @@ TEST_F(TlsClientServerTest, invalid_private_key) {
     io::EventLoop loop;
 
     io::fs::Path key_path = m_test_path / "invalid_key.pem";;
-    auto server = new io::net::TlsServer(loop, m_cert_path, key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
@@ -945,7 +961,8 @@ TEST_F(TlsClientServerTest, not_matching_certificate_and_key) {
 
     const io::fs::Path cert_path = m_test_path / "not_matching_certificate.pem";
     const io::fs::Path key_path = m_test_path / "not_matching_key.pem";
-    auto server = new io::net::TlsServer(loop, cert_path, key_path);
+    auto server = loop.allocate<io::net::TlsServer>(cert_path, key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     std::size_t server_new_connection_callback_count = 0;
     std::size_t server_data_receive_callback_count = 0;
@@ -989,7 +1006,8 @@ TEST_F(TlsClientServerTest, callbacks_order) {
     std::size_t client_new_connection_callback_count = 0;
     std::size_t client_data_receive_callback_count = 0;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1055,7 +1073,8 @@ TEST_F(TlsClientServerTest, tls_negotiated_version) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1096,8 +1115,9 @@ TEST_F(TlsClientServerTest, server_with_restricted_tls_version) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path,
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path,
         io::net::TlsVersionRange{io::net::min_supported_tls_version(), io::net::min_supported_tls_version()});
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1153,7 +1173,8 @@ TEST_F(TlsClientServerTest, client_with_restricted_tls_version) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1217,8 +1238,9 @@ TEST_F(TlsClientServerTest, client_and_server_tls_version_mismatch) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path,
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path,
         io::net::TlsVersionRange{io::net::max_supported_tls_version(), io::net::max_supported_tls_version()});
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TlsConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1279,8 +1301,9 @@ TEST_F(TlsClientServerTest, server_with_invalid_tls_version_range) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path,
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path,
         io::net::TlsVersionRange{io::net::max_supported_tls_version(), io::net::min_supported_tls_version()});
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         nullptr,
         nullptr
@@ -1301,7 +1324,8 @@ TEST_F(TlsClientServerTest, client_with_invalid_tls_version_range) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         nullptr,
         nullptr
@@ -1335,7 +1359,8 @@ TEST_F(TlsClientServerTest, server_works_with_multiple_clients) {
 
         std::size_t on_server_close_count = 0;
 
-        auto server = new io::net::TlsServer(loop, m_cert_path, m_key_path);
+        auto server = loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path);
+        ASSERT_TRUE(server) << loop.last_allocation_error();
         auto listen_error = server->listen({m_default_addr, m_default_port},
             [&](io::net::TlsConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error;

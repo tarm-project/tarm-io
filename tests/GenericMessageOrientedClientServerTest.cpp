@@ -803,8 +803,9 @@ TEST_F(GenericMessageOrientedClientServerTest, with_tls) {
 
     io::EventLoop loop;
 
-    TlsServerPtr tls_server(new io::net::TlsServer(loop, m_cert_path, m_key_path),
+    TlsServerPtr tls_server(loop.allocate<io::net::TlsServer>(m_cert_path, m_key_path),
                             io::Removable::default_delete());
+    ASSERT_TRUE(tls_server) << loop.last_allocation_error();
     TlsMessageOrientedServer message_server(std::move(tls_server));
     auto listen_error = message_server.listen({"0.0.0.0", m_default_port},
         [&](TlsMessageOrientedConnectedClient& client, const io::Error& error) {

@@ -69,6 +69,9 @@ void TlsClient::Impl::connect(const Endpoint endpoint,
                               const ConnectCallback& connect_callback,
                               const DataReceiveCallback& receive_callback,
                               const CloseCallback& close_callback) {
+    // TODO: handle TcpClient creation error properly
+    // TODO: m_client can leak here if call connect twice
+    // TODO: likely move SSL init calls in constructor
     m_client = new TcpClient(*m_loop);
 
     if (!is_ssl_inited()) {

@@ -26,7 +26,12 @@ namespace net {
 
 class TlsServer::Impl {
 public:
-    Impl(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range, TlsServer& parent);
+    Impl(EventLoop& loop,
+         Error& error,
+         const fs::Path& certificate_path,
+         const fs::Path& private_key_path,
+         TlsVersionRange version_range,
+         TlsServer& parent);
     ~Impl();
 
     Error listen(const Endpoint endpoint,
@@ -77,13 +82,14 @@ private:
 };
 
 TlsServer::Impl::Impl(EventLoop& loop,
-                         const fs::Path& certificate_path,
-                         const fs::Path& private_key_path,
-                         TlsVersionRange version_range,
-                         TlsServer& parent) :
+                      Error& error,
+                      const fs::Path& certificate_path,
+                      const fs::Path& private_key_path,
+                      TlsVersionRange version_range,
+                      TlsServer& parent) :
     m_parent(&parent),
     m_loop(&loop),
-    m_tcp_server(new TcpServer(loop)),
+    m_tcp_server(new TcpServer(loop)), // TODO: handle TcpServer creation error properly
     m_certificate_path(certificate_path),
     m_private_key_path(private_key_path),
     m_certificate(nullptr, ::X509_free),
@@ -281,9 +287,14 @@ bool TlsServer::Impl::certificate_and_key_match() {
 
 
 
-TlsServer::TlsServer(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range) :
+TlsServer::TlsServer(EventLoop& loop, Error& error, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range) :
     Removable(loop),
-    m_impl(new Impl(loop, certificate_path, private_key_path, version_range, *this)) {
+    m_impl(new Impl(loop, error, certificate_path, private_key_path, version_range, *this)) {
+}
+
+TlsServer::TlsServer(EventLoop& loop, Error& error, const fs::Path& certificate_path, const fs::Path& private_key_path) :
+    Removable(loop),
+    m_impl(new Impl(loop, error, certificate_path, private_key_path, DEFAULT_TLS_VERSION_RANGE, *this)) {
 }
 
 TlsServer::~TlsServer() {

@@ -1,11 +1,21 @@
 #include "Allocator.h"
+//*
+namespace tarm {
+namespace io {
 
+thread_local Error Allocator::m_last_allocation_error{StatusCode::OK};
+
+} // namespace io
+} // namespace tarm
+//*/
+/*
 #include "Timer.h"
 #include "fs/Dir.h"
 #include "fs/File.h"
 
 #ifdef TARM_IO_HAS_OPENSSL
     #include "net/TlsClient.h"
+    #include "net/TlsServer.h"
 #endif
 
 namespace tarm {
@@ -86,7 +96,11 @@ template TARM_IO_DLL_PUBLIC fs::File* Allocator::allocate<fs::File>();
 #ifdef TARM_IO_HAS_OPENSSL
     template TARM_IO_DLL_PUBLIC net::TlsClient* Allocator::allocate<net::TlsClient>();
     template TARM_IO_DLL_PUBLIC net::TlsClient* Allocator::allocate<net::TlsClient, net::TlsVersionRange>(net::TlsVersionRange&&);
+
+    template TARM_IO_DLL_PUBLIC net::TlsServer* Allocator::allocate<net::TlsServer, fs::Path, fs::Path>(fs::Path&&, fs::Path&&);
+    template TARM_IO_DLL_PUBLIC net::TlsServer* Allocator::allocate<net::TlsServer, fs::Path, fs::Path, net::TlsVersionRange>(fs::Path&&, fs::Path&&, net::TlsVersionRange&&);
 #endif
 
 } // namespace io
 } // namespace tarm
+//*/

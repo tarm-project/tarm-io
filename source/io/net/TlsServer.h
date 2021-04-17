@@ -26,6 +26,8 @@ namespace net {
 class TlsServer : public Removable,
                   public UserDataHolder {
 public:
+    friend class ::tarm::io::Allocator;
+
     using AssociatedClientType = TlsConnectedClient;
 
     using NewConnectionCallback = std::function<void(TlsConnectedClient&, const Error&)>;
@@ -37,11 +39,6 @@ public:
 
     TARM_IO_FORBID_COPY(TlsServer);
     TARM_IO_FORBID_MOVE(TlsServer);
-
-    TARM_IO_DLL_PUBLIC TlsServer(EventLoop& loop,
-                                 const fs::Path& certificate_path,
-                                 const fs::Path& private_key_path,
-                                 TlsVersionRange version_range = DEFAULT_TLS_VERSION_RANGE);
 
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
@@ -71,6 +68,15 @@ public:
     TARM_IO_DLL_PUBLIC TlsVersionRange version_range() const;
 
 protected:
+    TARM_IO_DLL_PUBLIC TlsServer(EventLoop& loop,
+                                 Error& error,
+                                 const fs::Path& certificate_path,
+                                 const fs::Path& private_key_path);
+    TARM_IO_DLL_PUBLIC TlsServer(EventLoop& loop,
+                                 Error& error,
+                                 const fs::Path& certificate_path,
+                                 const fs::Path& private_key_path,
+                                 TlsVersionRange version_range);
     TARM_IO_DLL_PUBLIC ~TlsServer();
 
 private:
