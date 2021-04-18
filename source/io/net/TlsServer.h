@@ -68,12 +68,10 @@ public:
     TARM_IO_DLL_PUBLIC TlsVersionRange version_range() const;
 
 protected:
-    TARM_IO_DLL_PUBLIC TlsServer(EventLoop& loop,
-                                 Error& error,
+    TARM_IO_DLL_PUBLIC TlsServer(AllocationContext& context,
                                  const fs::Path& certificate_path,
                                  const fs::Path& private_key_path);
-    TARM_IO_DLL_PUBLIC TlsServer(EventLoop& loop,
-                                 Error& error,
+    TARM_IO_DLL_PUBLIC TlsServer(AllocationContext& context,
                                  const fs::Path& certificate_path,
                                  const fs::Path& private_key_path,
                                  TlsVersionRange version_range);

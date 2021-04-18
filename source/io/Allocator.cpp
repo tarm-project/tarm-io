@@ -3,8 +3,6 @@
 namespace tarm {
 namespace io {
 
-TARM_IO_DLL_PUBLIC thread_local Error Allocator::m_last_allocation_error{StatusCode::OK};
-
 } // namespace io
 } // namespace tarm
 //*/

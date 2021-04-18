@@ -10,6 +10,16 @@
 namespace tarm {
 namespace io {
 
+struct AllocationContext {
+    AllocationContext(EventLoop& l, Error& e) :
+        loop(l),
+        error(e)
+    {}
+
+    EventLoop& loop;
+    Error& error;
+};
+
 class Allocator {
 public:
     Allocator(EventLoop& loop) :
@@ -19,7 +29,8 @@ public:
     template<typename T, typename... ARGS>
     T* allocate(ARGS&&... args) {
         Error error;
-        auto ptr = new(std::nothrow) T(*m_loop, error, std::forward<ARGS>(args)...);
+        AllocationContext context{*m_loop, error};
+        auto ptr = new(std::nothrow) T(context, std::forward<ARGS>(args)...);
         m_last_allocation_error = error;
         if (error) {
             return nullptr;
@@ -39,8 +50,7 @@ public:
 
 private:
     EventLoop* m_loop;
-    // TODO: remove thread_local?
-    static thread_local Error m_last_allocation_error;
+    Error m_last_allocation_error;
 
 
 /*

@@ -14,7 +14,7 @@ namespace io {
 
 class Timer::Impl  {
 public:
-    Impl(EventLoop& loop, Error& error, Timer& parent);
+    Impl(AllocationContext& context, Timer& parent);
     ~Impl();
 
     void start(uint64_t timeout_ms, uint64_t repeat_ms, const Callback& callback);
@@ -55,12 +55,12 @@ private:
     std::uint64_t m_last_callback_time;
 };
 
-Timer::Impl::Impl(EventLoop& loop, Error& error, Timer& parent) :
+Timer::Impl::Impl(AllocationContext& context, Timer& parent) :
     m_parent(&parent),
-    m_loop(&loop),
+    m_loop(&context.loop),
     m_uv_timer(new uv_timer_t),
     m_last_callback_time(uv_hrtime()) {
-    error = uv_timer_init(reinterpret_cast<uv_loop_t*>(loop.raw_loop()), m_uv_timer);
+    context.error = uv_timer_init(reinterpret_cast<uv_loop_t*>(context.loop.raw_loop()), m_uv_timer);
     m_uv_timer->data = this;
 }
 
@@ -172,9 +172,9 @@ void Timer::Impl::on_timer(uv_timer_t* handle) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-Timer::Timer(EventLoop& loop, Error& error) :
-    Removable(loop),
-    m_impl(new Impl(loop, error, *this)) {
+Timer::Timer(AllocationContext& context) :
+    Removable(context.loop),
+    m_impl(new Impl(context, *this)) {
 }
 
 Timer::~Timer() {

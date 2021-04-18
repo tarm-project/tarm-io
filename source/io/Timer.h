@@ -56,7 +56,7 @@ public:
 
 protected:
     // To create objects use allocate() method of EventLoop
-    TARM_IO_DLL_PUBLIC Timer(EventLoop& loop, Error& error);
+    TARM_IO_DLL_PUBLIC Timer(AllocationContext& context);
     TARM_IO_DLL_PUBLIC ~Timer();
 
 private:

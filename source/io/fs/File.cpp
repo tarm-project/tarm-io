@@ -60,7 +60,7 @@ public:
         CLOSED
     };
 
-    Impl(EventLoop& loop, Error& error, File& parent);
+    Impl(AllocationContext& context, File& parent);
     ~Impl();
 
     void open(const Path& path, const OpenCallback& callback);
@@ -119,10 +119,10 @@ private:
     State m_state = State::INITIAL;
 };
 
-File::Impl::Impl(EventLoop& loop, Error& /*error*/, File& parent) :
+File::Impl::Impl(AllocationContext& context, File& parent) :
     m_parent(&parent),
-    m_loop(&loop),
-    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
+    m_loop(&context.loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(context.loop.raw_loop())) {
 }
 
 File::Impl::~Impl() {
@@ -594,9 +594,9 @@ void File::Impl::on_stat(uv_fs_t* req) {
 
 
 
-File::File(EventLoop& loop, Error& error) :
-    Removable(loop),
-    m_impl(new Impl(loop, error, *this)) {
+File::File(AllocationContext& context) :
+    Removable(context.loop),
+    m_impl(new Impl(context, *this)) {
 }
 
 File::~File() {

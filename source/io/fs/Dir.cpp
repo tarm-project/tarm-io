@@ -49,7 +49,7 @@ public:
         CLOSED
     };
 
-    Impl(EventLoop& loop, Error& error, Dir& parent);
+    Impl(AllocationContext& context, Dir& parent);
     ~Impl();
 
     void open(const Path& path, const OpenCallback& callback);
@@ -120,10 +120,10 @@ DirectoryEntryType convert_direntry_type(uv_dirent_type_t type) {
 
 } // namespace
 
-Dir::Impl::Impl(EventLoop& loop, Error& error, Dir& parent) :
+Dir::Impl::Impl(AllocationContext& context, Dir& parent) :
     m_parent(&parent),
-    m_loop(&loop),
-    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())) {
+    m_loop(&context.loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(context.loop.raw_loop())) {
     memset(&m_open_dir_req, 0, sizeof(m_open_dir_req));
 }
 
@@ -353,9 +353,9 @@ void Dir::Impl::on_close_dir(uv_fs_t* req) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-Dir::Dir(EventLoop& loop, Error& error) :
-    Removable(loop),
-    m_impl(new Impl(loop, error, *this)) {
+Dir::Dir(AllocationContext& context) :
+    Removable(context.loop),
+    m_impl(new Impl(context, *this)) {
 }
 
 Dir::~Dir() {

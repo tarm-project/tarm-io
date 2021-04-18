@@ -26,8 +26,7 @@ namespace net {
 
 class TlsServer::Impl {
 public:
-    Impl(EventLoop& loop,
-         Error& error,
+    Impl(AllocationContext& context,
          const fs::Path& certificate_path,
          const fs::Path& private_key_path,
          TlsVersionRange version_range,
@@ -81,21 +80,20 @@ private:
     CloseConnectionCallback m_close_connection_callback = nullptr;
 };
 
-TlsServer::Impl::Impl(EventLoop& loop,
-                      Error& error,
+TlsServer::Impl::Impl(AllocationContext& context,
                       const fs::Path& certificate_path,
                       const fs::Path& private_key_path,
                       TlsVersionRange version_range,
                       TlsServer& parent) :
     m_parent(&parent),
-    m_loop(&loop),
-    m_tcp_server(new TcpServer(loop)), // TODO: handle TcpServer creation error properly
+    m_loop(&context.loop),
+    m_tcp_server(new TcpServer(context.loop)), // TODO: handle TcpServer creation error properly
     m_certificate_path(certificate_path),
     m_private_key_path(private_key_path),
     m_certificate(nullptr, ::X509_free),
     m_private_key(nullptr, ::EVP_PKEY_free),
     m_version_range(version_range),
-    m_openssl_context(loop, parent) {
+    m_openssl_context(context.loop, parent) {
 }
 
 TlsServer::Impl::~Impl() {
@@ -287,14 +285,14 @@ bool TlsServer::Impl::certificate_and_key_match() {
 
 
 
-TlsServer::TlsServer(EventLoop& loop, Error& error, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range) :
-    Removable(loop),
-    m_impl(new Impl(loop, error, certificate_path, private_key_path, version_range, *this)) {
+TlsServer::TlsServer(AllocationContext& context, const fs::Path& certificate_path, const fs::Path& private_key_path, TlsVersionRange version_range) :
+    Removable(context.loop),
+    m_impl(new Impl(context, certificate_path, private_key_path, version_range, *this)) {
 }
 
-TlsServer::TlsServer(EventLoop& loop, Error& error, const fs::Path& certificate_path, const fs::Path& private_key_path) :
-    Removable(loop),
-    m_impl(new Impl(loop, error, certificate_path, private_key_path, DEFAULT_TLS_VERSION_RANGE, *this)) {
+TlsServer::TlsServer(AllocationContext& context, const fs::Path& certificate_path, const fs::Path& private_key_path) :
+    Removable(context.loop),
+    m_impl(new Impl(context, certificate_path, private_key_path, DEFAULT_TLS_VERSION_RANGE, *this)) {
 }
 
 TlsServer::~TlsServer() {

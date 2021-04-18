@@ -57,7 +57,7 @@ public:
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
 protected:
-    TARM_IO_DLL_PUBLIC File(EventLoop& loop, Error& error);
+    TARM_IO_DLL_PUBLIC File(AllocationContext& context);
     TARM_IO_DLL_PUBLIC ~File();
 
 private:

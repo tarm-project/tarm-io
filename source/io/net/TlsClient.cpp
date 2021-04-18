@@ -22,7 +22,7 @@ namespace net {
 
 class TlsClient::Impl : public detail::OpenSslClientImplBase<TlsClient, TlsClient::Impl> {
 public:
-    Impl(EventLoop& loop, Error& error, TlsVersionRange version_range, TlsClient& parent);
+    Impl(AllocationContext& context, TlsVersionRange version_range, TlsClient& parent);
     ~Impl();
 
     const Endpoint& endpoint() const;
@@ -55,10 +55,10 @@ TlsClient::Impl::~Impl() {
 }
 
 // TODO: init SSL in constructor???
-TlsClient::Impl::Impl(EventLoop& loop, Error& /*error*/, TlsVersionRange version_range, TlsClient& parent) :
-    OpenSslClientImplBase(loop, parent),
+TlsClient::Impl::Impl(AllocationContext& context, TlsVersionRange version_range, TlsClient& parent) :
+    OpenSslClientImplBase(context.loop, parent),
     m_version_range(version_range),
-    m_openssl_context(loop, parent) {
+    m_openssl_context(context.loop, parent) {
 }
 
 const Endpoint& TlsClient::Impl::endpoint() const {
@@ -194,14 +194,14 @@ void TlsClient::Impl::on_alert(int /*code*/) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TlsClient::TlsClient(EventLoop& loop, Error& error) :
-    Removable(loop),
-    m_impl(new Impl(loop, error, DEFAULT_TLS_VERSION_RANGE, *this)) {
+TlsClient::TlsClient(AllocationContext& context) :
+    Removable(context.loop),
+    m_impl(new Impl(context, DEFAULT_TLS_VERSION_RANGE, *this)) {
 }
 
-TlsClient::TlsClient(EventLoop& loop, Error& error, TlsVersionRange version_range) :
-    Removable(loop),
-    m_impl(new Impl(loop, error, version_range, *this)) {
+TlsClient::TlsClient(AllocationContext& context, TlsVersionRange version_range) :
+    Removable(context.loop),
+    m_impl(new Impl(context, version_range, *this)) {
 }
 
 TlsClient::~TlsClient() {

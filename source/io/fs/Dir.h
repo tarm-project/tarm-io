@@ -50,7 +50,7 @@ public:
 
 protected:
     // To create objects use allocate() method of EventLoop
-    TARM_IO_DLL_PUBLIC Dir(EventLoop& loop, Error& error);
+    TARM_IO_DLL_PUBLIC Dir(AllocationContext& context);
     TARM_IO_DLL_PUBLIC ~Dir();
 
 private:

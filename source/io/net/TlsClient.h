@@ -59,8 +59,8 @@ public:
     TARM_IO_DLL_PUBLIC TlsVersion negotiated_tls_version() const;
 
 protected:
-    TARM_IO_DLL_PUBLIC TlsClient(EventLoop& loop, Error& error);
-    TARM_IO_DLL_PUBLIC TlsClient(EventLoop& loop, Error& error, TlsVersionRange version_range);
+    TARM_IO_DLL_PUBLIC TlsClient(AllocationContext& context);
+    TARM_IO_DLL_PUBLIC TlsClient(AllocationContext& context, TlsVersionRange version_range);
 
     TARM_IO_DLL_PUBLIC ~TlsClient();
 
