@@ -26,6 +26,8 @@ namespace net {
 class DtlsServer : public Removable,
                    public UserDataHolder {
 public:
+    friend class ::tarm::io::Allocator;
+
     using AssociatedClientType = DtlsConnectedClient;
 
     friend class DtlsConnectedClient;
@@ -40,11 +42,6 @@ public:
 
     TARM_IO_FORBID_COPY(DtlsServer);
     TARM_IO_FORBID_MOVE(DtlsServer);
-
-    TARM_IO_DLL_PUBLIC DtlsServer(EventLoop& loop,
-                             const fs::Path& certificate_path,
-                             const fs::Path& private_key_path,
-                             DtlsVersionRange version_range = DEFAULT_DTLS_VERSION_RANGE);
 
     TARM_IO_DLL_PUBLIC
     Error listen(const Endpoint& endpoint,
@@ -69,6 +66,15 @@ public:
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
 protected:
+    TARM_IO_DLL_PUBLIC DtlsServer(AllocationContext& context,
+                                  const fs::Path& certificate_path,
+                                  const fs::Path& private_key_path,
+                                  DtlsVersionRange version_range);
+
+    TARM_IO_DLL_PUBLIC DtlsServer(AllocationContext& context,
+                                  const fs::Path& certificate_path,
+                                  const fs::Path& private_key_path);
+
     TARM_IO_DLL_PUBLIC ~DtlsServer();
 
 private:

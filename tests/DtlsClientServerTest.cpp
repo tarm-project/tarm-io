@@ -36,7 +36,8 @@ protected:
 TEST_F(DtlsClientServerTest, client_without_actions) {
     io::EventLoop loop;
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->schedule_removal();
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -45,7 +46,8 @@ TEST_F(DtlsClientServerTest, client_without_actions) {
 TEST_F(DtlsClientServerTest, server_without_actions) {
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->schedule_removal();
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -58,7 +60,8 @@ TEST_F(DtlsClientServerTest, server_with_invalid_address) {
     std::size_t server_on_receive_count = 0;
     std::size_t server_on_close_count = 0;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto error = server->listen({"", m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -96,7 +99,8 @@ TEST_F(DtlsClientServerTest, bind_privileged) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, 100},
         nullptr
     );
@@ -122,7 +126,8 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     std::size_t client_data_receive_counter = 0;
     std::size_t client_data_send_counter = 0;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -146,7 +151,8 @@ TEST_F(DtlsClientServerTest, client_and_server_send_message_each_other) {
     );
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -206,7 +212,8 @@ TEST_F(DtlsClientServerTest, connected_peer_timeout) {
     std::chrono::high_resolution_clock::time_point t1;
     std::chrono::high_resolution_clock::time_point t2;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -228,7 +235,8 @@ TEST_F(DtlsClientServerTest, connected_peer_timeout) {
         }
     );
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -279,7 +287,8 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
     std::thread server_thread([&]() {
         io::EventLoop loop;
 
-        auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+        auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+        ASSERT_TRUE(server) << loop.last_allocation_error();
         server->listen({m_default_addr, m_default_port},
             [&](io::net::DtlsConnectedClient& client, const io::Error& error){
                 EXPECT_FALSE(error);
@@ -315,7 +324,8 @@ TEST_F(DtlsClientServerTest, client_and_server_in_threads_send_message_each_othe
         // Giving a time to start a server
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-        auto client = new io::net::DtlsClient(loop);
+        auto client = loop.allocate<io::net::DtlsClient>();
+        ASSERT_TRUE(client) << loop.last_allocation_error();
         client->connect({m_default_addr, m_default_port},
             [&](io::net::DtlsClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error.string();
@@ -367,7 +377,8 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
     std::size_t server_data_send_counter = 0;
 
     // A bit of callback hell here ]:-)
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->listen({m_default_addr, m_default_port},
         nullptr,
         [&](io::net::DtlsConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
@@ -399,7 +410,8 @@ TEST_F(DtlsClientServerTest, client_send_1mb_chunk) {
         }
     );
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             client.send_data(client_buf, LARGE_DATA_SIZE,
@@ -445,7 +457,8 @@ TEST_F(DtlsClientServerTest, dtls_negotiated_version) {
 
     std::size_t client_new_connection_counter = 0;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -455,7 +468,8 @@ TEST_F(DtlsClientServerTest, dtls_negotiated_version) {
         nullptr
     );
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     EXPECT_EQ(io::net::DtlsVersion::UNKNOWN, client->negotiated_dtls_version());
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
@@ -525,7 +539,8 @@ TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -545,8 +560,9 @@ TEST_F(DtlsClientServerTest, client_with_restricted_dtls_version) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::DtlsClient(loop,
+    auto client = loop.allocate<io::net::DtlsClient>(
         io::net::DtlsVersionRange{io::net::min_supported_dtls_version(), io::net::min_supported_dtls_version()});
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
@@ -583,8 +599,9 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path,
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path,
         io::net::DtlsVersionRange{io::net::min_supported_dtls_version(), io::net::min_supported_dtls_version()});
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -604,8 +621,8 @@ TEST_F(DtlsClientServerTest, server_with_restricted_dtls_version) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::DtlsClient(loop);
-
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -644,8 +661,9 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path,
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path,
         io::net::DtlsVersionRange{io::net::max_supported_dtls_version(), io::net::max_supported_dtls_version()});
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -661,8 +679,9 @@ TEST_F(DtlsClientServerTest, client_and_server_dtls_version_mismatch) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::DtlsClient(loop,
+    auto client = loop.allocate<io::net::DtlsClient>(
         io::net::DtlsVersionRange{io::net::min_supported_dtls_version(), io::net::min_supported_dtls_version()});
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -704,7 +723,8 @@ TEST_F(DtlsClientServerTest, save_received_buffer) {
     std::shared_ptr<const char> client_saved_buf;
     std::shared_ptr<const char> server_saved_buf;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -727,7 +747,8 @@ TEST_F(DtlsClientServerTest, save_received_buffer) {
         }
     );
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -778,7 +799,8 @@ TEST_F(DtlsClientServerTest, fail_to_init_ssl_on_client) {
     std::size_t client_data_receive_counter = 0;
     std::size_t client_connect_counter = 0;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -796,7 +818,8 @@ TEST_F(DtlsClientServerTest, fail_to_init_ssl_on_client) {
         io::global::set_ciphers_list(previous_ciphers);
     });
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -833,7 +856,8 @@ TEST_F(DtlsClientServerTest, close_connection_from_server_side) {
     const std::string client_message = "Hello from client!";
     const std::string server_message = "Hello from server!";
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -850,7 +874,8 @@ TEST_F(DtlsClientServerTest, close_connection_from_server_side) {
         }
     );
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -891,7 +916,8 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_no_data_sent
     std::size_t server_on_receive_count = 0;
     std::size_t server_on_close_count = 0;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -908,7 +934,8 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_no_data_sent
         }
     );
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -958,7 +985,8 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_with_data_se
     std::size_t server_on_receive_count = 0;
     std::size_t server_on_close_count = 0;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -975,7 +1003,8 @@ TEST_F(DtlsClientServerTest, close_connection_from_client_side_with_with_data_se
         }
     );
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1026,10 +1055,9 @@ TEST_F(DtlsClientServerTest, client_with_invalid_dtls_version) {
 
     // Note: Min > Max in this test
     io::EventLoop loop;
-    auto client = new io::net::DtlsClient(loop,
-        io::net::DtlsVersionRange{io::net::max_supported_dtls_version(),
-                             io::net::min_supported_dtls_version()});
-
+    auto client = loop.allocate<io::net::DtlsClient>(
+        io::net::DtlsVersionRange{io::net::max_supported_dtls_version(), io::net::min_supported_dtls_version()});
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1057,9 +1085,9 @@ TEST_F(DtlsClientServerTest, server_with_invalid_dtls_version) {
 
     // Note: Min > Max in this test
     io::EventLoop loop;
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path,
-        io::net::DtlsVersionRange{io::net::max_supported_dtls_version(),
-                             io::net::min_supported_dtls_version()});
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path,
+        io::net::DtlsVersionRange{io::net::max_supported_dtls_version(), io::net::min_supported_dtls_version()});
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1095,8 +1123,9 @@ TEST_F(DtlsClientServerTest, client_with_invalid_address) {
     std::size_t client_on_connect_count = 0;
 
     io::EventLoop loop;
-    auto client = new io::net::DtlsClient(loop);
 
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({"0.0", m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1116,11 +1145,13 @@ TEST_F(DtlsClientServerTest, client_with_invalid_address) {
 TEST_F(DtlsClientServerTest, server_address_in_use) {
     io::EventLoop loop;
 
-    auto server_1 = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server_1 = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server_1) << loop.last_allocation_error();
     auto listen_error_1 = server_1->listen({m_default_addr, m_default_port}, nullptr);
     EXPECT_FALSE(listen_error_1);
 
-    auto server_2 = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server_2 = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server_2) << loop.last_allocation_error();
     auto listen_error_2 = server_2->listen({m_default_addr, m_default_port}, nullptr);
     EXPECT_TRUE(listen_error_2);
     EXPECT_EQ(io::StatusCode::ADDRESS_ALREADY_IN_USE, listen_error_2.code());
@@ -1134,8 +1165,9 @@ TEST_F(DtlsClientServerTest, server_address_in_use) {
 TEST_F(DtlsClientServerTest, client_with_invalid_address_and_no_connect_callback) {
     // Note: crash test
     io::EventLoop loop;
-    auto client = new io::net::DtlsClient(loop);
 
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({"0.0", m_default_port},
         nullptr
     );
@@ -1154,7 +1186,8 @@ TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
 
         const auto start_time = std::chrono::high_resolution_clock::now();
 
-        auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+        auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+        ASSERT_TRUE(server) << loop.last_allocation_error();
         auto listen_error = server->listen({m_default_addr, m_default_port},
             [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error.string();
@@ -1200,7 +1233,8 @@ TEST_F(DtlsClientServerTest, client_no_timeout_on_data_send) {
 
         const auto start_time = std::chrono::high_resolution_clock::now();
 
-        auto client = new io::net::DtlsClient(loop);
+        auto client = loop.allocate<io::net::DtlsClient>();
+        ASSERT_TRUE(client) << loop.last_allocation_error();
         client->connect({m_default_addr, m_default_port},
             [&](io::net::DtlsClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error.string();
@@ -1246,7 +1280,8 @@ TEST_F(DtlsClientServerTest, client_timeout_cause_server_peer_close) {
     std::size_t client_on_close_callback_count = 0;
     std::size_t server_on_close_callback_count = 0;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1267,7 +1302,8 @@ TEST_F(DtlsClientServerTest, client_timeout_cause_server_peer_close) {
     );
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1305,7 +1341,8 @@ TEST_F(DtlsClientServerTest, server_peer_timeout_cause_client_close) {
     std::size_t client_on_close_callback_count = 0;
     std::size_t server_on_close_callback_count = 0;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1326,7 +1363,8 @@ TEST_F(DtlsClientServerTest, server_peer_timeout_cause_client_close) {
     );
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1366,7 +1404,8 @@ TEST_F(DtlsClientServerTest, server_schedule_removal_cause_client_close) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1385,7 +1424,8 @@ TEST_F(DtlsClientServerTest, server_schedule_removal_cause_client_close) {
     );
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1432,7 +1472,8 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_before_handshake) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1517,7 +1558,8 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_during_handshake) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -1593,7 +1635,8 @@ TEST_F(DtlsClientServerTest, DISABLED_client_send_invalid_data_after_handshake) 
 
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1613,7 +1656,8 @@ TEST_F(DtlsClientServerTest, DISABLED_client_send_invalid_data_after_handshake) 
     );
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1732,7 +1776,8 @@ TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout
 
     io::EventLoop loop;
 
-    auto server = new io::net::DtlsServer(loop, m_cert_path, m_key_path);
+    auto server = loop.allocate<io::net::DtlsServer>(m_cert_path, m_key_path);
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::DtlsConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1751,7 +1796,8 @@ TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout
     );
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1806,7 +1852,7 @@ TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout
     EXPECT_EQ(1, client_on_close_count);
 }
 
-TEST_F(DtlsClientServerTest, client_send_data_to_server_after_connection_timeout_at_client) {
+TEST_F(DtlsClientServerTest, DISABLED_client_send_data_to_server_after_connection_timeout_at_client) {
     // TODO:
 }
 
@@ -1817,7 +1863,8 @@ TEST_F(DtlsClientServerTest, connect_to_not_existing_server) {
 
     std::size_t client_on_connect_count = 0;
 
-    auto client = new io::net::DtlsClient(loop);
+    auto client = loop.allocate<io::net::DtlsClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->connect({m_default_addr, m_default_port},
         [&](io::net::DtlsClient& client, const io::Error& error) {
             EXPECT_TRUE(error);

@@ -21,6 +21,8 @@ namespace net {
 
 class DtlsClient : public Removable {
 public:
+    friend class ::tarm::io::Allocator;
+
     using UnderlyingClientType = UdpClient;
 
     using ConnectCallback = std::function<void(DtlsClient&, const Error&)>;
@@ -30,8 +32,6 @@ public:
 
     TARM_IO_FORBID_COPY(DtlsClient);
     TARM_IO_FORBID_MOVE(DtlsClient);
-
-    TARM_IO_DLL_PUBLIC DtlsClient(EventLoop& loop, DtlsVersionRange version_range = DEFAULT_DTLS_VERSION_RANGE);
 
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
@@ -58,6 +58,9 @@ public:
     TARM_IO_DLL_PUBLIC std::uint16_t bound_port() const;
 
 protected:
+    TARM_IO_DLL_PUBLIC DtlsClient(AllocationContext& context);
+    TARM_IO_DLL_PUBLIC DtlsClient(AllocationContext& context, DtlsVersionRange version_range);
+
     TARM_IO_DLL_PUBLIC ~DtlsClient();
 
 private:

@@ -23,7 +23,7 @@ namespace net {
 
 class DtlsClient::Impl : public detail::OpenSslClientImplBase<DtlsClient, DtlsClient::Impl> {
 public:
-    Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClient& parent);
+    Impl(AllocationContext& context, DtlsVersionRange version_range, DtlsClient& parent);
     ~Impl();
 
     void connect(const Endpoint& endpoint,
@@ -57,10 +57,10 @@ DtlsClient::Impl::~Impl() {
     LOG_TRACE(m_loop, m_parent, "Deleted DtlsClient");
 }
 
-DtlsClient::Impl::Impl(EventLoop& loop, DtlsVersionRange version_range, DtlsClient& parent) :
-    OpenSslClientImplBase(loop, parent),
+DtlsClient::Impl::Impl(AllocationContext& context, DtlsVersionRange version_range, DtlsClient& parent) :
+    OpenSslClientImplBase(context.loop, parent),
     m_version_range(version_range),
-    m_openssl_context(loop, parent) {
+    m_openssl_context(context.loop, parent) { // TODO: pass error to allocation context on fail to init OpenSSL?
     LOG_TRACE(m_loop, m_parent, "New DtlsClient");
 }
 
@@ -200,11 +200,16 @@ std::uint16_t DtlsClient::Impl::bound_port() const {
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 
-
-DtlsClient::DtlsClient(EventLoop& loop, DtlsVersionRange version_range) :
-    Removable(loop),
-    m_impl(new Impl(loop, version_range, *this)) {
+DtlsClient::DtlsClient(AllocationContext& context, DtlsVersionRange version_range) :
+    Removable(context.loop),
+    m_impl(new Impl(context, version_range, *this)) {
 }
+
+DtlsClient::DtlsClient(AllocationContext& context) :
+    DtlsClient(context, DEFAULT_DTLS_VERSION_RANGE) {
+}
+
+
 
 DtlsClient::~DtlsClient() {
 }

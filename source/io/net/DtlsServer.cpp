@@ -28,7 +28,7 @@ namespace net {
 
 class DtlsServer::Impl {
 public:
-    Impl(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent);
+    Impl(AllocationContext& context, const fs::Path& certificate_path, const fs::Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent);
     ~Impl();
 
     Error listen(const Endpoint& endpoint,
@@ -81,16 +81,22 @@ private:
     std::unordered_set<DtlsConnectedClient*> m_clients;
 };
 
-DtlsServer::Impl::Impl(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent) :
+DtlsServer::Impl::Impl(AllocationContext& context, const fs::Path& certificate_path, const fs::Path& private_key_path, DtlsVersionRange version_range, DtlsServer& parent) :
     m_parent(&parent),
-    m_loop(&loop),
-    m_udp_server(new UdpServer(loop)),
+    m_loop(&context.loop),
     m_certificate_path(certificate_path),
     m_private_key_path(private_key_path),
     m_certificate(nullptr, ::X509_free),
     m_private_key(nullptr, ::EVP_PKEY_free),
     m_version_range(version_range),
-    m_openssl_context(loop, parent) {
+    m_openssl_context(context.loop, parent) {
+    //m_udp_server = m_loop->allocate<UdpServer>();
+    m_udp_server = new UdpServer(*m_loop);
+    //if (!m_udp_server) {
+    //    context.error = m_loop->last_allocation_error();
+    //    return;
+    //}
+    // context.error // TODO: init error if required
 }
 
 DtlsServer::Impl::~Impl() {
@@ -269,9 +275,18 @@ bool DtlsServer::Impl::schedule_removal() {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-DtlsServer::DtlsServer(EventLoop& loop, const fs::Path& certificate_path, const fs::Path& private_key_path, DtlsVersionRange version_range) :
-    Removable(loop),
-    m_impl(new Impl(loop, certificate_path, private_key_path, version_range, *this)) {
+DtlsServer::DtlsServer(AllocationContext& context,
+                       const fs::Path& certificate_path,
+                       const fs::Path& private_key_path,
+                       DtlsVersionRange version_range) :
+    Removable(context.loop),
+    m_impl(new Impl(context, certificate_path, private_key_path, version_range, *this)) {
+}
+
+DtlsServer::DtlsServer(AllocationContext& context,
+                       const fs::Path& certificate_path,
+                       const fs::Path& private_key_path) :
+    DtlsServer(context, certificate_path, private_key_path, DEFAULT_DTLS_VERSION_RANGE) {
 }
 
 DtlsServer::~DtlsServer() {
