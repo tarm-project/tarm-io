@@ -24,7 +24,8 @@ protected:
 
 TEST_F(UdpClientServerTest, client_default_state) {
     io::EventLoop loop;
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     EXPECT_EQ(io::net::Endpoint::UNDEFINED, client->endpoint().type());
 
     client->schedule_removal();
@@ -33,7 +34,8 @@ TEST_F(UdpClientServerTest, client_default_state) {
 
 TEST_F(UdpClientServerTest, server_default_state) {
     io::EventLoop loop;
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     server->schedule_removal();
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -42,7 +44,8 @@ TEST_F(UdpClientServerTest, server_default_state) {
 TEST_F(UdpClientServerTest, server_bind) {
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto error = server->start_receive({m_default_addr, m_default_port}, nullptr);
     ASSERT_FALSE(error);
     server->schedule_removal();
@@ -56,7 +59,8 @@ TEST_F(UdpClientServerTest, bind_privileged) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     ASSERT_EQ(io::Error(io::StatusCode::PERMISSION_DENIED), server->start_receive({m_default_addr, 80}, nullptr));
     server->schedule_removal();
 
@@ -66,11 +70,13 @@ TEST_F(UdpClientServerTest, bind_privileged) {
 TEST_F(UdpClientServerTest, server_address_in_use) {
     io::EventLoop loop;
 
-    auto server_1 = new io::net::UdpServer(loop);
+    auto server_1 = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server_1) << loop.last_allocation_error();
     auto listen_error_1 = server_1->start_receive({m_default_addr, m_default_port}, nullptr);
     EXPECT_FALSE(listen_error_1);
 
-    auto server_2 = new io::net::UdpServer(loop);
+    auto server_2 = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server_2) << loop.last_allocation_error();
     auto listen_error_2 = server_2->start_receive({m_default_addr, m_default_port}, nullptr);
     EXPECT_TRUE(listen_error_2);
     EXPECT_EQ(io::StatusCode::ADDRESS_ALREADY_IN_USE, listen_error_2.code());
@@ -84,7 +90,8 @@ TEST_F(UdpClientServerTest, server_address_in_use) {
 TEST_F(UdpClientServerTest, server_invalid_address) {
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({"100500", m_default_port}, nullptr);
     EXPECT_TRUE(listen_error);
     EXPECT_EQ(io::StatusCode::INVALID_ARGUMENT, listen_error.code());
@@ -97,7 +104,8 @@ TEST_F(UdpClientServerTest, server_invalid_address) {
 TEST_F(UdpClientServerTest, client_invalid_address) {
     io::EventLoop loop;
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({"bla", m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -113,7 +121,8 @@ TEST_F(UdpClientServerTest, client_invalid_address) {
 TEST_F(UdpClientServerTest, client_remove_after_set_destination) {
     io::EventLoop loop;
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({"bla", m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_TRUE(error);
@@ -136,7 +145,8 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
     std::size_t client_on_data_send_count = 0;
     std::size_t client_on_destination_set_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -153,7 +163,8 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
 
     EXPECT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination(
         {0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
@@ -189,7 +200,8 @@ TEST_F(UdpClientServerTest, 1_client_send_data_to_server) {
 
 TEST_F(UdpClientServerTest, client_get_buffer_size) {
     io::EventLoop loop;
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     // At this point client has no receive callback nor destination set.
     // Even IP protocol version is undefined yet.
@@ -221,7 +233,8 @@ TEST_F(UdpClientServerTest, client_get_buffer_size) {
 TEST_F(UdpClientServerTest, server_get_buffer_size_1) {
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     const auto receive_buffer = server->receive_buffer_size();
     EXPECT_TRUE(receive_buffer.error);
 
@@ -236,7 +249,8 @@ TEST_F(UdpClientServerTest, server_get_buffer_size_1) {
 TEST_F(UdpClientServerTest, server_get_buffer_size_2) {
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer&, const io::DataChunk&, const io::Error&) {
         }
@@ -258,7 +272,8 @@ TEST_F(UdpClientServerTest, server_get_buffer_size_2) {
 
 TEST_F(UdpClientServerTest, client_set_buffer_size) {
     io::EventLoop loop;
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
 
     EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), client->set_send_buffer_size(4096));
     EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), client->set_receive_buffer_size(4096));
@@ -297,7 +312,8 @@ TEST_F(UdpClientServerTest, client_set_buffer_size) {
 TEST_F(UdpClientServerTest, server_set_buffer_size) {
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), server->set_send_buffer_size(4096));
     EXPECT_EQ(io::Error(io::StatusCode::ADDRESS_NOT_AVAILABLE), server->set_receive_buffer_size(4096));
@@ -363,7 +379,8 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
     std::size_t client_on_send_counter = 0;
     std::size_t client_on_receive_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -382,7 +399,8 @@ TEST_F(UdpClientServerTest, set_minimal_buffer_size) {
     EXPECT_FALSE(server->set_send_buffer_size(min_send_buffer_size));
     EXPECT_FALSE(server->set_receive_buffer_size(min_receive_buffer_size + 16));
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination(
         {0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
@@ -427,7 +445,8 @@ TEST_F(UdpClientServerTest, peer_identity_without_preservation_on_server) {
 
     std::size_t server_receive_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -449,7 +468,8 @@ TEST_F(UdpClientServerTest, peer_identity_without_preservation_on_server) {
 
     EXPECT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -483,7 +503,8 @@ TEST_F(UdpClientServerTest, peer_identity_with_preservation_on_server) {
 
     std::size_t server_receive_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -506,7 +527,8 @@ TEST_F(UdpClientServerTest, peer_identity_with_preservation_on_server) {
 
     EXPECT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -538,7 +560,8 @@ TEST_F(UdpClientServerTest, on_new_peer_callback) {
     std::size_t on_new_peer_counter = 0;
     std::size_t on_data_receive_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -560,7 +583,8 @@ TEST_F(UdpClientServerTest, on_new_peer_callback) {
     100,
     nullptr);
 
-    auto client_1 = new io::net::UdpClient(loop);
+    auto client_1 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_1) << loop.last_allocation_error();
     client_1->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -579,7 +603,8 @@ TEST_F(UdpClientServerTest, on_new_peer_callback) {
         }
     );
 
-    auto client_2 = new io::net::UdpClient(loop);
+    auto client_2 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_2) << loop.last_allocation_error();
     client_2->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -625,7 +650,8 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
     std::size_t server_timeout_counter = 0;
     std::size_t client_send_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -657,7 +683,8 @@ TEST_F(UdpClientServerTest, client_timeout_for_server) {
     });
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -727,7 +754,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
 
     std::unordered_map<std::string, std::size_t> peer_to_close_count;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::net::UdpPeer& client, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -753,7 +781,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
 
     auto timer_1 = loop.allocate<io::Timer>();
     ASSERT_TRUE(timer_1);
-    auto client_1 = new io::net::UdpClient(loop);
+    auto client_1 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_1) << loop.last_allocation_error();
     client_1->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -770,7 +799,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
 
     auto timer_2 = loop.allocate<io::Timer>();
     ASSERT_TRUE(timer_2);
-    auto client_2 = new io::net::UdpClient(loop);
+    auto client_2 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_2) << loop.last_allocation_error();
     client_2->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -787,7 +817,8 @@ TEST_F(UdpClientServerTest, multiple_clients_timeout_for_server) {
 
     auto timer_3 = loop.allocate<io::Timer>();
     ASSERT_TRUE(timer_3);
-    auto client_3 = new io::net::UdpClient(loop);
+    auto client_3 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_3) << loop.last_allocation_error();
     client_3->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -849,7 +880,8 @@ TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& client, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -879,7 +911,8 @@ TEST_F(UdpClientServerTest, peer_is_not_expired_while_sends_data) {
         }
     );
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({0x7F000001u, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -915,7 +948,8 @@ TEST_F(UdpClientServerTest, server_close) {
     std::size_t server_close_1_callback_call_count = 0;
     std::size_t server_close_2_callback_call_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     server->close(
         [&](io::net::UdpServer& server, const io::Error& error) {
             ++server_close_1_callback_call_count; // Should not be called
@@ -937,7 +971,8 @@ TEST_F(UdpClientServerTest, server_close) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -974,7 +1009,8 @@ TEST_F(UdpClientServerTest, server_schedule_removal_in_server_close_callback) {
 
     std::size_t server_close_callback_call_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1008,7 +1044,8 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     std::size_t client_data_receive_counter = 0;
     std::size_t client_data_send_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -1027,7 +1064,8 @@ TEST_F(UdpClientServerTest, client_and_server_send_data_each_other) {
     });
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1074,7 +1112,8 @@ TEST_F(UdpClientServerTest, client_and_server_use_char_buffer_for_send) {
     std::size_t client_data_receive_counter = 0;
     std::size_t client_data_send_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -1093,7 +1132,8 @@ TEST_F(UdpClientServerTest, client_and_server_use_char_buffer_for_send) {
     });
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1134,7 +1174,8 @@ TEST_F(UdpClientServerTest, null_server_send_buf) {
     std::size_t client_on_send_count = 0;
     std::size_t server_on_send_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1151,7 +1192,8 @@ TEST_F(UdpClientServerTest, null_server_send_buf) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1196,7 +1238,8 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
     std::size_t client_data_receive_counter = 0;
     std::size_t client_data_send_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
 
     std::function<void(io::net::UdpPeer&, const io::Error&)> on_server_send =
         [&](io::net::UdpPeer& client, const io::Error& error) {
@@ -1220,7 +1263,8 @@ TEST_F(UdpClientServerTest, server_reply_with_2_messages) {
 
     EXPECT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1266,9 +1310,11 @@ TEST_F(UdpClientServerTest, client_receive_data_only_from_its_target) {
 
     std::size_t receive_callback_call_count = 0;
 
-    auto client_2 = new io::net::UdpClient(loop);
+    auto client_2 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_2) << loop.last_allocation_error();
 
-    auto client_1 = new io::net::UdpClient(loop);
+    auto client_1 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_1) << loop.last_allocation_error();
     client_1->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1319,7 +1365,8 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
     bool data_sent = false;
     bool data_received = false;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
     [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -1340,7 +1387,8 @@ TEST_F(UdpClientServerTest, send_larger_than_ethernet_mtu) {
         *(reinterpret_cast<std::uint16_t*>(message.get()) + i) = static_cast<std::uint16_t>(i);
     }
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1369,7 +1417,8 @@ TEST_F(UdpClientServerTest, send_larger_than_allowed_to_send) {
     std::shared_ptr<char> message(new char[SIZE], std::default_delete<char[]>());
     std::memset(message.get(), 0, SIZE);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1418,7 +1467,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
             }
         };
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& client, const io::DataChunk& chunk, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1447,7 +1497,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets) {
             }
         };
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1534,7 +1585,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
         io::EventLoop server_loop;
 
-        auto server = new io::net::UdpServer(server_loop);
+        auto server = server_loop.allocate<io::net::UdpServer>();
+        ASSERT_TRUE(server) << server_loop.last_allocation_error();
         auto listen_error = server->start_receive({m_default_addr, m_default_port},
             [&](io::net::UdpPeer& client, const io::DataChunk& chunk, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -1590,7 +1642,8 @@ TEST_F(UdpClientServerTest, client_and_server_exchange_lot_of_packets_in_threads
 
         io::EventLoop client_loop;
 
-        auto client = new io::net::UdpClient(client_loop);
+        auto client = client_loop.allocate<io::net::UdpClient>();
+        ASSERT_TRUE(client) << client_loop.last_allocation_error();
         client->set_destination({m_default_addr, m_default_port},
             [&](io::net::UdpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error;
@@ -1634,7 +1687,8 @@ TEST_F(UdpClientServerTest, send_after_schedule_removal) {
     std::size_t server_receive_counter = 0;
     std::size_t client_send_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     io::Error listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1643,7 +1697,8 @@ TEST_F(UdpClientServerTest, send_after_schedule_removal) {
     );
     EXPECT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1676,7 +1731,8 @@ TEST_F(UdpClientServerTest, client_with_timeout_1) {
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1703,7 +1759,8 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
     std::size_t server_receive_counter = 0;
     std::size_t client_send_counter = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     io::Error listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1717,7 +1774,8 @@ TEST_F(UdpClientServerTest, client_with_timeout_2) {
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1783,7 +1841,8 @@ TEST_F(UdpClientServerTest, client_with_timeout_3) {
     const auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         nullptr,
         nullptr,
@@ -1837,7 +1896,8 @@ TEST_F(UdpClientServerTest, close_peer_from_server) {
     std::chrono::high_resolution_clock::time_point t1;
     std::chrono::high_resolution_clock::time_point t2;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto error = server->start_receive(
         { m_default_addr, m_default_port } ,
         [&] (io::net::UdpPeer&, const io::Error& error) {
@@ -1865,7 +1925,8 @@ TEST_F(UdpClientServerTest, close_peer_from_server) {
     );
     EXPECT_FALSE(error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1911,7 +1972,8 @@ TEST_F(UdpClientServerTest, closed_peer_from_server_has_no_timeout) {
     std::size_t server_on_new_peer_callback_count = 0;
     std::size_t server_on_peer_timeout_callback_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto error = server->start_receive(
         { m_default_addr, m_default_port } ,
         [&] (io::net::UdpPeer&, const io::Error& error) {
@@ -1930,7 +1992,8 @@ TEST_F(UdpClientServerTest, closed_peer_from_server_has_no_timeout) {
     );
     EXPECT_FALSE(error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1970,7 +2033,8 @@ TEST_F(UdpClientServerTest, double_close_peer_from_server) {
 
     std::size_t server_on_data_receive_callback_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto error = server->start_receive(
         { m_default_addr, m_default_port } ,
         [&] (io::net::UdpPeer& peer, const io::DataChunk&, const io::Error&) {
@@ -1984,7 +2048,8 @@ TEST_F(UdpClientServerTest, double_close_peer_from_server) {
     );
     EXPECT_FALSE(error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2028,7 +2093,8 @@ TEST_F(UdpClientServerTest, close_peer_from_server_and_than_try_send) {
     std::size_t server_on_data_receive_callback_count = 0;
     std::size_t peer_on_send_callback_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto error = server->start_receive(
         { m_default_addr, m_default_port } ,
         [&] (io::net::UdpPeer& peer, const io::DataChunk&, const io::Error&) {
@@ -2048,7 +2114,8 @@ TEST_F(UdpClientServerTest, close_peer_from_server_and_than_try_send) {
     );
     EXPECT_FALSE(error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2084,7 +2151,8 @@ TEST_F(UdpClientServerTest, send_data_of_size_0) {
     std::size_t client_on_send_count = 0;
     std::size_t client_on_receive_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({"0.0.0.0", m_default_port},
         [&](io::net::UdpPeer& client, const io::DataChunk& data, const io::Error& error) {
             ++server_on_receive_count;
@@ -2107,7 +2175,8 @@ TEST_F(UdpClientServerTest, send_data_of_size_0) {
     );
     ASSERT_FALSE(listen_error);
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({"127.0.0.1", m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2155,7 +2224,8 @@ TEST_F(UdpClientServerTest, ipv6_address) {
     std::size_t client_on_receive_count = 0;
     std::size_t server_on_receive_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto server_listen_error = server->start_receive({"::", m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -2176,7 +2246,8 @@ TEST_F(UdpClientServerTest, ipv6_address) {
     );
     EXPECT_FALSE(server_listen_error) << server_listen_error.string();
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({"::1", m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2214,7 +2285,8 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
     const io::net::UdpPeer* peer_2 = nullptr;
     const io::net::UdpPeer* peer_3 = nullptr;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({"::", m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -2275,7 +2347,8 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-    auto client_1 = new io::net::UdpClient(loop);
+    auto client_1 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_1) << loop.last_allocation_error();
     client_1->set_destination({"::1", m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2295,7 +2368,8 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
         }
     );
 
-    auto client_2 = new io::net::UdpClient(loop);
+    auto client_2 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_2) << loop.last_allocation_error();
     client_2->set_destination({"::1", m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2315,7 +2389,8 @@ TEST_F(UdpClientServerTest, ipv6_peer_identity) {
         }
     );
 
-    auto client_3 = new io::net::UdpClient(loop);
+    auto client_3 = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client_3) << loop.last_allocation_error();
     client_3->set_destination({"::1", m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2348,7 +2423,8 @@ TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
 
     io::EventLoop loop;
 
-    auto server_1 = new io::net::UdpServer(loop);
+    auto server_1 = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server_1) << loop.last_allocation_error();
     auto listen_error_1 = server_1->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2357,7 +2433,8 @@ TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
     );
     ASSERT_FALSE(listen_error_1) << listen_error_1;
 
-    auto server_2 = new io::net::UdpServer(loop);
+    auto server_2 = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server_2) << loop.last_allocation_error();
     auto listen_error_2 = server_2->start_receive({m_default_addr, std::uint16_t(m_default_port + 1)},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2366,7 +2443,8 @@ TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
     );
     ASSERT_FALSE(listen_error_2) << listen_error_2;
 
-    auto server_3 = new io::net::UdpServer(loop);
+    auto server_3 = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server_3) << loop.last_allocation_error();
     auto listen_error_3 = server_3->start_receive({m_default_addr, std::uint16_t(m_default_port + 2)},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2426,7 +2504,8 @@ TEST_F(UdpClientServerTest, client_works_with_multiple_servers) {
         );
     };
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         client_on_destination_set,
         client_on_data_received,
@@ -2461,7 +2540,8 @@ TEST_F(UdpClientServerTest, client_set_destination_with_ipv4_address_then_with_i
 
     std::size_t server_data_receive_count = 0;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({"::", std::uint16_t(m_default_port + 1)},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2471,7 +2551,8 @@ TEST_F(UdpClientServerTest, client_set_destination_with_ipv4_address_then_with_i
     );
     ASSERT_FALSE(listen_error) << listen_error;
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2510,7 +2591,8 @@ TEST_F(UdpClientServerTest, peers_count) {
 
     std::set<long> client_ids;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     // TODO: "::" address works here. IPV6 and IPV4 are compatible on local host????
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
@@ -2532,7 +2614,8 @@ TEST_F(UdpClientServerTest, peers_count) {
     EXPECT_EQ(0, server->peers_count());
 
     for (std::size_t i = 0; i < CLIENTS_COUNT; ++i) {
-        auto client = new io::net::UdpClient(loop);
+        auto client = loop.allocate<io::net::UdpClient>();
+        ASSERT_TRUE(client) << loop.last_allocation_error();
         client->set_destination({m_default_addr, m_default_port},
             [&, i](io::net::UdpClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error;
@@ -2563,7 +2646,8 @@ TEST_F(UdpClientServerTest, peers_count) {
 TEST_F(UdpClientServerTest, server_multiple_start_receive_in_row_different_addresses) {
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error_1 = server->start_receive({m_default_addr, m_default_port},
         nullptr,
         500,
@@ -2587,7 +2671,8 @@ TEST_F(UdpClientServerTest, server_multiple_start_receive_in_row_different_addre
 TEST_F(UdpClientServerTest, server_multiple_start_receive_sequenced_different_addresses) {
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error_1 = server->start_receive({m_default_addr, m_default_port},
         nullptr,
         500,
@@ -2614,7 +2699,8 @@ TEST_F(UdpClientServerTest, client_set_destination_and_simultaneously_send_1) {
 
     io::EventLoop loop;
     // Test description: set destination and send data right away (not in callback). Should be error
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2645,7 +2731,8 @@ TEST_F(UdpClientServerTest, client_set_destination_and_simultaneously_send_2) {
 
     io::EventLoop loop;
     // Test description: set destination and send data right away (not in callback). Should be error
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -2676,7 +2763,8 @@ TEST_F(UdpClientServerTest, client_set_destination_and_simultaneously_send_2) {
 TEST_F(UdpClientServerTest, server_0_ms_timeout_for_peer) {
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
+    ASSERT_TRUE(server) << loop.last_allocation_error();
     auto listen_error = server->start_receive({m_default_addr, m_default_port},
         nullptr,
         0,

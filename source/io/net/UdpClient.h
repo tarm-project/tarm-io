@@ -26,6 +26,8 @@ namespace net {
 class UdpClient : public Removable,
                   public UserDataHolder {
 public:
+    friend class ::tarm::io::Allocator;
+
     using DestinationSetCallback = std::function<void(UdpClient&, const Error&)>;
     using DataReceivedCallback = std::function<void(UdpClient&, const DataChunk&, const Error&)>;
     using CloseCallback = std::function<void(UdpClient&, const Error&)>;
@@ -33,8 +35,6 @@ public:
 
     TARM_IO_FORBID_COPY(UdpClient);
     TARM_IO_FORBID_MOVE(UdpClient);
-
-    TARM_IO_DLL_PUBLIC UdpClient(EventLoop& loop);
 
     // Analog of connect for TCP
     TARM_IO_DLL_PUBLIC void set_destination(const Endpoint& endpoint,
@@ -67,6 +67,7 @@ public:
     TARM_IO_DLL_PUBLIC void close();
 
 protected:
+    TARM_IO_DLL_PUBLIC UdpClient(AllocationContext& context);
     TARM_IO_DLL_PUBLIC ~UdpClient();
 
 private:

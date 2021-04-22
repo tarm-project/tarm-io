@@ -24,7 +24,7 @@ namespace net {
 
 class UdpServer::Impl : public detail::UdpImplBase<UdpServer, UdpServer::Impl>{
 public:
-    Impl(EventLoop& loop, UdpServer& parent);
+    Impl(AllocationContext& context, UdpServer& parent);
 
     Error bind(const Endpoint& endpoint);
     Error start_receive(const Endpoint& endpoint, const DataReceivedCallback& data_receive_callback);
@@ -63,8 +63,8 @@ private:
     bool m_connection_in_progress = false;
 };
 
-UdpServer::Impl::Impl(EventLoop& loop, UdpServer& parent) :
-    UdpImplBase(loop, parent) {
+UdpServer::Impl::Impl(AllocationContext& context, UdpServer& parent) :
+    UdpImplBase(context, parent) {
 }
 
 Error UdpServer::Impl::bind(const Endpoint& endpoint) {
@@ -245,11 +245,14 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
 
                     auto& peer_ptr = this_.m_peers[peer_id];
                     if (!peer_ptr.get()) {
-                        peer_ptr.reset(new UdpPeer(*this_.m_loop,
-                                                   *this_.m_parent,
-                                                   this_.m_udp_handle.get(),
-                                                   {reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)},
-                                                   peer_id),
+                        // TODO: check allocation failure
+                        auto peer = this_.m_loop->allocate<UdpPeer>(
+                            *this_.m_parent,
+                            this_.m_udp_handle.get(),
+                            Endpoint{reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)},
+                            peer_id);
+
+                        peer_ptr.reset(peer,
                                        free_udp_peer); // Ref count is == 1 here
                         LOG_TRACE(this_.m_loop, &parent, "New tracked peer:", peer_ptr->endpoint());
 
@@ -268,10 +271,11 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
                 } else {
                     // Ref/Unref semantics here was added to prolong lifetime of oneshot UdpPeer objects
                     // and to allow call send data in receive callback for UdpServer without peers tracking.
-                    auto peer = new UdpPeer(*this_.m_loop,
+                    // TODO: check allocation error
+                    auto peer = this_.m_loop->allocate<UdpPeer>(
                                             *this_.m_parent,
                                             this_.m_udp_handle.get(),
-                                            {reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)},
+                                            Endpoint{reinterpret_cast<const Endpoint::sockaddr_placeholder*>(addr)},
                                             peer_id); // Ref count is == 1 here
                     LOG_TRACE(this_.m_loop, &parent, "New untracked peer:", peer->endpoint());
                     this_.m_data_receive_callback(*peer, data_chunk, error);
@@ -281,7 +285,9 @@ void UdpServer::Impl::on_data_received(uv_udp_t* handle,
         } else {
             DataChunk data(nullptr, 0);
             // TODO: could address be available here???
-            UdpPeer peer(*this_.m_loop, *this_.m_parent, this_.m_udp_handle.get(), Endpoint{0u, 0u}, 0);
+            Error unused;
+            AllocationContext context{*this_.m_loop, unused};
+            UdpPeer peer(context, *this_.m_parent, this_.m_udp_handle.get(), Endpoint{0u, 0u}, 0);
 
             LOG_ERROR(this_.m_loop, &parent, "failed to receive UDP packet", error.string());
             this_.m_data_receive_callback(peer, data, error);
@@ -312,9 +318,9 @@ void UdpServer::Impl::free_udp_peer(UdpPeer* peer) {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-UdpServer::UdpServer(EventLoop& loop) :
-    Removable(loop),
-    m_impl(new UdpServer::Impl(loop, *this)) {
+UdpServer::UdpServer(AllocationContext& context) :
+    Removable(context.loop),
+    m_impl(new UdpServer::Impl(context, *this)) {
 }
 
 UdpServer::~UdpServer() {

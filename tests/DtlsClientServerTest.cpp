@@ -1495,7 +1495,8 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_before_handshake) {
     );
     ASSERT_FALSE(listen_error) << listen_error.string();
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1582,7 +1583,8 @@ TEST_F(DtlsClientServerTest, client_send_invalid_data_during_handshake) {
     ASSERT_FALSE(listen_error) << listen_error.string();
 
 
-    auto client = new io::net::UdpClient(loop);
+    auto client = loop.allocate<io::net::UdpClient>();
+    ASSERT_TRUE(client) << loop.last_allocation_error();
     client->set_destination({m_default_addr, m_default_port},
         [&](io::net::UdpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;

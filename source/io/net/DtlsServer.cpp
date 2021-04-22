@@ -91,7 +91,7 @@ DtlsServer::Impl::Impl(AllocationContext& context, const fs::Path& certificate_p
     m_version_range(version_range),
     m_openssl_context(context.loop, parent) {
     //m_udp_server = m_loop->allocate<UdpServer>();
-    m_udp_server = new UdpServer(*m_loop);
+    m_udp_server = m_loop->allocate<UdpServer>(); // TODO: check failure
     //if (!m_udp_server) {
     //    context.error = m_loop->last_allocation_error();
     //    return;

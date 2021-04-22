@@ -27,8 +27,8 @@ namespace detail {
 template<typename ParentType, typename ImplType>
 class UdpImplBase {
 public:
-    UdpImplBase(EventLoop& loop, ParentType& parent);
-    UdpImplBase(EventLoop& loop, ParentType& parent, uv_udp_t* udp_handle);
+    UdpImplBase(AllocationContext& context, ParentType& parent);
+    UdpImplBase(AllocationContext& context, ParentType& parent, uv_udp_t* udp_handle);
 
     Error ensure_handle_inited();
     bool is_open() const;
@@ -69,9 +69,9 @@ private:
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 template<typename ParentType, typename ImplType>
-UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& parent) :
-    m_loop(&loop),
-    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
+UdpImplBase<ParentType, ImplType>::UdpImplBase(AllocationContext& context, ParentType& parent) :
+    m_loop(&context.loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(context.loop.raw_loop())),
     m_parent(&parent),
     m_udp_handle(new uv_udp_t, std::default_delete<uv_udp_t>()) {
 
@@ -81,9 +81,9 @@ UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& pare
 }
 
 template<typename ParentType, typename ImplType>
-UdpImplBase<ParentType, ImplType>::UdpImplBase(EventLoop& loop, ParentType& parent, uv_udp_t* udp_handle) :
-    m_loop(&loop),
-    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
+UdpImplBase<ParentType, ImplType>::UdpImplBase(AllocationContext& context, ParentType& parent, uv_udp_t* udp_handle) :
+    m_loop(&context.loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(context.loop.raw_loop())),
     m_parent(&parent),
     m_udp_handle(udp_handle, [](uv_udp_t*){}) {
         m_udp_handle->data = udp_handle->data;

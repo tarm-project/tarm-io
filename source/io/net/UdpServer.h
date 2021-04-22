@@ -28,6 +28,8 @@ namespace net {
 class UdpServer : public Removable,
                   public UserDataHolder {
 public:
+    friend class ::tarm::io::Allocator;
+
     using AssociatedClientType = UdpPeer;
 
     using NewPeerCallback = std::function<void(UdpPeer&, const Error&)>;
@@ -38,8 +40,6 @@ public:
 
     TARM_IO_FORBID_COPY(UdpServer);
     TARM_IO_FORBID_MOVE(UdpServer);
-
-    TARM_IO_DLL_PUBLIC UdpServer(EventLoop& loop);
 
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
@@ -70,6 +70,7 @@ public:
     // TODO: method to iterate on peers???
 
 protected:
+    TARM_IO_DLL_PUBLIC UdpServer(AllocationContext& context);
     TARM_IO_DLL_PUBLIC ~UdpServer();
 
 private:

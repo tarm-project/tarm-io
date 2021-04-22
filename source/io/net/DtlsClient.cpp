@@ -78,7 +78,8 @@ void DtlsClient::Impl::connect(const Endpoint& endpoint,
         return;
     }
 
-    m_client = new UdpClient(*m_loop);
+    // TODO: check allocation error
+    m_client = m_loop->allocate<UdpClient>();
     m_client->set_destination(endpoint,
         [this, connect_callback](UdpClient&, const Error& error) {
             if (error) {

@@ -19,8 +19,8 @@ namespace net {
 
 class UdpClient::Impl : public detail::UdpClientImplBase<UdpClient, UdpClient::Impl> {
 public:
-    Impl(EventLoop& loop, UdpClient& parent);
-    Impl(EventLoop& loop, const Endpoint& endpoint, UdpClient& parent);
+    Impl(AllocationContext& context, UdpClient& parent);
+    Impl(AllocationContext& context, const Endpoint& endpoint, UdpClient& parent);
     ~Impl();
 
     using CloseHandler = void (*)(uv_handle_t* handle);
@@ -61,8 +61,8 @@ private:
     std::function<void(BacklogWithTimeout<UdpClient::Impl*>&, UdpClient::Impl* const& )> m_on_item_expired = nullptr;
 };
 
-UdpClient::Impl::Impl(EventLoop& loop, UdpClient& parent) :
-    UdpClientImplBase(loop, parent) {
+UdpClient::Impl::Impl(AllocationContext& context, UdpClient& parent) :
+    UdpClientImplBase(context, parent) {
 
     m_on_item_expired = [this](BacklogWithTimeout<UdpClient::Impl*>&, UdpClient::Impl* const & item) {
         this->close_no_removal();
@@ -235,9 +235,9 @@ void UdpClient::Impl::on_close_no_removal(uv_handle_t* handle) {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-UdpClient::UdpClient(EventLoop& loop) :
-    Removable(loop),
-    m_impl(new UdpClient::Impl(loop, *this)) {
+UdpClient::UdpClient(AllocationContext& context) :
+    Removable(context.loop),
+    m_impl(new UdpClient::Impl(context, *this)) {
 }
 
 UdpClient::~UdpClient() {

@@ -29,6 +29,7 @@ class UdpPeer : public UserDataHolder,
                 protected RefCounted {
 public:
     friend class UdpServer;
+    friend class ::tarm::io::Allocator;
 
     using EndSendCallback = std::function<void(UdpPeer&, const Error&)>;
 
@@ -62,7 +63,7 @@ protected:
     TARM_IO_DLL_PUBLIC ~UdpPeer();
 
 private:
-    TARM_IO_DLL_PUBLIC UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id);
+    TARM_IO_DLL_PUBLIC UdpPeer(AllocationContext& context, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id);
     TARM_IO_DLL_PUBLIC void set_last_packet_time(std::uint64_t time);
     const detail::PeerId& id() const;
 

@@ -20,8 +20,8 @@ namespace detail {
 template<typename ParentType, typename ImplType>
 class UdpClientImplBase : public UdpImplBase<ParentType, ImplType> {
 public:
-    UdpClientImplBase(EventLoop& loop, ParentType& parent);
-    UdpClientImplBase(EventLoop& loop, ParentType& parent, RefCounted& ref_counted, uv_udp_t* udp_handle);
+    UdpClientImplBase(AllocationContext& context, ParentType& parent);
+    UdpClientImplBase(AllocationContext& context, ParentType& parent, RefCounted& ref_counted, uv_udp_t* udp_handle);
 
     void send_data(const char* c_str, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
     void send_data(std::shared_ptr<const char> buffer, std::uint32_t size, const typename ParentType::EndSendCallback& callback);
@@ -59,13 +59,13 @@ private:
 };
 
 template<typename ParentType, typename ImplType>
-UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, ParentType& parent) :
-    UdpImplBase<ParentType, ImplType>(loop, parent) {
+UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(AllocationContext& context, ParentType& parent) :
+    UdpImplBase<ParentType, ImplType>(context, parent) {
 }
 
 template<typename ParentType, typename ImplType>
-UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(EventLoop& loop, ParentType& parent, RefCounted& ref_counted, uv_udp_t* udp_handle) :
-    UdpImplBase<ParentType, ImplType>(loop, parent, udp_handle),
+UdpClientImplBase<ParentType, ImplType>::UdpClientImplBase(AllocationContext& context, ParentType& parent, RefCounted& ref_counted, uv_udp_t* udp_handle) :
+    UdpImplBase<ParentType, ImplType>(context, parent, udp_handle),
     m_ref_counted(&ref_counted) {
 }
 

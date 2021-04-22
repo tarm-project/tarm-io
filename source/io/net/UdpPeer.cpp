@@ -19,7 +19,7 @@ namespace net {
 
 class UdpPeer::Impl : public detail::UdpClientImplBase<UdpPeer, UdpPeer::Impl> {
 public:
-    Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id, UdpPeer& parent);
+    Impl(AllocationContext& context, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id, UdpPeer& parent);
 
     std::uint32_t address();
     std::uint16_t port();
@@ -36,8 +36,8 @@ private:
     const detail::PeerId m_id;
 };
 
-UdpPeer::Impl::Impl(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id, UdpPeer& parent) :
-    UdpClientImplBase(loop, parent, parent, reinterpret_cast<uv_udp_t*>(udp_handle)),
+UdpPeer::Impl::Impl(AllocationContext& context, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id, UdpPeer& parent) :
+    UdpClientImplBase(context, parent, parent, reinterpret_cast<uv_udp_t*>(udp_handle)),
     m_server(&server),
     m_id(id) {
     m_destination_endpoint = endpoint;
@@ -63,9 +63,9 @@ const detail::PeerId& UdpPeer::Impl::id() const {
 
 /////////////////////////////////////////// interface ///////////////////////////////////////////
 
-UdpPeer::UdpPeer(EventLoop& loop, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id) :
-    RefCounted(loop),
-    m_impl(new Impl(loop, server, udp_handle, endpoint, id, *this)) {
+UdpPeer::UdpPeer(AllocationContext& context, UdpServer& server, void* udp_handle, const Endpoint& endpoint, const detail::PeerId& id) :
+    RefCounted(context.loop),
+    m_impl(new Impl(context, server, udp_handle, endpoint, id, *this)) {
 }
 
 UdpPeer::~UdpPeer() {
