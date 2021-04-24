@@ -12,7 +12,7 @@ using namespace tarm;
 int main() {
     io::EventLoop loop;
 
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
     server->start_receive({"0.0.0.0", 1234},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error&) {
             peer.send_data(std::string(data.buf.get(), data.size));

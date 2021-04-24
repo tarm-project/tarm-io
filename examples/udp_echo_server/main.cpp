@@ -18,7 +18,7 @@ int main() {
     const std::uint16_t port = 1234;
 
     // TODO: smart pointer will do the job in case of error
-    auto server = new io::net::UdpServer(loop);
+    auto server = loop.allocate<io::net::UdpServer>();
     auto listen_error = server->start_receive(
         {"0.0.0.0", port},
         [&](io::net::UdpPeer& peer, const io::DataChunk& data, const io::Error& error) {
