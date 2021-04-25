@@ -72,7 +72,7 @@ void TlsClient::Impl::connect(const Endpoint endpoint,
     // TODO: handle TcpClient creation error properly
     // TODO: m_client can leak here if call connect twice
     // TODO: likely move SSL init calls in constructor
-    m_client = new TcpClient(*m_loop);
+    m_client = m_loop->allocate<TcpClient>();
 
     if (!is_ssl_inited()) {
         auto context_errror = m_openssl_context.init_ssl_context(ssl_method());

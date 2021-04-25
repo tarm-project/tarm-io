@@ -20,7 +20,7 @@ namespace net {
 
 class TcpConnectedClient::Impl : public detail::TcpClientImplBase<TcpConnectedClient, TcpConnectedClient::Impl> {
 public:
-    Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, const CloseCallback& close_callback);
+    Impl(AllocationContext& context, TcpServer& server, TcpConnectedClient& parent, const CloseCallback& close_callback);
     ~Impl();
 
     void set_endpoint(const Endpoint& endpoint);
@@ -47,8 +47,8 @@ private:
     DataReceiveCallback m_receive_callback = nullptr;
 };
 
-TcpConnectedClient::Impl::Impl(EventLoop& loop, TcpServer& server, TcpConnectedClient& parent, const CloseCallback& close_callback) :
-    TcpClientImplBase(loop, parent),
+TcpConnectedClient::Impl::Impl(AllocationContext& context, TcpServer& server, TcpConnectedClient& parent, const CloseCallback& close_callback) :
+    TcpClientImplBase(context, parent),
     m_server(&server) {
     m_close_callback = close_callback;
 }
@@ -199,9 +199,9 @@ void TcpConnectedClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TcpConnectedClient::TcpConnectedClient(EventLoop& loop, TcpServer& server, const CloseCallback& cloase_callback) :
-    Removable(loop),
-    m_impl(new Impl(loop, server, *this, cloase_callback)) {
+TcpConnectedClient::TcpConnectedClient(AllocationContext& context, TcpServer& server, const CloseCallback& cloase_callback) :
+    Removable(context.loop),
+    m_impl(new Impl(context, server, *this, cloase_callback)) {
 }
 
 TcpConnectedClient::~TcpConnectedClient() {

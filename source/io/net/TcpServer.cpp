@@ -203,7 +203,7 @@ bool TcpServer::Impl::schedule_removal() {
 
 ////////////////////////////////////////////// static //////////////////////////////////////////////
 void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
-    assert(server && "server should be not null");
+    assert(server && "server should not be null");
     assert(server->data && "server should have user data set");
 
     auto& this_ = *reinterpret_cast<TcpServer::Impl*>(server->data);
@@ -216,8 +216,10 @@ void TcpServer::Impl::on_new_connection(uv_stream_t* server, int status) {
         }
     };
 
+    Error unused;
+    AllocationContext context{*this_.m_loop, unused};
     std::unique_ptr<TcpConnectedClient, std::function<void(TcpConnectedClient*)>> tcp_client(
-        new TcpConnectedClient(*this_.m_loop, *this_.m_parent, on_client_close_callback),
+        new TcpConnectedClient(context, *this_.m_parent, on_client_close_callback),
         [](TcpConnectedClient* c) {
             c->schedule_removal();
         }

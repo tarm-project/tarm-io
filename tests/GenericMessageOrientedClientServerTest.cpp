@@ -49,7 +49,7 @@ using TlsMessageOrientedConnectedClient = io::net::GenericMessageOrientedConnect
 TEST_F(GenericMessageOrientedClientServerTest, client_default_state) {
     io::EventLoop loop;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -88,7 +88,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_send_1_byte) {
     );
     EXPECT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -147,7 +147,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_send_multiple_bytes) {
     );
     EXPECT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -201,7 +201,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_1_byte) {
     );
     EXPECT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -275,7 +275,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_multiple_bytes) {
     );
     EXPECT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -381,7 +381,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_large_messages) {
     );
     EXPECT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -464,7 +464,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_too_large_messages
     );
     EXPECT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -517,7 +517,7 @@ TEST_F(GenericMessageOrientedClientServerTest, server_receive_1_message) {
 
     io::EventLoop loop;
 
-    auto tcp_client = new io::net::TcpClient(loop);
+    auto tcp_client = loop.allocate<io::net::TcpClient>();
     tcp_client->connect({m_default_addr, m_default_port},
         [&](io::net::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -586,7 +586,7 @@ TEST_F(GenericMessageOrientedClientServerTest, server_receive_multiple_messages)
 
     io::EventLoop loop;
 
-    auto tcp_client = new io::net::TcpClient(loop);
+    auto tcp_client = loop.allocate<io::net::TcpClient>();
     tcp_client->connect({m_default_addr, m_default_port},
         [&](io::net::TcpClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -720,7 +720,7 @@ TEST_F(GenericMessageOrientedClientServerTest, messages_exchange) {
     );
     ASSERT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -908,7 +908,7 @@ TEST_F(GenericMessageOrientedClientServerTest, send_unique_ptr) {
     );
     ASSERT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -985,7 +985,7 @@ TEST_F(GenericMessageOrientedClientServerTest, corrupted_stream) {
     );
     EXPECT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -1060,7 +1060,7 @@ TEST_F(GenericMessageOrientedClientServerTest, send_receive_0_size) {
     );
     EXPECT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client));
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {
@@ -1155,7 +1155,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_max_message_size) {
     );
     ASSERT_FALSE(listen_error) << listen_error;
 
-    TcpClientPtr tcp_client(new io::net::TcpClient(loop), io::Removable::default_delete());
+    TcpClientPtr tcp_client(loop.allocate<io::net::TcpClient>(), io::Removable::default_delete());
     TcpMessageOrientedClient message_client(std::move(tcp_client), CLIENT_MAX_MESSAGE_SIZE);
     message_client.connect({m_default_addr, m_default_port},
         [&](TcpMessageOrientedClient& client, const io::Error& error) {

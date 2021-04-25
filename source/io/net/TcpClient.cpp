@@ -20,7 +20,7 @@ namespace net {
 
 class TcpClient::Impl : public detail::TcpClientImplBase<TcpClient, TcpClient::Impl> {
 public:
-    Impl(EventLoop& loop, TcpClient& parent);
+    Impl(AllocationContext& context, TcpClient& parent);
     ~Impl();
 
     bool schedule_removal();
@@ -58,8 +58,8 @@ private:
     bool m_want_delete_object = false;
 };
 
-TcpClient::Impl::Impl(EventLoop& loop, TcpClient& parent) :
-    TcpClientImplBase(loop, parent) {
+TcpClient::Impl::Impl(AllocationContext& context, TcpClient& parent) :
+    TcpClientImplBase(context, parent) {
 }
 
 TcpClient::Impl::~Impl() {
@@ -323,9 +323,9 @@ void TcpClient::Impl::on_read(uv_stream_t* handle, ssize_t nread, const uv_buf_t
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TcpClient::TcpClient(EventLoop& loop) :
-    Removable(loop),
-    m_impl(new Impl(loop, *this)) {
+TcpClient::TcpClient(AllocationContext& context) :
+    Removable(context.loop),
+    m_impl(new Impl(context, *this)) {
 }
 
 TcpClient::~TcpClient() {

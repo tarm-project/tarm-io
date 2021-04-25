@@ -23,6 +23,8 @@ namespace net {
 class TcpClient : public Removable,
                   public UserDataHolder {
 public:
+    friend class ::tarm::io::Allocator;
+
     using ConnectCallback = std::function<void(TcpClient&, const Error&)>;
     using DataReceiveCallback = std::function<void(TcpClient&, const DataChunk&, const Error&)>;
     using CloseCallback = std::function<void(TcpClient&, const Error&)>;
@@ -31,7 +33,6 @@ public:
     TARM_IO_FORBID_COPY(TcpClient);
     TARM_IO_FORBID_MOVE(TcpClient);
 
-    TARM_IO_DLL_PUBLIC TcpClient(EventLoop& loop);
 
     TARM_IO_DLL_PUBLIC void schedule_removal() override;
 
@@ -75,6 +76,7 @@ public:
     TARM_IO_DLL_PUBLIC bool is_delay_send() const;
 
 protected:
+    TARM_IO_DLL_PUBLIC TcpClient(AllocationContext& context);
     TARM_IO_DLL_PUBLIC ~TcpClient();
 
 private:

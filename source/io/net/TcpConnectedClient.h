@@ -59,7 +59,7 @@ public:
     TARM_IO_DLL_PUBLIC const TcpServer& server() const;
 
 protected:
-    TARM_IO_DLL_PUBLIC TcpConnectedClient(EventLoop& loop, TcpServer& server, const CloseCallback& cloase_callback);
+    TARM_IO_DLL_PUBLIC TcpConnectedClient(AllocationContext& context, TcpServer& server, const CloseCallback& cloase_callback);
     TARM_IO_DLL_PUBLIC ~TcpConnectedClient();
 
     TARM_IO_DLL_PUBLIC void schedule_removal() override;

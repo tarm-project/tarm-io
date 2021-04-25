@@ -20,7 +20,7 @@ namespace detail {
 template<typename ParentType, typename ImplType>
 class TcpClientImplBase {
 public:
-    TcpClientImplBase(EventLoop& loop, ParentType& parent);
+    TcpClientImplBase(AllocationContext& context, ParentType& parent);
     ~TcpClientImplBase();
 
     const Endpoint& endpoint() const;
@@ -88,9 +88,9 @@ private:
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
 template<typename ParentType, typename ImplType>
-TcpClientImplBase<ParentType, ImplType>::TcpClientImplBase(EventLoop& loop, ParentType& parent) :
-    m_loop(&loop),
-    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop())),
+TcpClientImplBase<ParentType, ImplType>::TcpClientImplBase(AllocationContext& context, ParentType& parent) :
+    m_loop(&context.loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(context.loop.raw_loop())),
     m_parent(&parent) {
 }
 
