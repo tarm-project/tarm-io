@@ -35,7 +35,7 @@ protected:
 
 TEST_F(TcpClientServerTest, server_constructor) {
     io::EventLoop loop;
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     server->schedule_removal();
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -53,7 +53,7 @@ TEST_F(TcpClientServerTest, client_constructor) {
 TEST_F(TcpClientServerTest, invalid_ip4_address) {
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"1234567890", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -85,7 +85,7 @@ TEST_F(TcpClientServerTest, bind_privileged) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, 100},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -105,11 +105,11 @@ TEST_F(TcpClientServerTest, bind_privileged) {
 TEST_F(TcpClientServerTest, server_address_in_use) {
     io::EventLoop loop;
 
-    auto server_1 = new io::net::TcpServer(loop);
+    auto server_1 = loop.allocate<io::net::TcpServer>();
     auto listen_error_1 = server_1->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
     EXPECT_FALSE(listen_error_1);
 
-    auto server_2 = new io::net::TcpServer(loop);
+    auto server_2 = loop.allocate<io::net::TcpServer>();
     auto listen_error_2 = server_2->listen({m_default_addr, m_default_port}, nullptr, nullptr, nullptr);
     EXPECT_TRUE(listen_error_2);
     EXPECT_EQ(io::StatusCode::ADDRESS_ALREADY_IN_USE, listen_error_2.code());
@@ -152,7 +152,7 @@ TEST_F(TcpClientServerTest, 1_client_sends_data_to_server) {
 
     bool data_received = false;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
     [&](io::net::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -214,7 +214,7 @@ TEST_F(TcpClientServerTest, client_send_data_via_unique_ptr) {
     std::size_t total_bytes_received = 0;
     std::size_t client_on_send_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -270,7 +270,7 @@ TEST_F(TcpClientServerTest, 2_clients_send_data_to_server) {
     bool data_received_1 = false;
     bool data_received_2 = false;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
     [&](io::net::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -339,7 +339,7 @@ TEST_F(TcpClientServerTest, client_and_server_in_threads) {
 
     std::thread server_thread([this, &message, &receive_called]() {
         io::EventLoop loop;
-        auto server = new io::net::TcpServer(loop);
+        auto server = loop.allocate<io::net::TcpServer>();
         auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -393,7 +393,7 @@ TEST_F(TcpClientServerTest, send_data_from_char_buffer) {
     std::size_t on_server_receive_count = 0;
     std::size_t on_client_receive_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         nullptr,
         [&](io::net::TcpConnectedClient& client, const io::DataChunk& data, const io::Error& error) {
@@ -444,7 +444,7 @@ TEST_F(TcpClientServerTest, server_sends_data_first) {
 
     bool data_sent = false;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
     [&](io::net::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -495,7 +495,7 @@ TEST_F(TcpClientServerTest, multiple_data_chunks_sent_in_a_row_by_client) {
 
     std::thread server_thread([this, TOTAL_BYTES]() {
         io::EventLoop loop;
-        auto server = new io::net::TcpServer(loop);
+        auto server = loop.allocate<io::net::TcpServer>();
 
         std::size_t bytes_received = 0;
 
@@ -567,7 +567,7 @@ TEST_F(TcpClientServerTest, null_send_buf) {
     std::size_t server_on_send_count = 0;
     std::size_t client_on_send_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -620,7 +620,7 @@ TEST_F(TcpClientServerTest, server_shutdown_callback) {
 
     std::size_t on_server_shutdown_call_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
     [&](io::net::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -662,7 +662,7 @@ TEST_F(TcpClientServerTest, server_close_callback_1) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     server->close([&](io::net::TcpServer& server, const io::Error& error) {
         EXPECT_TRUE(error);
         EXPECT_EQ(io::StatusCode::NOT_CONNECTED, error.code());
@@ -683,7 +683,7 @@ TEST_F(TcpClientServerTest, server_close_callback_2) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
     [&](io::net::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -714,7 +714,7 @@ TEST_F(TcpClientServerTest, server_close_callback_3) {
 
     std::size_t on_server_close_call_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
     [&](io::net::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -908,7 +908,7 @@ TEST_F(TcpClientServerTest, client_reconnect_after_failure_3) {
             EXPECT_EQ(io::StatusCode::CONNECTION_REFUSED, error.code());
             ++client_on_connect_count;
 
-            server = new io::net::TcpServer(loop);
+            server = loop.allocate<io::net::TcpServer>();
             auto listen_error = server->listen({"0.0.0.0", m_default_port},
                 [&](io::net::TcpConnectedClient& client, const io::Error& error) {
                     EXPECT_FALSE(error) << error.string();
@@ -951,7 +951,7 @@ TEST_F(TcpClientServerTest, client_reconnect_after_failure_3) {
 
 TEST_F(TcpClientServerTest, server_disconnect_client_from_new_connection_callback) {
     io::EventLoop loop;
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
 
     std::size_t server_new_connection_callback_call_count = 0;
     std::size_t server_receive_callback_call_count = 0;
@@ -1030,7 +1030,7 @@ TEST_F(TcpClientServerTest, server_close_calls_close_on_connected_clients) {
     // for both client and server side when server is closed
 
     io::EventLoop loop;
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
 
     unsigned server_connect_callback_count = 0;
     unsigned server_receive_callback_count = 0;
@@ -1107,7 +1107,7 @@ TEST_F(TcpClientServerTest, server_shutdown_calls_close_on_connected_clients) {
     // for both client and server side when server is shut down
 
     io::EventLoop loop;
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
 
     unsigned server_connect_callback_count = 0;
     unsigned server_receive_callback_count = 0;
@@ -1184,7 +1184,7 @@ TEST_F(TcpClientServerTest, close_in_server_on_close_callback) {
 
     std::size_t on_server_close_call_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1256,7 +1256,7 @@ TEST_F(TcpClientServerTest, server_schedule_remove_after_send) {
     std::size_t client_receive_callback_count = 0;
 
     io::EventLoop loop;
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
 
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
@@ -1307,7 +1307,7 @@ void TcpClientServerTest::test_impl_server_disconnect_client_from_data_receive_c
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
     [&](io::net::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error) << error.string();
@@ -1383,7 +1383,7 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
     const std::size_t NUMBER_OF_CLIENTS = 100;
     std::vector<bool> clinets_data_log(NUMBER_OF_CLIENTS, false);
 
-    auto server = new io::net::TcpServer(server_loop);
+    auto server = server_loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error.string();
@@ -1473,7 +1473,7 @@ TEST_F(TcpClientServerTest, connect_and_simultaneous_send_many_participants) {
 TEST_F(TcpClientServerTest, client_disconnects_from_server) {
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
 
     std::size_t on_connected_client_close_call_count = 0;
     std::size_t on_raw_client_close_call_count = 0;
@@ -1539,7 +1539,7 @@ TEST_F(TcpClientServerTest, client_disconnects_from_server) {
 TEST_F(TcpClientServerTest, client_closed_without_read_and_connect_callback) {
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen(
         io::net::Endpoint{m_default_addr, m_default_port},
         [](io::net::TcpConnectedClient& client, const io::Error& error) {
@@ -1580,7 +1580,7 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1636,7 +1636,7 @@ TEST_F(TcpClientServerTest, server_shutdown_makes_client_close) {
 TEST_F(TcpClientServerTest, pending_write_requests) {
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen(
         io::net::Endpoint{m_default_addr, m_default_port},
         [](io::net::TcpConnectedClient& client, const io::Error& error) {
@@ -1716,7 +1716,7 @@ TEST_F(TcpClientServerTest, client_shutdown_in_connect) {
     std::size_t server_on_close_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1791,7 +1791,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_server_data_to_client) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1863,7 +1863,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -1915,7 +1915,7 @@ TEST_F(TcpClientServerTest, cancel_error_of_sending_client_data_to_server) {
 TEST_F(TcpClientServerTest, client_schedule_removal_with_send) {
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     io::net::TcpClient* client_ptr = nullptr;
 
     std::shared_ptr<char> message_ptr(new char[100], std::default_delete<char[]>());
@@ -2018,7 +2018,7 @@ TEST_F(TcpClientServerTest, client_saves_received_buffer) {
     std::size_t client_receive_counter = 0;
     std::size_t server_receive_counter = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             //client.delay_send(false); // disabling Nagle's algorithm
@@ -2105,7 +2105,7 @@ TEST_F(TcpClientServerTest, reuse_client_connection_after_disconnect_from_server
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -2194,7 +2194,7 @@ TEST_F(TcpClientServerTest, client_communicate_with_multiple_servers_in_threads)
         server_threads.emplace_back([&, i](std::string server_name){
             io::EventLoop loop;
 
-            auto server = new io::net::TcpServer(loop);
+            auto server = loop.allocate<io::net::TcpServer>();
             auto listen_error = server->listen({m_default_addr, std::uint16_t(m_default_port + i)},
                 [&](io::net::TcpConnectedClient& client, const io::Error& error) {
                     EXPECT_FALSE(error);
@@ -2310,7 +2310,7 @@ TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
         client.server().schedule_removal();
     };
 
-    auto server_1 = new io::net::TcpServer(loop);
+    auto server_1 = loop.allocate<io::net::TcpServer>();
     server_1->set_user_data(&server_1_on_new_client_count);
     auto listen_error_1 = server_1->listen(
         {m_default_addr, m_default_port},
@@ -2319,7 +2319,7 @@ TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
         nullptr);
     EXPECT_FALSE(listen_error_1);
 
-    auto server_2 = new io::net::TcpServer(loop);
+    auto server_2 = loop.allocate<io::net::TcpServer>();
     server_2->set_user_data(&server_2_on_new_client_count);
     auto listen_error_2 = server_2->listen(
         {m_default_addr, std::uint16_t(m_default_port + 1)},
@@ -2328,7 +2328,7 @@ TEST_F(TcpClientServerTest, connect_to_other_server_in_connect_callback) {
         nullptr);
     EXPECT_FALSE(listen_error_2);
 
-    auto server_3 = new io::net::TcpServer(loop);
+    auto server_3 = loop.allocate<io::net::TcpServer>();
     server_3->set_user_data(&server_3_on_new_client_count);
     auto listen_error_3 = server_3->listen(
         {m_default_addr, std::uint16_t(m_default_port + 2)},
@@ -2413,7 +2413,7 @@ TEST_F(TcpClientServerTest, DISABLED_connect_to_other_server_in_receive_callback
             EXPECT_EQ(1, client.pending_send_requesets());
         };
 
-        auto server = new io::net::TcpServer(loop);
+        auto server = loop.allocate<io::net::TcpServer>();
         auto listen_error = server->listen(
             {m_default_addr, m_default_port},
             server_on_new_client,
@@ -2460,7 +2460,7 @@ TEST_F(TcpClientServerTest, DISABLED_connect_to_other_server_in_receive_callback
             EXPECT_EQ(0, client.pending_send_requesets());
         };
 
-        auto server = new io::net::TcpServer(loop);
+        auto server = loop.allocate<io::net::TcpServer>();
         auto listen_error = server->listen(
             {m_default_addr, std::uint16_t(m_default_port + 1)},
             server_on_new_client,
@@ -2578,7 +2578,7 @@ TEST_F(TcpClientServerTest, server_send_lot_small_chunks_to_many_connected_clien
                 client_data->offset += UNDERLYING_TYPE_SIZE;
             };
 
-        auto server = new io::net::TcpServer(loop);
+        auto server = loop.allocate<io::net::TcpServer>();
         auto listen_error = server->listen(
             {m_default_addr, m_default_port},
             [&](io::net::TcpConnectedClient& client, const io::Error& error) {
@@ -2672,7 +2672,7 @@ TEST_F(TcpClientServerTest, send_data_of_size_0) {
     std::size_t client_on_send_count = 0;
     std::size_t client_on_receive_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
     [&](io::net::TcpConnectedClient& client, const io::Error& error) {
         EXPECT_FALSE(error);
@@ -2736,7 +2736,7 @@ TEST_F(TcpClientServerTest, connected_client_write_after_close_in_server_receive
     std::size_t server_on_receive_count = 0;
     std::size_t client_on_receive_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -2797,7 +2797,7 @@ TEST_F(TcpClientServerTest, client_schedule_removal_during_large_chunk_send) {
 
     std::size_t server_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen(
         {m_default_addr, m_default_port},
         nullptr,
@@ -2844,7 +2844,7 @@ TEST_F(TcpClientServerTest, server_schedule_removal_during_large_chunk_send) {
         buf.get()[i] = static_cast<char>(i);
     }
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen(
         {m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
@@ -2885,7 +2885,7 @@ void TcpClientServerTest::test_impl_client_double_close(
     std::size_t client_on_close_count = 0;
     std::size_t server_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen(
         {m_default_addr, m_default_port},
         nullptr,
@@ -2953,7 +2953,7 @@ void TcpClientServerTest::test_impl_server_double_close(
     std::size_t client_on_close_count = 0;
     std::size_t server_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen(
         {m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
@@ -3028,7 +3028,7 @@ TEST_F(TcpClientServerTest, client_shutdown_not_connected_2) {
 
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen(
         {m_default_addr, m_default_port},
         nullptr,
@@ -3068,7 +3068,7 @@ TEST_F(TcpClientServerTest, server_shutdown_not_listening_1) {
 
     std::size_t server_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     server->shutdown();
     server->shutdown([&](io::net::TcpServer&, const io::Error& error) {
         EXPECT_TRUE(error);
@@ -3090,7 +3090,7 @@ TEST_F(TcpClientServerTest, server_shutdown_not_listening_2) {
     std::size_t server_on_shutdown_1_count = 0;
     std::size_t server_on_shutdown_2_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen(
         {m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
@@ -3143,7 +3143,7 @@ TEST_F(TcpClientServerTest, client_schedule_removal_in_on_send_callback) {
 
         std::size_t server_received_size = 0;
 
-        auto server = new io::net::TcpServer(loop);
+        auto server = loop.allocate<io::net::TcpServer>();
         auto listen_error = server->listen({m_default_addr, m_default_port},
             [&](io::net::TcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -3211,7 +3211,7 @@ TEST_F(TcpClientServerTest, server_schedule_removal_in_on_send_callback) {
         std::shared_ptr<char> buf(new char[DATA_SIZE], std::default_delete<char[]>());
         std::memset(buf.get(), 0, DATA_SIZE);
 
-        auto server = new io::net::TcpServer(loop);
+        auto server = loop.allocate<io::net::TcpServer>();
         auto listen_error = server->listen({m_default_addr, m_default_port},
             [&](io::net::TcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error) << error;
@@ -3277,7 +3277,7 @@ TEST_F(TcpClientServerTest, multiple_connect_calls_to_server) {
     std::size_t server_on_connect_counter = 0;
     std::size_t server_on_close_counter = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error);
@@ -3384,7 +3384,7 @@ TEST_F(TcpClientServerTest, client_and_server_simultaneously_send_data_each_othe
 
         io::EventLoop loop;
 
-        auto server = new io::net::TcpServer(loop);
+        auto server = loop.allocate<io::net::TcpServer>();
         auto listen_error = server->listen({m_default_addr, m_default_port},
             [&](io::net::TcpConnectedClient& client, const io::Error& error) {
                 EXPECT_FALSE(error);
@@ -3487,7 +3487,7 @@ TEST_F(TcpClientServerTest, ipv6_address) {
     std::size_t server_on_receive_count = 0;
     std::size_t server_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto server_listen_error = server->listen({"::", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -3564,7 +3564,7 @@ TEST_F(TcpClientServerTest, ipv6_address) {
 TEST_F(TcpClientServerTest, server_multiple_listen_in_row_different_addresses) {
 	io::EventLoop loop;
 
-	auto server = new io::net::TcpServer(loop);
+	auto server = loop.allocate<io::net::TcpServer>();
 	auto listen_error_1 = server->listen({ m_default_addr, m_default_port },
 		nullptr,
 		nullptr,
@@ -3589,7 +3589,7 @@ TEST_F(TcpClientServerTest, server_multiple_listen_in_row_different_addresses) {
 TEST_F(TcpClientServerTest, server_multiple_start_receive_sequenced_different_addresses) {
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error_1 = server->listen({ m_default_addr, m_default_port },
         nullptr,
         nullptr,
@@ -3621,7 +3621,7 @@ TEST_F(TcpClientServerTest, client_close_reset_from_connect_callback) {
     std::size_t client_on_receive_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -3686,7 +3686,7 @@ TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback_with_send) 
     std::size_t client_on_receive_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -3754,7 +3754,7 @@ TEST_F(TcpClientServerTest, client_close_reset_from_receive_callback_after_send)
     std::size_t client_on_receive_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -3824,7 +3824,7 @@ TEST_F(TcpClientServerTest, server_close_reset_from_connect_callback) {
     std::size_t client_on_receive_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -3892,7 +3892,7 @@ TEST_F(TcpClientServerTest, server_close_reset_from_receive_callback_with_send) 
     std::size_t client_on_connect_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({m_default_addr, m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -3959,7 +3959,7 @@ TEST_F(TcpClientServerTest, server_close_reset_from_receive_callback_after_send)
     std::size_t client_on_connect_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({ m_default_addr, m_default_port },
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;

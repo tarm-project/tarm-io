@@ -29,6 +29,7 @@ class TcpConnectedClient;
 class TcpServer : public Removable,
                   public UserDataHolder {
 public:
+    friend class ::tarm::io::Allocator;
     friend class TcpConnectedClient;
 
     static const size_t READ_BUFFER_SIZE = 65536;
@@ -44,8 +45,6 @@ public:
 
     TARM_IO_FORBID_COPY(TcpServer);
     TARM_IO_FORBID_MOVE(TcpServer);
-
-    TARM_IO_DLL_PUBLIC TcpServer(EventLoop& loop);
 
     TARM_IO_DLL_PUBLIC
     Error listen(const Endpoint& endpoint,
@@ -66,6 +65,7 @@ public:
     TARM_IO_DLL_PUBLIC const Endpoint& endpoint() const;
 
 protected:
+    TARM_IO_DLL_PUBLIC TcpServer(AllocationContext& context);
     TARM_IO_DLL_PUBLIC ~TcpServer();
 
 private:

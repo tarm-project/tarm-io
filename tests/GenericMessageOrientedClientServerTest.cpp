@@ -58,7 +58,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_default_state) {
 TEST_F(GenericMessageOrientedClientServerTest, server_default_state) {
     io::EventLoop loop;
 
-    TcpServerPtr tcp_server(new io::net::TcpServer(loop), io::Removable::default_delete());
+    TcpServerPtr tcp_server(loop.allocate<io::net::TcpServer>(), io::Removable::default_delete());
     TcpMessageOrientedServer message_server(std::move(tcp_server));
 
     ASSERT_EQ(io::StatusCode::OK, loop.run());
@@ -70,7 +70,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_send_1_byte) {
 
     std::size_t server_receive_bytes_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -123,7 +123,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_send_multiple_bytes) {
     const char RECEIVE_STRING[] = "\x82""\x36""abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const std::size_t RECEIVE_SIZE = sizeof(RECEIVE_STRING) - 1; // -1 is for last \0 byte
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -181,7 +181,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_1_byte) {
     std::size_t client_on_receive_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -256,7 +256,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_multiple_bytes) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -358,7 +358,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_large_messages) {
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -440,7 +440,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_receive_too_large_messages
 
     io::EventLoop loop;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -536,7 +536,7 @@ TEST_F(GenericMessageOrientedClientServerTest, server_receive_1_message) {
         }
     );
 
-    TcpServerPtr tcp_server(new io::net::TcpServer(loop), io::Removable::default_delete());
+    TcpServerPtr tcp_server(loop.allocate<io::net::TcpServer>(), io::Removable::default_delete());
     TcpMessageOrientedServer message_server(std::move(tcp_server));
     auto listen_error = message_server.listen({"0.0.0.0", m_default_port},
         [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
@@ -609,7 +609,7 @@ TEST_F(GenericMessageOrientedClientServerTest, server_receive_multiple_messages)
         }
     );
 
-    TcpServerPtr tcp_server(new io::net::TcpServer(loop), io::Removable::default_delete());
+    TcpServerPtr tcp_server(loop.allocate<io::net::TcpServer>(), io::Removable::default_delete());
     TcpMessageOrientedServer message_server(std::move(tcp_server));
     auto listen_error = message_server.listen({"0.0.0.0", m_default_port},
         [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
@@ -698,7 +698,7 @@ TEST_F(GenericMessageOrientedClientServerTest, messages_exchange) {
 
     io::EventLoop loop;
 
-    TcpServerPtr tcp_server(new io::net::TcpServer(loop), io::Removable::default_delete());
+    TcpServerPtr tcp_server(loop.allocate<io::net::TcpServer>(), io::Removable::default_delete());
     TcpMessageOrientedServer message_server(std::move(tcp_server));
     auto listen_error = message_server.listen({"0.0.0.0", m_default_port},
         [&](TcpMessageOrientedConnectedClient& client, const io::Error& error) {
@@ -880,7 +880,7 @@ TEST_F(GenericMessageOrientedClientServerTest, send_unique_ptr) {
 
     io::EventLoop loop;
 
-    TcpServerPtr tcp_server(new io::net::TcpServer(loop),
+    TcpServerPtr tcp_server(loop.allocate<io::net::TcpServer>(),
                             io::Removable::default_delete());
     TcpMessageOrientedServer message_server(std::move(tcp_server));
     auto listen_error = message_server.listen({"0.0.0.0", m_default_port},
@@ -966,7 +966,7 @@ TEST_F(GenericMessageOrientedClientServerTest, corrupted_stream) {
     std::size_t client_on_receive_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1034,7 +1034,7 @@ TEST_F(GenericMessageOrientedClientServerTest, send_receive_0_size) {
     std::size_t client_on_receive_count = 0;
     std::size_t client_on_close_count = 0;
 
-    auto server = new io::net::TcpServer(loop);
+    auto server = loop.allocate<io::net::TcpServer>();
     auto listen_error = server->listen({"0.0.0.0", m_default_port},
         [&](io::net::TcpConnectedClient& client, const io::Error& error) {
             EXPECT_FALSE(error) << error;
@@ -1122,7 +1122,7 @@ TEST_F(GenericMessageOrientedClientServerTest, client_max_message_size) {
 
     io::EventLoop loop;
 
-    TcpServerPtr tcp_server(new io::net::TcpServer(loop),
+    TcpServerPtr tcp_server(loop.allocate<io::net::TcpServer>(),
                             io::Removable::default_delete());
     TcpMessageOrientedServer message_server(std::move(tcp_server));
     auto listen_error = message_server.listen({"0.0.0.0", m_default_port},

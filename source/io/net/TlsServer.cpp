@@ -87,13 +87,17 @@ TlsServer::Impl::Impl(AllocationContext& context,
                       TlsServer& parent) :
     m_parent(&parent),
     m_loop(&context.loop),
-    m_tcp_server(new TcpServer(context.loop)), // TODO: handle TcpServer creation error properly
     m_certificate_path(certificate_path),
     m_private_key_path(private_key_path),
     m_certificate(nullptr, ::X509_free),
     m_private_key(nullptr, ::EVP_PKEY_free),
     m_version_range(version_range),
     m_openssl_context(context.loop, parent) {
+
+    m_tcp_server = m_loop->allocate<TcpServer>();
+    if (!m_tcp_server) {
+        context.error = m_loop->last_allocation_error();
+    }
 }
 
 TlsServer::Impl::~Impl() {

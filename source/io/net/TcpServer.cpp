@@ -22,7 +22,7 @@ const size_t TcpServer::READ_BUFFER_SIZE;
 
 class TcpServer::Impl {
 public:
-    Impl(EventLoop& loop, TcpServer& parent);
+    Impl(AllocationContext& context, TcpServer& parent);
     ~Impl();
 
     Error listen(const Endpoint& endpoint,
@@ -74,11 +74,10 @@ private:
     bool m_is_open = false;
 };
 
-TcpServer::Impl::Impl(EventLoop& loop, TcpServer& parent) :
+TcpServer::Impl::Impl(AllocationContext& context, TcpServer& parent) :
     m_parent(&parent),
-    m_loop(&loop),
-    m_uv_loop(reinterpret_cast<uv_loop_t*>(loop.raw_loop()))/*,
-    m_pool(new boost::pool<>(TcpServer::READ_BUFFER_SIZE))*/ {
+    m_loop(&context.loop),
+    m_uv_loop(reinterpret_cast<uv_loop_t*>(context.loop.raw_loop())) {
 }
 
 TcpServer::Impl::~Impl() {
@@ -323,9 +322,9 @@ void TcpServer::Impl::on_close(uv_handle_t* handle) {
 
 ///////////////////////////////////////// implementation ///////////////////////////////////////////
 
-TcpServer::TcpServer(EventLoop& loop) :
-    Removable(loop),
-    m_impl(new Impl(loop, *this)) {
+TcpServer::TcpServer(AllocationContext& context) :
+    Removable(context.loop),
+    m_impl(new Impl(context, *this)) {
 }
 
 TcpServer::~TcpServer() {
